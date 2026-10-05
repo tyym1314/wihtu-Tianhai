@@ -1,0 +1,125 @@
+{
+  "at": "2026-09-19T15:48:30.548Z",
+  "runtime": "Desktop Google Chrome mobile viewport; real WebGL + pointer drag + local HTTP authoritative engine; zero money",
+  "results": [
+    {
+      "width": 390,
+      "players": 2,
+      "webgl": true,
+      "input": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.8166665395100912,
+        "spin": 0
+      },
+      "duration": 9533,
+      "pins": 10,
+      "trajectoryBytes": 59717,
+      "soundHooks": [
+        "shot",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "win"
+      ],
+      "horizontalOverflow": false,
+      "portraitsLoaded": true,
+      "portraitSource": "/arena/assets/restoration/player-portraits-v2.webp",
+      "portraitFormats": [
+        {
+          "extension": "png",
+          "status": 200,
+          "mime": "image/png"
+        },
+        {
+          "extension": "webp",
+          "status": 200,
+          "mime": "image/webp"
+        }
+      ],
+      "cameraAndReflection": "actual world geometry reflected, bounded 384x768 render target"
+    },
+    {
+      "width": 360,
+      "players": 4,
+      "webgl": true,
+      "input": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.8166667938232421,
+        "spin": 0
+      },
+      "duration": 6050,
+      "pins": 10,
+      "trajectoryBytes": 43204,
+      "soundHooks": [
+        "shot",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "win"
+      ],
+      "horizontalOverflow": false,
+      "portraitsLoaded": true,
+      "portraitSource": "/arena/assets/restoration/player-portraits-v2.webp",
+      "portraitFormats": [
+        {
+          "extension": "png",
+          "status": 200,
+          "mime": "image/png"
+        },
+        {
+          "extension": "webp",
+          "status": 200,
+          "mime": "image/webp"
+        }
+      ],
+      "cameraAndReflection": "actual world geometry reflected, bounded 384x768 render target"
+    },
+    {
+      "width": 390,
+      "players": 2,
+      "inputKind": "button",
+      "input": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.78,
+        "spin": 0
+      },
+      "pins": 10,
+      "celebration": "STRIKE",
+      "soundHooks": [
+        "shot",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "win"
+      ]
+    }
+  ],
+  "errors": []
+}

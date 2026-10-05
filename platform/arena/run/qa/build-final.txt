@@ -1,0 +1,111 @@
+vite v7.3.6 building client environment for production...
+transforming...
+
+/arena/assets/match-palace.png referenced in /arena/assets/match-palace.png didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/arena/assets/restoration/player-portraits-v2.webp referenced in /arena/assets/restoration/player-portraits-v2.webp didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/arena/assets/restoration/trophies-v2.webp referenced in /arena/assets/restoration/trophies-v2.webp didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/arena/assets/restoration/fox-poses-v2.webp referenced in /arena/assets/restoration/fox-poses-v2.webp didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/arena/assets/restoration/ludo-awards-v3.webp referenced in /arena/assets/restoration/ludo-awards-v3.webp didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/arena/assets/restoration/fox-victory-v3.webp referenced in /arena/assets/restoration/fox-victory-v3.webp didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/arena/assets/restoration/gems-v2.webp referenced in /arena/assets/restoration/gems-v2.webp didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/arena/assets/restoration/fox-idle-v3.webp referenced in /arena/assets/restoration/fox-idle-v3.webp didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/arena/assets/restoration/fox-cheer-v3.webp referenced in /arena/assets/restoration/fox-cheer-v3.webp didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 1673 modules transformed.
+rendering chunks...
+computing gzip size...
+../../../../../../../tmp/oasis-run-blender-final-20260920/index.html                                         0.48 kB │ gzip:   0.32 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/ivory-tile-DxGu3m3E.webp                    6.17 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/marble-emerald-BsbGVGxQ.webp                6.71 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/pawn-3-CCnwtWJ9.webp                        6.94 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/pawn-2-K52SuxQd.webp                        7.14 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/pawn-0-DAcrRZwV.webp                        7.27 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/marble-ivory-DgNoSBbh.webp                  7.31 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/pawn-1-ezqcaXhV.webp                        7.80 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/disc-white-DzDuKya3.webp                    8.09 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/disc-black-0y0IgEqA.webp                   12.03 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/disc-striker-BfJZ4LLR.webp                 15.68 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/neon-competition-pin-BLY3CY4Z.glb          17.86 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/disc-queen-fxuApOl_.webp                   18.05 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/metal-dart-3aQ_euWt.webp                   19.12 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/neon-result-environment-4JXPrSzA.webp      44.77 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/oasis-botanical-library-DSvsSiWF.glb       57.88 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/draco_wasm_wrapper-fZCQGLGb.js             58.46 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/players-atlas-BJZwm6F1.webp                70.70 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/sandstone-normal-Drz1pQ2o.webp             72.42 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/oasis-result-environment-CSlXRvZE.webp     75.77 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/course-1-contact-ao-8wQTAiot.webp          78.29 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/course-3-contact-ao-DBzS43yo.webp          81.86 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/course-2-contact-ao-BJVh6kUH.webp          82.03 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/fine-grass-normal-ByGGnQ37.webp            88.50 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/majlis-DUvgr9WP.webp                      131.43 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/crown-wall-imagegen-DQfvbbFG.webp         151.32 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/pearl-resin-imagegen-D0s3pC1r.webp        151.75 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/draco_decoder-Z1_iN-Ht.wasm               192.42 kB │ gzip:  63.46 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/aged-sandstone-imagegen-DzmkUPs2.webp     196.32 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/neon-private-venue-Cp_YH1bX.glb           201.07 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/neon-pearl-ball-DkjEPPX7.glb              204.34 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/palace-V9mOTRdr.webp                      213.99 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/emerald-palace-corfLABz.webp              227.19 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/putting-grass-imagegen-Cse4BO7L.webp      295.13 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/board-material-CNTfzPhi.webp              331.55 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/run-back-Ccn_4exm.webp                    455.08 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/board-material-Bhy3IN9F.webp              496.43 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/action-back-NKFTyGrs.webp                 498.47 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/board-material-DAEWx123.webp              505.79 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/board-material-lzMIlQ42.webp              519.14 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/board-material-0BR5pk4N.webp              536.27 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/front-win-kLDl5wsp.webp                   547.88 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/board-material-B6DsXAWo.webp              553.00 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/oasis-environment-BR5D3yHy.webp           688.58 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/oasis-course-3-CbPfMLCm.glb               962.77 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/oasis-course-1-CO1qF0K0.glb               966.08 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/oasis-course-2-BbXMNqJF.glb             1,004.32 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/oasis-kit-BgKB9sjK.glb                  1,344.62 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/midnight-club-D-h4RlH0.png              2,322.73 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/cat-LrKoXZCs.glb                        2,418.41 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/night-room-Bc846tvA.png                 2,481.52 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/bear-Bih7o6Ut.glb                       2,486.10 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/fox-C7KHBBBq.glb                        2,617.36 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/rabbit-koIidLoG.glb                     2,700.71 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/LudoGame-BpfxDA_2.css                       4.12 kB │ gzip:   1.46 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/RunGame-CPsURgEq.css                       11.52 kB │ gzip:   3.34 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/DartsGame-DWK8DNz1.css                     12.74 kB │ gzip:   3.93 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/restoration-BfQjK2Xb.css                   13.53 kB │ gzip:   4.16 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/GolfGame-CF-sbQzi.css                      14.78 kB │ gzip:   4.42 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/JackarooGame-5GimK0G3.css                  15.22 kB │ gzip:   4.05 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/BowlingGame-CaW9kXsL.css                   15.41 kB │ gzip:   4.42 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/CarromGame-mQE1cG2Z.css                    16.79 kB │ gzip:   4.72 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/DominoGame-DsX-XGoG.css                    18.33 kB │ gzip:   5.25 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/PoolGame-D9vqtJpJ.css                      19.12 kB │ gzip:   5.75 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/MatchGame-CjcvpGoZ.css                     31.46 kB │ gzip:   7.98 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/index-CFxbOl0X.css                         56.55 kB │ gzip:  13.50 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/chevron-left-DwrZRgss.js                    0.13 kB │ gzip:   0.14 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/flag-DkuHLdCd.js                            0.22 kB │ gzip:   0.20 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/info-B5FONsdt.js                            0.33 kB │ gzip:   0.22 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/trophy-C4dPH4uv.js                          0.46 kB │ gzip:   0.28 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/RunPodium-CJlX08uF.js                       5.23 kB │ gzip:   2.85 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/DRACOLoader-DHM9JZu_.js                     6.28 kB │ gzip:   2.61 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/characters-Mg6IIiWl.js                      7.97 kB │ gzip:   3.35 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/restoration-BMNdfOX7.js                     8.89 kB │ gzip:   4.06 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/LudoGame-B44YJ3k9.js                       12.48 kB │ gzip:   5.98 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/DominoGame-DeiyuQzL.js                     14.29 kB │ gzip:   5.99 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/DartsGame-BQh1ECFF.js                      16.04 kB │ gzip:   6.76 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/MatchGame-OjY8qd0d.js                      18.53 kB │ gzip:   7.67 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/JackarooGame-Bb5L_QiS.js                   21.47 kB │ gzip:   9.38 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/CarromGame-BesY1PJ4.js                     26.34 kB │ gzip:  10.99 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/RunGame-93BVI8X-.js                        26.95 kB │ gzip:  12.31 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/PoolGame-DRsXBmPj.js                       28.67 kB │ gzip:  12.02 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/BowlingGame-CPK0cUUq.js                    47.66 kB │ gzip:  16.49 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/GLTFLoader-B3A6yEZ-.js                     50.55 kB │ gzip:  14.88 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/GolfGame-BhVOG5Ec.js                       52.20 kB │ gzip:  21.11 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/index-B8wKLB2T.js                         286.34 kB │ gzip:  93.47 kB
+../../../../../../../tmp/oasis-run-blender-final-20260920/assets/three-BhyjpprA.js                         589.01 kB │ gzip: 150.68 kB
+✓ built in 1.62s

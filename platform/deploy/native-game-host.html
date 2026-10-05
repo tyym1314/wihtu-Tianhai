@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="color-scheme" content="dark">
+ <title>OASIS 游戏</title>
+ <link rel="stylesheet" href="/demo/native-game-host.css">
+ <script type="module" src="/demo/native-game-host-boot.mjs"></script>
+</head>
+<body data-game="__OASIS_NATIVE_GAME__">
+ <main id="native-game" aria-label="游戏画面" aria-busy="true"></main>
+ <section id="native-status" data-state="loading" role="status" aria-live="polite">
+  <div class="native-transition">
+   <span class="native-loader" aria-hidden="true"></span>
+   <h1 id="native-status-title">正在进入游戏</h1>
+   <p id="native-status-message">请稍候，正在准备游戏画面。</p>
+   <button id="native-back" type="button">返回 App</button>
+  </div>
+ </section>
+</body>
+</html>

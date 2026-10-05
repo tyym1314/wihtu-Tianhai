@@ -1,0 +1,59 @@
+{
+  "checkedAt": "2026-09-19T18:00:31.684Z",
+  "scope": "SwiftShader basic compatibility only: assets, at least two actual material frames per character, touch HTTP acceptance and actual airborne engine response. Transient rendering assertions are reserved for the complete Metal run. No claim of smooth software animation.",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+  "renderInfo": {
+    "frame": 45,
+    "calls": 137,
+    "triangles": 151996,
+    "points": 0,
+    "lines": 0
+  },
+  "runFrames": [
+    {
+      "key": "p0",
+      "frames": [
+        4,
+        6,
+        5
+      ]
+    },
+    {
+      "key": "p1",
+      "frames": [
+        7,
+        0
+      ]
+    },
+    {
+      "key": "p2",
+      "frames": [
+        1,
+        3,
+        2
+      ]
+    },
+    {
+      "key": "p3",
+      "frames": [
+        4,
+        6,
+        5
+      ]
+    }
+  ],
+  "airborne": [],
+  "accepted": {
+    "type": "input_accepted",
+    "playerKey": "p0",
+    "input": "jump",
+    "inputNo": 1,
+    "acceptedTick": 556,
+    "at": 1789840830403
+  },
+  "authoritativeJump": {
+    "jumpStartTick": 556,
+    "y": 0.1916667
+  },
+  "errors": []
+}

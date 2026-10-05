@@ -1,0 +1,9 @@
+/* Platform WebView only: preserve the standalone presentation and reel geometry. */
+@media(max-width:480px) and (max-height:780px){
+ .feature-bar{min-height:25px;padding-bottom:5px}
+ .round-message{height:24px}
+ .stats{min-height:50px}
+ .spin-dock{height:auto;min-height:0;padding:10px 0 8px}
+ .control-deck{padding-bottom:max(4px,env(safe-area-inset-bottom))}
+ .game-footer{padding-top:4px}
+}

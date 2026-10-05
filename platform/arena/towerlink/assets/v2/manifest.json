@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "generator": "built-in image_gen",
+  "files": {
+    "sky": "sky-backdrop.webp",
+    "terrain": "battlefield.webp",
+    "barracks": "barracks-atlas.webp",
+    "citadel": "citadel.webp",
+    "soldiers": "soldiers-atlas.webp"
+  },
+  "atlas": {
+    "columns": 5,
+    "rows": 3,
+    "width": 1322,
+    "height": 1190,
+    "columnTeams": [
+      "neutral",
+      "green",
+      "red",
+      "blue",
+      "purple"
+    ],
+    "rowRects": [
+      {
+        "y": 50,
+        "height": 312
+      },
+      {
+        "y": 375,
+        "height": 342
+      },
+      {
+        "y": 725,
+        "height": 370
+      }
+    ],
+    "anchor": {
+      "x": 0.5,
+      "y": 0.94
+    },
+    "contentScale": 1.05
+  },
+  "soldiers": {
+    "columns": 4,
+    "rows": 4,
+    "columnTeams": ["green", "red", "blue", "purple"],
+    "frameRate": 8,
+    "facing": "right",
+    "anchor": {"x": 0.5, "y": 0.94}
+  },
+  "terrain": {
+    "width": 1254,
+    "height": 1254,
+    "playablePlane": {
+      "left": 0.1,
+      "top": 0.1,
+      "right": 0.9,
+      "bottom": 0.7
+    }
+  },
+  "notes": "Rows have measured source rectangles; do not use equal-height grid slicing. All sprite/terrain alpha verified. Sky is opaque. Original PNGs kept as source."
+}

@@ -1,0 +1,8737 @@
+{
+  "summary": {
+    "cases": 211,
+    "faults": [],
+    "center": [
+      {
+        "power": 0.25,
+        "pins": 7
+      },
+      {
+        "power": 0.35,
+        "pins": 6
+      },
+      {
+        "power": 0.45,
+        "pins": 7
+      },
+      {
+        "power": 0.55,
+        "pins": 8
+      },
+      {
+        "power": 0.6,
+        "pins": 7
+      },
+      {
+        "power": 0.65,
+        "pins": 9
+      },
+      {
+        "power": 0.7,
+        "pins": 8
+      },
+      {
+        "power": 0.75,
+        "pins": 8
+      },
+      {
+        "power": 0.78,
+        "pins": 8
+      },
+      {
+        "power": 0.8,
+        "pins": 8
+      },
+      {
+        "power": 0.85,
+        "pins": 9
+      },
+      {
+        "power": 0.9,
+        "pins": 7
+      },
+      {
+        "power": 0.95,
+        "pins": 7
+      },
+      {
+        "power": 1,
+        "pins": 8
+      }
+    ],
+    "strikes": [
+      {
+        "group": "pocket",
+        "action": {
+          "type": "roll",
+          "offset": -0.16,
+          "angle": 0,
+          "power": 0.5,
+          "spin": 0
+        }
+      },
+      {
+        "group": "pocket",
+        "action": {
+          "type": "roll",
+          "offset": -0.2,
+          "angle": 0,
+          "power": 1,
+          "spin": 0
+        }
+      },
+      {
+        "group": "pocket",
+        "action": {
+          "type": "roll",
+          "offset": 0.24,
+          "angle": 0,
+          "power": 1,
+          "spin": 0
+        }
+      }
+    ],
+    "maxMs": 294.99
+  },
+  "rows": [
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.25,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9
+      ],
+      "remaining": [
+        7,
+        8,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 8900,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 132.02
+    },
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.35,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8
+      ],
+      "remaining": [
+        4,
+        7,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5717,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 41.96
+    },
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.45,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9
+      ],
+      "remaining": [
+        7,
+        8,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 7267,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 61.59
+    },
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.55,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4733,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 22.41
+    },
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9
+      ],
+      "remaining": [
+        7,
+        8,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5050,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 27.6
+    },
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.65,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "remaining": [
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6400,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 63.84
+    },
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 8217,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 34.48
+    },
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.75,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5417,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 33.36
+    },
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "remaining": [
+        4,
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6117,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 47.85
+    },
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5417,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 30.48
+    },
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.85,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "remaining": [
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5483,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 49.71
+    },
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "remaining": [
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5417,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 48.13
+    },
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.95,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "remaining": [
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5600,
+      "maxPinSpeed": 0.0007,
+      "maxPinAngular": 0.0005,
+      "computeMs": 71.88
+    },
+    {
+      "group": "center-power",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6850,
+      "maxPinSpeed": 0.0013,
+      "maxPinAngular": 0.013,
+      "computeMs": 89.83
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.2,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2183,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.98
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.19,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2183,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.89
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.18,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2183,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.98
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.17,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2183,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.23
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.16,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2167,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.82
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.15,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2167,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 4.06
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.14,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2167,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.96
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.13,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2167,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.96
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.12,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        7
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3200,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 3.81
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.11,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        7
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3933,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.64
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.1,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        7
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 2767,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 4.07
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.09,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4250,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 7.54
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.08,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3917,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 5.84
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.07,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        4,
+        7
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5133,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 11.47
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.06,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        2,
+        4,
+        5,
+        7,
+        9
+      ],
+      "remaining": [
+        1,
+        3,
+        6,
+        8,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5017,
+      "maxPinSpeed": 0.0014,
+      "maxPinAngular": 0.0185,
+      "computeMs": 13.99
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.05,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        2,
+        4,
+        5,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        3,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4783,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 10.12
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.04,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "remaining": [
+        3,
+        5,
+        6,
+        7,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3833,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 12.93
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.03,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        10
+      ],
+      "remaining": [
+        5,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5367,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 44
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.02,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6250,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 79.42
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": -0.01,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        4,
+        5,
+        8,
+        9
+      ],
+      "remaining": [
+        3,
+        6,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4350,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 12.86
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "remaining": [
+        4,
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6117,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 48.56
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.01,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "remaining": [
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6100,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 46.8
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.02,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5500,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 37.36
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.03,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        9,
+        10
+      ],
+      "remaining": [
+        5,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5383,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 52.79
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.04,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        1,
+        3,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        2,
+        4,
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3617,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 11.87
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.05,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        4,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5750,
+      "maxPinSpeed": 0.0009,
+      "maxPinAngular": 0.0122,
+      "computeMs": 22.86
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.06,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        3,
+        5,
+        6,
+        8,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        4,
+        7,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4517,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 28
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.07,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        6,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4817,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 7.41
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.08,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4850,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 20.61
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.09,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3950,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 10.69
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.1,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 2983,
+      "maxPinSpeed": 0.0007,
+      "maxPinAngular": 0.0005,
+      "computeMs": 3.43
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.11,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4617,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.45
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.12,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3850,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.61
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.13,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2167,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.43
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.14,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2167,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.66
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.15,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2167,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.77
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.16,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2167,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.78
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.17,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2183,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.02
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.18,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2183,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.81
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.19,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2183,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.78
+    },
+    {
+      "group": "angle",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0.2,
+        "power": 0.78,
+        "spin": 0
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2183,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.23
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.12,
+        "angle": 0,
+        "power": 0.5,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        9
+      ],
+      "remaining": [
+        4,
+        6,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5300,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 29.24
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.12,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 7433,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 31.49
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.12,
+        "angle": 0,
+        "power": 0.85,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9
+      ],
+      "remaining": [
+        6,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 8383,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 67.56
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.12,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        4,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4300,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 53.18
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.16,
+        "angle": 0,
+        "power": 0.5,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "remaining": [],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5417,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 46.06
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.16,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        8
+      ],
+      "remaining": [
+        6,
+        7,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4950,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 24.22
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.16,
+        "angle": 0,
+        "power": 0.85,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "remaining": [
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5567,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 71.79
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.16,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        4,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4283,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 25.63
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.2,
+        "angle": 0,
+        "power": 0.5,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "remaining": [
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 9333,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 98.71
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.2,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "remaining": [
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4817,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 24.76
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.2,
+        "angle": 0,
+        "power": 0.85,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10
+      ],
+      "remaining": [
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5633,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 41.29
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.2,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "remaining": [],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 8200,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 58.23
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.24,
+        "angle": 0,
+        "power": 0.5,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        8
+      ],
+      "remaining": [
+        5,
+        7,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5000,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 40.4
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.24,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "remaining": [
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 10000,
+      "maxPinSpeed": 0.0234,
+      "maxPinAngular": 0.127,
+      "computeMs": 294.99
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.24,
+        "angle": 0,
+        "power": 0.85,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8
+      ],
+      "remaining": [
+        5,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5400,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 56.82
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.24,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10
+      ],
+      "remaining": [
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4750,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 76.85
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.28,
+        "angle": 0,
+        "power": 0.5,
+        "spin": 0
+      },
+      "down": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4767,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 23.69
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.28,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        8
+      ],
+      "remaining": [
+        6,
+        7,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6150,
+      "maxPinSpeed": 0.0005,
+      "maxPinAngular": 0.0054,
+      "computeMs": 113.65
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.28,
+        "angle": 0,
+        "power": 0.85,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9
+      ],
+      "remaining": [
+        6,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5100,
+      "maxPinSpeed": 0.0007,
+      "maxPinAngular": 0.0005,
+      "computeMs": 55.63
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.28,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        4,
+        5,
+        8,
+        9
+      ],
+      "remaining": [
+        3,
+        6,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5500,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 27.67
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.12,
+        "angle": 0,
+        "power": 0.5,
+        "spin": 0
+      },
+      "down": [
+        1,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        2,
+        4,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6900,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 31.72
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.12,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        4,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4250,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 51.38
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.12,
+        "angle": 0,
+        "power": 0.85,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        4,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5183,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 14.83
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.12,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5917,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 82.21
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.16,
+        "angle": 0,
+        "power": 0.5,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4400,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 52.08
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.16,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6967,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 105.91
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.16,
+        "angle": 0,
+        "power": 0.85,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "remaining": [
+        4,
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4350,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 36.52
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.16,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        9
+      ],
+      "remaining": [
+        4,
+        6,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 9617,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 45.76
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.2,
+        "angle": 0,
+        "power": 0.5,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        4,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4483,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 35.24
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.2,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3867,
+      "maxPinSpeed": 0.0062,
+      "maxPinAngular": 0.0151,
+      "computeMs": 39.74
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.2,
+        "angle": 0,
+        "power": 0.85,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6483,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 47.41
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.2,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4817,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 39.33
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.24,
+        "angle": 0,
+        "power": 0.5,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "remaining": [
+        4,
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5383,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 85.43
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.24,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5583,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 48.19
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.24,
+        "angle": 0,
+        "power": 0.85,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4250,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 25.97
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.24,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "remaining": [],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6117,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 60.23
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.28,
+        "angle": 0,
+        "power": 0.5,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "remaining": [
+        4,
+        7
+      ],
+      "gutter": true,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5850,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 95.15
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.28,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        4,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4800,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 21.69
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.28,
+        "angle": 0,
+        "power": 0.85,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "remaining": [
+        4,
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5900,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 53.38
+    },
+    {
+      "group": "pocket",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.28,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4867,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 32.21
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.85,
+        "angle": -0.2,
+        "power": 0.25,
+        "spin": -1
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2717,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.88
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.85,
+        "angle": -0.2,
+        "power": 0.25,
+        "spin": 1
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2717,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.3
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.85,
+        "angle": -0.2,
+        "power": 1,
+        "spin": -1
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2033,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.75
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.85,
+        "angle": -0.2,
+        "power": 1,
+        "spin": 1
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2033,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.74
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.85,
+        "angle": 0.2,
+        "power": 0.25,
+        "spin": -1
+      },
+      "down": [
+        6,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5633,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 7.48
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.85,
+        "angle": 0.2,
+        "power": 0.25,
+        "spin": 1
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2717,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.95
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.85,
+        "angle": 0.2,
+        "power": 1,
+        "spin": -1
+      },
+      "down": [
+        6,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3800,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.91
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.85,
+        "angle": 0.2,
+        "power": 1,
+        "spin": 1
+      },
+      "down": [
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "gutter": true,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3133,
+      "maxPinSpeed": 0.0007,
+      "maxPinAngular": 0.0005,
+      "computeMs": 3.81
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.85,
+        "angle": -0.2,
+        "power": 0.25,
+        "spin": -1
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2717,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.99
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.85,
+        "angle": -0.2,
+        "power": 0.25,
+        "spin": 1
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4400,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 5.53
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.85,
+        "angle": -0.2,
+        "power": 1,
+        "spin": -1
+      },
+      "down": [
+        7
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3117,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 3.29
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.85,
+        "angle": -0.2,
+        "power": 1,
+        "spin": 1
+      },
+      "down": [
+        4,
+        7
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4400,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 4.24
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.85,
+        "angle": 0.2,
+        "power": 0.25,
+        "spin": -1
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2717,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.22
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.85,
+        "angle": 0.2,
+        "power": 0.25,
+        "spin": 1
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2717,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.72
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.85,
+        "angle": 0.2,
+        "power": 1,
+        "spin": -1
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2033,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.74
+    },
+    {
+      "group": "boundary",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.85,
+        "angle": 0.2,
+        "power": 1,
+        "spin": 1
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2033,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.88
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.6094577220501378,
+        "angle": 0.09253177037462593,
+        "power": 0.9711115704267286,
+        "spin": -0.5631585866212845
+      },
+      "down": [
+        1,
+        3,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "remaining": [
+        2,
+        4,
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6967,
+      "maxPinSpeed": 0.0005,
+      "maxPinAngular": 0.0025,
+      "computeMs": 50.38
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.7868791293120011,
+        "angle": 0.009886307362467052,
+        "power": 0.8236603938858025,
+        "spin": 0.9844899866729975
+      },
+      "down": [
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3367,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.16
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.56712239428889,
+        "angle": 0.02407873747870326,
+        "power": 0.2789324991754256,
+        "spin": -0.8793574534356594
+      },
+      "down": [
+        3,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        4,
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5400,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 13.41
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.005912561505101621,
+        "angle": 0.08326527448371053,
+        "power": 0.5433384731295519,
+        "spin": 0.7307651918381453
+      },
+      "down": [
+        6,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5050,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 6.33
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.5073817157419398,
+        "angle": 0.07657884722575546,
+        "power": 0.823345169366803,
+        "spin": -0.2130899801850319
+      },
+      "down": [
+        1,
+        3,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        2,
+        4,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6500,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 27.96
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.7419381871586666,
+        "angle": -0.016200490202754738,
+        "power": 0.3484707034076564,
+        "spin": 0.665708290413022
+      },
+      "down": [
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4050,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 5.53
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.47960032902192323,
+        "angle": 0.08693891419097782,
+        "power": 0.7875899946666323,
+        "spin": 0.1011292152106762
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2167,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.91
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.4922218220075592,
+        "angle": -0.09063615454360843,
+        "power": 0.25776960531948134,
+        "spin": 0.678254371508956
+      },
+      "down": [
+        1,
+        2,
+        4,
+        5,
+        8,
+        9
+      ],
+      "remaining": [
+        3,
+        6,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4250,
+      "maxPinSpeed": 0.0007,
+      "maxPinAngular": 0.0005,
+      "computeMs": 18.64
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.1446088929893449,
+        "angle": -0.001916180644184351,
+        "power": 0.31235062604537234,
+        "spin": -0.725682258605957
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "remaining": [
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 7417,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 92.04
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.17903538530226795,
+        "angle": -0.08517225747928024,
+        "power": 0.9824983586440794,
+        "spin": 0.3532613757997751
+      },
+      "down": [
+        2,
+        4,
+        5,
+        7,
+        8,
+        10
+      ],
+      "remaining": [
+        1,
+        3,
+        6,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4000,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 9.73
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.7341357064200565,
+        "angle": 0.05153463510796428,
+        "power": 0.3839375455281697,
+        "spin": 0.5200566835701466
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2533,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.79
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.15014778769109396,
+        "angle": -0.06411658404394985,
+        "power": 0.5880918960901909,
+        "spin": -0.7589586544781923
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4350,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 5.56
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.6951220377115532,
+        "angle": -0.057513249758630994,
+        "power": 0.6443466599448584,
+        "spin": -0.8634781464934349
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "remaining": [
+        4,
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5583,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 33.46
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.4162076331907883,
+        "angle": -0.024626040365546942,
+        "power": 0.5776529970462434,
+        "spin": -0.24810832552611828
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3483,
+      "maxPinSpeed": 0.0007,
+      "maxPinAngular": 0.0005,
+      "computeMs": 5.45
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.03264885388780385,
+        "angle": -0.06261200504377484,
+        "power": 0.6231928946799599,
+        "spin": -0.7864849604666233
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3350,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 5.13
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.5043179536005482,
+        "angle": 0.052121471334248784,
+        "power": 0.3973233813303523,
+        "spin": 0.6756263580173254
+      },
+      "down": [
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3417,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.45
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.4796424758853391,
+        "angle": -0.04598323414102197,
+        "power": 0.6415187874226831,
+        "spin": 0.9644952565431595
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5217,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 5.09
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.7981784309959039,
+        "angle": -0.08774482225999236,
+        "power": 0.6135298029403202,
+        "spin": -0.6738927569240332
+      },
+      "down": [
+        1,
+        2,
+        4,
+        5,
+        7,
+        8,
+        9
+      ],
+      "remaining": [
+        3,
+        6,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5600,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 38.1
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.7387205760227517,
+        "angle": 0.004060150962322951,
+        "power": 0.8874780819169246,
+        "spin": 0.6836099959909916
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4050,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 4.71
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.34060592332389206,
+        "angle": -0.09696044055745007,
+        "power": 0.5121051438036375,
+        "spin": 0.31077527813613415
+      },
+      "down": [
+        2,
+        4,
+        5,
+        8
+      ],
+      "remaining": [
+        1,
+        3,
+        6,
+        7,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6733,
+      "maxPinSpeed": 0.016,
+      "maxPinAngular": 0.046,
+      "computeMs": 33.76
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.2618208297761157,
+        "angle": -0.0018079453147947788,
+        "power": 0.9138943217112683,
+        "spin": -0.6722735241055489
+      },
+      "down": [
+        1,
+        2,
+        4,
+        5,
+        7,
+        8,
+        9
+      ],
+      "remaining": [
+        3,
+        6,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4483,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 16.11
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.32676053342875094,
+        "angle": 0.00920247593894601,
+        "power": 0.6192845075274818,
+        "spin": 0.9251817632466555
+      },
+      "down": [
+        3,
+        5,
+        6,
+        8,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        4,
+        7,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4700,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 18.77
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.5496134721441194,
+        "angle": -0.08634867714717985,
+        "power": 0.3076944439089857,
+        "spin": -0.27653710916638374
+      },
+      "down": [
+        1,
+        2,
+        4,
+        5,
+        7,
+        8
+      ],
+      "remaining": [
+        3,
+        6,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5950,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 38
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.3905743448296562,
+        "angle": 0.05176329063251615,
+        "power": 0.3945763131487183,
+        "spin": -0.8274803999811411
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        10
+      ],
+      "remaining": [
+        5,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4883,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 20.23
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.5604537362931296,
+        "angle": -0.07568013230338694,
+        "power": 0.5312173729180358,
+        "spin": 0.39921966195106506
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 7850,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 123.53
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.357046714075841,
+        "angle": 0.04936099583283067,
+        "power": 0.8455083888838999,
+        "spin": 0.4081545416265726
+      },
+      "down": [
+        1,
+        3,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        2,
+        4,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4783,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 25.53
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.07604362100828439,
+        "angle": 0.09330079285427928,
+        "power": 0.43539761420106515,
+        "spin": 0.04221068695187569
+      },
+      "down": [
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5483,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 14.55
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.6665406609186902,
+        "angle": -0.05791766224429012,
+        "power": 0.8142490658792667,
+        "spin": 0.6091564428061247
+      },
+      "down": [
+        7
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3833,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 3.51
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.5100831388263032,
+        "angle": 0.027996518369764092,
+        "power": 0.44482384802540764,
+        "spin": 0.5804945901036263
+      },
+      "down": [
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4150,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 5.02
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.19526895654853432,
+        "angle": 0.07778994152322412,
+        "power": 0.4361032719607465,
+        "spin": 0.26883050985634327
+      },
+      "down": [
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3550,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.33
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.3599286108510569,
+        "angle": 0.09768690569326283,
+        "power": 0.4146725232130848,
+        "spin": 0.8900059722363949
+      },
+      "down": [
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4100,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 5.11
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.28638817875180395,
+        "angle": 0.060950436163693666,
+        "power": 0.5198836253839545,
+        "spin": 0.9162485506385565
+      },
+      "down": [
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        4,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5117,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 21.69
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.7727455494226888,
+        "angle": 0.01360738268122077,
+        "power": 0.9095164508908056,
+        "spin": -0.8734133392572403
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4900,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 5.15
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.1135674696182832,
+        "angle": -0.03603742038831115,
+        "power": 0.8501565285841934,
+        "spin": 0.26078022457659245
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        8
+      ],
+      "remaining": [
+        6,
+        7,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6683,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 41.29
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.27586809650529176,
+        "angle": -0.028472931403666735,
+        "power": 0.4040083982399665,
+        "spin": -0.31698304042220116
+      },
+      "down": [
+        2,
+        4,
+        5,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        3,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 7550,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 12.42
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.23526060411240904,
+        "angle": -0.09901461629197002,
+        "power": 0.41136326192645356,
+        "spin": -0.03837570734322071
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6333,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 24.02
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.72431009944994,
+        "angle": -0.04317310089245439,
+        "power": 0.4054396822466515,
+        "spin": 0.7710468992590904
+      },
+      "down": [
+        7
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3650,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.16
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.5846935943001881,
+        "angle": -0.03573376080021262,
+        "power": 0.2838160774554126,
+        "spin": 0.022339867427945137
+      },
+      "down": [
+        7
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3950,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.45
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.2210285208420828,
+        "angle": 0.01207775129005313,
+        "power": 0.4981737634516321,
+        "spin": 0.6284274868667126
+      },
+      "down": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        9
+      ],
+      "remaining": [
+        3,
+        7,
+        8,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6567,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 72.09
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.22549415363464503,
+        "angle": -0.07703095925971866,
+        "power": 0.9615692926454358,
+        "spin": -0.1896223369985819
+      },
+      "down": [
+        7
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4733,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 4.15
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.5511031260015443,
+        "angle": 0.06711856862530112,
+        "power": 0.5599548397003673,
+        "spin": 0.3509419560432434
+      },
+      "down": [
+        1,
+        3,
+        5,
+        6,
+        9
+      ],
+      "remaining": [
+        2,
+        4,
+        7,
+        8,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5750,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 50.17
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.11179100160952657,
+        "angle": 0.0845023118890822,
+        "power": 0.8421653841505758,
+        "spin": -0.29838875494897366
+      },
+      "down": [
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4717,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 9.11
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.7903338295174762,
+        "angle": -0.0683655139990151,
+        "power": 0.40009143989300355,
+        "spin": -0.6505629830062389
+      },
+      "down": [
+        1,
+        3,
+        5,
+        6,
+        8,
+        9
+      ],
+      "remaining": [
+        2,
+        4,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5300,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 32.44
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.10442036294844001,
+        "angle": -0.08165266988798976,
+        "power": 0.38825608155457303,
+        "spin": -0.650131719186902
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4850,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 6.25
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.023582087573595343,
+        "angle": 0.0502349547110498,
+        "power": 0.5695150177343749,
+        "spin": -0.5681458935141563
+      },
+      "down": [
+        1,
+        3,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        2,
+        4,
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4500,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 9.67
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.48557584958616645,
+        "angle": 0.0423862517811358,
+        "power": 0.7110984611208551,
+        "spin": 0.5814617890864611
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        9
+      ],
+      "remaining": [
+        6,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 7283,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 58.34
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.13312282420229166,
+        "angle": 0.0200318674556911,
+        "power": 0.5927135454840027,
+        "spin": -0.4897393621504307
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4317,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 32.24
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.7987003749469295,
+        "angle": -0.028269762825220826,
+        "power": 0.3259260395425372,
+        "spin": 0.9147213902324438
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4500,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 7.17
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.7699192864121869,
+        "angle": 0.07071768334135413,
+        "power": 0.621540107706096,
+        "spin": 0.9328812509775162
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9
+      ],
+      "remaining": [
+        6,
+        8,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6717,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 23.56
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.540956401429139,
+        "angle": 0.03004757547751069,
+        "power": 0.5791948676924221,
+        "spin": -0.2954754438251257
+      },
+      "down": [
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4667,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 6.56
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.4335947417886928,
+        "angle": -0.024836308509111407,
+        "power": 0.5904717471566983,
+        "spin": 0.7652986207976937
+      },
+      "down": [
+        1,
+        6,
+        9
+      ],
+      "remaining": [
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5233,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 5.05
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        2,
+        3,
+        6,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.8479318236233666,
+        "angle": -0.0491060153581202,
+        "power": 0.8387485732673667,
+        "spin": -0.610749751329422
+      },
+      "down": [],
+      "remaining": [
+        2,
+        3,
+        6,
+        8,
+        9,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2117,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 1.58
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.6470307439798489,
+        "angle": -0.005830751545727254,
+        "power": 0.683113535924349,
+        "spin": 0.9611612176522613
+      },
+      "down": [
+        6,
+        9
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        5,
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4800,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 4.96
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        2,
+        4,
+        5,
+        6,
+        7,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.5528334787348285,
+        "angle": 0.018249936867505312,
+        "power": 0.33766742068110034,
+        "spin": -0.2254394982010126
+      },
+      "down": [
+        2,
+        4,
+        5,
+        7
+      ],
+      "remaining": [
+        6,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4050,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 6.3
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        4,
+        6,
+        8,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.4601682833628729,
+        "angle": -0.021978807076811793,
+        "power": 0.5251152415876277,
+        "spin": 0.6654790015891194
+      },
+      "down": [
+        6,
+        10
+      ],
+      "remaining": [
+        1,
+        4,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5867,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.47
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.34638729013968256,
+        "angle": 0.04672891749069095,
+        "power": 0.9947492009378038,
+        "spin": 0.575311940163374
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8
+      ],
+      "remaining": [
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4983,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 31.29
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        3,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.8081515697995201,
+        "angle": -0.08317222353070974,
+        "power": 0.6319042747491039,
+        "spin": 0.7066072849556804
+      },
+      "down": [
+        3,
+        8,
+        9
+      ],
+      "remaining": [
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4250,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 11.01
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        7,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.1925890244776383,
+        "angle": 0.01827610740438104,
+        "power": 0.9433407696778886,
+        "spin": 0.2578641790896654
+      },
+      "down": [
+        1,
+        2,
+        3,
+        9
+      ],
+      "remaining": [
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3933,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 3.99
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.17205720145720987,
+        "angle": 0.0017142489552497864,
+        "power": 0.840459368948359,
+        "spin": -0.8449340080842376
+      },
+      "down": [
+        1,
+        2,
+        3,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        4
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5267,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 17.46
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        4,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.6158977201906964,
+        "angle": -0.07599812084808946,
+        "power": 0.906658481748309,
+        "spin": -0.6363117769360542
+      },
+      "down": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "remaining": [
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4150,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 12.96
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        4,
+        5,
+        6,
+        7,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.20589001441840082,
+        "angle": -0.03793348912149668,
+        "power": 0.6483761324197985,
+        "spin": 0.8903121193870902
+      },
+      "down": [
+        5
+      ],
+      "remaining": [
+        4,
+        6,
+        7,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4200,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 2.02
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        2,
+        5,
+        7,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.7017783796181902,
+        "angle": 0.030429355520755055,
+        "power": 0.8882941726478748,
+        "spin": -0.9072595108300447
+      },
+      "down": [
+        10
+      ],
+      "remaining": [
+        2,
+        5,
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3933,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.29
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        6,
+        7,
+        8,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.5410203385399655,
+        "angle": -0.04937367178499699,
+        "power": 0.3856962717254646,
+        "spin": -0.9633471770212054
+      },
+      "down": [
+        1,
+        2,
+        7,
+        8
+      ],
+      "remaining": [
+        6,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4333,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 7.33
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        2,
+        6,
+        7
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.27694944485556333,
+        "angle": 0.07953103063628078,
+        "power": 0.7599379368475638,
+        "spin": -0.009647544473409653
+      },
+      "down": [],
+      "remaining": [
+        2,
+        6,
+        7
+      ],
+      "gutter": false,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2183,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 0.85
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        3,
+        7,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.3790001595625654,
+        "angle": -0.08918689023703337,
+        "power": 0.7702817372628488,
+        "spin": -0.6379508720710874
+      },
+      "down": [
+        7
+      ],
+      "remaining": [
+        1,
+        3,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4167,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 1.75
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.6804568600142374,
+        "angle": -0.018070546444505453,
+        "power": 0.5158489529858343,
+        "spin": 0.08138593472540379
+      },
+      "down": [
+        4,
+        7
+      ],
+      "remaining": [
+        3,
+        5,
+        6,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4817,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 7.38
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        3,
+        6,
+        7,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.5913043125299736,
+        "angle": 0.010647246986627579,
+        "power": 0.8350150406477042,
+        "spin": -0.7664397349581122
+      },
+      "down": [
+        7
+      ],
+      "remaining": [
+        3,
+        6,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4650,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 1.63
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.8473677438916638,
+        "angle": 0.01263697436079383,
+        "power": 0.6511056059389375,
+        "spin": 0.29540397226810455
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        1,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4650,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 5.04
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.491326168901287,
+        "angle": -0.022349983640015128,
+        "power": 0.4026069939718582,
+        "spin": -0.7768213683739305
+      },
+      "down": [
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        2,
+        3,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4567,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 10.45
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        4,
+        5,
+        6,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.2519673584261909,
+        "angle": -0.03129044724628329,
+        "power": 0.3081661557662301,
+        "spin": -0.4733926299959421
+      },
+      "down": [
+        4
+      ],
+      "remaining": [
+        1,
+        5,
+        6,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5067,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.9
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.6207800789969041,
+        "angle": 0.01909504421055317,
+        "power": 0.7212931209360249,
+        "spin": -0.042194622568786144
+      },
+      "down": [],
+      "remaining": [
+        1,
+        9
+      ],
+      "gutter": false,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2200,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 0.68
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        8
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.8036408484680578,
+        "angle": -0.0018103708513081075,
+        "power": 0.7737712035304867,
+        "spin": 0.17228683456778526
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        8
+      ],
+      "gutter": false,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2167,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 1.73
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.09415471346583217,
+        "angle": 0.06198633406311274,
+        "power": 0.8121999898576178,
+        "spin": -0.6928833844140172
+      },
+      "down": [
+        3,
+        6,
+        9
+      ],
+      "remaining": [
+        1,
+        2,
+        5,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4050,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 6.39
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        5,
+        8,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.23225556465331465,
+        "angle": 0.05971305826678872,
+        "power": 0.34571920399321243,
+        "spin": -0.5064592491835356
+      },
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        8
+      ],
+      "remaining": [
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4750,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 9.68
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        6,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.3174588692607358,
+        "angle": 0.09713785648345948,
+        "power": 0.7666627185535617,
+        "spin": -0.49692974146455526
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        6,
+        9
+      ],
+      "gutter": false,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2183,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 1.09
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.8087424262193963,
+        "angle": 0.022155105229467155,
+        "power": 0.5265462751849554,
+        "spin": 0.6420085802674294
+      },
+      "down": [
+        10
+      ],
+      "remaining": [
+        1,
+        3,
+        5,
+        7,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4983,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.81
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        5,
+        6,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.5452540974831208,
+        "angle": 0.061729701422154906,
+        "power": 0.9192749010981061,
+        "spin": 0.2848034789785743
+      },
+      "down": [
+        1,
+        5
+      ],
+      "remaining": [
+        6,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3283,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 4.05
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        4,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.1462865742156282,
+        "angle": 0.06369050415232778,
+        "power": 0.9386415548506193,
+        "spin": -0.3036301154643297
+      },
+      "down": [
+        9
+      ],
+      "remaining": [
+        1,
+        2,
+        4,
+        8,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4317,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 2.36
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.3199143727077171,
+        "angle": -0.055284206941723826,
+        "power": 0.25995220645563677,
+        "spin": 0.6626707958057523
+      },
+      "down": [
+        4
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        6,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4400,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.29
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        4,
+        6,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.35573110908735545,
+        "angle": 0.07964257923886181,
+        "power": 0.2928293537697755,
+        "spin": -0.4476410262286663
+      },
+      "down": [
+        1,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        2,
+        4,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6717,
+      "maxPinSpeed": 0.0013,
+      "maxPinAngular": 0.0015,
+      "computeMs": 32.78
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.6872911376645788,
+        "angle": 0.04945816714316607,
+        "power": 0.6357908989884891,
+        "spin": 0.39517278503626585
+      },
+      "down": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        10
+      ],
+      "remaining": [
+        7,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 6483,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 80.49
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        2,
+        3,
+        5,
+        6,
+        7,
+        8
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.38312905838247385,
+        "angle": 0.05849642837420106,
+        "power": 0.679949355951976,
+        "spin": 0.010045180097222328
+      },
+      "down": [],
+      "remaining": [
+        2,
+        3,
+        5,
+        6,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2250,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.08
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        5,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.06588817748706788,
+        "angle": -0.002037189155817032,
+        "power": 0.9810025308397599,
+        "spin": 0.7725254157558084
+      },
+      "down": [
+        1,
+        2,
+        5,
+        8,
+        9
+      ],
+      "remaining": [
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5817,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 17.9
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.3698590288637206,
+        "angle": 0.03545116921886802,
+        "power": 0.6424661157070659,
+        "spin": -0.09787124395370483
+      },
+      "down": [
+        6
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3100,
+      "maxPinSpeed": 0.0006,
+      "maxPinAngular": 0.0004,
+      "computeMs": 4.62
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        2,
+        3,
+        5,
+        6
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.666223843418993,
+        "angle": -0.0889079349115491,
+        "power": 0.5007060561911203,
+        "spin": 0.8006200110539794
+      },
+      "down": [
+        2,
+        3,
+        5,
+        6
+      ],
+      "remaining": [],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4500,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.96
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        4,
+        5,
+        7
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.649202507152222,
+        "angle": 0.08288624780252576,
+        "power": 0.9206391015904956,
+        "spin": -0.39299760200083256
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        4,
+        5,
+        7
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2067,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 1.33
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.008266512234695255,
+        "angle": 0.04912858940660954,
+        "power": 0.6718586173956282,
+        "spin": -0.6208761660382152
+      },
+      "down": [
+        3,
+        6,
+        9,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        4,
+        5,
+        7,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4383,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 15.51
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.37954930134583265,
+        "angle": 0.047116809617727996,
+        "power": 0.4552845372236334,
+        "spin": 0.7903283946216106
+      },
+      "down": [
+        1,
+        3,
+        5,
+        6,
+        8,
+        9,
+        10
+      ],
+      "remaining": [
+        4,
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4717,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 57.25
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        4,
+        7,
+        8,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.743241704837419,
+        "angle": 0.047065889276564125,
+        "power": 0.6121062529855408,
+        "spin": 0.5674712983891368
+      },
+      "down": [],
+      "remaining": [
+        1,
+        2,
+        4,
+        7,
+        8,
+        10
+      ],
+      "gutter": true,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2300,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 1.59
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.31871613787952807,
+        "angle": -0.009186866786330938,
+        "power": 0.9166602889890783,
+        "spin": 0.7188814003020525
+      },
+      "down": [
+        1,
+        2,
+        4,
+        7,
+        8
+      ],
+      "remaining": [
+        3,
+        5,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4600,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 20.8
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        3,
+        4,
+        5,
+        6,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.24998602916020898,
+        "angle": -0.07099959403276444,
+        "power": 0.8048357775551267,
+        "spin": -0.4675041949376464
+      },
+      "down": [
+        4
+      ],
+      "remaining": [
+        1,
+        3,
+        5,
+        6,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 2950,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.07
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        3,
+        4,
+        5,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.8045230186311528,
+        "angle": -0.04954087371006608,
+        "power": 0.716505050600972,
+        "spin": 0.990406833589077
+      },
+      "down": [
+        3,
+        9,
+        10
+      ],
+      "remaining": [
+        1,
+        4,
+        5,
+        8
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4367,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 3.84
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        2,
+        3,
+        6,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.018270825198851526,
+        "angle": -0.06399983111768962,
+        "power": 0.356209083518479,
+        "spin": -0.7285477975383401
+      },
+      "down": [],
+      "remaining": [
+        2,
+        3,
+        6,
+        8,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": false,
+      "outcome": "settled",
+      "duration": 2567,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 1.7
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        5,
+        6,
+        7,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.5712293168297037,
+        "angle": 0.06822488429024816,
+        "power": 0.897763074550312,
+        "spin": -0.9767550993710756
+      },
+      "down": [
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        5,
+        6,
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4967,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.25
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        2,
+        3,
+        6,
+        7,
+        8,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.2970936688827351,
+        "angle": 0.05182501040399075,
+        "power": 0.8974611147423275,
+        "spin": 0.7041798727586865
+      },
+      "down": [
+        6
+      ],
+      "remaining": [
+        2,
+        3,
+        7,
+        8,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 3850,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.11
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        2,
+        3,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.20858855440746993,
+        "angle": 0.00762831149622798,
+        "power": 0.4840257004252635,
+        "spin": -0.8505297563970089
+      },
+      "down": [
+        3,
+        9
+      ],
+      "remaining": [
+        2
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5217,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.51
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        6,
+        7,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.04552646183874458,
+        "angle": -0.0391266567632556,
+        "power": 0.43324276205385104,
+        "spin": -0.7718435572460294
+      },
+      "down": [
+        2,
+        7,
+        9
+      ],
+      "remaining": [
+        1,
+        3,
+        6,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4467,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 20.62
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.39398164416197684,
+        "angle": 0.012360804621130228,
+        "power": 0.3082209301064722,
+        "spin": 0.6552972141653299
+      },
+      "down": [
+        8
+      ],
+      "remaining": [
+        3,
+        4,
+        6,
+        7,
+        9,
+        10
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5217,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.76
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        2,
+        4,
+        6,
+        7,
+        8,
+        9
+      ],
+      "action": {
+        "type": "roll",
+        "offset": -0.39427062261383977,
+        "angle": 0.022730500251054764,
+        "power": 0.37428993062349036,
+        "spin": -0.6698078801855445
+      },
+      "down": [
+        2,
+        4,
+        8
+      ],
+      "remaining": [
+        6,
+        7,
+        9
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 5017,
+      "maxPinSpeed": 0.0007,
+      "maxPinAngular": 0.0005,
+      "computeMs": 9.6
+    },
+    {
+      "group": "seeded",
+      "standing": [
+        1,
+        2,
+        3,
+        6,
+        7,
+        10
+      ],
+      "action": {
+        "type": "roll",
+        "offset": 0.4079355063615367,
+        "angle": 0.01765199890360236,
+        "power": 0.7775822998373769,
+        "spin": 0.6125007718801498
+      },
+      "down": [
+        6,
+        10
+      ],
+      "remaining": [
+        1,
+        2,
+        3,
+        7
+      ],
+      "gutter": false,
+      "contact": true,
+      "outcome": "settled",
+      "duration": 4050,
+      "maxPinSpeed": 0,
+      "maxPinAngular": 0,
+      "computeMs": 2.69
+    }
+  ]
+}

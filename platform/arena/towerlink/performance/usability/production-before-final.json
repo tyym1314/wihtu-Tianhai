@@ -1,0 +1,868 @@
+{
+  "at": "2026-09-28T10:19:48.180Z",
+  "note": "Pre-fix regression evidence. Final acceptance is in report.json.",
+  "failures": [
+    "chromium/battle-390: production text exceeds selected tower summary",
+    "chromium/battle-320: production text exceeds selected tower summary",
+    "chromium/four-390: production text exceeds selected tower summary",
+    "chromium/supply-390: production text exceeds selected tower summary",
+    "chromium/defense-320: production text exceeds selected tower summary",
+    "webkit/battle-390: production text exceeds selected tower summary",
+    "webkit/battle-320: production text exceeds selected tower summary",
+    "webkit/four-390: production text exceeds selected tower summary",
+    "webkit/supply-390: production text exceeds selected tower summary",
+    "webkit/defense-320: production text exceeds selected tower summary"
+  ],
+  "layouts": [
+    {
+      "browser": "chromium",
+      "name": "battle-390",
+      "summary": {
+        "x": 16,
+        "y": 682,
+        "width": 358,
+        "height": 48,
+        "top": 682,
+        "right": 374,
+        "bottom": 730,
+        "left": 16
+      },
+      "productionLines": [
+        {
+          "text": "产兵 1 /秒",
+          "rect": {
+            "x": 288.625,
+            "y": 674.734375,
+            "width": 85.375,
+            "height": 20.84375,
+            "top": 674.734375,
+            "right": 374,
+            "bottom": 695.578125,
+            "left": 288.625
+          },
+          "textBounds": {
+            "x": 288.625,
+            "y": 674.734375,
+            "width": 51.109375,
+            "height": 20,
+            "top": 674.734375,
+            "right": 339.734375,
+            "bottom": 694.734375,
+            "left": 288.625
+          }
+        },
+        {
+          "text": "出兵 1 /秒 · 1路",
+          "rect": {
+            "x": 288.625,
+            "y": 695.578125,
+            "width": 85.375,
+            "height": 20.84375,
+            "top": 695.578125,
+            "right": 374,
+            "bottom": 716.421875,
+            "left": 288.625
+          },
+          "textBounds": {
+            "x": 288.625,
+            "y": 695.578125,
+            "width": 75.484375,
+            "height": 20,
+            "top": 695.578125,
+            "right": 364.109375,
+            "bottom": 715.578125,
+            "left": 288.625
+          }
+        },
+        {
+          "text": "自然产兵上限 40",
+          "rect": {
+            "x": 288.625,
+            "y": 716.421875,
+            "width": 85.375,
+            "height": 20.84375,
+            "top": 716.421875,
+            "right": 374,
+            "bottom": 737.265625,
+            "left": 288.625
+          },
+          "textBounds": {
+            "x": 288.625,
+            "y": 716.421875,
+            "width": 85.375,
+            "height": 20,
+            "top": 716.421875,
+            "right": 374,
+            "bottom": 736.421875,
+            "left": 288.625
+          }
+        }
+      ]
+    },
+    {
+      "browser": "chromium",
+      "name": "battle-320",
+      "summary": {
+        "x": 14,
+        "y": 423,
+        "width": 292,
+        "height": 44,
+        "top": 423,
+        "right": 306,
+        "bottom": 467,
+        "left": 14
+      },
+      "productionLines": [
+        {
+          "text": "产兵 1 /秒",
+          "rect": {
+            "x": 239,
+            "y": 421,
+            "width": 67,
+            "height": 16,
+            "top": 421,
+            "right": 306,
+            "bottom": 437,
+            "left": 239
+          },
+          "textBounds": {
+            "x": 239,
+            "y": 420,
+            "width": 40.546875,
+            "height": 15,
+            "top": 420,
+            "right": 279.546875,
+            "bottom": 435,
+            "left": 239
+          }
+        },
+        {
+          "text": "出兵 1 /秒 · 1路",
+          "rect": {
+            "x": 239,
+            "y": 437,
+            "width": 67,
+            "height": 16,
+            "top": 437,
+            "right": 306,
+            "bottom": 453,
+            "left": 239
+          },
+          "textBounds": {
+            "x": 239,
+            "y": 436,
+            "width": 59.5,
+            "height": 15,
+            "top": 436,
+            "right": 298.5,
+            "bottom": 451,
+            "left": 239
+          }
+        },
+        {
+          "text": "自然产兵上限 40",
+          "rect": {
+            "x": 239,
+            "y": 453,
+            "width": 67,
+            "height": 16,
+            "top": 453,
+            "right": 306,
+            "bottom": 469,
+            "left": 239
+          },
+          "textBounds": {
+            "x": 239,
+            "y": 452,
+            "width": 67,
+            "height": 15,
+            "top": 452,
+            "right": 306,
+            "bottom": 467,
+            "left": 239
+          }
+        }
+      ]
+    },
+    {
+      "browser": "chromium",
+      "name": "four-390",
+      "summary": {
+        "x": 16,
+        "y": 682,
+        "width": 358,
+        "height": 48,
+        "top": 682,
+        "right": 374,
+        "bottom": 730,
+        "left": 16
+      },
+      "productionLines": [
+        {
+          "text": "产兵 1 /秒",
+          "rect": {
+            "x": 288.625,
+            "y": 674.734375,
+            "width": 85.375,
+            "height": 20.84375,
+            "top": 674.734375,
+            "right": 374,
+            "bottom": 695.578125,
+            "left": 288.625
+          },
+          "textBounds": {
+            "x": 288.625,
+            "y": 674.734375,
+            "width": 51.109375,
+            "height": 20,
+            "top": 674.734375,
+            "right": 339.734375,
+            "bottom": 694.734375,
+            "left": 288.625
+          }
+        },
+        {
+          "text": "出兵 1 /秒 · 1路",
+          "rect": {
+            "x": 288.625,
+            "y": 695.578125,
+            "width": 85.375,
+            "height": 20.84375,
+            "top": 695.578125,
+            "right": 374,
+            "bottom": 716.421875,
+            "left": 288.625
+          },
+          "textBounds": {
+            "x": 288.625,
+            "y": 695.578125,
+            "width": 75.484375,
+            "height": 20,
+            "top": 695.578125,
+            "right": 364.109375,
+            "bottom": 715.578125,
+            "left": 288.625
+          }
+        },
+        {
+          "text": "自然产兵上限 40",
+          "rect": {
+            "x": 288.625,
+            "y": 716.421875,
+            "width": 85.375,
+            "height": 20.84375,
+            "top": 716.421875,
+            "right": 374,
+            "bottom": 737.265625,
+            "left": 288.625
+          },
+          "textBounds": {
+            "x": 288.625,
+            "y": 716.421875,
+            "width": 85.375,
+            "height": 20,
+            "top": 716.421875,
+            "right": 374,
+            "bottom": 736.421875,
+            "left": 288.625
+          }
+        }
+      ]
+    },
+    {
+      "browser": "chromium",
+      "name": "supply-390",
+      "summary": {
+        "x": 16,
+        "y": 682,
+        "width": 358,
+        "height": 48,
+        "top": 682,
+        "right": 374,
+        "bottom": 730,
+        "left": 16
+      },
+      "productionLines": [
+        {
+          "text": "产兵 1 /秒",
+          "rect": {
+            "x": 288.625,
+            "y": 674.734375,
+            "width": 85.375,
+            "height": 20.84375,
+            "top": 674.734375,
+            "right": 374,
+            "bottom": 695.578125,
+            "left": 288.625
+          },
+          "textBounds": {
+            "x": 288.625,
+            "y": 674.734375,
+            "width": 51.109375,
+            "height": 20,
+            "top": 674.734375,
+            "right": 339.734375,
+            "bottom": 694.734375,
+            "left": 288.625
+          }
+        },
+        {
+          "text": "出兵 1 /秒 · 1路",
+          "rect": {
+            "x": 288.625,
+            "y": 695.578125,
+            "width": 85.375,
+            "height": 20.84375,
+            "top": 695.578125,
+            "right": 374,
+            "bottom": 716.421875,
+            "left": 288.625
+          },
+          "textBounds": {
+            "x": 288.625,
+            "y": 695.578125,
+            "width": 75.484375,
+            "height": 20,
+            "top": 695.578125,
+            "right": 364.109375,
+            "bottom": 715.578125,
+            "left": 288.625
+          }
+        },
+        {
+          "text": "自然产兵上限 40",
+          "rect": {
+            "x": 288.625,
+            "y": 716.421875,
+            "width": 85.375,
+            "height": 20.84375,
+            "top": 716.421875,
+            "right": 374,
+            "bottom": 737.265625,
+            "left": 288.625
+          },
+          "textBounds": {
+            "x": 288.625,
+            "y": 716.421875,
+            "width": 85.375,
+            "height": 20,
+            "top": 716.421875,
+            "right": 374,
+            "bottom": 736.421875,
+            "left": 288.625
+          }
+        }
+      ]
+    },
+    {
+      "browser": "chromium",
+      "name": "defense-320",
+      "summary": {
+        "x": 14,
+        "y": 423,
+        "width": 292,
+        "height": 44,
+        "top": 423,
+        "right": 306,
+        "bottom": 467,
+        "left": 14
+      },
+      "productionLines": [
+        {
+          "text": "产兵 1 /秒",
+          "rect": {
+            "x": 239,
+            "y": 421,
+            "width": 67,
+            "height": 16,
+            "top": 421,
+            "right": 306,
+            "bottom": 437,
+            "left": 239
+          },
+          "textBounds": {
+            "x": 239,
+            "y": 420,
+            "width": 40.546875,
+            "height": 15,
+            "top": 420,
+            "right": 279.546875,
+            "bottom": 435,
+            "left": 239
+          }
+        },
+        {
+          "text": "出兵 1 /秒 · 1路",
+          "rect": {
+            "x": 239,
+            "y": 437,
+            "width": 67,
+            "height": 16,
+            "top": 437,
+            "right": 306,
+            "bottom": 453,
+            "left": 239
+          },
+          "textBounds": {
+            "x": 239,
+            "y": 436,
+            "width": 59.5,
+            "height": 15,
+            "top": 436,
+            "right": 298.5,
+            "bottom": 451,
+            "left": 239
+          }
+        },
+        {
+          "text": "自然产兵上限 40",
+          "rect": {
+            "x": 239,
+            "y": 453,
+            "width": 67,
+            "height": 16,
+            "top": 453,
+            "right": 306,
+            "bottom": 469,
+            "left": 239
+          },
+          "textBounds": {
+            "x": 239,
+            "y": 452,
+            "width": 67,
+            "height": 15,
+            "top": 452,
+            "right": 306,
+            "bottom": 467,
+            "left": 239
+          }
+        }
+      ]
+    },
+    {
+      "browser": "webkit",
+      "name": "battle-390",
+      "summary": {
+        "x": 16,
+        "y": 682,
+        "width": 358,
+        "height": 48,
+        "top": 682,
+        "right": 374,
+        "bottom": 730,
+        "left": 16
+      },
+      "productionLines": [
+        {
+          "text": "产兵 1 /秒",
+          "rect": {
+            "x": 288.65625,
+            "y": 675.84375,
+            "width": 85.34375,
+            "height": 20.109375,
+            "top": 675.84375,
+            "right": 374,
+            "bottom": 695.953125,
+            "left": 288.65625
+          },
+          "textBounds": {
+            "x": 288.65625,
+            "y": 676.185791015625,
+            "width": 51.07965087890625,
+            "height": 19.31591796875,
+            "top": 676.185791015625,
+            "right": 339.73590087890625,
+            "bottom": 695.501708984375,
+            "left": 288.65625
+          }
+        },
+        {
+          "text": "出兵 1 /秒 · 1路",
+          "rect": {
+            "x": 288.65625,
+            "y": 695.953125,
+            "width": 85.34375,
+            "height": 20.109375,
+            "top": 695.953125,
+            "right": 374,
+            "bottom": 716.0625,
+            "left": 288.65625
+          },
+          "textBounds": {
+            "x": 288.65625,
+            "y": 696.295166015625,
+            "width": 75.44439697265625,
+            "height": 19.31591796875,
+            "top": 696.295166015625,
+            "right": 364.10064697265625,
+            "bottom": 715.611083984375,
+            "left": 288.65625
+          }
+        },
+        {
+          "text": "自然产兵上限 40",
+          "rect": {
+            "x": 288.65625,
+            "y": 716.0625,
+            "width": 85.34375,
+            "height": 20.109375,
+            "top": 716.0625,
+            "right": 374,
+            "bottom": 736.171875,
+            "left": 288.65625
+          },
+          "textBounds": {
+            "x": 288.65625,
+            "y": 716.404541015625,
+            "width": 85.34295654296875,
+            "height": 19.31591796875,
+            "top": 716.404541015625,
+            "right": 373.99920654296875,
+            "bottom": 735.720458984375,
+            "left": 288.65625
+          }
+        }
+      ]
+    },
+    {
+      "browser": "webkit",
+      "name": "battle-320",
+      "summary": {
+        "x": 14,
+        "y": 423,
+        "width": 292,
+        "height": 44,
+        "top": 423,
+        "right": 306,
+        "bottom": 467,
+        "left": 14
+      },
+      "productionLines": [
+        {
+          "text": "产兵 1 /秒",
+          "rect": {
+            "x": 239.03125,
+            "y": 421.75,
+            "width": 66.96875,
+            "height": 15.5,
+            "top": 421.75,
+            "right": 306,
+            "bottom": 437.25,
+            "left": 239.03125
+          },
+          "textBounds": {
+            "x": 239.03125,
+            "y": 420.864501953125,
+            "width": 40.5086669921875,
+            "height": 14.77099609375,
+            "top": 420.864501953125,
+            "right": 279.5399169921875,
+            "bottom": 435.635498046875,
+            "left": 239.03125
+          }
+        },
+        {
+          "text": "出兵 1 /秒 · 1路",
+          "rect": {
+            "x": 239.03125,
+            "y": 437.25,
+            "width": 66.96875,
+            "height": 15.5,
+            "top": 437.25,
+            "right": 306,
+            "bottom": 452.75,
+            "left": 239.03125
+          },
+          "textBounds": {
+            "x": 239.03125,
+            "y": 436.364501953125,
+            "width": 59.45904541015625,
+            "height": 14.77099609375,
+            "top": 436.364501953125,
+            "right": 298.49029541015625,
+            "bottom": 451.135498046875,
+            "left": 239.03125
+          }
+        },
+        {
+          "text": "自然产兵上限 40",
+          "rect": {
+            "x": 239.03125,
+            "y": 452.75,
+            "width": 66.96875,
+            "height": 15.5,
+            "top": 452.75,
+            "right": 306,
+            "bottom": 468.25,
+            "left": 239.03125
+          },
+          "textBounds": {
+            "x": 239.03125,
+            "y": 451.864501953125,
+            "width": 66.96661376953125,
+            "height": 14.77099609375,
+            "top": 451.864501953125,
+            "right": 305.99786376953125,
+            "bottom": 466.635498046875,
+            "left": 239.03125
+          }
+        }
+      ]
+    },
+    {
+      "browser": "webkit",
+      "name": "four-390",
+      "summary": {
+        "x": 16,
+        "y": 682,
+        "width": 358,
+        "height": 48,
+        "top": 682,
+        "right": 374,
+        "bottom": 730,
+        "left": 16
+      },
+      "productionLines": [
+        {
+          "text": "产兵 1 /秒",
+          "rect": {
+            "x": 288.65625,
+            "y": 675.84375,
+            "width": 85.34375,
+            "height": 20.109375,
+            "top": 675.84375,
+            "right": 374,
+            "bottom": 695.953125,
+            "left": 288.65625
+          },
+          "textBounds": {
+            "x": 288.65625,
+            "y": 676.185791015625,
+            "width": 51.07965087890625,
+            "height": 19.31591796875,
+            "top": 676.185791015625,
+            "right": 339.73590087890625,
+            "bottom": 695.501708984375,
+            "left": 288.65625
+          }
+        },
+        {
+          "text": "出兵 1 /秒 · 1路",
+          "rect": {
+            "x": 288.65625,
+            "y": 695.953125,
+            "width": 85.34375,
+            "height": 20.109375,
+            "top": 695.953125,
+            "right": 374,
+            "bottom": 716.0625,
+            "left": 288.65625
+          },
+          "textBounds": {
+            "x": 288.65625,
+            "y": 696.295166015625,
+            "width": 75.44439697265625,
+            "height": 19.31591796875,
+            "top": 696.295166015625,
+            "right": 364.10064697265625,
+            "bottom": 715.611083984375,
+            "left": 288.65625
+          }
+        },
+        {
+          "text": "自然产兵上限 40",
+          "rect": {
+            "x": 288.65625,
+            "y": 716.0625,
+            "width": 85.34375,
+            "height": 20.109375,
+            "top": 716.0625,
+            "right": 374,
+            "bottom": 736.171875,
+            "left": 288.65625
+          },
+          "textBounds": {
+            "x": 288.65625,
+            "y": 716.404541015625,
+            "width": 85.34295654296875,
+            "height": 19.31591796875,
+            "top": 716.404541015625,
+            "right": 373.99920654296875,
+            "bottom": 735.720458984375,
+            "left": 288.65625
+          }
+        }
+      ]
+    },
+    {
+      "browser": "webkit",
+      "name": "supply-390",
+      "summary": {
+        "x": 16,
+        "y": 682,
+        "width": 358,
+        "height": 48,
+        "top": 682,
+        "right": 374,
+        "bottom": 730,
+        "left": 16
+      },
+      "productionLines": [
+        {
+          "text": "产兵 1 /秒",
+          "rect": {
+            "x": 288.65625,
+            "y": 675.84375,
+            "width": 85.34375,
+            "height": 20.109375,
+            "top": 675.84375,
+            "right": 374,
+            "bottom": 695.953125,
+            "left": 288.65625
+          },
+          "textBounds": {
+            "x": 288.65625,
+            "y": 676.185791015625,
+            "width": 51.07965087890625,
+            "height": 19.31591796875,
+            "top": 676.185791015625,
+            "right": 339.73590087890625,
+            "bottom": 695.501708984375,
+            "left": 288.65625
+          }
+        },
+        {
+          "text": "出兵 1 /秒 · 1路",
+          "rect": {
+            "x": 288.65625,
+            "y": 695.953125,
+            "width": 85.34375,
+            "height": 20.109375,
+            "top": 695.953125,
+            "right": 374,
+            "bottom": 716.0625,
+            "left": 288.65625
+          },
+          "textBounds": {
+            "x": 288.65625,
+            "y": 696.295166015625,
+            "width": 75.44439697265625,
+            "height": 19.31591796875,
+            "top": 696.295166015625,
+            "right": 364.10064697265625,
+            "bottom": 715.611083984375,
+            "left": 288.65625
+          }
+        },
+        {
+          "text": "自然产兵上限 40",
+          "rect": {
+            "x": 288.65625,
+            "y": 716.0625,
+            "width": 85.34375,
+            "height": 20.109375,
+            "top": 716.0625,
+            "right": 374,
+            "bottom": 736.171875,
+            "left": 288.65625
+          },
+          "textBounds": {
+            "x": 288.65625,
+            "y": 716.404541015625,
+            "width": 85.34295654296875,
+            "height": 19.31591796875,
+            "top": 716.404541015625,
+            "right": 373.99920654296875,
+            "bottom": 735.720458984375,
+            "left": 288.65625
+          }
+        }
+      ]
+    },
+    {
+      "browser": "webkit",
+      "name": "defense-320",
+      "summary": {
+        "x": 14,
+        "y": 423,
+        "width": 292,
+        "height": 44,
+        "top": 423,
+        "right": 306,
+        "bottom": 467,
+        "left": 14
+      },
+      "productionLines": [
+        {
+          "text": "产兵 1 /秒",
+          "rect": {
+            "x": 239.03125,
+            "y": 421.75,
+            "width": 66.96875,
+            "height": 15.5,
+            "top": 421.75,
+            "right": 306,
+            "bottom": 437.25,
+            "left": 239.03125
+          },
+          "textBounds": {
+            "x": 239.03125,
+            "y": 420.864501953125,
+            "width": 40.5086669921875,
+            "height": 14.77099609375,
+            "top": 420.864501953125,
+            "right": 279.5399169921875,
+            "bottom": 435.635498046875,
+            "left": 239.03125
+          }
+        },
+        {
+          "text": "出兵 1 /秒 · 1路",
+          "rect": {
+            "x": 239.03125,
+            "y": 437.25,
+            "width": 66.96875,
+            "height": 15.5,
+            "top": 437.25,
+            "right": 306,
+            "bottom": 452.75,
+            "left": 239.03125
+          },
+          "textBounds": {
+            "x": 239.03125,
+            "y": 436.364501953125,
+            "width": 59.45904541015625,
+            "height": 14.77099609375,
+            "top": 436.364501953125,
+            "right": 298.49029541015625,
+            "bottom": 451.135498046875,
+            "left": 239.03125
+          }
+        },
+        {
+          "text": "自然产兵上限 40",
+          "rect": {
+            "x": 239.03125,
+            "y": 452.75,
+            "width": 66.96875,
+            "height": 15.5,
+            "top": 452.75,
+            "right": 306,
+            "bottom": 468.25,
+            "left": 239.03125
+          },
+          "textBounds": {
+            "x": 239.03125,
+            "y": 451.864501953125,
+            "width": 66.96661376953125,
+            "height": 14.77099609375,
+            "top": 451.864501953125,
+            "right": 305.99786376953125,
+            "bottom": 466.635498046875,
+            "left": 239.03125
+          }
+        }
+      ]
+    }
+  ]
+}

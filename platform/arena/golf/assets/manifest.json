@@ -1,0 +1,290 @@
+{
+  "date": "2026-09-20",
+  "artVersion": "oasis-natural-light-v2",
+  "game": "golf",
+  "blender": "4.5.14 LTS",
+  "assets": [
+    {
+      "path": "models/oasis-botanical-library.glb",
+      "bytes": 77388,
+      "sha256": "6a37b5a21467a38215c6c12a4ae5c7d38b9edd95ad28eac75ce0098d2caf6223",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "models/oasis-course-1.glb",
+      "bytes": 571528,
+      "sha256": "d4f0a75e82e7117fff0785ddfaab232da5362a20f1a75205a0d4e4e304a7bc06",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "models/oasis-course-2.glb",
+      "bytes": 596684,
+      "sha256": "8e247bd86255abf820410f023870f19b9b7c8eebde96735d49dea96b629179da",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "models/oasis-course-3.glb",
+      "bytes": 567300,
+      "sha256": "dd0ec89ec0207b4d5f8368178e1eb7ea975fc946708c4784527d74a770723ed1",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/aged-sandstone-imagegen.png",
+      "bytes": 3555587,
+      "sha256": "59db357d652723d4d0dec061ddb5f0fa201c81acbfb93538b826354a17cb05fd",
+      "role": "editable-source"
+    },
+    {
+      "path": "textures/aged-sandstone-imagegen.webp",
+      "bytes": 196318,
+      "sha256": "b2973addec99477ea64478d7c0072addafb7844f652efc3cc9f09c81a38b62b9",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/course-1-contact-ao.png",
+      "bytes": 333729,
+      "sha256": "5a7cfb50dcd13b5acb3793d91d59d4f08ece4dd9c8b9573192e2f286e99b7f68",
+      "role": "editable-source"
+    },
+    {
+      "path": "textures/course-1-contact-ao.webp",
+      "bytes": 78188,
+      "sha256": "fbfb1294259128efc8160598c80b030e76062597eb48fac537454aa7a3cddf30",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/course-2-contact-ao.png",
+      "bytes": 346174,
+      "sha256": "f3e108208159ecb6a8979d128c64c5f444fc59831e15cc7bd4a968a1914498ba",
+      "role": "editable-source"
+    },
+    {
+      "path": "textures/course-2-contact-ao.webp",
+      "bytes": 81880,
+      "sha256": "cb33dbe602ba7a8dd1a1681607aedebcfc04b499564f964239f0c77aa34dcdab",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/course-3-contact-ao.png",
+      "bytes": 348076,
+      "sha256": "f82be42c5bdfe14d14f09bebe529a5cccc4e82e9b5737268fcc066370711b6df",
+      "role": "editable-source"
+    },
+    {
+      "path": "textures/course-3-contact-ao.webp",
+      "bytes": 81888,
+      "sha256": "b1b250a06d122c005d02e5524f33ee11feeebf3bd9486ac38d30993a887b228d",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/fine-grass-albedo.png",
+      "bytes": 413530,
+      "sha256": "d2ba66072f17f83abf2fc22f80414ef0434c38e0557e456d6f2d8e1203837e32",
+      "role": "editable-source"
+    },
+    {
+      "path": "textures/fine-grass-albedo.webp",
+      "bytes": 91652,
+      "sha256": "092b27c8f60c3e1bc709e76602a1cb3ad9e50efd7c1c4081f097044aaf6ea4a8",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/fine-grass-normal.png",
+      "bytes": 561264,
+      "sha256": "86d7c9cc0bf3b94ec9872ead06138117afcfa25ab88673f0582e87442b991f63",
+      "role": "editable-source"
+    },
+    {
+      "path": "textures/fine-grass-normal.webp",
+      "bytes": 88502,
+      "sha256": "ac56f7508bc9737e280b3a89e53d6ef391fad4a97d250d288082af49f85d7131",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/oasis-distant-palace.webp",
+      "bytes": 688580,
+      "sha256": "0aa25334017ecce51efc699d41c4743d5179444980a3efef8b4a61913e69a054",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/oasis-result-environment.png",
+      "bytes": 1375627,
+      "sha256": "3778d6ca2cd73bdceb785259ec5746086e9e455e309108efd5844f53f65cff73",
+      "role": "editable-source"
+    },
+    {
+      "path": "textures/oasis-result-environment.webp",
+      "bytes": 75774,
+      "sha256": "9bd7126129bc66b082f115d195e9e3ee0e4abdb8f238bf5b03695aa563af74e0",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/putting-grass-imagegen.png",
+      "bytes": 4070904,
+      "sha256": "d6d102838c1607a32971189e73472345620ffe1369b0f670e36a7744baf6ce49",
+      "role": "editable-source"
+    },
+    {
+      "path": "textures/putting-grass-imagegen.webp",
+      "bytes": 295130,
+      "sha256": "029d613ac931fbe8d416df3005731e4c0a97decd2cbda62be234c2bf63e98151",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/sandstone-albedo.png",
+      "bytes": 329183,
+      "sha256": "db7fbee801496217a7edc63a9958c649634cc89905c8eff98d8ccbf69fd556cf",
+      "role": "editable-source"
+    },
+    {
+      "path": "textures/sandstone-albedo.webp",
+      "bytes": 15078,
+      "sha256": "1c081f75d3ad1158c2bfa9068764bdd40790197e4742bf6ebf7097a61fb3112d",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/sandstone-normal.png",
+      "bytes": 497052,
+      "sha256": "0e7a753c5b5f2c39d77e30a1bd7e814d0b094953400d3abf652cfcf5cfe2be67",
+      "role": "editable-source"
+    },
+    {
+      "path": "textures/sandstone-normal.webp",
+      "bytes": 72418,
+      "sha256": "beefd77af69d4d2c382e5fef4fa6ff18076c2e0dc24cf0e4dbe959a6729ed560",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "draco/LICENSE",
+      "bytes": 13898,
+      "sha256": "d3709b0fb4b8a94bbb1d02b8a2e484f258b0d9c5c5a01f940391f3fe662cd1a4",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "draco/README.md",
+      "bytes": 1489,
+      "sha256": "8b9d277bf5743f4ce8d85d63c16690071b53f81796e877d4d395af943bde02a0",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "draco/draco_decoder.wasm",
+      "bytes": 192420,
+      "sha256": "a680d927bed9cb864ddbd63521868891af2bfbe755092761b4837487618df8ac",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "draco/draco_wasm_wrapper.js",
+      "bytes": 58456,
+      "sha256": "8bb2952d2ba7d67e1414f8df819410cb0434a666be53f671fff75f68843d76f6",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "source/art-pass-1.png",
+      "bytes": 471562,
+      "sha256": "6ea7b17f06745420bc6d1f4ed885bc461b3bcc8a725551c4481b6a904f4887e5",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/art-pass-2.png",
+      "bytes": 384272,
+      "sha256": "7ff69239d519b9077bd6227b7b5bf203276d49fcd080846dd8f8833c9960e8ee",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/art-pass-3.png",
+      "bytes": 428256,
+      "sha256": "556d89a15b6f6cdfc36cbe252137b397f8fb66f7912d8057eb6fb2774596db58",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/build_oasis.py",
+      "bytes": 12574,
+      "sha256": "05eee29e797cfb320e738b7fc956402db264e3964ebdd0e1a23a641804654c1c",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/course-topology.json",
+      "bytes": 155722,
+      "sha256": "33eacf7aeb5e8cafe8a487ae02d6427fef256c7660d6867fb56256982ea1d911",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/oasis-botanical-library.blend",
+      "bytes": 1397546,
+      "sha256": "90feeeaa26aa5967704c0a9e36e8aa493919f7709584d9a1a84243eb068e5337",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/oasis-course-1-editable.blend",
+      "bytes": 9379102,
+      "sha256": "a012590232c52f2d9f12dee88839b0b3a300ab6ed57219e57a009c016fc9ab7c",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/oasis-course-1.blend",
+      "bytes": 6825679,
+      "sha256": "c5449e3ddf4b286868525002d3b7da828877734eec756c2f220a3d97929dcc61",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/oasis-course-2-editable.blend",
+      "bytes": 9672391,
+      "sha256": "3682e03e7d7df53fc2ec914ce326872e5a86d7d3b5c87cdca3a13dcf4b623d0d",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/oasis-course-2.blend",
+      "bytes": 7032835,
+      "sha256": "0584913be62e00076ace723bca10a50b1afba352a4e0c97b602bb7f1e775e727",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/oasis-course-3-editable.blend",
+      "bytes": 9312945,
+      "sha256": "259c446908e01e6f7b535aeae313d3d4a815969adcfadf7cac27393ec709261d",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/oasis-course-3.blend",
+      "bytes": 6779003,
+      "sha256": "c1c3b4a150d711807538d3e8e4fe22580b40df46b4b5a51aefae0e4c482d00f7",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/oasis-lighting-hole-1.blend",
+      "bytes": 7901172,
+      "sha256": "e843b053a4992e84670d3872289ce18c16d05adbd69337b5c05ffbab6510ff49",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/oasis-lighting-hole-2.blend",
+      "bytes": 8109240,
+      "sha256": "4b5ef418af30b4e6a4588e99195ce2b3e14f2bff04ea446dc3e68f37fc0d88cf",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/oasis-lighting-hole-3.blend",
+      "bytes": 7854496,
+      "sha256": "4a7007f71363c944b191bfa0b69256b00212143e028fb8c4e999c21d41c80bf7",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/oasis-result-scene.blend",
+      "bytes": 6437110,
+      "sha256": "63019b9cf27253bb508dc56530ce438c8b6b4da53b5ed1a770202e5e0a7ebf34",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/optimize-textures.mjs",
+      "bytes": 703,
+      "sha256": "ba5ae8883f7d7f4fa2a01d9b62e8f49073be638c31a754b4d86587bc933fb92d",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/render_result.py",
+      "bytes": 6570,
+      "sha256": "570d3974a74954ba3d0fcdb7f26c585942593baf751267321b579d19604da19b",
+      "role": "editable-source"
+    }
+  ]
+}

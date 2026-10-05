@@ -1,0 +1,28 @@
+{
+  "tool": "built-in image_gen",
+  "reference": "output/design/pvp-arena-concepts-v1/10-run.png",
+  "rendering": "High-detail 2.5D pre-rendered character art animated in a real 3D scene. Not real-time fur meshes. Editable Blender rigs remain separate.",
+  "common_prompt": "Production engine sprite atlas, genuine transparent RGBA. Exactly 4 equal columns by 4 equal rows,16 frames. Rows: cream fennec with teal scarf; charcoal black cat with coral vest; honey bear with purple vest; cream rabbit with blue vest. Family-film quality detailed soft fur, expressive large head, short limbs, warm shading. Same character/costume across columns, full body safely inside every cell, foot center x50%, baseline y92%. No UI, scenery, ground, text, labels or atlas grid.",
+  "assets": [
+    {
+      "file": "run-back.png",
+      "source": "exec-2aea78ed-43c7-4af3-a3c3-6269a0405ea4.png",
+      "prompt": "Third-person back view slightly above20degrees. Columns=4 evenly spaced running-cycle keys, left stride/passing/right stride/airborne; scarf/ears/tail secondary motion."
+    },
+    {
+      "file": "action-back.png",
+      "source": "exec-82eaa5da-8fbe-4b59-972f-1b406d3702d1.png",
+      "prompt": "Same back camera. Columns=jump tucked knees, slide low, hit stagger, fall spread arms. Distinct silhouettes, entire body within each cell."
+    },
+    {
+      "file": "front-win.png",
+      "source": "exec-b4c2392c-c6f2-41cb-91d9-4f26d2b6f138.png",
+      "prompt": "Front camera chest level. Columns=happy running finish, trophy lifted high, trophy hugged to chest, friendly neutral standing. Film quality fur and materials, original characters."
+    },
+    {
+      "file": "oasis-environment.png",
+      "source": "exec-c3736bc2-e237-43dc-88e9-90eb5382d3f5.png",
+      "prompt": "Portrait1024x1536 high detail distant environment only. Golden sunlight sandstone fantasy oasis palaces, carved arches, layered rocky islands, date palms, flowers, white waterfalls, distant golden domes. Camera3m over river slightly downward. Central lower half open turquoise water to receive realtime3D course. Buildings frame left/right and upperthird. Warm peach highlights, teal shadows, atmospheric depth. No game UI, no animals, no text, no central path or interactive bridge."
+    }
+  ]
+}

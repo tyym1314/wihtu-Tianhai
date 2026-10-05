@@ -1,0 +1,160 @@
+TAP version 13
+# Subtest: lane has exactly ten uniquely numbered pins in 1+2+3+4 symmetric rows
+ok 1 - lane has exactly ten uniquely numbered pins in 1+2+3+4 symmetric rows
+  ---
+  duration_ms: 0.857334
+  type: 'test'
+  ...
+# Subtest: 2/3/4 independent lanes have identical fair initial conditions and no client seed exposure
+ok 2 - 2/3/4 independent lanes have identical fair initial conditions and no client seed exposure
+  ---
+  duration_ms: 1.363084
+  type: 'test'
+  ...
+# Subtest: XXX plus XX fill balls scores exactly 90 with no recursive extra opportunity
+ok 3 - XXX plus XX fill balls scores exactly 90 with no recursive extra opportunity
+  ---
+  duration_ms: 0.276584
+  type: 'test'
+  ...
+# Subtest: 9/,5-,8- = 15+5+8 = 28, early bonuses stay null until the required future roll
+ok 4 - 9/,5-,8- = 15+5+8 = 28, early bonuses stay null until the required future roll
+  ---
+  duration_ms: 0.203667
+  type: 'test'
+  ...
+# Subtest: third-frame X,7,3 retains seven-ball remainder and finishes at 20 without fourth roll
+ok 5 - third-frame X,7,3 retains seven-ball remainder and finishes at 20 without fourth roll
+  ---
+  duration_ms: 0.065709
+  type: 'test'
+  ...
+# Subtest: third-frame spare resets ten pins for exactly one fill ball; seven total rolls maximum
+ok 6 - third-frame spare resets ten pins for exactly one fill ball; seven total rolls maximum
+  ---
+  duration_ms: 0.052459
+  type: 'test'
+  ...
+# Subtest: authoritative rigid bodies reproduce exact outcome and delta poses across repeated simulation
+ok 7 - authoritative rigid bodies reproduce exact outcome and delta poses across repeated simulation
+  ---
+  duration_ms: 118.138083
+  type: 'test'
+  ...
+# Subtest: gutter disables later ball-pin collision scoring, while a returned upright pin is not counted
+ok 8 - gutter disables later ball-pin collision scoring, while a returned upright pin is not counted
+  ---
+  duration_ms: 5.572584
+  type: 'test'
+  ...
+# Subtest: server rejects extra score, trajectory, illegal ranges, wrong player and overlapping rolls
+ok 9 - server rejects extra score, trajectory, illegal ranges, wrong player and overlapping rolls
+  ---
+  duration_ms: 36.811917
+  type: 'test'
+  ...
+# Subtest: legal roll after JSON restart is identical, and scores reveal only after stable physical completion
+ok 10 - legal roll after JSON restart is identical, and scores reveal only after stable physical completion
+  ---
+  duration_ms: 66.095292
+  type: 'test'
+  ...
+# Subtest: a preparation timeout consumes one zero roll and preserves remaining pins; third causes forfeit
+ok 11 - a preparation timeout consumes one zero roll and preserves remaining pins; third causes forfeit
+  ---
+  duration_ms: 0.15925
+  type: 'test'
+  ...
+# Subtest: same-tick all third-timeouts void atomically, including a large server clock advance
+ok 12 - same-tick all third-timeouts void atomically, including a large server clock advance
+  ---
+  duration_ms: 0.09675
+  type: 'test'
+  ...
+# Subtest: batch disconnect includes implicit third-timeout before choosing winner
+ok 13 - batch disconnect includes implicit third-timeout before choosing winner
+  ---
+  duration_ms: 0.089541
+  type: 'test'
+  ...
+# Subtest: completed valid results survive later disconnect and all finished results are immutable
+ok 14 - completed valid results survive later disconnect and all finished results are immutable
+  ---
+  duration_ms: 0.116417
+  type: 'test'
+  ...
+# Subtest: 180-second deadline zero-fills without new timeout penalties and same-score finals tie
+ok 15 - 180-second deadline zero-fills without new timeout penalties and same-score finals tie
+  ---
+  duration_ms: 0.074
+  type: 'test'
+  ...
+# Subtest: accepted ball at deadline completes before remaining rolls zero-fill; completed score survives batch exit
+ok 16 - accepted ball at deadline completes before remaining rolls zero-fill; completed score survives batch exit
+  ---
+  duration_ms: 32.124375
+  type: 'test'
+  ...
+# Subtest: public opponent status excludes their redundant trajectories; pause shifts shot and all deadlines
+ok 17 - public opponent status excludes their redundant trajectories; pause shifts shot and all deadlines
+  ---
+  duration_ms: 31.684542
+  type: 'test'
+  ...
+# Subtest: third timeout that fills the final frame still forfeits; previously valid completion survives
+ok 18 - third timeout that fills the final frame still forfeits; previously valid completion survives
+  ---
+  duration_ms: 0.160292
+  type: 'test'
+  ...
+# Subtest: sleeping pins wake on impact but a centre shot now leaves a real physical remainder
+ok 19 - sleeping pins wake on impact but a centre shot now leaves a real physical remainder
+  ---
+  duration_ms: 241.902166
+  type: 'test'
+  ...
+# Subtest: centre no longer guarantees strikes across low, default and maximum power
+ok 20 - centre no longer guarantees strikes across low, default and maximum power
+  ---
+  duration_ms: 418.680708
+  type: 'test'
+  ...
+# Subtest: left and right pocket shots can strike through collision without scoring correction
+ok 21 - left and right pocket shots can strike through collision without scoring correction
+  ---
+  duration_ms: 244.035709
+  type: 'test'
+  ...
+# Subtest: large angles physically miss into both gutters and cannot score by reentry
+ok 22 - large angles physically miss into both gutters and cannot score by reentry
+  ---
+  duration_ms: 6.492083
+  type: 'test'
+  ...
+# Subtest: touch preview and release use the same start offset, direction and power
+ok 23 - touch preview and release use the same start offset, direction and power
+  ---
+  duration_ms: 0.198958
+  type: 'test'
+  ...
+# Subtest: pinned old accepted result is revealed unchanged and new-version actions are rejected
+ok 24 - pinned old accepted result is revealed unchanged and new-version actions are rejected
+  ---
+  duration_ms: 0.680542
+  type: 'test'
+  ...
+# Subtest: late pocket pin motion settles naturally beyond the old ten-second cap
+ok 25 - late pocket pin motion settles naturally beyond the old ten-second cap
+  ---
+  duration_ms: 338.890917
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1061.285875

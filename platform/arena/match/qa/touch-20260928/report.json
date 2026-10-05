@@ -1,0 +1,1010 @@
+{
+  "checkedAt": "2026-09-28T11:17:36.711Z",
+  "scope": "Isolated real HTTP engines and current UI. Chrome trusted touch and desktop WebKit trusted pointer. Explicit legal positions for Run. Every attempted HTTP action is counted before engine validation. No platform wallet, public deployment or physical phone acceptance.",
+  "samples": [
+    {
+      "engine": "chromium",
+      "method": "Chrome Input.dispatchTouchEvent (trusted native touch)",
+      "checks": [
+        "Legal finger/pointer swipe is exactly one real HTTP swap with valid engine result; its compatibility click does not select or swap again",
+        "short-drag does not accidentally activate the selected adjacent pair",
+        "diagonal does not accidentally activate the selected adjacent pair",
+        "out-and-back does not accidentally activate the selected adjacent pair",
+        "Native touchCancel never swaps",
+        "Two actual touch pointers cannot overwrite or complete one another",
+        "Two intentional taps remain a working auxiliary input after canceled drags",
+        "Open help prevents board input",
+        "Capture released before its first move cannot turn the later pointerup into a swap",
+        "Second finger outside the board cancels the active swipe"
+      ],
+      "events": [
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 2,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 2,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 2,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 3,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "0"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 3,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "0"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 3,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "0"
+        },
+        {
+          "type": "click",
+          "pointerType": "touch",
+          "pointerId": 3,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 1,
+          "cell": "0"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 4,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 4,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 4,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "click",
+          "pointerType": "touch",
+          "pointerId": 4,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 1,
+          "cell": "1"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 5,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "0"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 5,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "0"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 5,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "0"
+        },
+        {
+          "type": "click",
+          "pointerType": "touch",
+          "pointerId": 5,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 1,
+          "cell": "0"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 6,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 6,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 6,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 7,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "0"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 7,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "0"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 7,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "0"
+        },
+        {
+          "type": "click",
+          "pointerType": "touch",
+          "pointerId": 7,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 1,
+          "cell": "0"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 8,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 8,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 8,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 9,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "14"
+        },
+        {
+          "type": "pointercancel",
+          "pointerType": "touch",
+          "pointerId": 9,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "14"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 9,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "14"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 10,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "14"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 11,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 0,
+          "cell": "15"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 10,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "14"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 10,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "14"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 11,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 0,
+          "cell": "15"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 11,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 0,
+          "cell": "15"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 12,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "0"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 12,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "0"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 12,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "0"
+        },
+        {
+          "type": "click",
+          "pointerType": "touch",
+          "pointerId": 12,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 1,
+          "cell": "0"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 13,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 13,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 13,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "1"
+        },
+        {
+          "type": "click",
+          "pointerType": "touch",
+          "pointerId": 13,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 1,
+          "cell": "1"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 1
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 14,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0
+        },
+        {
+          "type": "pointercancel",
+          "pointerType": "touch",
+          "pointerId": 14,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 14,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 1
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 15,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "12"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 15,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "13"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 16,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "12"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "touch",
+          "pointerId": 17,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 0
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 16,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "12"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 16,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "12"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "touch",
+          "pointerId": 17,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 0
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "touch",
+          "pointerId": 17,
+          "isPrimary": false,
+          "trusted": true,
+          "detail": 0
+        }
+      ],
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "method": "Desktop WebKit Playwright mouse (trusted native pointer; not iPhone touch)",
+      "checks": [
+        "Legal finger/pointer swipe is exactly one real HTTP swap with valid engine result; its compatibility click does not select or swap again",
+        "short-drag does not accidentally activate the selected adjacent pair",
+        "diagonal does not accidentally activate the selected adjacent pair",
+        "out-and-back does not accidentally activate the selected adjacent pair",
+        "Real lostpointercapture never swaps",
+        "Two intentional taps remain a working auxiliary input after canceled drags",
+        "Open help prevents board input",
+        "Capture released before its first move cannot turn the later pointerup into a swap"
+      ],
+      "events": [
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "12"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "12"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "12"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "7"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "7"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "7"
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "7"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "8"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "8"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "8"
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "8"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "7"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "7"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "7"
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "7"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "8"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "8"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "8"
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "8"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "7"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "7"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "7"
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "7"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "8"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "8"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "8"
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "8"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "14"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "14"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "15"
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "14"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "7"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "7"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "7"
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "7"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "8"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "8"
+        },
+        {
+          "type": "lostpointercapture",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 0,
+          "cell": "8"
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "8"
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1
+        },
+        {
+          "type": "pointerdown",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "6"
+        },
+        {
+          "type": "pointerup",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1,
+          "cell": "7"
+        },
+        {
+          "type": "click",
+          "pointerType": "mouse",
+          "pointerId": 1,
+          "isPrimary": true,
+          "trusted": true,
+          "detail": 1
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

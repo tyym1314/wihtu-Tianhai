@@ -1,0 +1,10 @@
+import * as T from 'three';
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import kitUrl from './assets/environment/oasis-kit.glb?url';
+import stoneUrl from '../golf/assets/textures/aged-sandstone-imagegen.webp?url';
+import normalUrl from '../golf/assets/textures/sandstone-normal.webp?url';
+let kit,stoneMaps;
+export function loadStoneTextures(){return stoneMaps??=Promise.all([new T.TextureLoader().loadAsync(stoneUrl),new T.TextureLoader().loadAsync(normalUrl)]).then(([albedo,normal])=>{albedo.colorSpace=T.SRGBColorSpace;for(const t of[albedo,normal]){t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=4;}return{albedo,normal};});}
+function worldUV(geometry){const g=geometry.clone(),p=g.attributes.position,n=g.attributes.normal,uv=new Float32Array(p.count*2);for(let i=0;i<p.count;i++){const ax=Math.abs(n.getX(i)),ay=Math.abs(n.getY(i)),az=Math.abs(n.getZ(i));uv[i*2]=(ax>=ay&&ax>=az?p.getZ(i):p.getX(i))*.85;uv[i*2+1]=(ay>=ax&&ay>=az?p.getZ(i):p.getY(i))*.85;}g.setAttribute('uv',new T.BufferAttribute(uv,2));return g;}
+/** Original Blender cosmetic prefabs. Shared original sandstone art documented in Golf assets/PROVENANCE.md. */
+export function loadOasisKit(){return kit??=Promise.all([new GLTFLoader().loadAsync(kitUrl),loadStoneTextures()]).then(([g,maps])=>{g.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(/leaf/i.test(o.material.name))o.material.side=T.DoubleSide;if(/stone|grout/i.test(o.material.name)){o.geometry=worldUV(o.geometry);o.material.map=maps.albedo;o.material.normalMap=maps.normal;o.material.normalScale=new T.Vector2(.22,.22);o.material.roughness=.87;o.material.color.set(0xd4c5ac);}o.material.envMapIntensity=.45;}});return{source:kitUrl,clone(name){const node=g.scene.getObjectByName(name);if(!node)throw new Error(`Missing oasis prefab ${name}`);return node.clone(true);}};});}

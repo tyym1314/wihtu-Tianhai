@@ -1,0 +1,699 @@
+{
+  "status": "sandbox_candidates_not_certified",
+  "reports": [
+    {
+      "status": "DEVELOPMENT_MONTE_CARLO_NOT_CERTIFIED",
+      "gameId": "thunder",
+      "profile": "98",
+      "mathVersion": "thunder-platform-98-v1",
+      "mathConfigHash": "f8f24c5c9edcf286a8199d28186801b31c023e9f16d3a866c9713ef07c4b0e1c",
+      "generatedAt": "2026-09-18T13:20:57.882Z",
+      "countPaidCycles": 10000000,
+      "stakeMinor": 10000,
+      "seedHex": "9dac18448e0c9ddc98d521e678c9b26813f47fefb887b7818d7e06d0a9520e22",
+      "rng": "Domain-separated AES-256-CTR continuous test stream with rejection sampling; same production complete-cycle payout kernels; production uses independent random 256-bit seed per paid cycle.",
+      "observedRtp": 0.9779885814090374,
+      "targetRtp": 0.98,
+      "normalApproximation95": [
+        0.9738611104407028,
+        0.9821160523773721
+      ],
+      "standardError": 0.0021058525348646084,
+      "targetInsideInterval": true,
+      "hitRate": 0.3155974,
+      "bonusEntries": 87883,
+      "freeRounds": 1732785,
+      "totalPresentationRounds": 11732785,
+      "maxObservedGrossMultiple": 1316.4216,
+      "provenGrossUpperBoundMultiple": 10000,
+      "grossCapEvents": 0,
+      "freeSpinLimitEvents": 0,
+      "elapsedSeconds": 112.052635375,
+      "implementationSha256": "7af82be39e3094185396da3fb8c39d3882ad6b0016f9b7f83f91eb701ae3b560",
+      "config": {
+        "sourceMathVersion": "thunder-0.1.0",
+        "baseConfig": {
+          "mathVersion": "thunder-0.1.0",
+          "columns": 6,
+          "rows": 5,
+          "minBet": 1000,
+          "maxBet": 100000,
+          "currencyScale": 100,
+          "targetRtp": 0.99,
+          "symbols": [
+            {
+              "id": "ruby",
+              "name": "Ruby",
+              "label": "红宝石",
+              "color": "#ff4b69",
+              "weight": 172,
+              "payouts": [
+                1200,
+                3000,
+                7000
+              ]
+            },
+            {
+              "id": "emerald",
+              "name": "Emerald",
+              "label": "祖母绿",
+              "color": "#5dfbc0",
+              "weight": 157,
+              "payouts": [
+                1400,
+                3500,
+                8000
+              ]
+            },
+            {
+              "id": "sapphire",
+              "name": "Sapphire",
+              "label": "蓝宝石",
+              "color": "#55bfff",
+              "weight": 142,
+              "payouts": [
+                1700,
+                4200,
+                10000
+              ]
+            },
+            {
+              "id": "amethyst",
+              "name": "Amethyst",
+              "label": "紫水晶",
+              "color": "#b277ff",
+              "weight": 127,
+              "payouts": [
+                2000,
+                5000,
+                12000
+              ]
+            },
+            {
+              "id": "amber",
+              "name": "Amber",
+              "label": "琥珀",
+              "color": "#ffd260",
+              "weight": 112,
+              "payouts": [
+                2500,
+                6500,
+                15000
+              ]
+            },
+            {
+              "id": "crown",
+              "name": "Crown",
+              "label": "王冠",
+              "color": "#ffcf7a",
+              "weight": 97,
+              "payouts": [
+                3500,
+                8500,
+                20000
+              ]
+            },
+            {
+              "id": "chalice",
+              "name": "Chalice",
+              "label": "圣杯",
+              "color": "#ffeac0",
+              "weight": 82,
+              "payouts": [
+                5000,
+                12000,
+                30000
+              ]
+            },
+            {
+              "id": "pearl",
+              "name": "Pearl",
+              "label": "珍珠",
+              "color": "#ef9aff",
+              "weight": 67,
+              "payouts": [
+                7000,
+                17000,
+                40000
+              ]
+            },
+            {
+              "id": "scatter",
+              "name": "Scatter",
+              "label": "雷霆之门",
+              "color": "#f7d681",
+              "weight": 24,
+              "payouts": [
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "id": "multiplier",
+              "name": "Multiplier",
+              "label": "倍率球",
+              "color": "#bd9bff",
+              "weight": 20,
+              "payouts": [
+                0,
+                0,
+                0
+              ]
+            }
+          ],
+          "paytableScale": 2.176,
+          "maxCascades": 24,
+          "maxMultiplier": 100,
+          "maxWinMultiple": 1000,
+          "scatterTrigger": 4,
+          "freeSpinsOnTrigger": 15,
+          "scatterRetrigger": 3,
+          "freeSpinsOnRetrigger": 5,
+          "multiplierValues": [
+            {
+              "value": 2,
+              "weight": 60
+            },
+            {
+              "value": 3,
+              "weight": 25
+            },
+            {
+              "value": 5,
+              "weight": 10
+            },
+            {
+              "value": 10,
+              "weight": 4
+            },
+            {
+              "value": 20,
+              "weight": 1
+            }
+          ]
+        },
+        "mathVersion": "thunder-platform-98-v1",
+        "targetRtp": 0.98,
+        "payoutScale": {
+          "numerator": 98,
+          "denominator": 99
+        },
+        "payoutRounding": "floor each symbol/line award after rational scaling, then apply the feature multiplier",
+        "currencyScale": 100,
+        "stakeMinorChoices": [
+          1000,
+          5000,
+          10000,
+          20000,
+          50000
+        ],
+        "completeCycleMaximumMultiplier": 10000,
+        "maxFreeSpinsPerPaidCycle": 100,
+        "maxWinPerPaidCycle": 10000,
+        "capRule": "clip the final accepted round to remaining gross allowance; no further bonus obligations once cap reached; total granted/played free spins cannot exceed 100",
+        "rng": "AES-256-CTR stream; HMAC-SHA256 domain-derived key from 256-bit seed; rejection-sampled uint32",
+        "validation": "development Monte Carlo required; not a certified theoretical RTP"
+      },
+      "limitations": "Statistical estimate at one stake, not exact theoretical RTP or certification. CI is an approximate interval for independent complete-cycle mean. Bounded-platform Thunder differs from original demo in bonus length/cycle cap. 98 scales symbol/line awards by 98/99 with floor before multipliers, so observed RTP is not forced to 98%. Max observed payout is not the proven maximum."
+    },
+    {
+      "status": "DEVELOPMENT_MONTE_CARLO_NOT_CERTIFIED",
+      "gameId": "thunder",
+      "profile": "99",
+      "mathVersion": "thunder-platform-99-v1",
+      "mathConfigHash": "44f59d68eb8aa0d121a47f19ac66223b271fa8ab641154b001e74aa664988d32",
+      "generatedAt": "2026-09-18T13:21:00.572Z",
+      "countPaidCycles": 10000000,
+      "stakeMinor": 10000,
+      "seedHex": "438ef698c49fdc4349db31191de6859656cb87bd61d74f2b2a69ec628300dd58",
+      "rng": "Domain-separated AES-256-CTR continuous test stream with rejection sampling; same production complete-cycle payout kernels; production uses independent random 256-bit seed per paid cycle.",
+      "observedRtp": 0.9926729093254747,
+      "targetRtp": 0.99,
+      "normalApproximation95": [
+        0.9884472133517157,
+        0.9968986052992337
+      ],
+      "standardError": 0.0021559673335504797,
+      "targetInsideInterval": true,
+      "hitRate": 0.3156423,
+      "bonusEntries": 88234,
+      "freeRounds": 1743780,
+      "totalPresentationRounds": 11743780,
+      "maxObservedGrossMultiple": 1057.2988,
+      "provenGrossUpperBoundMultiple": 10000,
+      "grossCapEvents": 0,
+      "freeSpinLimitEvents": 0,
+      "elapsedSeconds": 114.742459833,
+      "implementationSha256": "7af82be39e3094185396da3fb8c39d3882ad6b0016f9b7f83f91eb701ae3b560",
+      "config": {
+        "sourceMathVersion": "thunder-0.1.0",
+        "baseConfig": {
+          "mathVersion": "thunder-0.1.0",
+          "columns": 6,
+          "rows": 5,
+          "minBet": 1000,
+          "maxBet": 100000,
+          "currencyScale": 100,
+          "targetRtp": 0.99,
+          "symbols": [
+            {
+              "id": "ruby",
+              "name": "Ruby",
+              "label": "红宝石",
+              "color": "#ff4b69",
+              "weight": 172,
+              "payouts": [
+                1200,
+                3000,
+                7000
+              ]
+            },
+            {
+              "id": "emerald",
+              "name": "Emerald",
+              "label": "祖母绿",
+              "color": "#5dfbc0",
+              "weight": 157,
+              "payouts": [
+                1400,
+                3500,
+                8000
+              ]
+            },
+            {
+              "id": "sapphire",
+              "name": "Sapphire",
+              "label": "蓝宝石",
+              "color": "#55bfff",
+              "weight": 142,
+              "payouts": [
+                1700,
+                4200,
+                10000
+              ]
+            },
+            {
+              "id": "amethyst",
+              "name": "Amethyst",
+              "label": "紫水晶",
+              "color": "#b277ff",
+              "weight": 127,
+              "payouts": [
+                2000,
+                5000,
+                12000
+              ]
+            },
+            {
+              "id": "amber",
+              "name": "Amber",
+              "label": "琥珀",
+              "color": "#ffd260",
+              "weight": 112,
+              "payouts": [
+                2500,
+                6500,
+                15000
+              ]
+            },
+            {
+              "id": "crown",
+              "name": "Crown",
+              "label": "王冠",
+              "color": "#ffcf7a",
+              "weight": 97,
+              "payouts": [
+                3500,
+                8500,
+                20000
+              ]
+            },
+            {
+              "id": "chalice",
+              "name": "Chalice",
+              "label": "圣杯",
+              "color": "#ffeac0",
+              "weight": 82,
+              "payouts": [
+                5000,
+                12000,
+                30000
+              ]
+            },
+            {
+              "id": "pearl",
+              "name": "Pearl",
+              "label": "珍珠",
+              "color": "#ef9aff",
+              "weight": 67,
+              "payouts": [
+                7000,
+                17000,
+                40000
+              ]
+            },
+            {
+              "id": "scatter",
+              "name": "Scatter",
+              "label": "雷霆之门",
+              "color": "#f7d681",
+              "weight": 24,
+              "payouts": [
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "id": "multiplier",
+              "name": "Multiplier",
+              "label": "倍率球",
+              "color": "#bd9bff",
+              "weight": 20,
+              "payouts": [
+                0,
+                0,
+                0
+              ]
+            }
+          ],
+          "paytableScale": 2.176,
+          "maxCascades": 24,
+          "maxMultiplier": 100,
+          "maxWinMultiple": 1000,
+          "scatterTrigger": 4,
+          "freeSpinsOnTrigger": 15,
+          "scatterRetrigger": 3,
+          "freeSpinsOnRetrigger": 5,
+          "multiplierValues": [
+            {
+              "value": 2,
+              "weight": 60
+            },
+            {
+              "value": 3,
+              "weight": 25
+            },
+            {
+              "value": 5,
+              "weight": 10
+            },
+            {
+              "value": 10,
+              "weight": 4
+            },
+            {
+              "value": 20,
+              "weight": 1
+            }
+          ]
+        },
+        "mathVersion": "thunder-platform-99-v1",
+        "targetRtp": 0.99,
+        "payoutScale": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "payoutRounding": "floor each symbol/line award after rational scaling, then apply the feature multiplier",
+        "currencyScale": 100,
+        "stakeMinorChoices": [
+          1000,
+          5000,
+          10000,
+          20000,
+          50000
+        ],
+        "completeCycleMaximumMultiplier": 10000,
+        "maxFreeSpinsPerPaidCycle": 100,
+        "maxWinPerPaidCycle": 10000,
+        "capRule": "clip the final accepted round to remaining gross allowance; no further bonus obligations once cap reached; total granted/played free spins cannot exceed 100",
+        "rng": "AES-256-CTR stream; HMAC-SHA256 domain-derived key from 256-bit seed; rejection-sampled uint32",
+        "validation": "development Monte Carlo required; not a certified theoretical RTP"
+      },
+      "limitations": "Statistical estimate at one stake, not exact theoretical RTP or certification. CI is an approximate interval for independent complete-cycle mean. Bounded-platform Thunder differs from original demo in bonus length/cycle cap. 98 scales symbol/line awards by 98/99 with floor before multipliers, so observed RTP is not forced to 98%. Max observed payout is not the proven maximum."
+    },
+    {
+      "status": "DEVELOPMENT_MONTE_CARLO_NOT_CERTIFIED",
+      "gameId": "tiger",
+      "profile": "98",
+      "mathVersion": "tiger-platform-98-v1",
+      "mathConfigHash": "bbd94270e080b1a332f1da9617f7c5eec2d8f88b555615e5fe93523b443b4edc",
+      "generatedAt": "2026-09-18T13:19:26.234Z",
+      "countPaidCycles": 10000000,
+      "stakeMinor": 10000,
+      "seedHex": "3f5e2ddaf310c58b3e5810cdd690fa8985b304d6001eb40182d1caa48f3c1b38",
+      "rng": "Domain-separated AES-256-CTR continuous test stream with rejection sampling; same production complete-cycle payout kernels; production uses independent random 256-bit seed per paid cycle.",
+      "observedRtp": 0.9800283743919026,
+      "targetRtp": 0.98,
+      "normalApproximation95": [
+        0.97698020752674,
+        0.9830765412570652
+      ],
+      "standardError": 0.0015551871761033632,
+      "targetInsideInterval": true,
+      "hitRate": 0.2224584,
+      "bonusEntries": 0,
+      "freeRounds": 0,
+      "totalPresentationRounds": 10000000,
+      "maxObservedGrossMultiple": 225.2,
+      "provenGrossUpperBoundMultiple": 455,
+      "grossCapEvents": 0,
+      "freeSpinLimitEvents": 0,
+      "elapsedSeconds": 20.401359584,
+      "implementationSha256": "7af82be39e3094185396da3fb8c39d3882ad6b0016f9b7f83f91eb701ae3b560",
+      "config": {
+        "sourceMathVersion": "tiger-original-1.0.0",
+        "baseConfig": {
+          "mathVersion": "tiger-original-1.0.0",
+          "columns": 3,
+          "rows": 3,
+          "paylines": [
+            [
+              0,
+              1,
+              2
+            ],
+            [
+              3,
+              4,
+              5
+            ],
+            [
+              6,
+              7,
+              8
+            ],
+            [
+              0,
+              4,
+              8
+            ],
+            [
+              6,
+              4,
+              2
+            ]
+          ],
+          "symbols": [
+            {
+              "id": "tiger",
+              "weight": 2,
+              "payoutBps": 91000
+            },
+            {
+              "id": "ingot",
+              "weight": 8,
+              "payoutBps": 45500
+            },
+            {
+              "id": "coin",
+              "weight": 10,
+              "payoutBps": 27300
+            },
+            {
+              "id": "jade",
+              "weight": 14,
+              "payoutBps": 18200
+            },
+            {
+              "id": "envelope",
+              "weight": 18,
+              "payoutBps": 10920
+            },
+            {
+              "id": "firecracker",
+              "weight": 22,
+              "payoutBps": 7280
+            },
+            {
+              "id": "orange",
+              "weight": 26,
+              "payoutBps": 4550
+            }
+          ],
+          "unitsPerCoin": 100,
+          "targetRtp": 0.99,
+          "maxRespins": 7,
+          "fullBoardMultiplier": 10,
+          "maxWinMultiple": 455,
+          "note": "Independent original demo mathematics. Target RTP is a long-run expectation, not a promise for a session or a reproduction of PG mathematics."
+        },
+        "mathVersion": "tiger-platform-98-v1",
+        "targetRtp": 0.98,
+        "payoutScale": {
+          "numerator": 98,
+          "denominator": 99
+        },
+        "payoutRounding": "floor each symbol/line award after rational scaling, then apply the feature multiplier",
+        "currencyScale": 100,
+        "stakeMinorChoices": [
+          1000,
+          5000,
+          10000,
+          20000,
+          50000
+        ],
+        "completeCycleMaximumMultiplier": 455,
+        "maxRespins": 7,
+        "finalBoardOnlyPaid": true,
+        "fullBoardMultiplier": 10,
+        "maxPayoutProof": "5 lines * floor(stake*91000/10000) * 10; 98 profile line scaling only lowers this bound",
+        "rng": "AES-256-CTR stream; HMAC-SHA256 domain-derived key from 256-bit seed; rejection-sampled uint32",
+        "validation": "development Monte Carlo required; not a certified theoretical RTP"
+      },
+      "limitations": "Statistical estimate at one stake, not exact theoretical RTP or certification. CI is an approximate interval for independent complete-cycle mean. Bounded-platform Thunder differs from original demo in bonus length/cycle cap. 98 scales symbol/line awards by 98/99 with floor before multipliers, so observed RTP is not forced to 98%. Max observed payout is not the proven maximum."
+    },
+    {
+      "status": "DEVELOPMENT_MONTE_CARLO_NOT_CERTIFIED",
+      "gameId": "tiger",
+      "profile": "99",
+      "mathVersion": "tiger-platform-99-v1",
+      "mathConfigHash": "ff0a30882d50ddb1913c9e4b2b898bdcd4ad7f8c3c8ea43e7f20b4786b58e04d",
+      "generatedAt": "2026-09-18T13:19:26.031Z",
+      "countPaidCycles": 10000000,
+      "stakeMinor": 10000,
+      "seedHex": "04c6a484dee2e99cf446f1cf0cff58fa7b9a54a8de951928eccff189ad32340d",
+      "rng": "Domain-separated AES-256-CTR continuous test stream with rejection sampling; same production complete-cycle payout kernels; production uses independent random 256-bit seed per paid cycle.",
+      "observedRtp": 0.9895671877205579,
+      "targetRtp": 0.99,
+      "normalApproximation95": [
+        0.9864878395052401,
+        0.9926465359358756
+      ],
+      "standardError": 0.0015710960282233474,
+      "targetInsideInterval": true,
+      "hitRate": 0.2224455,
+      "bonusEntries": 0,
+      "freeRounds": 0,
+      "totalPresentationRounds": 10000000,
+      "maxObservedGrossMultiple": 234.78,
+      "provenGrossUpperBoundMultiple": 455,
+      "grossCapEvents": 0,
+      "freeSpinLimitEvents": 0,
+      "elapsedSeconds": 20.20100125,
+      "implementationSha256": "7af82be39e3094185396da3fb8c39d3882ad6b0016f9b7f83f91eb701ae3b560",
+      "config": {
+        "sourceMathVersion": "tiger-original-1.0.0",
+        "baseConfig": {
+          "mathVersion": "tiger-original-1.0.0",
+          "columns": 3,
+          "rows": 3,
+          "paylines": [
+            [
+              0,
+              1,
+              2
+            ],
+            [
+              3,
+              4,
+              5
+            ],
+            [
+              6,
+              7,
+              8
+            ],
+            [
+              0,
+              4,
+              8
+            ],
+            [
+              6,
+              4,
+              2
+            ]
+          ],
+          "symbols": [
+            {
+              "id": "tiger",
+              "weight": 2,
+              "payoutBps": 91000
+            },
+            {
+              "id": "ingot",
+              "weight": 8,
+              "payoutBps": 45500
+            },
+            {
+              "id": "coin",
+              "weight": 10,
+              "payoutBps": 27300
+            },
+            {
+              "id": "jade",
+              "weight": 14,
+              "payoutBps": 18200
+            },
+            {
+              "id": "envelope",
+              "weight": 18,
+              "payoutBps": 10920
+            },
+            {
+              "id": "firecracker",
+              "weight": 22,
+              "payoutBps": 7280
+            },
+            {
+              "id": "orange",
+              "weight": 26,
+              "payoutBps": 4550
+            }
+          ],
+          "unitsPerCoin": 100,
+          "targetRtp": 0.99,
+          "maxRespins": 7,
+          "fullBoardMultiplier": 10,
+          "maxWinMultiple": 455,
+          "note": "Independent original demo mathematics. Target RTP is a long-run expectation, not a promise for a session or a reproduction of PG mathematics."
+        },
+        "mathVersion": "tiger-platform-99-v1",
+        "targetRtp": 0.99,
+        "payoutScale": {
+          "numerator": 1,
+          "denominator": 1
+        },
+        "payoutRounding": "floor each symbol/line award after rational scaling, then apply the feature multiplier",
+        "currencyScale": 100,
+        "stakeMinorChoices": [
+          1000,
+          5000,
+          10000,
+          20000,
+          50000
+        ],
+        "completeCycleMaximumMultiplier": 455,
+        "maxRespins": 7,
+        "finalBoardOnlyPaid": true,
+        "fullBoardMultiplier": 10,
+        "maxPayoutProof": "5 lines * floor(stake*91000/10000) * 10; 98 profile line scaling only lowers this bound",
+        "rng": "AES-256-CTR stream; HMAC-SHA256 domain-derived key from 256-bit seed; rejection-sampled uint32",
+        "validation": "development Monte Carlo required; not a certified theoretical RTP"
+      },
+      "limitations": "Statistical estimate at one stake, not exact theoretical RTP or certification. CI is an approximate interval for independent complete-cycle mean. Bounded-platform Thunder differs from original demo in bonus length/cycle cap. 98 scales symbol/line awards by 98/99 with floor before multipliers, so observed RTP is not forced to 98%. Max observed payout is not the proven maximum."
+    }
+  ]
+}

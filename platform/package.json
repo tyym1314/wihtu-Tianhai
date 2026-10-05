@@ -1,0 +1,40 @@
+{
+  "name": "oasis-game-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 8795 --strictPort",
+    "build": "vite build",
+    "build:release": "node scripts/build-release.mjs",
+    "build:android": "bash android-smoke/build.sh",
+    "preview": "vite preview --host 127.0.0.1 --port 8795 --strictPort",
+    "check:contracts": "node scripts/check-contracts.mjs",
+    "server": "tsx server/index.mjs",
+    "build:legacy": "node scripts/build-legacy.mjs",
+    "build:partner-kit": "node scripts/build-partner-kit.mjs",
+    "test:backend": "tsx --test --test-concurrency=4 tests/*.test.mjs tests/*.test.ts",
+    "db:start": "node scripts/local-db.mjs",
+    "db:stop": "node scripts/local-db.mjs stop",
+    "partner:smoke": "node scripts/partner-smoke.mjs",
+    "build:arena": "vite build --config arena/vite.config.mjs",
+    "test:release": "node scripts/test-backend-isolated.mjs"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "cannon-es": "0.20.0",
+    "jsonc-parser": "^3.3.1",
+    "lucide-react": "^0.468.0",
+    "pg": "^8.23.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "playwright": "^1.55.0",
+    "tsx": "^4.23.13",
+    "vite": "^7.1.0"
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "version": "dune-blender-cast-v1",
+  "created": "2026-09-20",
+  "blender": {
+    "version": "4.5.14 LTS",
+    "official_source": "https://download.blender.org/release/Blender4.5/",
+    "sha256": "65134d9b07b20e2fa8d3c9e44f6f44ffb5c9774dd521b95f50387310241ca170",
+    "binary": "../../../../.tools/Blender.app/Contents/MacOS/Blender"
+  },
+  "authorship": "Original scripted mesh, UV, material, rig, animation and modular environment authoring in Blender. No third-party character model, no design-board image embedded as gameplay.",
+  "source_scripts": [
+    "source/build_characters.py",
+    "source/build_environment.py"
+  ],
+  "character_bones": 27,
+  "actions": [
+    "idle",
+    "run",
+    "jump",
+    "land",
+    "slide",
+    "hit",
+    "fall",
+    "recover",
+    "finish",
+    "celebrate"
+  ],
+  "engine_changed": false,
+  "limitations": [
+    "Solid mesh fur tufts and albedo; no simulated hair strands.",
+    "Fixed desktop software WebGL tests do not certify mobile GPU budget.",
+    "Character likeness still differs from the approved generated concept."
+  ],
+  "files": [
+    {
+      "path": "atlases/action-back.png",
+      "bytes": 1504938,
+      "sha256": "b86eb168eed6ecbc8cfb7e6e1ea220d439d7e20af49eab8cc12c16ddd8f0e3c4"
+    },
+    {
+      "path": "atlases/action-back.webp",
+      "bytes": 498472,
+      "sha256": "a1c9b94b4fb7372c835ee1d1f9883c8178f86fcd154263abcf2edc3662a12628"
+    },
+    {
+      "path": "atlases/front-win.png",
+      "bytes": 1748073,
+      "sha256": "2a66c6f137f440c040c80b81a8f845deefbf0ef73125e1027b3fe52a44e34bc5"
+    },
+    {
+      "path": "atlases/front-win.webp",
+      "bytes": 547882,
+      "sha256": "a65dc7b45c04a9640eee07496486b7e2fc5d99c5ad760534716a65184d541485"
+    },
+    {
+      "path": "atlases/oasis-environment.png",
+      "bytes": 3352496,
+      "sha256": "95ea40e638121486f1559c08362d2dfc07ce5fae93c41dae056f48800402da76"
+    },
+    {
+      "path": "atlases/oasis-environment.webp",
+      "bytes": 688580,
+      "sha256": "0aa25334017ecce51efc699d41c4743d5179444980a3efef8b4a61913e69a054"
+    },
+    {
+      "path": "atlases/run-back.png",
+      "bytes": 1413040,
+      "sha256": "cc273fdb38a231ad417eeae1a3f1dfce5ab8602729de78a14fb633d90391d3f7"
+    },
+    {
+      "path": "atlases/run-back.webp",
+      "bytes": 455082,
+      "sha256": "fa471b8a8d158a7261f0b9789cd664c2dd8938747e20866f7a56af9670fb7a94"
+    },
+    {
+      "path": "characters/bear-portrait.png",
+      "bytes": 327204,
+      "sha256": "04d49cc1c3ed6e7fda68c9c85659508c408dfaed6c80f93e02c819ffc739079b"
+    },
+    {
+      "path": "characters/bear.blend",
+      "bytes": 11095703,
+      "sha256": "b49070f3a3f4b5a42578dcb01f5c482e813401172e4ec2ee4f80eb9f5fbec2e5"
+    },
+    {
+      "path": "characters/bear.glb",
+      "bytes": 2486096,
+      "sha256": "a3e7a4b006d639911cabfd87e4711e12f1c3c95425ac1d6b6cbcca6f8d0b0efd"
+    },
+    {
+      "path": "characters/cat-portrait.png",
+      "bytes": 323606,
+      "sha256": "5dd17804b888a9e5e8a757dabb330c1aea6474c0d12a079b8aa9ed32c52fb358"
+    },
+    {
+      "path": "characters/cat.blend",
+      "bytes": 9677310,
+      "sha256": "0fb5609f3637389b5fcbd56a9141ddd3ed2318fd1e631be4ddb1703cdaf686ad"
+    },
+    {
+      "path": "characters/cat.glb",
+      "bytes": 2418408,
+      "sha256": "6bb5f5cb3768b8e62a330284e9c566d68a4b0a5a57352c7182576519dfe7790e"
+    },
+    {
+      "path": "characters/fox-portrait.png",
+      "bytes": 383198,
+      "sha256": "5ecc211fb4280035e4f315d536f132accc4164d62a69ac559a5a19271743687d"
+    },
+    {
+      "path": "characters/fox.blend",
+      "bytes": 8538062,
+      "sha256": "4a91a0d3e41be67d78722770002f6b475a7cf62a82f25c6f083d11117fb5a8c2"
+    },
+    {
+      "path": "characters/fox.glb",
+      "bytes": 2617364,
+      "sha256": "1a70baa0cbc4e72720bb515b0bd7559bef4012b20eec207e54e80db9598c2a3d"
+    },
+    {
+      "path": "characters/rabbit-portrait.png",
+      "bytes": 373341,
+      "sha256": "2c45c7443798dd5b5be462416927bc5fad31582cf10cf1dbf92cf5b65d2aaecf"
+    },
+    {
+      "path": "characters/rabbit.blend",
+      "bytes": 12836035,
+      "sha256": "b4f18fa8315116a638e8e4943aca4600b1fe7b8e974dda233a0f0254096489d6"
+    },
+    {
+      "path": "characters/rabbit.glb",
+      "bytes": 2700712,
+      "sha256": "b23040e854e087bc80d7391770261557acfcd93cb5fd3e6bafbe4c8125c378e7"
+    },
+    {
+      "path": "environment/oasis-kit.glb",
+      "bytes": 1344624,
+      "sha256": "611065e6fa1a1174c6a5095e997383fe7f467bc0c33273ed33aecde5b3cd90f0"
+    },
+    {
+      "path": "environment/oasis-modular-environment.blend",
+      "bytes": 2128549,
+      "sha256": "e18193da417f59e4535069d7a94d97684223eefe072927c369e52a0ebae32b4c"
+    }
+  ],
+  "default_character_renderer": "Original high-detail 2.5D atlas, not the smooth Blender rig",
+  "shared_material_sources": [
+    "../golf/assets/textures/aged-sandstone-imagegen.webp",
+    "../golf/assets/textures/sandstone-normal.webp"
+  ],
+  "image_art_origin": "Original imagegen production supplied by root task; originals retained, WebP encoding only. No concept-board raster used as gameplay."
+}

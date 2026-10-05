@@ -1,0 +1,370 @@
+TAP version 13
+# Subtest: lane has exactly ten uniquely numbered pins in 1+2+3+4 symmetric rows
+ok 1 - lane has exactly ten uniquely numbered pins in 1+2+3+4 symmetric rows
+  ---
+  duration_ms: 0.778458
+  type: 'test'
+  ...
+# Subtest: 2/3/4 independent lanes have identical fair initial conditions and no client seed exposure
+ok 2 - 2/3/4 independent lanes have identical fair initial conditions and no client seed exposure
+  ---
+  duration_ms: 1.86625
+  type: 'test'
+  ...
+# Subtest: XXX plus XX fill balls scores exactly 90 with no recursive extra opportunity
+ok 3 - XXX plus XX fill balls scores exactly 90 with no recursive extra opportunity
+  ---
+  duration_ms: 0.298791
+  type: 'test'
+  ...
+# Subtest: 9/,5-,8- = 15+5+8 = 28, early bonuses stay null until the required future roll
+ok 4 - 9/,5-,8- = 15+5+8 = 28, early bonuses stay null until the required future roll
+  ---
+  duration_ms: 0.213209
+  type: 'test'
+  ...
+# Subtest: third-frame X,7,3 retains seven-ball remainder and finishes at 20 without fourth roll
+ok 5 - third-frame X,7,3 retains seven-ball remainder and finishes at 20 without fourth roll
+  ---
+  duration_ms: 0.072166
+  type: 'test'
+  ...
+# Subtest: third-frame spare resets ten pins for exactly one fill ball; seven total rolls maximum
+ok 6 - third-frame spare resets ten pins for exactly one fill ball; seven total rolls maximum
+  ---
+  duration_ms: 0.057875
+  type: 'test'
+  ...
+# Subtest: authoritative rigid bodies reproduce exact outcome and delta poses across repeated simulation
+ok 7 - authoritative rigid bodies reproduce exact outcome and delta poses across repeated simulation
+  ---
+  duration_ms: 232.602042
+  type: 'test'
+  ...
+# Subtest: gutter disables later ball-pin collision scoring, while a returned upright pin is not counted
+ok 8 - gutter disables later ball-pin collision scoring, while a returned upright pin is not counted
+  ---
+  duration_ms: 7.113792
+  type: 'test'
+  ...
+# Subtest: server rejects extra score, trajectory, illegal ranges, wrong player and overlapping rolls
+ok 9 - server rejects extra score, trajectory, illegal ranges, wrong player and overlapping rolls
+  ---
+  duration_ms: 86.353167
+  type: 'test'
+  ...
+# Subtest: legal roll after JSON restart is identical, and scores reveal only after stable physical completion
+ok 10 - legal roll after JSON restart is identical, and scores reveal only after stable physical completion
+  ---
+  duration_ms: 177.189792
+  type: 'test'
+  ...
+# Subtest: a preparation timeout consumes one zero roll and preserves remaining pins; third causes forfeit
+ok 11 - a preparation timeout consumes one zero roll and preserves remaining pins; third causes forfeit
+  ---
+  duration_ms: 0.266667
+  type: 'test'
+  ...
+# Subtest: same-tick all third-timeouts void atomically, including a large server clock advance
+ok 12 - same-tick all third-timeouts void atomically, including a large server clock advance
+  ---
+  duration_ms: 0.126667
+  type: 'test'
+  ...
+# Subtest: batch disconnect includes implicit third-timeout before choosing winner
+ok 13 - batch disconnect includes implicit third-timeout before choosing winner
+  ---
+  duration_ms: 0.104083
+  type: 'test'
+  ...
+# Subtest: completed valid results survive later disconnect and all finished results are immutable
+ok 14 - completed valid results survive later disconnect and all finished results are immutable
+  ---
+  duration_ms: 0.302208
+  type: 'test'
+  ...
+# Subtest: 180-second deadline zero-fills without new timeout penalties and same-score finals tie
+ok 15 - 180-second deadline zero-fills without new timeout penalties and same-score finals tie
+  ---
+  duration_ms: 0.092792
+  type: 'test'
+  ...
+# Subtest: accepted ball at deadline completes before remaining rolls zero-fill; completed score survives batch exit
+ok 16 - accepted ball at deadline completes before remaining rolls zero-fill; completed score survives batch exit
+  ---
+  duration_ms: 87.596541
+  type: 'test'
+  ...
+# Subtest: public opponent status excludes their redundant trajectories; pause shifts shot and all deadlines
+ok 17 - public opponent status excludes their redundant trajectories; pause shifts shot and all deadlines
+  ---
+  duration_ms: 89.257542
+  type: 'test'
+  ...
+# Subtest: third timeout that fills the final frame still forfeits; previously valid completion survives
+ok 18 - third timeout that fills the final frame still forfeits; previously valid completion survives
+  ---
+  duration_ms: 0.152708
+  type: 'test'
+  ...
+# Subtest: sleeping pins wake on impact and a legal centre shot physically chains through all ten pins
+ok 19 - sleeping pins wake on impact and a legal centre shot physically chains through all ten pins
+  ---
+  duration_ms: 968.546709
+  type: 'test'
+  ...
+# Subtest: three continuous shared courses contain tees/cups and deterministic fixed-step shots
+ok 20 - three continuous shared courses contain tees/cups and deterministic fixed-step shots
+  ---
+  duration_ms: 343.735417
+  type: 'test'
+  ...
+# Subtest: client cannot submit a position, score, out-of-bounds power, NaN, or shoot before busyUntil
+ok 21 - client cannot submit a position, score, out-of-bounds power, NaN, or shoot before busyUntil
+  ---
+  duration_ms: 2.330792
+  type: 'test'
+  ...
+# Subtest: falling through open boundary adds one shot plus one penalty and restores shot origin
+ok 22 - falling through open boundary adds one shot plus one penalty and restores shot origin
+  ---
+  duration_ms: 0.40875
+  type: 'test'
+  ...
+# Subtest: tenth accepted shot that holes counts ten; a tenth miss records twelve
+ok 23 - tenth accepted shot that holes counts ten; a tenth miss records twelve
+  ---
+  duration_ms: 1.467542
+  type: 'test'
+  ...
+# Subtest: 90-second deadline scores twelve even if the last accepted shot is still rolling
+ok 24 - 90-second deadline scores twelve even if the last accepted shot is still rolling
+  ---
+  duration_ms: 6.932125
+  type: 'test'
+  ...
+# Subtest: twenty-second timeouts add one, third consecutive timeout forfeits all simultaneously
+ok 25 - twenty-second timeouts add one, third consecutive timeout forfeits all simultaneously
+  ---
+  duration_ms: 0.274625
+  type: 'test'
+  ...
+# Subtest: three played holes progress through five-second intermissions, preserve ties, then end
+ok 26 - three played holes progress through five-second intermissions, preserve ties, then end
+  ---
+  duration_ms: 3.056542
+  type: 'test'
+  ...
+# Subtest: ghost balls cannot change another shot, and JSON recovery retains exact outcome
+ok 27 - ghost balls cannot change another shot, and JSON recovery retains exact outcome
+  ---
+  duration_ms: 3.4585
+  type: 'test'
+  ...
+# Subtest: forfeit batches never break ties by seat; pause shifting preserves relative animation time
+ok 28 - forfeit batches never break ties by seat; pause shifting preserves relative animation time
+  ---
+  duration_ms: 1.37075
+  type: 'test'
+  ...
+# Subtest: all three islands are playable from tee to cup using ordinary legal actions, without position edits
+ok 29 - all three islands are playable from tee to cup using ordinary legal actions, without position edits
+  ---
+  duration_ms: 88.462625
+  type: 'test'
+  ...
+# Subtest: a third timeout and another player disconnecting in the same tick void together
+ok 30 - a third timeout and another player disconnecting in the same tick void together
+  ---
+  duration_ms: 0.171208
+  type: 'test'
+  ...
+# Subtest: the same batch still preserves a third-hole score fixed before simultaneous forfeits
+ok 31 - the same batch still preserves a third-hole score fixed before simultaneous forfeits
+  ---
+  duration_ms: 0.194416
+  type: 'test'
+  ...
+# Subtest: third consecutive timeout cannot complete the final hole and beat an already valid finisher
+ok 32 - third consecutive timeout cannot complete the final hole and beat an already valid finisher
+  ---
+  duration_ms: 0.10025
+  type: 'test'
+  ...
+# Subtest: same-tick third timeouts at the last-hole stroke limit void all players before awarding completed scores
+ok 33 - same-tick third timeouts at the last-hole stroke limit void all players before awarding completed scores
+  ---
+  duration_ms: 0.099292
+  type: 'test'
+  ...
+# Subtest: fixed public 480 m course has three lanes and safe 30 m checkpoints
+ok 34 - fixed public 480 m course has three lanes and safe 30 m checkpoints
+  ---
+  duration_ms: 0.975458
+  type: 'test'
+  ...
+# Subtest: 2/3/4 players accepted and malformed rosters/seeds/durations rejected
+ok 35 - 2/3/4 players accepted and malformed rosters/seeds/durations rejected
+  ---
+  duration_ms: 0.525666
+  type: 'test'
+  ...
+# Subtest: distance depends on authoritative 60 Hz ticks, never polling frequency or cosmetic character
+ok 36 - distance depends on authoritative 60 Hz ticks, never polling frequency or cosmetic character
+  ---
+  duration_ms: 3.315292
+  type: 'test'
+  ...
+# Subtest: current view contains no entropy or hidden future sequence
+ok 37 - current view contains no entropy or hidden future sequence
+  ---
+  duration_ms: 0.429291
+  type: 'test'
+  ...
+# Subtest: client positions/scores/timestamps and invalid action fields are rejected
+ok 38 - client positions/scores/timestamps and invalid action fields are rejected
+  ---
+  duration_ms: 0.279375
+  type: 'test'
+  ...
+# Subtest: accepted input applies only on the next server tick; concurrent inputs/rate limit rejected
+ok 39 - accepted input applies only on the next server tick; concurrent inputs/rate limit rejected
+  ---
+  duration_ms: 0.200083
+  type: 'test'
+  ...
+# Subtest: observed tick may reject stale/future input but never rewinds execution
+ok 40 - observed tick may reject stale/future input but never rewinds execution
+  ---
+  duration_ms: 1.987625
+  type: 'test'
+  ...
+# Subtest: lane transition lasts exactly twelve ticks, stays in bounds and permits airborne lane input
+ok 41 - lane transition lasts exactly twelve ticks, stays in bounds and permits airborne lane input
+  ---
+  duration_ms: 0.472875
+  type: 'test'
+  ...
+# Subtest: jump is 800 ms, apex 1.2 m; no double jump or airborne slide
+ok 42 - jump is 800 ms, apex 1.2 m; no double jump or airborne slide
+  ---
+  duration_ms: 0.63325
+  type: 'test'
+  ...
+# Subtest: 600 ms slide is grounded and mutually exclusive with jumping
+ok 43 - 600 ms slide is grounded and mutually exclusive with jumping
+  ---
+  duration_ms: 0.690625
+  type: 'test'
+  ...
+# Subtest: low crate stops for 800 ms followed by one second collision immunity
+ok 44 - low crate stops for 800 ms followed by one second collision immunity
+  ---
+  duration_ms: 0.43525
+  type: 'test'
+  ...
+# Subtest: jump clears a crate and slide clears a beam using shared dimensions
+ok 45 - jump clears a crate and slide clears a beam using shared dimensions
+  ---
+  duration_ms: 0.11775
+  type: 'test'
+  ...
+# Subtest: active shield removes exactly one obstacle penalty but cannot prevent water
+ok 46 - active shield removes exactly one obstacle penalty but cannot prevent water
+  ---
+  duration_ms: 0.146375
+  type: 'test'
+  ...
+# Subtest: shield duration is eight seconds and expired shield does not protect
+ok 47 - shield duration is eight seconds and expired shield does not protect
+  ---
+  duration_ms: 0.306833
+  type: 'test'
+  ...
+# Subtest: boost is exactly 1.2 times speed for three seconds without changing jump duration
+ok 48 - boost is exactly 1.2 times speed for three seconds without changing jump duration
+  ---
+  duration_ms: 2.321791
+  type: 'test'
+  ...
+# Subtest: single-slot pickup never replaces a held item, and all players collect independently
+ok 49 - single-slot pickup never replaces a held item, and all players collect independently
+  ---
+  duration_ms: 0.312208
+  type: 'test'
+  ...
+# Subtest: fall ranking uses recovery checkpoint, returns after 1.5 s, and cannot claim an item twice
+ok 50 - fall ranking uses recovery checkpoint, returns after 1.5 s, and cannot claim an item twice
+  ---
+  duration_ms: 0.619833
+  type: 'test'
+  ...
+# Subtest: same inputs give four different characters exactly identical trajectories, inventory and hits
+ok 51 - same inputs give four different characters exactly identical trajectories, inventory and hits
+  ---
+  duration_ms: 2.345292
+  type: 'test'
+  ...
+# Subtest: all same-tick finishers are recorded before champion selection; later finishes cannot replace them
+ok 52 - all same-tick finishers are recorded before champion selection; later finishes cannot replace them
+  ---
+  duration_ms: 0.498375
+  type: 'test'
+  ...
+# Subtest: completed times survive batch forfeit, including finish and exit in the same server tick
+ok 53 - completed times survive batch forfeit, including finish and exit in the same server tick
+  ---
+  duration_ms: 0.226208
+  type: 'test'
+  ...
+# Subtest: post-finish display stops after at most fifteen seconds and keeps champion fixed
+ok 54 - post-finish display stops after at most fifteen seconds and keeps champion fixed
+  ---
+  duration_ms: 5.632958
+  type: 'test'
+  ...
+# Subtest: 100-second deadline ranks uncompleted recovery distances to centimeters with ties
+ok 55 - 100-second deadline ranks uncompleted recovery distances to centimeters with ties
+  ---
+  duration_ms: 18.369833
+  type: 'test'
+  ...
+# Subtest: pause shifts wall clock while keeping exact physics/input ticks and relative progress
+ok 56 - pause shifts wall clock while keeping exact physics/input ticks and relative progress
+  ---
+  duration_ms: 0.458291
+  type: 'test'
+  ...
+# Subtest: seed replay and JSON restoration match batched server advancement
+ok 57 - seed replay and JSON restoration match batched server advancement
+  ---
+  duration_ms: 11.206625
+  type: 'test'
+  ...
+# Subtest: normal bot inputs can complete the entire course and keep all same-tick results
+ok 58 - normal bot inputs can complete the entire course and keep all same-tick results
+  ---
+  duration_ms: 21.264833
+  type: 'test'
+  ...
+# Subtest: public score uses metres while ranking compares integer centimetres
+ok 59 - public score uses metres while ranking compares integer centimetres
+  ---
+  duration_ms: 0.315542
+  type: 'test'
+  ...
+# Subtest: paid or practice wrapper never changes allowed input payload or physics
+ok 60 - paid or practice wrapper never changes allowed input payload or physics
+  ---
+  duration_ms: 1.447083
+  type: 'test'
+  ...
+1..60
+# tests 60
+# suites 0
+# pass 60
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1729.164125

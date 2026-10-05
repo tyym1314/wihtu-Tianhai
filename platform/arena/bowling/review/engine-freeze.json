@@ -1,0 +1,11 @@
+{
+  "at": "2026-09-19T14:27:09.503Z",
+  "physicsVersion": "bowling-rigid-v1.0.0",
+  "fixedHz": 60,
+  "replayHz": 20,
+  "files": {
+    "engine.mjs": "c4c922b19a5c66fdefd9d9f97e44d9e08709b0d6d91aba8f0f9aee7078edb212",
+    "physics.mjs": "c4216b64c5343ef00a85204244249f35036279f6116be2b0489c1531a25037aa",
+    "constants.mjs": "520a9ccbf6099fde8c72fee862a685a53d78eaad0839e9ab59cac4ad6691820a"
+  }
+}

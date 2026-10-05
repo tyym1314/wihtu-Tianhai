@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-19T16:33:16.442Z",
+  "scope": "Actual-engine local zero-value setup, real UI actions; no fabricated settlement, platform API or wallet access; mobile viewport emulation, not physical device.",
+  "reports": [
+    {
+      "game": "domino",
+      "video": "/Users/tyym/Documents/codes/game/platform/arena/domino/review-v3/domino-motion-390.webm",
+      "evidence": {
+        "actions": [
+          "select legal hand tile",
+          "connect matching endpoint"
+        ],
+        "tileId": "d_1_5",
+        "end": "left",
+        "actionCount": 1
+      },
+      "errors": []
+    }
+  ]
+}

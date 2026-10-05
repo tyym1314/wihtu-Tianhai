@@ -1,0 +1,8 @@
+{
+  "version": "1.1.1",
+  "version_code": 4,
+  "apk": "oasis-android-smoke-1.1.1-debug.apk",
+  "sha256": "63210cd9b237693d0e7d62e4663913197a9fedfec0ade536cb396320a65892a9",
+  "game_count": 13,
+  "device_verification": "not_performed_by_build"
+}

@@ -1,0 +1,108 @@
+{
+  "scope": "Chrome native touch taps and desktop WebKit trusted mouse pointer. Local actual HTTP engines. Not physical iPhone acceptance.",
+  "samples": [
+    {
+      "engine": "chromium",
+      "courseId": "palm-weave",
+      "difficulty": 1,
+      "action": "jump",
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "courseId": "sunrise-arches",
+      "difficulty": 1,
+      "action": "jump",
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "courseId": "canal-crossing",
+      "difficulty": 2,
+      "action": "jump",
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "courseId": "red-beam-rhythm",
+      "difficulty": 2,
+      "action": "jump",
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "courseId": "rapid-bridges",
+      "difficulty": 3,
+      "action": "jump",
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "courseId": "oasis-switchbacks",
+      "difficulty": 3,
+      "action": "jump",
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "courseId": "palm-weave",
+      "difficulty": 1,
+      "action": "jump",
+      "errors": [
+        "/127.0.0.1:51769/room due to access control checks.",
+        "TypeError: Load failed"
+      ]
+    },
+    {
+      "engine": "webkit",
+      "courseId": "sunrise-arches",
+      "difficulty": 1,
+      "action": "jump",
+      "errors": [
+        "/127.0.0.1:51769/room due to access control checks.",
+        "TypeError: Load failed"
+      ]
+    },
+    {
+      "engine": "webkit",
+      "courseId": "canal-crossing",
+      "difficulty": 2,
+      "action": "jump",
+      "errors": [
+        "/127.0.0.1:51769/room due to access control checks.",
+        "TypeError: Load failed"
+      ]
+    },
+    {
+      "engine": "webkit",
+      "courseId": "red-beam-rhythm",
+      "difficulty": 2,
+      "action": "jump",
+      "errors": [
+        "/127.0.0.1:51769/room due to access control checks.",
+        "TypeError: Load failed"
+      ]
+    },
+    {
+      "engine": "webkit",
+      "courseId": "rapid-bridges",
+      "difficulty": 3,
+      "action": "jump",
+      "errors": [
+        "/127.0.0.1:51769/room due to access control checks.",
+        "TypeError: Load failed"
+      ]
+    },
+    {
+      "engine": "webkit",
+      "courseId": "oasis-switchbacks",
+      "difficulty": 3,
+      "action": "jump",
+      "errors": [
+        "/127.0.0.1:51769/room due to access control checks.",
+        "TypeError: Load failed"
+      ]
+    }
+  ],
+  "servicesClosed": true
+}

@@ -1,0 +1,49 @@
+{
+  "label": "after",
+  "scope": "Desktop Chrome Metal, 390x844 DPR3 mobile quality, CPU4 diagnostic; fixed open-path snapshots every 400ms; no phone, gameplay or production acceptance.",
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+  "created_ms": 177.39999961853027,
+  "ready_at_ms": 828.8999996185303,
+  "frame_ms": {
+    "n": 387,
+    "p50": 16.699999999999818,
+    "p95": 16.799999999999272,
+    "max": 16.800000000000182
+  },
+  "render_submit_ms": {
+    "n": 388,
+    "p50": 1.4000000953674316,
+    "p95": 2,
+    "max": 21.90000009536743
+  },
+  "calls": {
+    "n": 388,
+    "p50": 113,
+    "p95": 120,
+    "max": 121
+  },
+  "triangles": {
+    "n": 388,
+    "p50": 150616,
+    "p95": 173376,
+    "max": 173788
+  },
+  "still_frames": 0,
+  "sampled_frames": 388,
+  "still_percent": 0,
+  "startup_long_tasks": [
+    {
+      "at": 29.299999713897705,
+      "ms": 198
+    },
+    {
+      "at": 236.7999997138977,
+      "ms": 70
+    },
+    {
+      "at": 311.7999997138977,
+      "ms": 460
+    }
+  ],
+  "errors": []
+}

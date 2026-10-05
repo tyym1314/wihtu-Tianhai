@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="650" viewBox="0 0 940 650" fill="none">
+<defs>
+ <linearGradient id="sky" x2="0" y2="650" gradientUnits="userSpaceOnUse"><stop stop-color="#0a1736"/><stop offset=".43" stop-color="#3c5b9c"/><stop offset=".7" stop-color="#7898c7"/><stop offset="1" stop-color="#14213a"/></linearGradient>
+ <linearGradient id="stone" x2="0" y2="1"><stop stop-color="#716a72"/><stop offset=".12" stop-color="#252f45"/><stop offset=".8" stop-color="#10182c"/><stop offset="1" stop-color="#050b17"/></linearGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffecc0"/><stop offset=".23" stop-color="#916532"/><stop offset=".47" stop-color="#fbe2a7"/><stop offset=".72" stop-color="#684328"/><stop offset="1" stop-color="#edc778"/></linearGradient>
+ <radialGradient id="cloud"><stop stop-color="#d5e7ff" stop-opacity=".6"/><stop offset=".55" stop-color="#bbd6ff" stop-opacity=".28"/><stop offset="1" stop-color="#aac4ff" stop-opacity="0"/></radialGradient>
+ <radialGradient id="fire"><stop stop-color="#fffdd6"/><stop offset=".32" stop-color="#ffd97b"/><stop offset=".7" stop-color="#f48137" stop-opacity=".8"/><stop offset="1" stop-color="#ea721c" stop-opacity="0"/></radialGradient>
+ <linearGradient id="fireTip" x2="0" y2="1"><stop stop-color="#fff9c9"/><stop offset=".7" stop-color="#ffa544"/><stop offset="1" stop-color="#d5581e"/></linearGradient>
+ <filter id="soft"><feGaussianBlur stdDeviation="6"/></filter>
+ <g id="temple"><path d="m0 240 12-98 18-14 6-77 13-15 9 91 18-10 13 31 12-48 18 9 8 82 18 12 8 37Z" fill="#173151"/><path d="m34 119 10-86 8 88M101 110l10-66 8 68" stroke="#d9bb80" stroke-opacity=".55" stroke-width="2"/><path d="M30 157h49M91 173h38" stroke="#d3c096" stroke-opacity=".4" stroke-width="3"/></g>
+ <g id="brazier"><path d="m-29 280 8-137h42l8 137" fill="url(#stone)" stroke="#9b7d55" stroke-width="2"/><path d="m-34 279 6-12h56l6 12v16h-68Z" fill="url(#stone)" stroke="url(#gold)" stroke-width="3"/><path d="M-29 167h58M-26 179h52M-26 245h52" stroke="#c8a370" stroke-width="2"/><path d="m-11 193 11-10 11 10-11 25Z" stroke="url(#gold)" stroke-width="3"/><path d="m-36 126 10 22h52l10-22-12-10h-48Z" fill="#14223a" stroke="url(#gold)" stroke-width="4"/><ellipse cy="124" rx="37" ry="8" fill="#665548" stroke="url(#gold)" stroke-width="3"/><ellipse cy="101" rx="57" ry="62" fill="url(#fire)" filter="url(#soft)"/><path d="M-21 117c-15-20 8-25 0-42 26 14 8 27 21 32-5-36 31-37 11-67 43 39-1 53 15 70l-12 13h-32Z" fill="url(#fireTip)"/><path d="M-2 117c-15-11 8-21 9-38 16 23-4 27 5 39" fill="#fff4b1"/></g>
+</defs>
+<path fill="url(#sky)" d="M0 0h940v650H0z"/>
+<path d="M0 0h940v210H0z" fill="#061126" fill-opacity=".6"/>
+<g opacity=".7"><use href="#temple" transform="translate(70 120) scale(.8)"/><use href="#temple" transform="translate(724 165) scale(.8)"/><use href="#temple" transform="translate(206 206) scale(.5)"/><use href="#temple" transform="translate(641 163) scale(.5)"/></g>
+<g fill="url(#cloud)"><ellipse cx="120" cy="334" rx="220" ry="72"/><ellipse cx="781" cy="313" rx="210" ry="80"/><ellipse cx="277" cy="350" rx="140" ry="49"/><ellipse cx="697" cy="358" rx="180" ry="57"/></g>
+<path d="M0 425h940v225H0Z" fill="url(#stone)"/><path d="M0 426h940M0 438h940" stroke="url(#gold)" stroke-width="5"/><path d="M0 445h940" stroke="#080d1e" stroke-width="6"/>
+<path d="m325 437-280 213m570-213 280 213M470 437v213M0 500h940M0 579h940" stroke="#b0a287" stroke-opacity=".24" stroke-width="2"/>
+<path d="m263 485 53-32h308l53 32v28H263Z" fill="#343d50" stroke="url(#gold)" stroke-width="3"/><path d="M239 528h462v24H239Z" fill="#172339" stroke="#816c4b" stroke-width="2"/><path d="m263 513-24 15h462l-24-15" fill="#5a626e"/>
+<use href="#brazier" transform="translate(28 157)"/><use href="#brazier" transform="translate(912 157)"/>
+<path d="M0 570h940v80H0Z" fill="#071123" fill-opacity=".76"/>
+</svg>

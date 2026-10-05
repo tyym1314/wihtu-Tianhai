@@ -1,0 +1,36 @@
+{
+  "label": "webkit-after",
+  "scope": "Desktop Playwright WebKit without CPU throttle, 390x844 DPR3 mobile quality; fixed open-path snapshots every 400ms; no phone, gameplay or production acceptance. Long Tasks unavailable on WebKit.",
+  "gpu": "Apple GPU",
+  "created_ms": 347,
+  "ready_at_ms": 1473,
+  "frame_ms": {
+    "n": 352,
+    "p50": 17,
+    "p95": 19,
+    "max": 174
+  },
+  "render_submit_ms": {
+    "n": 353,
+    "p50": 1,
+    "p95": 1,
+    "max": 165
+  },
+  "calls": {
+    "n": 353,
+    "p50": 113,
+    "p95": 120,
+    "max": 121
+  },
+  "triangles": {
+    "n": 353,
+    "p50": 150628,
+    "p95": 173376,
+    "max": 173788
+  },
+  "still_frames": 0,
+  "sampled_frames": 353,
+  "still_percent": 0,
+  "startup_long_tasks": [],
+  "errors": []
+}

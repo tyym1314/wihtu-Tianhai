@@ -1,0 +1,7 @@
+[Unit]
+Description=Renew OASIS demo HTTPS certificate
+After=network-online.target docker.service nginx.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/oasis/current/platform/deploy/renew-certificate.sh

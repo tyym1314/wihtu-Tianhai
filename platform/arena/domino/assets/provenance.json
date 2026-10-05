@@ -1,0 +1,12 @@
+{
+  "generatedAt": "2026-09-19",
+  "tool": "image_gen.imagegen",
+  "originalArtwork": true,
+  "reference": "output/design/pvp-arena-concepts-v1/09-domino.png",
+  "prompt": "Use case: stylized-concept. Production mobile board-game environment asset, portrait 1024x1536. Original luxurious Arabian palace veranda at blue hour: intricately carved cream sandstone and dark-gold horseshoe arch around outer edges, warm glowing hanging brass lanterns at both upper side edges, distant soft golden domes and tall palms beneath a deep midnight navy sky, small emerald tropical leaves at bottom corners, blue velvet darkness through quiet center. Premium cinematic 3D mobile-game render with detailed real stone relief and amber lighting, balanced symmetrical composition. Critical: central 78% of image is dark navy, low contrast, uncluttered negative space; foreground carvings and light clusters at outermost edges so an interactive blue domino table and UI remain readable. No game board, no table, no dominoes, no cards, no letters, no words, no UI, no people, no watermark.",
+  "source": "palace-source.png",
+  "delivery": "palace.webp",
+  "deliveryDimensions": "768×1152",
+  "conversion": "cwebp resizing and lossy WebP encoding only; source preserved",
+  "scope": "Environment only; interactive board, tiles, marbles, state and controls are rendered separately."
+}

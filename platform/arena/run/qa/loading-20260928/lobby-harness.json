@@ -1,0 +1,988 @@
+{
+  "schema_version": "mobile-isolated-harness-v1",
+  "started_at": "2026-09-28T12:09:35.318Z",
+  "completed": true,
+  "physical_device": false,
+  "public_services_used": false,
+  "isolation": {
+    "database": "oasis_release_test_75517_128771b54c77",
+    "bind": "127.0.0.1",
+    "pid": 75517,
+    "api_port": 51636,
+    "wallet_port": 51637,
+    "demo_port": 51638,
+    "asset_port": 51635,
+    "gateway_port": 51639
+  },
+  "delivery": {
+    "source": "copied production builds over real loopback HTTP",
+    "request_routing": false,
+    "http_cache_disabled": false,
+    "loopback_cookie_alias": "oasis_quality_demo → signed __Host-oasis_demo upstream; Secure omitted only on this HTTP-only gateway",
+    "gzip_level": 1,
+    "gzip_responses": 26,
+    "network_profile": "loopback-unshaped",
+    "public_loading_evidence": false
+  },
+  "cleanup": {
+    "http_servers_stopped": true,
+    "api_exit": {
+      "code": 0,
+      "signal": null
+    },
+    "api_stopped": true,
+    "database_dropped": true,
+    "private_directory_removed": true
+  },
+  "limitations": [
+    "HTTP localhost is a test secure context, not deployed HTTPS/TLS/network evidence.",
+    "The production demo-host constructor is used with an explicit loopback origin; its production HTTPS configuration parser is not changed.",
+    "WebKit rejects Secure __Host cookies over HTTP localhost. This loopback gateway aliases only that guest cookie and restores its original name upstream; MAC and CSRF remain unchanged. This is not deployed authentication-cookie acceptance.",
+    "The gateway mirrors production gzip content types and level 1, but does not reproduce nginx/HTTP2/CDN/remote network costs."
+  ],
+  "source_sha256": {
+    "scripts/profile-mobile-isolated.mjs": "171810f84e062d9b96b4d5489593f62f73ac02c27577b763b96dacde18b82b20",
+    "scripts/profile-game-performance.mjs": "c3aad33b52706d05a49ff3021386d1c7b1e9d6cf176dd2fb72364cba76fedc64",
+    "scripts/profile-probability-performance.mjs": "d948c2d3331f628a6f312a25595189abf3e73579a0c0e4509da30cd34a7ec71c",
+    "scripts/mobile-quality-metrics.mjs": "9d5b32533c11532517798ea8a8121796d2b4d5651a26766e0ee9a75181f236ec",
+    "scripts/profile-mobile-load-batch.mjs": "8c3e7a4bd616aedfbd1019083f67e51defc7e78d4a0edc12d15aa686ab978474",
+    "scripts/mobile-continuous-driver.mjs": "81556ae433c218d809c4149cd74376628d20dd1fea917f0a9c8b403f7b307b8b",
+    "scripts/android-game-actions.mjs": "a2cdde93636a312dd0efe44cefea5f2f02180440a011f15bbfd7aa4d59b1ea27",
+    "scripts/evaluate-mobile-quality.mjs": "8c81557c1f714d4a3274ea159e43386c3bb5cf91f6d4ba72522ec93075fc23c5",
+    "mobile-assets.json": "270ce7d495b3751858be7d08b6419480c2dccba81f73a4d6ebe37dd01dcfd628",
+    "specs/mobile-quality-v1.json": "da2d9ddc811277b096b5b55a20e0f42178fb0ed6c06b4589b49447f9917e896b",
+    "server/index.mjs": "dc800741bb6be97619755708fe909e6f2cdfacb6683da90f814fcaacfc153e75",
+    "server/pvp/index.mjs": "d3102cb3c6b4ac94a5e6d355d2587fef2b17f504e15381c218130fd4ea7ddcc7",
+    "server/pvp/snapshot-transfer.mjs": "abb07e3a264c543b838f832a2c947f87affb3dd1c51652522a0d253af90cfd26",
+    "arena/shared/client.mjs": "55ea318dca40174b494e36498f5adef7be5913723bfdfc54ff137c15f024d2da",
+    "arena/shared/snapshot-transfer.mjs": "c9bce9d30c5c9b2bf48f443c50cc11479da112664ce71945df55f77ef7eea2f9"
+  },
+  "builds": {
+    "arena": {
+      "source": "/var/folders/s2/vjh1h3497tl5r7kzvkg6p8fr0000gn/T/run-lobby-roster-LMYx0o",
+      "files": [
+        {
+          "path": "assets/action-back-mobile-81e5c62e42-YmJbuCwd.webp",
+          "bytes": 355872,
+          "sha256": "81e5c62e4220be8c7cc63ae1c0310beea3be7c09c6b0e961a7bdc7aa578ed57d"
+        },
+        {
+          "path": "assets/aged-sandstone-imagegen-mobile-dcc28108d4-CqA0P4-K.webp",
+          "bytes": 142832,
+          "sha256": "dcc28108d4a5cde4a880a12dc6448e68e5d358a9a3f0678730003ec263719f5f"
+        },
+        {
+          "path": "assets/assets-BFhjUqCW.js",
+          "bytes": 359,
+          "sha256": "e73e33c5b6f1914420d3436c74a795d259992e5171769c04d42040dcacacb83b"
+        },
+        {
+          "path": "assets/barracks-atlas-UnJjqMjd.webp",
+          "bytes": 515886,
+          "sha256": "792a91a287999efeb0b23c7738fcb891245d58764f6f139851dde713af3ccf90"
+        },
+        {
+          "path": "assets/battlefield-Ut7z2PA9.webp",
+          "bytes": 568568,
+          "sha256": "15224cc3115b9f37fd6954c5df77aaba1b6e8cda02647d33a2baab5bc4f3696b"
+        },
+        {
+          "path": "assets/bear-Bih7o6Ut.glb",
+          "bytes": 2486096,
+          "sha256": "a3e7a4b006d639911cabfd87e4711e12f1c3c95425ac1d6b6cbcca6f8d0b0efd"
+        },
+        {
+          "path": "assets/board-assets-OK5mVjc1.js",
+          "bytes": 5211,
+          "sha256": "6b7aed083199af3251191052c9b118f63b80b54ab081f6f3ec204912b29feeb3"
+        },
+        {
+          "path": "assets/board-material-0BR5pk4N.webp",
+          "bytes": 536274,
+          "sha256": "b1e9c59cee8c13d52c64e0bcb27b8268fd342eb9050da4a28edc5e930643e74b"
+        },
+        {
+          "path": "assets/board-material-B6DsXAWo.webp",
+          "bytes": 552996,
+          "sha256": "fa6f5ea9dd12a5570eece85397384730457cace7c9fd1055f09a8b060aeaee7a"
+        },
+        {
+          "path": "assets/board-material-Bhy3IN9F.webp",
+          "bytes": 496426,
+          "sha256": "5501ee53fcf5e38c99233417824f136bceeab25c17d4bdd34800125c8cb0e358"
+        },
+        {
+          "path": "assets/board-material-CNTfzPhi.webp",
+          "bytes": 331554,
+          "sha256": "3a01b767f59767245cb5163fb7ac4749b3f4b16584253061804abe541c63affc"
+        },
+        {
+          "path": "assets/board-material-DAEWx123.webp",
+          "bytes": 505788,
+          "sha256": "f1a116a56142b1c18eb40da82f0a48d7d589e9559cc8445262aa37338343a1cb"
+        },
+        {
+          "path": "assets/board-material-lzMIlQ42.webp",
+          "bytes": 519136,
+          "sha256": "960b44381ae9ff7eb664e1aaecf7609c53e48b149869afc51a3da4ff3e945dd6"
+        },
+        {
+          "path": "assets/BowlingGame-KYvdHNS-.css",
+          "bytes": 16776,
+          "sha256": "ea2d8f053f593bc0fac3a3a675ea70b04a1229e9a7eac3dfaee01843b255e7af"
+        },
+        {
+          "path": "assets/BowlingGame-taZnIfwD.js",
+          "bytes": 56513,
+          "sha256": "f8dddf5cd9c44b037c582fc368d78e129433abe8891ea9fa4244690fd831e1af"
+        },
+        {
+          "path": "assets/CarromGame-_abDRHVz.css",
+          "bytes": 21479,
+          "sha256": "18c33c021b806f033c24fa6ad206822f155d543220a36f0067b01e2b1e2b71a7"
+        },
+        {
+          "path": "assets/CarromGame-Cv-0QEgi.js",
+          "bytes": 27865,
+          "sha256": "df4662ae6b6dc913e9eeb659603e79dc2e265d845fa2f7c356b493e3f3032415"
+        },
+        {
+          "path": "assets/cat-LrKoXZCs.glb",
+          "bytes": 2418408,
+          "sha256": "6bb5f5cb3768b8e62a330284e9c566d68a4b0a5a57352c7182576519dfe7790e"
+        },
+        {
+          "path": "assets/characters-DJEzjzpi.js",
+          "bytes": 13278,
+          "sha256": "58674878e5a8d3edf43a8f4529141e98329ed5a5dd66da876cce626fcbac5da8"
+        },
+        {
+          "path": "assets/chevron-left-UXM66tb0.js",
+          "bytes": 126,
+          "sha256": "98d9223c9b8a53fe25ecdcc0183e24288a40b594521c627f435d5ab17e52dbb6"
+        },
+        {
+          "path": "assets/citadel-CWXQooCk.webp",
+          "bytes": 269392,
+          "sha256": "8e319b64d17fd1f330b29edc6c5e943c6717f42771f5327e8e56d92b06964838"
+        },
+        {
+          "path": "assets/clock-3-mVYv1Ne7.js",
+          "bytes": 178,
+          "sha256": "225b913c29834af6915e834d1d771b986a739c36778df66e4c9ffbab8cdb9018"
+        },
+        {
+          "path": "assets/course-1-contact-ao-mobile-21f6644136-XVLTVrZd.webp",
+          "bytes": 6536,
+          "sha256": "21f6644136a62128c7bef125f8574e6fe46e55c8b9b07b26f537f5bf7f60fe5b"
+        },
+        {
+          "path": "assets/course-2-contact-ao-mobile-dde247036b-BviGMBHJ.webp",
+          "bytes": 6914,
+          "sha256": "dde247036b15df40eb1a6d7c360c31f0dd98fa89f71e3b4c32b17adf03f4c54b"
+        },
+        {
+          "path": "assets/course-3-contact-ao-mobile-32988f4c70-Btwq2N8v.webp",
+          "bytes": 6892,
+          "sha256": "32988f4c706085083c0cdb7e693b9451bcb2f89f111bbfe5a752b5b34e67d054"
+        },
+        {
+          "path": "assets/crown-wall-imagegen-DQfvbbFG.webp",
+          "bytes": 151324,
+          "sha256": "6d4f8cebe6601bae421036a82a6fba99fd8449b082f90e6e3093908a3d911e3a"
+        },
+        {
+          "path": "assets/DartsGame-Ct3XCmJb.js",
+          "bytes": 20048,
+          "sha256": "681743eba9eae1f9e34da859e8721dffbbd8d6bb3e4a3c0d17edad6df30ba380"
+        },
+        {
+          "path": "assets/DartsGame-DpSqGj0-.css",
+          "bytes": 14338,
+          "sha256": "d44c23e3f624de1c3713d6857e8ffdfb6f052f6f5cd80e90d50a59f476af4b95"
+        },
+        {
+          "path": "assets/disc-black-0y0IgEqA.webp",
+          "bytes": 12028,
+          "sha256": "9c25c95d4d525304599c7556a3ab3e0c1236d8744b9ffaca348ccc86a47ffd7d"
+        },
+        {
+          "path": "assets/disc-queen-fxuApOl_.webp",
+          "bytes": 18048,
+          "sha256": "334a77e0e964d7ad7d08f12931cf481e73c004deeb9f164da243cf6735561bf8"
+        },
+        {
+          "path": "assets/disc-striker-BfJZ4LLR.webp",
+          "bytes": 15682,
+          "sha256": "d049d45a36e1ac042de1fcc57c65c39e889fdf7fdff39c491c2fa4c51b066c3b"
+        },
+        {
+          "path": "assets/disc-white-DzDuKya3.webp",
+          "bytes": 8086,
+          "sha256": "175c6b0fd511bbaa5ff672239c156910888f876c4ee6900c3d0e3643fdde30e1"
+        },
+        {
+          "path": "assets/DominoGame-D_plE-WQ.css",
+          "bytes": 19166,
+          "sha256": "0882e761b5cb25406678590c402d36bbc559de19e48e2aa101a83bae674c49f2"
+        },
+        {
+          "path": "assets/DominoGame-uaAuATCL.js",
+          "bytes": 14646,
+          "sha256": "c20148624a10b570756557322babab8e02d23f7d4f327f40d3f7320778951c24"
+        },
+        {
+          "path": "assets/draco_decoder-Z1_iN-Ht.wasm",
+          "bytes": 192420,
+          "sha256": "a680d927bed9cb864ddbd63521868891af2bfbe755092761b4837487618df8ac"
+        },
+        {
+          "path": "assets/draco_wasm_wrapper-fZCQGLGb.js",
+          "bytes": 58456,
+          "sha256": "8bb2952d2ba7d67e1414f8df819410cb0434a666be53f671fff75f68843d76f6"
+        },
+        {
+          "path": "assets/DRACOLoader-4dwTupNn.js",
+          "bytes": 6276,
+          "sha256": "7ce06fe559307dff1417de2d6a2646314f439f48f83cc9603826ee2139b144bc"
+        },
+        {
+          "path": "assets/emerald-palace-corfLABz.webp",
+          "bytes": 227192,
+          "sha256": "96bb7104e7b616b3eba7e2f16051131011123ffa5a34b3c6c1c4dfe4ab8b1a2c"
+        },
+        {
+          "path": "assets/fine-grass-normal-ByGGnQ37.webp",
+          "bytes": 88502,
+          "sha256": "ac56f7508bc9737e280b3a89e53d6ef391fad4a97d250d288082af49f85d7131"
+        },
+        {
+          "path": "assets/fox-C7KHBBBq.glb",
+          "bytes": 2617364,
+          "sha256": "1a70baa0cbc4e72720bb515b0bd7559bef4012b20eec207e54e80db9598c2a3d"
+        },
+        {
+          "path": "assets/fox-mascot-mobile-7d3781fba5.webp",
+          "bytes": 260878,
+          "sha256": "7d3781fba58eeed445e392c22a61b37709bfccaba7b5829fe02518bc27f66416"
+        },
+        {
+          "path": "assets/fox-mascot.png",
+          "bytes": 2253952,
+          "sha256": "c37f3385f89395e3b36255cd21fad6be3101aebf25c363164f52afd00cdb131b"
+        },
+        {
+          "path": "assets/front-win-mobile-902055527a-CfGfLtdY.webp",
+          "bytes": 390330,
+          "sha256": "902055527a213b285a521ca893c5cf7a7b4a98aa0de69b5e61ff7db4c29b706f"
+        },
+        {
+          "path": "assets/GLTFLoader-D6-jlh63.js",
+          "bytes": 50551,
+          "sha256": "bd7fefaa358330d57c474cdb7908b5e43272a2932dec2b86808c064aa2f0dde8"
+        },
+        {
+          "path": "assets/GolfGame-CMMIsR6z.js",
+          "bytes": 69312,
+          "sha256": "b1d03d3a25bad246e112f959e3cb6cc62d919bd2eb5f6e5a6724b2c348d10596"
+        },
+        {
+          "path": "assets/GolfGame-DamCzP6X.css",
+          "bytes": 15860,
+          "sha256": "dc6e00437a346204ca50597ef0910170d0dd8306d63e168f24e8455324c83352"
+        },
+        {
+          "path": "assets/held-dart-z7IEU17j.webp",
+          "bytes": 24384,
+          "sha256": "1611486206b7a8f4704d8cae417967d6b90ef5145e5a34d4649f9946204eadbe"
+        },
+        {
+          "path": "assets/image-preloader-BCPSfof5.js",
+          "bytes": 692,
+          "sha256": "84efe3c1206a3ffe9a9d56253d48105739eb534ec167bc3666e7029e5bf33eba"
+        },
+        {
+          "path": "assets/index-_mxLmHln.css",
+          "bytes": 63621,
+          "sha256": "b0c7c279d1ba5b861477bf3db44582ff233c55eb6e885b7c0986085bb3798fda"
+        },
+        {
+          "path": "assets/index-CHXInRD8.js",
+          "bytes": 306744,
+          "sha256": "eed90af7c0142328c9bc728a0d9c68921631a0e8e32f436ecef8507ef817218d"
+        },
+        {
+          "path": "assets/info-BDlwi9d9.js",
+          "bytes": 196,
+          "sha256": "3b30f7a9f006ab27d80109bdea5ca43d553be7a7e4ca1c189d946123f146828c"
+        },
+        {
+          "path": "assets/ivory-tile-DxGu3m3E.webp",
+          "bytes": 6172,
+          "sha256": "ad1af0923c22d1bb109a1b5e64df383b647c88b86d202c056bb69c026dc32173"
+        },
+        {
+          "path": "assets/JackarooGame-B9AZkfMH.css",
+          "bytes": 17715,
+          "sha256": "ee52236dde954d710ee9d258408f1fcc1ffbec40b4e2d3f1fd5ec1b8b1c96457"
+        },
+        {
+          "path": "assets/JackarooGame-Dpba8j9m.js",
+          "bytes": 22524,
+          "sha256": "982953ba60d06c933539cdaedc6c85ee2f1ca65c64104ddc56b9e39de32c9a95"
+        },
+        {
+          "path": "assets/LudoGame-BpfxDA_2.css",
+          "bytes": 4122,
+          "sha256": "dbbef306a7bd6bad5304ebf473b31082302a660a6922cc1c359f6662fca78e42"
+        },
+        {
+          "path": "assets/LudoGame-QsuPTYWi.js",
+          "bytes": 12982,
+          "sha256": "82b597f5f8fe51fdf45565cb00f39c845839a70b8a1f21e927001095f12f8b47"
+        },
+        {
+          "path": "assets/majlis-DUvgr9WP.webp",
+          "bytes": 131430,
+          "sha256": "b58735e5579229af27c5ee8cb961cb651d8f7d42b3bdd72e3dd9a73e7fc2af67"
+        },
+        {
+          "path": "assets/marble-emerald-BsbGVGxQ.webp",
+          "bytes": 6714,
+          "sha256": "18f8bcc8208b3c902003d0e0c9cef565a75e3b19a939474cddf3f04907399bae"
+        },
+        {
+          "path": "assets/marble-ivory-DgNoSBbh.webp",
+          "bytes": 7312,
+          "sha256": "bf9204c25bd7d8b68c1a900c154e0704466ce7bc499819d4d576418d51610673"
+        },
+        {
+          "path": "assets/match-palace-mobile-09ad602636.webp",
+          "bytes": 374098,
+          "sha256": "09ad6026368c046ba3c9f51b3b3e37a781633e7366d93883d84d8448c96853eb"
+        },
+        {
+          "path": "assets/match-palace.png",
+          "bytes": 2569557,
+          "sha256": "4d5bc30d7e90071736cdf7c2e675f2b103ae0cd68b84c21f20167aced4e99a2e"
+        },
+        {
+          "path": "assets/MatchGame-BUL6bjrr.js",
+          "bytes": 21373,
+          "sha256": "f1f02e4ae79897806bc5a48539e6beda8d30d80201596cf63b79798268dc28eb"
+        },
+        {
+          "path": "assets/MatchGame-COH-V4HZ.css",
+          "bytes": 32957,
+          "sha256": "6a5e874bd471f06018d62bf80b0f625afbe5e192de3ed4cbeb535e3111b97dfe"
+        },
+        {
+          "path": "assets/metal-dart-3aQ_euWt.webp",
+          "bytes": 19122,
+          "sha256": "5df6825eabfe07446d209637feb789a55a506f268864fd73a1731d2e11240215"
+        },
+        {
+          "path": "assets/midnight-club-D-h4RlH0.png",
+          "bytes": 2322729,
+          "sha256": "15fe4ea85dff6311d0a8ff4a62559a2edf999cc1c41af7b61e63d8906c0a7ba0"
+        },
+        {
+          "path": "assets/midnight-club-mobile-cb6f5ec471-g41_cdbP.webp",
+          "bytes": 371414,
+          "sha256": "cb6f5ec471ebe48a0ec06b346f83d3e5c979a529283f0861e06e7ab6dcac4f70"
+        },
+        {
+          "path": "assets/neon-competition-pin-BLY3CY4Z.glb",
+          "bytes": 17856,
+          "sha256": "4f687c084aaba49b82c02c3a59bd9a5f9718a1674b809b30bebe8466ce640237"
+        },
+        {
+          "path": "assets/neon-pearl-ball-B3AovylR.glb",
+          "bytes": 204732,
+          "sha256": "f4d0eb947bf7f102d0126e4bf4a5ce8c2f7eb563bd126ad08f506a0a29a39c27"
+        },
+        {
+          "path": "assets/neon-private-venue-BfAr-m8J.glb",
+          "bytes": 211260,
+          "sha256": "5a6dc0339c107bc2d98f889a2210598b5af04bf79a48ef159fb0a8a5149a6d14"
+        },
+        {
+          "path": "assets/neon-result-environment-4JXPrSzA.webp",
+          "bytes": 44766,
+          "sha256": "21cfcee8f5fa74a824d4842667fd0fb7eeb356c61c4d05686920b9033f0e8220"
+        },
+        {
+          "path": "assets/night-room-Bc846tvA.png",
+          "bytes": 2481523,
+          "sha256": "0b3435c75239e261d5e46b6dc362af79b475d42ab33de26514ea76b91b769efb"
+        },
+        {
+          "path": "assets/night-room-mobile-60782ace8b-wOAO4b8s.webp",
+          "bytes": 392654,
+          "sha256": "60782ace8b12aab8de3da46acd9990ca50c3fe4f27a9d819819d47e240c511d4"
+        },
+        {
+          "path": "assets/oasis-botanical-library-DzHpQHKk.glb",
+          "bytes": 77388,
+          "sha256": "6a37b5a21467a38215c6c12a4ae5c7d38b9edd95ad28eac75ce0098d2caf6223"
+        },
+        {
+          "path": "assets/oasis-course-1-DMgPsfIX.glb",
+          "bytes": 571528,
+          "sha256": "d4f0a75e82e7117fff0785ddfaab232da5362a20f1a75205a0d4e4e304a7bc06"
+        },
+        {
+          "path": "assets/oasis-course-2-C8glLOFC.glb",
+          "bytes": 596684,
+          "sha256": "8e247bd86255abf820410f023870f19b9b7c8eebde96735d49dea96b629179da"
+        },
+        {
+          "path": "assets/oasis-course-3-BtYkMHmX.glb",
+          "bytes": 567300,
+          "sha256": "dd0ec89ec0207b4d5f8368178e1eb7ea975fc946708c4784527d74a770723ed1"
+        },
+        {
+          "path": "assets/oasis-distant-palace-mobile-e251f780d8-BaTRX0QZ.webp",
+          "bytes": 169080,
+          "sha256": "e251f780d87604fb42393f04b4b153804c1251393ae6ac766ffe393c24f1a6c4"
+        },
+        {
+          "path": "assets/oasis-environment-BR5D3yHy.webp",
+          "bytes": 688580,
+          "sha256": "0aa25334017ecce51efc699d41c4743d5179444980a3efef8b4a61913e69a054"
+        },
+        {
+          "path": "assets/oasis-kit-BgKB9sjK.glb",
+          "bytes": 1344624,
+          "sha256": "611065e6fa1a1174c6a5095e997383fe7f467bc0c33273ed33aecde5b3cd90f0"
+        },
+        {
+          "path": "assets/oasis-result-environment-CSlXRvZE.webp",
+          "bytes": 75774,
+          "sha256": "9bd7126129bc66b082f115d195e9e3ee0e4abdb8f238bf5b03695aa563af74e0"
+        },
+        {
+          "path": "assets/palace-V9mOTRdr.webp",
+          "bytes": 213986,
+          "sha256": "da108a0749f5d28ed367e78e16400c4025e717eaeae700461dedd2c39240551e"
+        },
+        {
+          "path": "assets/pawn-0-DAcrRZwV.webp",
+          "bytes": 7270,
+          "sha256": "059b9708959c074c2c2cef73acb5b70d770f528e674449eba423eb1a5cf8d833"
+        },
+        {
+          "path": "assets/pawn-1-ezqcaXhV.webp",
+          "bytes": 7798,
+          "sha256": "2c091c03242c52b06678ad468857f3329b66fc8cd74bc3ccaa82147e3e8c689a"
+        },
+        {
+          "path": "assets/pawn-2-K52SuxQd.webp",
+          "bytes": 7136,
+          "sha256": "a0dfa005641e51d362f7c9e465fe4dce6dd4d0fbb3663b9b091b28a5f8886c43"
+        },
+        {
+          "path": "assets/pawn-3-CCnwtWJ9.webp",
+          "bytes": 6938,
+          "sha256": "31c4d115ceda0ea12d3dfea3247205cfbb1c0006e8a03b32f490a7a291860c3f"
+        },
+        {
+          "path": "assets/pearl-resin-imagegen-D0s3pC1r.webp",
+          "bytes": 151752,
+          "sha256": "b4c7715b27c359e9dc598245e3b2d68ec177c6d1173e21d261c7ffe13a510818"
+        },
+        {
+          "path": "assets/players-atlas-BJZwm6F1.webp",
+          "bytes": 70696,
+          "sha256": "d4a85be4d16d6ffce267e0bdf6d8961d524022357d4799efc166ab5adff89733"
+        },
+        {
+          "path": "assets/PoolGame-8qqPr_J8.css",
+          "bytes": 19191,
+          "sha256": "b1acd3598c520944d5ba12b2ab91e309882994db4a096fdaea6086880fb2fd8f"
+        },
+        {
+          "path": "assets/PoolGame-D66ORomf.js",
+          "bytes": 31346,
+          "sha256": "9bbbb3fdf1374dfbf5bb6cfc3eda32a3fde887eb99eb1ef25ddd2d28a90d990e"
+        },
+        {
+          "path": "assets/presentation-clock-CY_UAYnE.js",
+          "bytes": 1773,
+          "sha256": "69b45cbf4f309d0ec1195d6ae3d9d7596810e5995171442e2ad0314a0a85f32f"
+        },
+        {
+          "path": "assets/putting-grass-imagegen-mobile-6d969fa6fc-DITOlvwH.webp",
+          "bytes": 240728,
+          "sha256": "6d969fa6fc20dbebb4ad3e236a6ddb6e137209468e9c6361f1103f349dfbd122"
+        },
+        {
+          "path": "assets/rabbit-koIidLoG.glb",
+          "bytes": 2700712,
+          "sha256": "b23040e854e087bc80d7391770261557acfcd93cb5fd3e6bafbe4c8125c378e7"
+        },
+        {
+          "path": "assets/restoration-D4_FEcKa.css",
+          "bytes": 16115,
+          "sha256": "d0a2cae0a54a3461875ae485efa87eea34e6a9d26dfee515742beb19f8c8b5fb"
+        },
+        {
+          "path": "assets/restoration-DP5WLwur.js",
+          "bytes": 8907,
+          "sha256": "7fcfba40db63a79dab10ad90c4f83a222af6304b5c35379e4090cb225d8b5702"
+        },
+        {
+          "path": "assets/restoration/encoding.json",
+          "bytes": 2379,
+          "sha256": "37c3e817ef4ed90f6e6390cc928a1a272905c0ac69287c827ea0d537bdc75f6e"
+        },
+        {
+          "path": "assets/restoration/fox-cheer-v3.png",
+          "bytes": 2567042,
+          "sha256": "c8343c2c4e865a7217c84e09b943ea02ff13bb652d854a71982b60cdf69fb86b"
+        },
+        {
+          "path": "assets/restoration/fox-cheer-v3.webp",
+          "bytes": 404872,
+          "sha256": "c0f491264b2dd8c53528f985f941a4a8e36354af4006d2bb2ffb24e3d7f3a707"
+        },
+        {
+          "path": "assets/restoration/fox-idle-v3.png",
+          "bytes": 2597292,
+          "sha256": "515ad48f2d106c2d199b1884a9ed1b93a633ecaae802374c0318a2318aa219f3"
+        },
+        {
+          "path": "assets/restoration/fox-idle-v3.webp",
+          "bytes": 423958,
+          "sha256": "6cfdd879dc45f44afd8905eebb4b8e75d1ac9bafd2abc134ad55e7794292098f"
+        },
+        {
+          "path": "assets/restoration/fox-poses-v2.png",
+          "bytes": 2261441,
+          "sha256": "41d619468a7d4b5057c79b96f6756f727ee0508336390463e8b21f05f6bb1938"
+        },
+        {
+          "path": "assets/restoration/fox-poses-v2.webp",
+          "bytes": 319472,
+          "sha256": "cddeac4b0e0eb39446e06a905563f5f3686fc1db4699e7f460f977347d579516"
+        },
+        {
+          "path": "assets/restoration/fox-victory-v3.png",
+          "bytes": 2418651,
+          "sha256": "7476d1f199fc629bdc365d61faffe68886bae6927b193f0ca0e5b2bd69b9f6f2"
+        },
+        {
+          "path": "assets/restoration/fox-victory-v3.webp",
+          "bytes": 386622,
+          "sha256": "2766b905b435b6af88adea14d2a05fce028d07c5094750a2af970e5c89ddb066"
+        },
+        {
+          "path": "assets/restoration/gems-v2.png",
+          "bytes": 1937074,
+          "sha256": "2b18546c01059dad35780b2a184f8beed6ca251281d952c45719fdae376f9cd9"
+        },
+        {
+          "path": "assets/restoration/gems-v2.webp",
+          "bytes": 232572,
+          "sha256": "ec07978922b1abb7219f1402c374ba43cfcf3bb190da1bfe076755bba6d71ba7"
+        },
+        {
+          "path": "assets/restoration/ludo-awards-v3.png",
+          "bytes": 1304765,
+          "sha256": "eba5869b2e71f7100e913fa2112f318d64d25c683dc3946bfa063c7f5f113c5c"
+        },
+        {
+          "path": "assets/restoration/ludo-awards-v3.webp",
+          "bytes": 370638,
+          "sha256": "52e4a9b23a4d9fd026307999c7193b589a57e8ea0cd4890c4e4cce07bd674735"
+        },
+        {
+          "path": "assets/restoration/player-portraits-v2-mobile-e193e8ea76.webp",
+          "bytes": 223600,
+          "sha256": "e193e8ea76fdb2d4c792ee0e766892c9bfdacdb277dede533db2d57be741f997"
+        },
+        {
+          "path": "assets/restoration/player-portraits-v2.png",
+          "bytes": 2628536,
+          "sha256": "8c3c590741dcbb1314c6fc7d4dec151a5fab63cca9b48c3d087b84c87b875238"
+        },
+        {
+          "path": "assets/restoration/player-portraits-v2.webp",
+          "bytes": 375036,
+          "sha256": "de9ce532fe9dd71845797309b220eea97e529482edcebfb351a8b453e1572ace"
+        },
+        {
+          "path": "assets/restoration/prompts.json",
+          "bytes": 6175,
+          "sha256": "38a010ac736a2a3147ab414851b4bc85b80845d6ea18e8352266587e78e9aae3"
+        },
+        {
+          "path": "assets/restoration/provenance-v3.json",
+          "bytes": 1696,
+          "sha256": "984cda78166dd74e9064e26845d587572a29d046fce2011d3398a3061d4cc9b2"
+        },
+        {
+          "path": "assets/restoration/trophies-v2.png",
+          "bytes": 2279954,
+          "sha256": "4e9b7a269fbb85907b990ee2c7ad577567eb7127ae2a60e7fcda126021474cd7"
+        },
+        {
+          "path": "assets/restoration/trophies-v2.webp",
+          "bytes": 641424,
+          "sha256": "669e9f59cb0916bf78820970e2a0e535e8a4b98e81552315c337cf57f1e18dda"
+        },
+        {
+          "path": "assets/RoundedBoxGeometry-b5MFqI1P.js",
+          "bytes": 1714,
+          "sha256": "64c74c89859b172a0ffffef72917e7d0049a59153f5d68a3b78146a580b33d10"
+        },
+        {
+          "path": "assets/run-bear-v4-mobile-9b7c40a00c-g2yrkwh0.webp",
+          "bytes": 236620,
+          "sha256": "9b7c40a00c8f53e32d6988eea19dea6ca8838f726048f340138bfa45435fecc6"
+        },
+        {
+          "path": "assets/run-cat-v4-mobile-e8ac410768-9dJJCoq2.webp",
+          "bytes": 222070,
+          "sha256": "e8ac4107684e9b5e2f39015e15b4351bddc5103e0a72a22983cd428c0f9ece76"
+        },
+        {
+          "path": "assets/run-fox-v4-mobile-bd3571fd7e-DFRwfUro.webp",
+          "bytes": 249470,
+          "sha256": "bd3571fd7e15ec4d237cb37d899913ce09acf036f72c64c27337525b49f42f31"
+        },
+        {
+          "path": "assets/run-rabbit-v4-mobile-415ab8b203-AMHUm-8w.webp",
+          "bytes": 204948,
+          "sha256": "415ab8b203d6da213598f8763a60abcb6cd7b03c1236a59c1ed4f5ff68fcc569"
+        },
+        {
+          "path": "assets/RunGame-3ucv_Ht6.js",
+          "bytes": 39820,
+          "sha256": "00f9966a1f0eefeaa8a42a671ae6750a4da56c0898375e5efee058764fdd4947"
+        },
+        {
+          "path": "assets/RunGame-Dh0XzvCz.css",
+          "bytes": 17062,
+          "sha256": "7855e777b36f3e5252ed99075310045df4e4b52bac6f2747c766708c7a112f9e"
+        },
+        {
+          "path": "assets/RunPodium-CFHmEyfF.js",
+          "bytes": 5387,
+          "sha256": "7422090f3dd410bedb30a6347588504694d1ab89994df10da1399b400ac9e8c6"
+        },
+        {
+          "path": "assets/sandstone-normal-Drz1pQ2o.webp",
+          "bytes": 72418,
+          "sha256": "beefd77af69d4d2c382e5fef4fa6ff18076c2e0dc24cf0e4dbe959a6729ed560"
+        },
+        {
+          "path": "assets/shield-DJL6xo2q.js",
+          "bytes": 455,
+          "sha256": "d2ecfaa4b8ceb279972577d9fa72d67cefb9096d73a1b5f5cf69cf54bcde96b0"
+        },
+        {
+          "path": "assets/sky-backdrop-D7eGxcbw.webp",
+          "bytes": 147760,
+          "sha256": "9daa06af15a193ca76f81dc04c8c0db12d591423be58a8b48b7f234378692569"
+        },
+        {
+          "path": "assets/soldiers-atlas-B8kYpEYv.webp",
+          "bytes": 410542,
+          "sha256": "b9e351878c376e875972b0d96a798f0da2ebba8acbfa6044edcf54ae45a902ef"
+        },
+        {
+          "path": "assets/swipe-gesture-CHDjwh3E.js",
+          "bytes": 790,
+          "sha256": "754b6569be647a504cc382bdc4a8dec16e846eef089b7ff32b639acb431829df"
+        },
+        {
+          "path": "assets/three-BKn1zrSO.js",
+          "bytes": 589010,
+          "sha256": "81b84093e6524b23392fa5062543903da0ee49930652185e704bf70c36e40e77"
+        },
+        {
+          "path": "assets/tower-assets-BHWNFwh7.js",
+          "bytes": 2730,
+          "sha256": "f730bb0157c15da608b5a16664be3fe75828fdd2c2971b409e4b109fa5faaf83"
+        },
+        {
+          "path": "assets/TowerLinkGame-58V_J1r5.css",
+          "bytes": 31517,
+          "sha256": "2d59e3a7cdf8c34d585a15d4dd4a86cdc40597b152f748ff0c7a996039eff5f1"
+        },
+        {
+          "path": "assets/TowerLinkGame-Z0OkfKvW.js",
+          "bytes": 44144,
+          "sha256": "6432bebd7a471d32bec4c9840df8072c0feebbb547617773a52f49d5c05918ef"
+        },
+        {
+          "path": "assets/trophy-slCmj_47.js",
+          "bytes": 462,
+          "sha256": "6dee6ebfa779c7b71f1c643cf189a772d7353651ebfad73c9ebd5c353d287efa"
+        },
+        {
+          "path": "assets/visible-interval-Dbrk6cuD.js",
+          "bytes": 332,
+          "sha256": "dddf690a20e322f5b17d4df83ba11e4fb17bbb5d192f7c6bb17ede202fc87dc6"
+        },
+        {
+          "path": "favicon.svg",
+          "bytes": 686,
+          "sha256": "8c21f04f37691e06ba758e022d783b6de0bc90c7d085c20a9b2262c77c3bfe28"
+        },
+        {
+          "path": "index.html",
+          "bytes": 549,
+          "sha256": "e40ff10cc4737c7bbe2853b2b6dad5e620a7b2215db309bab0fa6ab2a0d5611a"
+        }
+      ],
+      "total_bytes": 57271454,
+      "tree_sha256": "3da62bb78a913d7a321b1f0f1b84c3724c4181efe8b42dee8b11217e13c567a4"
+    },
+    "legacy": {
+      "source": "/Users/tyym/Documents/codes/game/platform/legacy/dist",
+      "files": [
+        {
+          "path": "assets/hero-character-mobile-d5cc5f4d2e.webp",
+          "bytes": 459812,
+          "sha256": "d5cc5f4d2e014578d04461d0b8b4c71d0bb6c8ad4fa23225d2a38640c3d7de54"
+        },
+        {
+          "path": "assets/hero-character.png",
+          "bytes": 2270296,
+          "sha256": "51262c4660b0e3b31bda24d7a21cdae058f73a889d561e5be553e6a31616638c"
+        },
+        {
+          "path": "assets/hero-scene-mobile-b14b40ee3c.webp",
+          "bytes": 458916,
+          "sha256": "b14b40ee3c989ff46874934727010e9ea77905bca1734c68c82b4d4ef4efc86c"
+        },
+        {
+          "path": "assets/hero-scene.png",
+          "bytes": 2614001,
+          "sha256": "fd9cd0901fbe4e91b26288ef692e458cfe9bb34a95833abbeb3ce58a051a5efc"
+        },
+        {
+          "path": "assets/spin-ornament.svg",
+          "bytes": 1330,
+          "sha256": "9274e5426f568c7d807282dab46e36f3b7a9cf8977cbd3c253457f5b5b17bab4"
+        },
+        {
+          "path": "assets/throne-deck-mobile-a3d5b6d29f.webp",
+          "bytes": 532932,
+          "sha256": "a3d5b6d29f8d21081a69fe9f805b0ed23c94c20a75eac76a654008bef4258b54"
+        },
+        {
+          "path": "assets/throne-deck.png",
+          "bytes": 2817241,
+          "sha256": "1560b3e2c0e861fd4509a71babb0a6efbdd62b29305f5b362f8232766aebecea"
+        },
+        {
+          "path": "assets/throne-platform.svg",
+          "bytes": 3905,
+          "sha256": "61101c3bee39f2b3aba01ca06321b1fbba319419a604b867eb804fb36eaedfc6"
+        },
+        {
+          "path": "assets/thunder-free-mobile-945e9aec53.webp",
+          "bytes": 518116,
+          "sha256": "945e9aec53add53379265bf0dcd11669c6294eb8262d62d18c65eaf19d66e490"
+        },
+        {
+          "path": "assets/thunder-free.png",
+          "bytes": 2798377,
+          "sha256": "1f41f5663f81b131cfb5018edba41d51b7a5cd119c231020d613c00f8d06ac9c"
+        },
+        {
+          "path": "assets/thunder-main-mobile-d6c646ceb2.webp",
+          "bytes": 499608,
+          "sha256": "d6c646ceb249d4d47dc0a905da6d5eaa26f50475344c5fd138b7cbc5fb3c0074"
+        },
+        {
+          "path": "assets/thunder-main.png",
+          "bytes": 2781163,
+          "sha256": "5c5a75b808a20d1470badfde6caa775d89ef56df9b97ef1889264faca26f7118"
+        },
+        {
+          "path": "assets/tiger/character-blink-mobile-1a08e4e887.webp",
+          "bytes": 353524,
+          "sha256": "1a08e4e887c58fce270a65c43443f7ca304d1be65436837eb812f962384cdfc7"
+        },
+        {
+          "path": "assets/tiger/character-blink.png",
+          "bytes": 1995548,
+          "sha256": "9dfeaae827bb10ac5fcd0ba202af690188bb0e282b5e4517fd26acdba53e000b"
+        },
+        {
+          "path": "assets/tiger/character-idle-mobile-f603443652.webp",
+          "bytes": 463182,
+          "sha256": "f60344365272df04af9aee2d75e720ecf014b9d1aa8e13ffb8b81100a864fd90"
+        },
+        {
+          "path": "assets/tiger/character-idle.png",
+          "bytes": 2163783,
+          "sha256": "a42dea0816863515c6b8464daf5ac4024139312fd9a85a0e457a601c35e40bd5"
+        },
+        {
+          "path": "assets/tiger/character-win-mobile-1d1da61527.webp",
+          "bytes": 396802,
+          "sha256": "1d1da61527aa0b660b1f1627ded9328bcc7b90f38d201b6a29550a9ba3b27363"
+        },
+        {
+          "path": "assets/tiger/character-win.png",
+          "bytes": 2105780,
+          "sha256": "3ee61a679249883390a7da4bf3d07e4860ac6936f98f9d1a550b0ecb4b60c20f"
+        },
+        {
+          "path": "assets/tiger/scene-mobile-e7cfec1c28.webp",
+          "bytes": 350710,
+          "sha256": "e7cfec1c28d0a6bf69c1c8c4c0d78ec02e0c38e3449e5f31b4c1b0b23d298764"
+        },
+        {
+          "path": "assets/tiger/scene.png",
+          "bytes": 2379737,
+          "sha256": "d6e12df05af51dc13d34a7d2aab4b721a7834040afdc12b6898d5cd957013e56"
+        },
+        {
+          "path": "assets/tiger/symbols-mobile-9df608fad1.webp",
+          "bytes": 514216,
+          "sha256": "9df608fad198cc319ca17ef10c9070bcccb153be80ce192dedb964afe780c725"
+        },
+        {
+          "path": "assets/tiger/symbols.png",
+          "bytes": 2077785,
+          "sha256": "810d3a6ce5c32acdb63c5053077a349dbadf2653fd7ed6b8f71d4fe03bae78ba"
+        },
+        {
+          "path": "bundles/audio-worker-BXDNGBSK.js",
+          "bytes": 3644,
+          "sha256": "5ef1724be569c2fc0ada1e9764588147c393f3476cccb4bc0be51d94eee82459"
+        },
+        {
+          "path": "bundles/audio-worker-sixy99c5.js",
+          "bytes": 3644,
+          "sha256": "b7b663c05679bd710c21708ac0b6449a31aeff50312236931f2e98960dab00d7"
+        },
+        {
+          "path": "bundles/bridge-DO-fhwLV.js",
+          "bytes": 11227,
+          "sha256": "26e277e696308d8d1b07e052d1235834991439402deb4e1d2a5e3c8f066b2480"
+        },
+        {
+          "path": "bundles/main-DIyG4Ubw.css",
+          "bytes": 37869,
+          "sha256": "15d1b79b4bc4e1d5dcc70441be62dd178472e26c7a002d37b69e6ba991b24702"
+        },
+        {
+          "path": "bundles/main-DkhA9Ip_.js",
+          "bytes": 72599,
+          "sha256": "ed86130de24fff6351514a100ade31a26bb48da743f02876f01de4f7c7ebaa00"
+        },
+        {
+          "path": "bundles/main-DRZh0Phe.css",
+          "bytes": 57342,
+          "sha256": "ff6151dd855f7953c49c7cecae9e94b3facdf52b07bd23c8821f7ea9cc98dde7"
+        },
+        {
+          "path": "bundles/main-etqfBxHU.js",
+          "bytes": 53724,
+          "sha256": "c18cd2f18ba3ef12455797d647e6aea3236e7fe9d714a4b71af613e4cac9f64d"
+        },
+        {
+          "path": "bundles/thunder-eAoIyKcl.js",
+          "bytes": 938,
+          "sha256": "73feb8bb9c823c1a528a5e30e3127815694eda846d61b216981dad7d6f69f360"
+        },
+        {
+          "path": "bundles/tiger-2xhQ2l2Z.js",
+          "bytes": 961,
+          "sha256": "ad8bd264dfa938b155025d34f6350c8e5e5e306f0c0a23a1d1eade9f911bd027"
+        },
+        {
+          "path": "favicon.svg",
+          "bytes": 177,
+          "sha256": "6da0c5574fee5e9a17a4a1d8ad65986d24ae9957ea64fac05a75fb224724d44f"
+        },
+        {
+          "path": "thunder.html",
+          "bytes": 803,
+          "sha256": "16b4bd3dbd22501a07e256e856bf162dbad300287266c4f406c84849897022df"
+        },
+        {
+          "path": "tiger-favicon.svg",
+          "bytes": 410,
+          "sha256": "bc7da54899353690cd7a90acaf354bfcddf51dd5fd888578a22626d67153f542"
+        },
+        {
+          "path": "tiger.html",
+          "bytes": 660,
+          "sha256": "c7975b8e6e777f02ae29d3b5f5a715e14e6559181b67df862c449bd84edf906a"
+        }
+      ],
+      "total_bytes": 28800762,
+      "tree_sha256": "77b1d84f5382780e43a7ed242d10e881ffcb435f3b79d85b4fbb3df16853dfa6"
+    }
+  },
+  "measurement_build_id": "b388071c3eca1ffbf3033b0c149d9da096d87bdf7cddcc8513b914dad26a0507",
+  "origin": "http://localhost:51639",
+  "protocol_probe": {
+    "catalog_count": 13,
+    "launches": [
+      {
+        "game": "match",
+        "launch_status": 200,
+        "exchange_status": 200,
+        "session_status": 200,
+        "native_host": true,
+        "production_entry": true
+      },
+      {
+        "game": "thunder",
+        "launch_status": 200,
+        "exchange_status": 200,
+        "session_status": 200,
+        "native_host": true,
+        "production_entry": true
+      },
+      {
+        "game": "tiger",
+        "launch_status": 200,
+        "exchange_status": 200,
+        "session_status": 200,
+        "native_host": true,
+        "production_entry": true
+      }
+    ],
+    "static_cache": {
+      "path": "/arena/assets/index-CHXInRD8.js",
+      "first_status": 200,
+      "encoded_bytes": 114454,
+      "decoded_bytes": 306744,
+      "content_encoding": "gzip",
+      "cache_control": "public,max-age=31536000,immutable",
+      "conditional_status": 304,
+      "conditional_body_bytes": 0
+    },
+    "browser_started": false
+  },
+  "ready_at": "2026-09-28T12:09:36.001Z",
+  "command": {
+    "program": "/Users/tyym/.hermes/node/bin/node",
+    "args": [
+      "arena/run/qa/lobby-roster-review.mjs"
+    ],
+    "result": {
+      "code": 0,
+      "signal": null
+    }
+  },
+  "terminal_readback": {
+    "rooms": [],
+    "cycles": [],
+    "active_users": 0,
+    "pending_presentations": 0
+  },
+  "session_cleanup_complete": true,
+  "source_changes_during_run": [],
+  "finished_at": "2026-09-28T12:09:37.249Z"
+}

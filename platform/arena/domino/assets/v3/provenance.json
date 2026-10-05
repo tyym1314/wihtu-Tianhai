@@ -1,0 +1,26 @@
+{
+  "reference": "output/design/pvp-arena-concepts-v1/09-domino.png",
+  "board_original": "/Users/tyym/.codex/generated_images/01a0b06a-2b67-73d2-8819-3164d148773c/exec-bf204bc1-cba9-414d-924a-25c3d536defe.png",
+  "guide": "geometry-guide.svg / geometry-guide.png",
+  "complete_prompt": "board-prompt.txt",
+  "runtime": "board-material.webp",
+  "encoding": "cwebp q92 alpha_q100, original PNG retained; no crop/resize/paint postprocessing",
+  "blender": "render-tile.py / ivory-tile-source.blend",
+  "runtime_geometry": "Brushed gold perimeter and woven blue felt are an empty material layer; tile chain, endpoints and pips remain actual SVG data. Original Blender ivory tile body is shared by hand, chain and flights. New independent night palace background replaces the previous flat environment. No domino/pips/UI are baked in any backdrop.",
+  "files": [
+    {
+      "path": "board-material.webp",
+      "bytes": 519136
+    },
+    {
+      "path": "ivory-tile.webp",
+      "bytes": 6172
+    },
+    {
+      "path": "palace.webp",
+      "bytes": 213986
+    }
+  ],
+  "environment_original": "/Users/tyym/.codex/generated_images/01a0b06a-2b67-73d2-8819-3164d148773c/exec-d7bdbed4-3cd7-4f54-91cd-7c82cc28781a.png",
+  "environment_prompt": "palace-prompt.txt"
+}

@@ -1,0 +1,4515 @@
+{
+  "scope": "Pure authoritative engine replay. Human skill, device performance and production acceptance remain separate.",
+  "generatedAt": "2026-09-28T11:14:57.195Z",
+  "cases": [
+    {
+      "seed": "0000000000000000000000000000000000000000000000000000000000000000",
+      "objective": {
+        "id": "score",
+        "target": 1000,
+        "title": {
+          "zh": "连锁积分赛",
+          "en": "Cascade Score",
+          "ar": "نقاط السلسلة"
+        },
+        "color": null
+      },
+      "trace": [
+        {
+          "at": 0,
+          "action": {
+            "type": "swap",
+            "from": 20,
+            "to": 26
+          },
+          "valid": true,
+          "score": 310,
+          "objectiveProgress": 310,
+          "waves": 3
+        },
+        {
+          "at": 1500,
+          "action": {
+            "type": "swap",
+            "from": 9,
+            "to": 10
+          },
+          "valid": true,
+          "score": 420,
+          "objectiveProgress": 420,
+          "waves": 2
+        },
+        {
+          "at": 2550,
+          "action": {
+            "type": "swap",
+            "from": 16,
+            "to": 22
+          },
+          "valid": true,
+          "score": 550,
+          "objectiveProgress": 550,
+          "waves": 1
+        },
+        {
+          "at": 3150,
+          "action": {
+            "type": "swap",
+            "from": 21,
+            "to": 22
+          },
+          "valid": true,
+          "score": 670,
+          "objectiveProgress": 670,
+          "waves": 1
+        },
+        {
+          "at": 3750,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 20
+          },
+          "valid": true,
+          "score": 750,
+          "objectiveProgress": 750,
+          "waves": 1
+        },
+        {
+          "at": 4350,
+          "action": {
+            "type": "swap",
+            "from": 20,
+            "to": 26
+          },
+          "valid": true,
+          "score": 850,
+          "objectiveProgress": 850,
+          "waves": 1
+        },
+        {
+          "at": 4950,
+          "action": {
+            "type": "swap",
+            "from": 26,
+            "to": 32
+          },
+          "valid": true,
+          "score": 970,
+          "objectiveProgress": 970,
+          "waves": 2
+        },
+        {
+          "at": 6000,
+          "action": {
+            "type": "swap",
+            "from": 4,
+            "to": 10
+          },
+          "valid": true,
+          "score": 1010,
+          "objectiveProgress": 1010,
+          "waves": 1
+        },
+        {
+          "at": 6600,
+          "action": {
+            "type": "swap",
+            "from": 27,
+            "to": 28
+          },
+          "valid": true,
+          "score": 1120,
+          "objectiveProgress": 1120,
+          "waves": 1
+        },
+        {
+          "at": 7200,
+          "action": {
+            "type": "swap",
+            "from": 6,
+            "to": 12
+          },
+          "valid": true,
+          "score": 1150,
+          "objectiveProgress": 1150,
+          "waves": 1
+        },
+        {
+          "at": 7800,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 21
+          },
+          "valid": true,
+          "score": 1340,
+          "objectiveProgress": 1340,
+          "waves": 3
+        },
+        {
+          "at": 9300,
+          "action": {
+            "type": "swap",
+            "from": 13,
+            "to": 19
+          },
+          "valid": true,
+          "score": 1400,
+          "objectiveProgress": 1400,
+          "waves": 1
+        },
+        {
+          "at": 9900,
+          "action": {
+            "type": "swap",
+            "from": 18,
+            "to": 19
+          },
+          "valid": true,
+          "score": 1580,
+          "objectiveProgress": 1580,
+          "waves": 2
+        },
+        {
+          "at": 10950,
+          "action": {
+            "type": "swap",
+            "from": 18,
+            "to": 19
+          },
+          "valid": true,
+          "score": 1660,
+          "objectiveProgress": 1660,
+          "waves": 1
+        },
+        {
+          "at": 11550,
+          "action": {
+            "type": "swap",
+            "from": 25,
+            "to": 31
+          },
+          "valid": true,
+          "score": 2510,
+          "objectiveProgress": 2510,
+          "waves": 6
+        },
+        {
+          "at": 14400,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 20
+          },
+          "valid": true,
+          "score": 2590,
+          "objectiveProgress": 2590,
+          "waves": 1
+        },
+        {
+          "at": 15000,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 16
+          },
+          "valid": true,
+          "score": 2630,
+          "objectiveProgress": 2630,
+          "waves": 1
+        },
+        {
+          "at": 15600,
+          "action": {
+            "type": "swap",
+            "from": 27,
+            "to": 28
+          },
+          "valid": true,
+          "score": 2690,
+          "objectiveProgress": 2690,
+          "waves": 1
+        },
+        {
+          "at": 16200,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 3
+          },
+          "valid": true,
+          "score": 2780,
+          "objectiveProgress": 2780,
+          "waves": 2
+        },
+        {
+          "at": 17250,
+          "action": {
+            "type": "swap",
+            "from": 6,
+            "to": 12
+          },
+          "valid": true,
+          "score": 2810,
+          "objectiveProgress": 2810,
+          "waves": 1
+        },
+        {
+          "at": 17850,
+          "action": {
+            "type": "swap",
+            "from": 24,
+            "to": 30
+          },
+          "valid": true,
+          "score": 2860,
+          "objectiveProgress": 2860,
+          "waves": 1
+        },
+        {
+          "at": 18450,
+          "action": {
+            "type": "swap",
+            "from": 18,
+            "to": 24
+          },
+          "valid": true,
+          "score": 2920,
+          "objectiveProgress": 2920,
+          "waves": 1
+        },
+        {
+          "at": 19050,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 1
+          },
+          "valid": true,
+          "score": 2950,
+          "objectiveProgress": 2950,
+          "waves": 1
+        },
+        {
+          "at": 19650,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 2980,
+          "objectiveProgress": 2980,
+          "waves": 1
+        },
+        {
+          "at": 20250,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 16
+          },
+          "valid": true,
+          "score": 3020,
+          "objectiveProgress": 3020,
+          "waves": 1
+        },
+        {
+          "at": 20850,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 16
+          },
+          "valid": true,
+          "score": 3110,
+          "objectiveProgress": 3110,
+          "waves": 1
+        },
+        {
+          "at": 21450,
+          "action": {
+            "type": "swap",
+            "from": 13,
+            "to": 14
+          },
+          "valid": true,
+          "score": 3140,
+          "objectiveProgress": 3140,
+          "waves": 1
+        },
+        {
+          "at": 22050,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 4
+          },
+          "valid": true,
+          "score": 3170,
+          "objectiveProgress": 3170,
+          "waves": 1
+        },
+        {
+          "at": 22650,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 3200,
+          "objectiveProgress": 3200,
+          "waves": 1
+        },
+        {
+          "at": 23250,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 3
+          },
+          "valid": true,
+          "score": 3230,
+          "objectiveProgress": 3230,
+          "waves": 1
+        },
+        {
+          "at": 23850,
+          "action": {
+            "type": "swap",
+            "from": 7,
+            "to": 13
+          },
+          "valid": true,
+          "score": 3260,
+          "objectiveProgress": 3260,
+          "waves": 1
+        },
+        {
+          "at": 24450,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 7
+          },
+          "valid": true,
+          "score": 3350,
+          "objectiveProgress": 3350,
+          "waves": 2
+        },
+        {
+          "at": 25500,
+          "action": {
+            "type": "swap",
+            "from": 19,
+            "to": 20
+          },
+          "valid": true,
+          "score": 3490,
+          "objectiveProgress": 3490,
+          "waves": 2
+        },
+        {
+          "at": 26550,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 14
+          },
+          "valid": true,
+          "score": 3700,
+          "objectiveProgress": 3700,
+          "waves": 2
+        },
+        {
+          "at": 27600,
+          "action": {
+            "type": "swap",
+            "from": 20,
+            "to": 26
+          },
+          "valid": true,
+          "score": 3760,
+          "objectiveProgress": 3760,
+          "waves": 1
+        },
+        {
+          "at": 28200,
+          "action": {
+            "type": "swap",
+            "from": 20,
+            "to": 21
+          },
+          "valid": true,
+          "score": 3880,
+          "objectiveProgress": 3880,
+          "waves": 2
+        },
+        {
+          "at": 29250,
+          "action": {
+            "type": "swap",
+            "from": 19,
+            "to": 25
+          },
+          "valid": true,
+          "score": 3910,
+          "objectiveProgress": 3910,
+          "waves": 1
+        },
+        {
+          "at": 29850,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 7
+          },
+          "valid": true,
+          "score": 4060,
+          "objectiveProgress": 4060,
+          "waves": 2
+        },
+        {
+          "at": 30900,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 4360,
+          "objectiveProgress": 4360,
+          "waves": 3
+        },
+        {
+          "at": 32400,
+          "action": {
+            "type": "swap",
+            "from": 13,
+            "to": 14
+          },
+          "valid": true,
+          "score": 4520,
+          "objectiveProgress": 4520,
+          "waves": 2
+        },
+        {
+          "at": 33450,
+          "action": {
+            "type": "swap",
+            "from": 6,
+            "to": 7
+          },
+          "valid": true,
+          "score": 4600,
+          "objectiveProgress": 4600,
+          "waves": 1
+        },
+        {
+          "at": 34050,
+          "action": {
+            "type": "swap",
+            "from": 18,
+            "to": 24
+          },
+          "valid": true,
+          "score": 5020,
+          "objectiveProgress": 5020,
+          "waves": 3
+        },
+        {
+          "at": 35550,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 7
+          },
+          "valid": true,
+          "score": 5060,
+          "objectiveProgress": 5060,
+          "waves": 1
+        },
+        {
+          "at": 36150,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 5150,
+          "objectiveProgress": 5150,
+          "waves": 1
+        },
+        {
+          "at": 36750,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 6
+          },
+          "valid": true,
+          "score": 5180,
+          "objectiveProgress": 5180,
+          "waves": 1
+        },
+        {
+          "at": 37350,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 1
+          },
+          "valid": true,
+          "score": 5210,
+          "objectiveProgress": 5210,
+          "waves": 1
+        },
+        {
+          "at": 37950,
+          "action": {
+            "type": "swap",
+            "from": 13,
+            "to": 14
+          },
+          "valid": true,
+          "score": 5380,
+          "objectiveProgress": 5380,
+          "waves": 2
+        },
+        {
+          "at": 39000,
+          "action": {
+            "type": "swap",
+            "from": 26,
+            "to": 32
+          },
+          "valid": true,
+          "score": 5710,
+          "objectiveProgress": 5710,
+          "waves": 3
+        },
+        {
+          "at": 40500,
+          "action": {
+            "type": "swap",
+            "from": 12,
+            "to": 18
+          },
+          "valid": true,
+          "score": 5860,
+          "objectiveProgress": 5860,
+          "waves": 1
+        },
+        {
+          "at": 41100,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 14
+          },
+          "valid": true,
+          "score": 6350,
+          "objectiveProgress": 6350,
+          "waves": 4
+        },
+        {
+          "at": 43050,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 21
+          },
+          "valid": true,
+          "score": 6440,
+          "objectiveProgress": 6440,
+          "waves": 1
+        },
+        {
+          "at": 43650,
+          "action": {
+            "type": "swap",
+            "from": 19,
+            "to": 25
+          },
+          "valid": true,
+          "score": 6630,
+          "objectiveProgress": 6630,
+          "waves": 3
+        },
+        {
+          "at": 45150,
+          "action": {
+            "type": "swap",
+            "from": 20,
+            "to": 26
+          },
+          "valid": true,
+          "score": 6840,
+          "objectiveProgress": 6840,
+          "waves": 3
+        },
+        {
+          "at": 46650,
+          "action": {
+            "type": "swap",
+            "from": 27,
+            "to": 33
+          },
+          "valid": true,
+          "score": 6880,
+          "objectiveProgress": 6880,
+          "waves": 1
+        },
+        {
+          "at": 47250,
+          "action": {
+            "type": "swap",
+            "from": 26,
+            "to": 27
+          },
+          "valid": true,
+          "score": 6940,
+          "objectiveProgress": 6940,
+          "waves": 1
+        },
+        {
+          "at": 47850,
+          "action": {
+            "type": "swap",
+            "from": 18,
+            "to": 19
+          },
+          "valid": true,
+          "score": 7020,
+          "objectiveProgress": 7020,
+          "waves": 1
+        },
+        {
+          "at": 48450,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 2
+          },
+          "valid": true,
+          "score": 7070,
+          "objectiveProgress": 7070,
+          "waves": 1
+        },
+        {
+          "at": 49050,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 15
+          },
+          "valid": true,
+          "score": 7220,
+          "objectiveProgress": 7220,
+          "waves": 2
+        },
+        {
+          "at": 50100,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 2
+          },
+          "valid": true,
+          "score": 7270,
+          "objectiveProgress": 7270,
+          "waves": 1
+        },
+        {
+          "at": 50700,
+          "action": {
+            "type": "swap",
+            "from": 13,
+            "to": 14
+          },
+          "valid": true,
+          "score": 7370,
+          "objectiveProgress": 7370,
+          "waves": 1
+        },
+        {
+          "at": 51300,
+          "action": {
+            "type": "swap",
+            "from": 24,
+            "to": 30
+          },
+          "valid": true,
+          "score": 7430,
+          "objectiveProgress": 7430,
+          "waves": 1
+        },
+        {
+          "at": 51900,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 7460,
+          "objectiveProgress": 7460,
+          "waves": 1
+        },
+        {
+          "at": 52500,
+          "action": {
+            "type": "swap",
+            "from": 4,
+            "to": 10
+          },
+          "valid": true,
+          "score": 7490,
+          "objectiveProgress": 7490,
+          "waves": 1
+        },
+        {
+          "at": 53100,
+          "action": {
+            "type": "swap",
+            "from": 9,
+            "to": 15
+          },
+          "valid": true,
+          "score": 7580,
+          "objectiveProgress": 7580,
+          "waves": 2
+        },
+        {
+          "at": 54150,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 16
+          },
+          "valid": true,
+          "score": 7640,
+          "objectiveProgress": 7640,
+          "waves": 1
+        },
+        {
+          "at": 54750,
+          "action": {
+            "type": "swap",
+            "from": 4,
+            "to": 5
+          },
+          "valid": true,
+          "score": 7670,
+          "objectiveProgress": 7670,
+          "waves": 1
+        },
+        {
+          "at": 55350,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 16
+          },
+          "valid": true,
+          "score": 7700,
+          "objectiveProgress": 7700,
+          "waves": 1
+        },
+        {
+          "at": 55950,
+          "action": {
+            "type": "swap",
+            "from": 16,
+            "to": 22
+          },
+          "valid": true,
+          "score": 7730,
+          "objectiveProgress": 7730,
+          "waves": 1
+        },
+        {
+          "at": 56550,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 16
+          },
+          "valid": true,
+          "score": 7760,
+          "objectiveProgress": 7760,
+          "waves": 1
+        },
+        {
+          "at": 57150,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 16
+          },
+          "valid": true,
+          "score": 8010,
+          "objectiveProgress": 8010,
+          "waves": 3
+        },
+        {
+          "at": 58650,
+          "action": {
+            "type": "swap",
+            "from": 4,
+            "to": 10
+          },
+          "valid": true,
+          "score": 8110,
+          "objectiveProgress": 8110,
+          "waves": 1
+        },
+        {
+          "at": 59250,
+          "action": {
+            "type": "swap",
+            "from": 4,
+            "to": 10
+          },
+          "valid": true,
+          "score": 8230,
+          "objectiveProgress": 8230,
+          "waves": 2
+        },
+        {
+          "at": 60300,
+          "action": {
+            "type": "swap",
+            "from": 9,
+            "to": 15
+          },
+          "valid": true,
+          "score": 8360,
+          "objectiveProgress": 8360,
+          "waves": 2
+        },
+        {
+          "at": 61350,
+          "action": {
+            "type": "swap",
+            "from": 19,
+            "to": 20
+          },
+          "valid": true,
+          "score": 8400,
+          "objectiveProgress": 8400,
+          "waves": 1
+        },
+        {
+          "at": 61950,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 4
+          },
+          "valid": true,
+          "score": 8840,
+          "objectiveProgress": 8840,
+          "waves": 3
+        },
+        {
+          "at": 63450,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 7
+          },
+          "valid": true,
+          "score": 9010,
+          "objectiveProgress": 9010,
+          "waves": 2
+        },
+        {
+          "at": 64500,
+          "action": {
+            "type": "swap",
+            "from": 4,
+            "to": 10
+          },
+          "valid": true,
+          "score": 9050,
+          "objectiveProgress": 9050,
+          "waves": 1
+        },
+        {
+          "at": 65100,
+          "action": {
+            "type": "swap",
+            "from": 22,
+            "to": 23
+          },
+          "valid": true,
+          "score": 9770,
+          "objectiveProgress": 9770,
+          "waves": 4
+        },
+        {
+          "at": 67050,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 3
+          },
+          "valid": true,
+          "score": 9830,
+          "objectiveProgress": 9830,
+          "waves": 1
+        },
+        {
+          "at": 67650,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 16
+          },
+          "valid": true,
+          "score": 9900,
+          "objectiveProgress": 9900,
+          "waves": 1
+        },
+        {
+          "at": 68250,
+          "action": {
+            "type": "swap",
+            "from": 27,
+            "to": 28
+          },
+          "valid": true,
+          "score": 10000,
+          "objectiveProgress": 10000,
+          "waves": 1
+        },
+        {
+          "at": 68850,
+          "action": {
+            "type": "swap",
+            "from": 25,
+            "to": 31
+          },
+          "valid": true,
+          "score": 10060,
+          "objectiveProgress": 10060,
+          "waves": 1
+        },
+        {
+          "at": 69450,
+          "action": {
+            "type": "swap",
+            "from": 27,
+            "to": 33
+          },
+          "valid": true,
+          "score": 10120,
+          "objectiveProgress": 10120,
+          "waves": 1
+        },
+        {
+          "at": 70050,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 10160,
+          "objectiveProgress": 10160,
+          "waves": 1
+        },
+        {
+          "at": 70650,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 2
+          },
+          "valid": true,
+          "score": 10220,
+          "objectiveProgress": 10220,
+          "waves": 1
+        },
+        {
+          "at": 71250,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 1
+          },
+          "valid": true,
+          "score": 10250,
+          "objectiveProgress": 10250,
+          "waves": 1
+        },
+        {
+          "at": 71850,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 7
+          },
+          "valid": true,
+          "score": 10280,
+          "objectiveProgress": 10280,
+          "waves": 1
+        },
+        {
+          "at": 72450,
+          "action": {
+            "type": "swap",
+            "from": 4,
+            "to": 5
+          },
+          "valid": true,
+          "score": 10310,
+          "objectiveProgress": 10310,
+          "waves": 1
+        },
+        {
+          "at": 73050,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 14
+          },
+          "valid": true,
+          "score": 10340,
+          "objectiveProgress": 10340,
+          "waves": 1
+        },
+        {
+          "at": 73650,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 10370,
+          "objectiveProgress": 10370,
+          "waves": 1
+        },
+        {
+          "at": 74250,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 15
+          },
+          "valid": true,
+          "score": 10430,
+          "objectiveProgress": 10430,
+          "waves": 1
+        },
+        {
+          "at": 74850,
+          "action": {
+            "type": "swap",
+            "from": 6,
+            "to": 7
+          },
+          "valid": true,
+          "score": 10470,
+          "objectiveProgress": 10470,
+          "waves": 1
+        },
+        {
+          "at": 75450,
+          "action": {
+            "type": "swap",
+            "from": 20,
+            "to": 21
+          },
+          "valid": true,
+          "score": 10510,
+          "objectiveProgress": 10510,
+          "waves": 1
+        },
+        {
+          "at": 76050,
+          "action": {
+            "type": "swap",
+            "from": 28,
+            "to": 34
+          },
+          "valid": true,
+          "score": 10920,
+          "objectiveProgress": 10920,
+          "waves": 4
+        },
+        {
+          "at": 78000,
+          "action": {
+            "type": "swap",
+            "from": 12,
+            "to": 18
+          },
+          "valid": true,
+          "score": 10980,
+          "objectiveProgress": 10980,
+          "waves": 1
+        },
+        {
+          "at": 78600,
+          "action": {
+            "type": "swap",
+            "from": 13,
+            "to": 19
+          },
+          "valid": true,
+          "score": 11020,
+          "objectiveProgress": 11020,
+          "waves": 1
+        },
+        {
+          "at": 79200,
+          "action": {
+            "type": "swap",
+            "from": 7,
+            "to": 13
+          },
+          "valid": true,
+          "score": 11080,
+          "objectiveProgress": 11080,
+          "waves": 1
+        },
+        {
+          "at": 79800,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 4
+          },
+          "valid": true,
+          "score": 11110,
+          "objectiveProgress": 11110,
+          "waves": 1
+        },
+        {
+          "at": 80400,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 3
+          },
+          "valid": true,
+          "score": 11200,
+          "objectiveProgress": 11200,
+          "waves": 2
+        },
+        {
+          "at": 81450,
+          "action": {
+            "type": "swap",
+            "from": 4,
+            "to": 10
+          },
+          "valid": true,
+          "score": 11260,
+          "objectiveProgress": 11260,
+          "waves": 1
+        },
+        {
+          "at": 82050,
+          "action": {
+            "type": "swap",
+            "from": 6,
+            "to": 7
+          },
+          "valid": true,
+          "score": 11290,
+          "objectiveProgress": 11290,
+          "waves": 1
+        },
+        {
+          "at": 82650,
+          "action": {
+            "type": "swap",
+            "from": 18,
+            "to": 19
+          },
+          "valid": true,
+          "score": 11480,
+          "objectiveProgress": 11480,
+          "waves": 3
+        },
+        {
+          "at": 84150,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 20
+          },
+          "valid": true,
+          "score": 11550,
+          "objectiveProgress": 11550,
+          "waves": 1
+        },
+        {
+          "at": 84750,
+          "action": {
+            "type": "swap",
+            "from": 26,
+            "to": 27
+          },
+          "valid": true,
+          "score": 11710,
+          "objectiveProgress": 11710,
+          "waves": 2
+        },
+        {
+          "at": 85800,
+          "action": {
+            "type": "swap",
+            "from": 24,
+            "to": 30
+          },
+          "valid": true,
+          "score": 11770,
+          "objectiveProgress": 11770,
+          "waves": 1
+        },
+        {
+          "at": 86400,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 11800,
+          "objectiveProgress": 11800,
+          "waves": 1
+        },
+        {
+          "at": 87000,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 11870,
+          "objectiveProgress": 11870,
+          "waves": 1
+        },
+        {
+          "at": 87600,
+          "action": {
+            "type": "swap",
+            "from": 5,
+            "to": 11
+          },
+          "valid": true,
+          "score": 11950,
+          "objectiveProgress": 11950,
+          "waves": 1
+        },
+        {
+          "at": 88200,
+          "action": {
+            "type": "swap",
+            "from": 23,
+            "to": 29
+          },
+          "valid": true,
+          "score": 12300,
+          "objectiveProgress": 12300,
+          "waves": 4
+        }
+      ],
+      "final": {
+        "status": "finished",
+        "ruleVersion": "pvp-match-v2.0.0",
+        "contentVersion": "match-objectives-v2.0.0",
+        "objective": {
+          "id": "score",
+          "target": 1000,
+          "title": {
+            "zh": "连锁积分赛",
+            "en": "Cascade Score",
+            "ar": "نقاط السلسلة"
+          },
+          "color": null
+        },
+        "objectiveProgress": 12300,
+        "objectiveComplete": true,
+        "standings": [
+          {
+            "playerKey": "a",
+            "rank": 1,
+            "score": 12300,
+            "rawScore": 12300,
+            "objectiveId": "score",
+            "objectiveComplete": true,
+            "forfeited": false
+          },
+          {
+            "playerKey": "b",
+            "rank": 2,
+            "score": 0,
+            "rawScore": 0,
+            "objectiveId": "score",
+            "objectiveComplete": false,
+            "forfeited": false
+          }
+        ],
+        "board": [
+          {
+            "id": 899,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 900,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 902,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 903,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 904,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 895,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 869,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 852,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 883,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 884,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 890,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 894,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 867,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 846,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 874,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 875,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 889,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 893,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 866,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 816,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 854,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 857,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 888,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 892,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 865,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 733,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 853,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 856,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 885,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 891,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 864,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 729,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 848,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 850,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 877,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 887,
+            "color": 1,
+            "special": null
+          }
+        ],
+        "score": 12300,
+        "busyUntil": 90150,
+        "deadlineAt": 90000,
+        "durationMs": 90000,
+        "version": 109,
+        "maxCombo": 5,
+        "moves": 109,
+        "lastEventId": "a:109",
+        "forfeited": false
+      }
+    },
+    {
+      "seed": "0000000100000000000000000000000000000000000000000000000000000000",
+      "objective": {
+        "id": "collect",
+        "target": 24,
+        "title": {
+          "zh": "宝石收集赛",
+          "en": "Gem Collection",
+          "ar": "جمع الجواهر"
+        },
+        "color": 0
+      },
+      "trace": [
+        {
+          "at": 0,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 4
+          },
+          "valid": true,
+          "score": 30,
+          "objectiveProgress": 0,
+          "waves": 1
+        },
+        {
+          "at": 600,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 120,
+          "objectiveProgress": 3,
+          "waves": 2
+        },
+        {
+          "at": 1650,
+          "action": {
+            "type": "swap",
+            "from": 7,
+            "to": 8
+          },
+          "valid": true,
+          "score": 150,
+          "objectiveProgress": 3,
+          "waves": 1
+        },
+        {
+          "at": 2250,
+          "action": {
+            "type": "swap",
+            "from": 16,
+            "to": 22
+          },
+          "valid": true,
+          "score": 180,
+          "objectiveProgress": 6,
+          "waves": 1
+        },
+        {
+          "at": 2850,
+          "action": {
+            "type": "swap",
+            "from": 12,
+            "to": 13
+          },
+          "valid": true,
+          "score": 270,
+          "objectiveProgress": 6,
+          "waves": 2
+        },
+        {
+          "at": 3900,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 6
+          },
+          "valid": true,
+          "score": 300,
+          "objectiveProgress": 9,
+          "waves": 1
+        },
+        {
+          "at": 4500,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 21
+          },
+          "valid": true,
+          "score": 330,
+          "objectiveProgress": 9,
+          "waves": 1
+        },
+        {
+          "at": 5100,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 20
+          },
+          "valid": true,
+          "score": 440,
+          "objectiveProgress": 9,
+          "waves": 2
+        },
+        {
+          "at": 6150,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 2
+          },
+          "valid": true,
+          "score": 500,
+          "objectiveProgress": 11,
+          "waves": 1
+        },
+        {
+          "at": 6750,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 9
+          },
+          "valid": true,
+          "score": 530,
+          "objectiveProgress": 11,
+          "waves": 1
+        },
+        {
+          "at": 7350,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 11
+          },
+          "valid": true,
+          "score": 560,
+          "objectiveProgress": 11,
+          "waves": 1
+        },
+        {
+          "at": 7950,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 14
+          },
+          "valid": true,
+          "score": 600,
+          "objectiveProgress": 11,
+          "waves": 1
+        },
+        {
+          "at": 8550,
+          "action": {
+            "type": "swap",
+            "from": 19,
+            "to": 20
+          },
+          "valid": true,
+          "score": 630,
+          "objectiveProgress": 14,
+          "waves": 1
+        },
+        {
+          "at": 9150,
+          "action": {
+            "type": "swap",
+            "from": 9,
+            "to": 15
+          },
+          "valid": true,
+          "score": 790,
+          "objectiveProgress": 14,
+          "waves": 2
+        },
+        {
+          "at": 10200,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 7
+          },
+          "valid": true,
+          "score": 880,
+          "objectiveProgress": 17,
+          "waves": 2
+        },
+        {
+          "at": 11250,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 910,
+          "objectiveProgress": 20,
+          "waves": 1
+        },
+        {
+          "at": 11850,
+          "action": {
+            "type": "swap",
+            "from": 26,
+            "to": 27
+          },
+          "valid": true,
+          "score": 1020,
+          "objectiveProgress": 20,
+          "waves": 2
+        },
+        {
+          "at": 12900,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 9
+          },
+          "valid": true,
+          "score": 1250,
+          "objectiveProgress": 21,
+          "waves": 3
+        },
+        {
+          "at": 14400,
+          "action": {
+            "type": "swap",
+            "from": 12,
+            "to": 18
+          },
+          "valid": true,
+          "score": 1280,
+          "objectiveProgress": 24,
+          "waves": 1
+        },
+        {
+          "at": 15000,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 1350,
+          "objectiveProgress": 24,
+          "waves": 1
+        },
+        {
+          "at": 15600,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 14
+          },
+          "valid": true,
+          "score": 1470,
+          "objectiveProgress": 24,
+          "waves": 2
+        },
+        {
+          "at": 16650,
+          "action": {
+            "type": "swap",
+            "from": 20,
+            "to": 26
+          },
+          "valid": true,
+          "score": 1600,
+          "objectiveProgress": 25,
+          "waves": 1
+        },
+        {
+          "at": 17250,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 16
+          },
+          "valid": true,
+          "score": 1700,
+          "objectiveProgress": 25,
+          "waves": 2
+        },
+        {
+          "at": 18300,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 6
+          },
+          "valid": true,
+          "score": 1730,
+          "objectiveProgress": 28,
+          "waves": 1
+        },
+        {
+          "at": 18900,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 1790,
+          "objectiveProgress": 28,
+          "waves": 1
+        },
+        {
+          "at": 19500,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 1850,
+          "objectiveProgress": 28,
+          "waves": 1
+        },
+        {
+          "at": 20100,
+          "action": {
+            "type": "swap",
+            "from": 27,
+            "to": 28
+          },
+          "valid": true,
+          "score": 1910,
+          "objectiveProgress": 28,
+          "waves": 1
+        },
+        {
+          "at": 20700,
+          "action": {
+            "type": "swap",
+            "from": 28,
+            "to": 34
+          },
+          "valid": true,
+          "score": 2010,
+          "objectiveProgress": 28,
+          "waves": 2
+        },
+        {
+          "at": 21750,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 2
+          },
+          "valid": true,
+          "score": 2100,
+          "objectiveProgress": 31,
+          "waves": 2
+        },
+        {
+          "at": 22800,
+          "action": {
+            "type": "swap",
+            "from": 22,
+            "to": 28
+          },
+          "valid": true,
+          "score": 2160,
+          "objectiveProgress": 32,
+          "waves": 1
+        },
+        {
+          "at": 23400,
+          "action": {
+            "type": "swap",
+            "from": 7,
+            "to": 8
+          },
+          "valid": true,
+          "score": 2190,
+          "objectiveProgress": 35,
+          "waves": 1
+        },
+        {
+          "at": 24000,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 2230,
+          "objectiveProgress": 35,
+          "waves": 1
+        },
+        {
+          "at": 24600,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 2440,
+          "objectiveProgress": 36,
+          "waves": 3
+        },
+        {
+          "at": 26100,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 4
+          },
+          "valid": true,
+          "score": 2500,
+          "objectiveProgress": 36,
+          "waves": 1
+        },
+        {
+          "at": 26700,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 2620,
+          "objectiveProgress": 39,
+          "waves": 2
+        },
+        {
+          "at": 27750,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 4
+          },
+          "valid": true,
+          "score": 2650,
+          "objectiveProgress": 39,
+          "waves": 1
+        },
+        {
+          "at": 28350,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 3
+          },
+          "valid": true,
+          "score": 2800,
+          "objectiveProgress": 42,
+          "waves": 2
+        },
+        {
+          "at": 29400,
+          "action": {
+            "type": "swap",
+            "from": 6,
+            "to": 7
+          },
+          "valid": true,
+          "score": 2980,
+          "objectiveProgress": 45,
+          "waves": 3
+        },
+        {
+          "at": 30900,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 3070,
+          "objectiveProgress": 45,
+          "waves": 2
+        },
+        {
+          "at": 31950,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 15
+          },
+          "valid": true,
+          "score": 3100,
+          "objectiveProgress": 45,
+          "waves": 1
+        },
+        {
+          "at": 32550,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 1
+          },
+          "valid": true,
+          "score": 3190,
+          "objectiveProgress": 45,
+          "waves": 2
+        },
+        {
+          "at": 33600,
+          "action": {
+            "type": "swap",
+            "from": 22,
+            "to": 23
+          },
+          "valid": true,
+          "score": 3220,
+          "objectiveProgress": 45,
+          "waves": 1
+        },
+        {
+          "at": 34200,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 3460,
+          "objectiveProgress": 50,
+          "waves": 3
+        },
+        {
+          "at": 35700,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 1
+          },
+          "valid": true,
+          "score": 3500,
+          "objectiveProgress": 52,
+          "waves": 1
+        },
+        {
+          "at": 36300,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 3530,
+          "objectiveProgress": 52,
+          "waves": 1
+        },
+        {
+          "at": 36900,
+          "action": {
+            "type": "swap",
+            "from": 4,
+            "to": 10
+          },
+          "valid": true,
+          "score": 3640,
+          "objectiveProgress": 52,
+          "waves": 2
+        },
+        {
+          "at": 37950,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 11
+          },
+          "valid": true,
+          "score": 3700,
+          "objectiveProgress": 55,
+          "waves": 1
+        },
+        {
+          "at": 38550,
+          "action": {
+            "type": "swap",
+            "from": 9,
+            "to": 10
+          },
+          "valid": true,
+          "score": 3760,
+          "objectiveProgress": 58,
+          "waves": 1
+        },
+        {
+          "at": 39150,
+          "action": {
+            "type": "swap",
+            "from": 11,
+            "to": 17
+          },
+          "valid": true,
+          "score": 3790,
+          "objectiveProgress": 61,
+          "waves": 1
+        },
+        {
+          "at": 39750,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 15
+          },
+          "valid": true,
+          "score": 4580,
+          "objectiveProgress": 63,
+          "waves": 5
+        },
+        {
+          "at": 42150,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 4770,
+          "objectiveProgress": 66,
+          "waves": 2
+        },
+        {
+          "at": 43200,
+          "action": {
+            "type": "swap",
+            "from": 28,
+            "to": 34
+          },
+          "valid": true,
+          "score": 4870,
+          "objectiveProgress": 69,
+          "waves": 2
+        },
+        {
+          "at": 44250,
+          "action": {
+            "type": "swap",
+            "from": 4,
+            "to": 10
+          },
+          "valid": true,
+          "score": 4900,
+          "objectiveProgress": 72,
+          "waves": 1
+        },
+        {
+          "at": 44850,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 21
+          },
+          "valid": true,
+          "score": 5000,
+          "objectiveProgress": 72,
+          "waves": 2
+        },
+        {
+          "at": 45900,
+          "action": {
+            "type": "swap",
+            "from": 21,
+            "to": 22
+          },
+          "valid": true,
+          "score": 5770,
+          "objectiveProgress": 76,
+          "waves": 4
+        },
+        {
+          "at": 47850,
+          "action": {
+            "type": "swap",
+            "from": 25,
+            "to": 31
+          },
+          "valid": true,
+          "score": 5910,
+          "objectiveProgress": 77,
+          "waves": 2
+        },
+        {
+          "at": 48900,
+          "action": {
+            "type": "swap",
+            "from": 19,
+            "to": 20
+          },
+          "valid": true,
+          "score": 5950,
+          "objectiveProgress": 77,
+          "waves": 1
+        },
+        {
+          "at": 49500,
+          "action": {
+            "type": "swap",
+            "from": 26,
+            "to": 27
+          },
+          "valid": true,
+          "score": 6010,
+          "objectiveProgress": 77,
+          "waves": 1
+        },
+        {
+          "at": 50100,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 15
+          },
+          "valid": true,
+          "score": 6050,
+          "objectiveProgress": 81,
+          "waves": 1
+        },
+        {
+          "at": 50700,
+          "action": {
+            "type": "swap",
+            "from": 21,
+            "to": 27
+          },
+          "valid": true,
+          "score": 6170,
+          "objectiveProgress": 82,
+          "waves": 2
+        },
+        {
+          "at": 51750,
+          "action": {
+            "type": "swap",
+            "from": 27,
+            "to": 33
+          },
+          "valid": true,
+          "score": 6200,
+          "objectiveProgress": 85,
+          "waves": 1
+        },
+        {
+          "at": 52350,
+          "action": {
+            "type": "swap",
+            "from": 31,
+            "to": 32
+          },
+          "valid": true,
+          "score": 6310,
+          "objectiveProgress": 85,
+          "waves": 1
+        },
+        {
+          "at": 52950,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 6610,
+          "objectiveProgress": 92,
+          "waves": 3
+        },
+        {
+          "at": 54450,
+          "action": {
+            "type": "swap",
+            "from": 12,
+            "to": 18
+          },
+          "valid": true,
+          "score": 6670,
+          "objectiveProgress": 93,
+          "waves": 1
+        },
+        {
+          "at": 55050,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 7
+          },
+          "valid": true,
+          "score": 6700,
+          "objectiveProgress": 93,
+          "waves": 1
+        },
+        {
+          "at": 55650,
+          "action": {
+            "type": "swap",
+            "from": 12,
+            "to": 18
+          },
+          "valid": true,
+          "score": 6730,
+          "objectiveProgress": 93,
+          "waves": 1
+        },
+        {
+          "at": 56250,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 3
+          },
+          "valid": true,
+          "score": 6760,
+          "objectiveProgress": 93,
+          "waves": 1
+        },
+        {
+          "at": 56850,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 21
+          },
+          "valid": true,
+          "score": 6940,
+          "objectiveProgress": 93,
+          "waves": 3
+        },
+        {
+          "at": 58350,
+          "action": {
+            "type": "swap",
+            "from": 16,
+            "to": 17
+          },
+          "valid": true,
+          "score": 6970,
+          "objectiveProgress": 93,
+          "waves": 1
+        },
+        {
+          "at": 58950,
+          "action": {
+            "type": "swap",
+            "from": 16,
+            "to": 17
+          },
+          "valid": true,
+          "score": 7110,
+          "objectiveProgress": 96,
+          "waves": 2
+        },
+        {
+          "at": 60000,
+          "action": {
+            "type": "swap",
+            "from": 16,
+            "to": 22
+          },
+          "valid": true,
+          "score": 7190,
+          "objectiveProgress": 97,
+          "waves": 1
+        },
+        {
+          "at": 60600,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 20
+          },
+          "valid": true,
+          "score": 7220,
+          "objectiveProgress": 100,
+          "waves": 1
+        },
+        {
+          "at": 61200,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 11
+          },
+          "valid": true,
+          "score": 7260,
+          "objectiveProgress": 100,
+          "waves": 1
+        },
+        {
+          "at": 61800,
+          "action": {
+            "type": "swap",
+            "from": 17,
+            "to": 23
+          },
+          "valid": true,
+          "score": 7400,
+          "objectiveProgress": 100,
+          "waves": 2
+        },
+        {
+          "at": 62850,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 21
+          },
+          "valid": true,
+          "score": 7520,
+          "objectiveProgress": 100,
+          "waves": 2
+        },
+        {
+          "at": 63900,
+          "action": {
+            "type": "swap",
+            "from": 19,
+            "to": 25
+          },
+          "valid": true,
+          "score": 7580,
+          "objectiveProgress": 100,
+          "waves": 1
+        },
+        {
+          "at": 64500,
+          "action": {
+            "type": "swap",
+            "from": 18,
+            "to": 19
+          },
+          "valid": true,
+          "score": 7720,
+          "objectiveProgress": 102,
+          "waves": 2
+        },
+        {
+          "at": 65550,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 1
+          },
+          "valid": true,
+          "score": 7810,
+          "objectiveProgress": 105,
+          "waves": 2
+        },
+        {
+          "at": 66600,
+          "action": {
+            "type": "swap",
+            "from": 19,
+            "to": 20
+          },
+          "valid": true,
+          "score": 8550,
+          "objectiveProgress": 108,
+          "waves": 5
+        },
+        {
+          "at": 69000,
+          "action": {
+            "type": "swap",
+            "from": 12,
+            "to": 13
+          },
+          "valid": true,
+          "score": 9090,
+          "objectiveProgress": 110,
+          "waves": 3
+        },
+        {
+          "at": 70500,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 1
+          },
+          "valid": true,
+          "score": 9180,
+          "objectiveProgress": 118,
+          "waves": 1
+        },
+        {
+          "at": 71100,
+          "action": {
+            "type": "swap",
+            "from": 21,
+            "to": 22
+          },
+          "valid": true,
+          "score": 9220,
+          "objectiveProgress": 118,
+          "waves": 1
+        },
+        {
+          "at": 71700,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 4
+          },
+          "valid": true,
+          "score": 9250,
+          "objectiveProgress": 121,
+          "waves": 1
+        },
+        {
+          "at": 72300,
+          "action": {
+            "type": "swap",
+            "from": 22,
+            "to": 28
+          },
+          "valid": true,
+          "score": 9310,
+          "objectiveProgress": 121,
+          "waves": 1
+        },
+        {
+          "at": 72900,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 7
+          },
+          "valid": true,
+          "score": 9340,
+          "objectiveProgress": 121,
+          "waves": 1
+        },
+        {
+          "at": 73500,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 4
+          },
+          "valid": true,
+          "score": 9370,
+          "objectiveProgress": 121,
+          "waves": 1
+        },
+        {
+          "at": 74100,
+          "action": {
+            "type": "swap",
+            "from": 12,
+            "to": 13
+          },
+          "valid": true,
+          "score": 9400,
+          "objectiveProgress": 121,
+          "waves": 1
+        },
+        {
+          "at": 74700,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 15
+          },
+          "valid": true,
+          "score": 9430,
+          "objectiveProgress": 121,
+          "waves": 1
+        },
+        {
+          "at": 75300,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 7
+          },
+          "valid": true,
+          "score": 9460,
+          "objectiveProgress": 121,
+          "waves": 1
+        },
+        {
+          "at": 75900,
+          "action": {
+            "type": "swap",
+            "from": 9,
+            "to": 10
+          },
+          "valid": true,
+          "score": 9490,
+          "objectiveProgress": 121,
+          "waves": 1
+        },
+        {
+          "at": 76500,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 2
+          },
+          "valid": true,
+          "score": 9860,
+          "objectiveProgress": 124,
+          "waves": 4
+        },
+        {
+          "at": 78450,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 1
+          },
+          "valid": true,
+          "score": 9920,
+          "objectiveProgress": 124,
+          "waves": 1
+        },
+        {
+          "at": 79050,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 9950,
+          "objectiveProgress": 124,
+          "waves": 1
+        },
+        {
+          "at": 79650,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 11
+          },
+          "valid": true,
+          "score": 9980,
+          "objectiveProgress": 127,
+          "waves": 1
+        },
+        {
+          "at": 80250,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 10010,
+          "objectiveProgress": 127,
+          "waves": 1
+        },
+        {
+          "at": 80850,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 14
+          },
+          "valid": true,
+          "score": 10040,
+          "objectiveProgress": 127,
+          "waves": 1
+        },
+        {
+          "at": 81450,
+          "action": {
+            "type": "swap",
+            "from": 25,
+            "to": 26
+          },
+          "valid": true,
+          "score": 10080,
+          "objectiveProgress": 127,
+          "waves": 1
+        },
+        {
+          "at": 82050,
+          "action": {
+            "type": "swap",
+            "from": 33,
+            "to": 34
+          },
+          "valid": true,
+          "score": 10610,
+          "objectiveProgress": 131,
+          "waves": 4
+        },
+        {
+          "at": 84000,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 10700,
+          "objectiveProgress": 134,
+          "waves": 2
+        },
+        {
+          "at": 85050,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 15
+          },
+          "valid": true,
+          "score": 10820,
+          "objectiveProgress": 140,
+          "waves": 2
+        },
+        {
+          "at": 86100,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 7
+          },
+          "valid": true,
+          "score": 11070,
+          "objectiveProgress": 140,
+          "waves": 3
+        },
+        {
+          "at": 87600,
+          "action": {
+            "type": "swap",
+            "from": 25,
+            "to": 31
+          },
+          "valid": true,
+          "score": 11540,
+          "objectiveProgress": 145,
+          "waves": 4
+        },
+        {
+          "at": 89550,
+          "action": {
+            "type": "swap",
+            "from": 25,
+            "to": 31
+          },
+          "valid": true,
+          "score": 11570,
+          "objectiveProgress": 148,
+          "waves": 1
+        }
+      ],
+      "final": {
+        "status": "finished",
+        "ruleVersion": "pvp-match-v2.0.0",
+        "contentVersion": "match-objectives-v2.0.0",
+        "objective": {
+          "id": "collect",
+          "target": 24,
+          "title": {
+            "zh": "宝石收集赛",
+            "en": "Gem Collection",
+            "ar": "جمع الجواهر"
+          },
+          "color": 0
+        },
+        "objectiveProgress": 148,
+        "objectiveComplete": true,
+        "standings": [
+          {
+            "playerKey": "a",
+            "rank": 1,
+            "score": 148,
+            "rawScore": 11570,
+            "objectiveId": "collect",
+            "objectiveComplete": true,
+            "forfeited": false
+          },
+          {
+            "playerKey": "b",
+            "rank": 2,
+            "score": 0,
+            "rawScore": 0,
+            "objectiveId": "collect",
+            "objectiveComplete": false,
+            "forfeited": false
+          }
+        ],
+        "board": [
+          {
+            "id": 776,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 781,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 778,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 770,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 771,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 772,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 757,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 780,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 768,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 764,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 753,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 754,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 756,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 779,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 767,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 752,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 723,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 727,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 755,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 777,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 763,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 740,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 716,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 726,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 683,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 774,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 736,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 738,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 646,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 720,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 632,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 747,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 735,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 650,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 604,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 531,
+            "color": 3,
+            "special": null
+          }
+        ],
+        "score": 11570,
+        "busyUntil": 90150,
+        "deadlineAt": 90000,
+        "durationMs": 90000,
+        "version": 103,
+        "maxCombo": 5,
+        "moves": 103,
+        "lastEventId": "a:103",
+        "forfeited": false
+      }
+    },
+    {
+      "seed": "0000000200000000000000000000000000000000000000000000000000000000",
+      "objective": {
+        "id": "special",
+        "target": 4,
+        "title": {
+          "zh": "特殊消除赛",
+          "en": "Special Effects",
+          "ar": "تفعيل الجواهر الخاصة"
+        },
+        "color": null
+      },
+      "trace": [
+        {
+          "at": 0,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 7
+          },
+          "valid": true,
+          "score": 90,
+          "objectiveProgress": 0,
+          "waves": 2
+        },
+        {
+          "at": 1050,
+          "action": {
+            "type": "swap",
+            "from": 7,
+            "to": 8
+          },
+          "valid": true,
+          "score": 180,
+          "objectiveProgress": 0,
+          "waves": 2
+        },
+        {
+          "at": 2100,
+          "action": {
+            "type": "swap",
+            "from": 16,
+            "to": 22
+          },
+          "valid": true,
+          "score": 270,
+          "objectiveProgress": 0,
+          "waves": 2
+        },
+        {
+          "at": 3150,
+          "action": {
+            "type": "swap",
+            "from": 4,
+            "to": 10
+          },
+          "valid": true,
+          "score": 450,
+          "objectiveProgress": 0,
+          "waves": 3
+        },
+        {
+          "at": 4650,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 16
+          },
+          "valid": true,
+          "score": 670,
+          "objectiveProgress": 0,
+          "waves": 3
+        },
+        {
+          "at": 6150,
+          "action": {
+            "type": "swap",
+            "from": 28,
+            "to": 29
+          },
+          "valid": true,
+          "score": 820,
+          "objectiveProgress": 2,
+          "waves": 2
+        },
+        {
+          "at": 7200,
+          "action": {
+            "type": "swap",
+            "from": 16,
+            "to": 17
+          },
+          "valid": true,
+          "score": 860,
+          "objectiveProgress": 2,
+          "waves": 1
+        },
+        {
+          "at": 7800,
+          "action": {
+            "type": "swap",
+            "from": 16,
+            "to": 22
+          },
+          "valid": true,
+          "score": 920,
+          "objectiveProgress": 3,
+          "waves": 1
+        },
+        {
+          "at": 8400,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 2
+          },
+          "valid": true,
+          "score": 950,
+          "objectiveProgress": 3,
+          "waves": 1
+        },
+        {
+          "at": 9000,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 6
+          },
+          "valid": true,
+          "score": 980,
+          "objectiveProgress": 3,
+          "waves": 1
+        },
+        {
+          "at": 9600,
+          "action": {
+            "type": "swap",
+            "from": 32,
+            "to": 33
+          },
+          "valid": true,
+          "score": 1070,
+          "objectiveProgress": 3,
+          "waves": 2
+        },
+        {
+          "at": 10650,
+          "action": {
+            "type": "swap",
+            "from": 28,
+            "to": 29
+          },
+          "valid": true,
+          "score": 1130,
+          "objectiveProgress": 3,
+          "waves": 1
+        },
+        {
+          "at": 11250,
+          "action": {
+            "type": "swap",
+            "from": 25,
+            "to": 31
+          },
+          "valid": true,
+          "score": 1190,
+          "objectiveProgress": 3,
+          "waves": 1
+        },
+        {
+          "at": 11850,
+          "action": {
+            "type": "swap",
+            "from": 26,
+            "to": 32
+          },
+          "valid": true,
+          "score": 1240,
+          "objectiveProgress": 3,
+          "waves": 1
+        },
+        {
+          "at": 12450,
+          "action": {
+            "type": "swap",
+            "from": 32,
+            "to": 33
+          },
+          "valid": true,
+          "score": 1530,
+          "objectiveProgress": 4,
+          "waves": 3
+        },
+        {
+          "at": 13950,
+          "action": {
+            "type": "swap",
+            "from": 9,
+            "to": 15
+          },
+          "valid": true,
+          "score": 1800,
+          "objectiveProgress": 5,
+          "waves": 3
+        },
+        {
+          "at": 15450,
+          "action": {
+            "type": "swap",
+            "from": 24,
+            "to": 25
+          },
+          "valid": true,
+          "score": 2470,
+          "objectiveProgress": 6,
+          "waves": 5
+        },
+        {
+          "at": 17850,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 6
+          },
+          "valid": true,
+          "score": 2500,
+          "objectiveProgress": 6,
+          "waves": 1
+        },
+        {
+          "at": 18450,
+          "action": {
+            "type": "swap",
+            "from": 6,
+            "to": 7
+          },
+          "valid": true,
+          "score": 2530,
+          "objectiveProgress": 6,
+          "waves": 1
+        },
+        {
+          "at": 19050,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 3
+          },
+          "valid": true,
+          "score": 2560,
+          "objectiveProgress": 6,
+          "waves": 1
+        },
+        {
+          "at": 19650,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 2600,
+          "objectiveProgress": 6,
+          "waves": 1
+        },
+        {
+          "at": 20250,
+          "action": {
+            "type": "swap",
+            "from": 4,
+            "to": 10
+          },
+          "valid": true,
+          "score": 2660,
+          "objectiveProgress": 7,
+          "waves": 1
+        },
+        {
+          "at": 20850,
+          "action": {
+            "type": "swap",
+            "from": 9,
+            "to": 10
+          },
+          "valid": true,
+          "score": 2780,
+          "objectiveProgress": 7,
+          "waves": 2
+        },
+        {
+          "at": 21900,
+          "action": {
+            "type": "swap",
+            "from": 22,
+            "to": 23
+          },
+          "valid": true,
+          "score": 2820,
+          "objectiveProgress": 7,
+          "waves": 1
+        },
+        {
+          "at": 22500,
+          "action": {
+            "type": "swap",
+            "from": 27,
+            "to": 28
+          },
+          "valid": true,
+          "score": 3140,
+          "objectiveProgress": 8,
+          "waves": 3
+        },
+        {
+          "at": 24000,
+          "action": {
+            "type": "swap",
+            "from": 12,
+            "to": 13
+          },
+          "valid": true,
+          "score": 3180,
+          "objectiveProgress": 8,
+          "waves": 1
+        },
+        {
+          "at": 24600,
+          "action": {
+            "type": "swap",
+            "from": 12,
+            "to": 18
+          },
+          "valid": true,
+          "score": 3240,
+          "objectiveProgress": 9,
+          "waves": 1
+        },
+        {
+          "at": 25200,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 3360,
+          "objectiveProgress": 9,
+          "waves": 2
+        },
+        {
+          "at": 26250,
+          "action": {
+            "type": "swap",
+            "from": 6,
+            "to": 7
+          },
+          "valid": true,
+          "score": 3390,
+          "objectiveProgress": 9,
+          "waves": 1
+        },
+        {
+          "at": 26850,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 3420,
+          "objectiveProgress": 9,
+          "waves": 1
+        },
+        {
+          "at": 27450,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 1
+          },
+          "valid": true,
+          "score": 3450,
+          "objectiveProgress": 9,
+          "waves": 1
+        },
+        {
+          "at": 28050,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 9
+          },
+          "valid": true,
+          "score": 3540,
+          "objectiveProgress": 9,
+          "waves": 2
+        },
+        {
+          "at": 29100,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 14
+          },
+          "valid": true,
+          "score": 3630,
+          "objectiveProgress": 9,
+          "waves": 2
+        },
+        {
+          "at": 30150,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 3930,
+          "objectiveProgress": 9,
+          "waves": 3
+        },
+        {
+          "at": 31650,
+          "action": {
+            "type": "swap",
+            "from": 9,
+            "to": 15
+          },
+          "valid": true,
+          "score": 3970,
+          "objectiveProgress": 9,
+          "waves": 1
+        },
+        {
+          "at": 32250,
+          "action": {
+            "type": "swap",
+            "from": 5,
+            "to": 11
+          },
+          "valid": true,
+          "score": 4090,
+          "objectiveProgress": 10,
+          "waves": 2
+        },
+        {
+          "at": 33300,
+          "action": {
+            "type": "swap",
+            "from": 7,
+            "to": 13
+          },
+          "valid": true,
+          "score": 4120,
+          "objectiveProgress": 10,
+          "waves": 1
+        },
+        {
+          "at": 33900,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 20
+          },
+          "valid": true,
+          "score": 4290,
+          "objectiveProgress": 10,
+          "waves": 2
+        },
+        {
+          "at": 34950,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 9
+          },
+          "valid": true,
+          "score": 4450,
+          "objectiveProgress": 11,
+          "waves": 2
+        },
+        {
+          "at": 36000,
+          "action": {
+            "type": "swap",
+            "from": 13,
+            "to": 19
+          },
+          "valid": true,
+          "score": 4540,
+          "objectiveProgress": 12,
+          "waves": 1
+        },
+        {
+          "at": 36600,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 16
+          },
+          "valid": true,
+          "score": 4580,
+          "objectiveProgress": 12,
+          "waves": 1
+        },
+        {
+          "at": 37200,
+          "action": {
+            "type": "swap",
+            "from": 16,
+            "to": 22
+          },
+          "valid": true,
+          "score": 4720,
+          "objectiveProgress": 13,
+          "waves": 2
+        },
+        {
+          "at": 38250,
+          "action": {
+            "type": "swap",
+            "from": 32,
+            "to": 33
+          },
+          "valid": true,
+          "score": 4840,
+          "objectiveProgress": 14,
+          "waves": 2
+        },
+        {
+          "at": 39300,
+          "action": {
+            "type": "swap",
+            "from": 16,
+            "to": 22
+          },
+          "valid": true,
+          "score": 4950,
+          "objectiveProgress": 14,
+          "waves": 2
+        },
+        {
+          "at": 40350,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 16
+          },
+          "valid": true,
+          "score": 5040,
+          "objectiveProgress": 15,
+          "waves": 1
+        },
+        {
+          "at": 40950,
+          "action": {
+            "type": "swap",
+            "from": 27,
+            "to": 33
+          },
+          "valid": true,
+          "score": 5090,
+          "objectiveProgress": 15,
+          "waves": 1
+        },
+        {
+          "at": 41550,
+          "action": {
+            "type": "swap",
+            "from": 21,
+            "to": 27
+          },
+          "valid": true,
+          "score": 5520,
+          "objectiveProgress": 16,
+          "waves": 3
+        },
+        {
+          "at": 43050,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 20
+          },
+          "valid": true,
+          "score": 5770,
+          "objectiveProgress": 17,
+          "waves": 3
+        },
+        {
+          "at": 44550,
+          "action": {
+            "type": "swap",
+            "from": 27,
+            "to": 33
+          },
+          "valid": true,
+          "score": 5860,
+          "objectiveProgress": 18,
+          "waves": 1
+        },
+        {
+          "at": 45150,
+          "action": {
+            "type": "swap",
+            "from": 17,
+            "to": 23
+          },
+          "valid": true,
+          "score": 6040,
+          "objectiveProgress": 18,
+          "waves": 2
+        },
+        {
+          "at": 46200,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 6070,
+          "objectiveProgress": 18,
+          "waves": 1
+        },
+        {
+          "at": 46800,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 6100,
+          "objectiveProgress": 18,
+          "waves": 1
+        },
+        {
+          "at": 47400,
+          "action": {
+            "type": "swap",
+            "from": 6,
+            "to": 7
+          },
+          "valid": true,
+          "score": 6190,
+          "objectiveProgress": 18,
+          "waves": 2
+        },
+        {
+          "at": 48450,
+          "action": {
+            "type": "swap",
+            "from": 12,
+            "to": 13
+          },
+          "valid": true,
+          "score": 6260,
+          "objectiveProgress": 18,
+          "waves": 1
+        },
+        {
+          "at": 49050,
+          "action": {
+            "type": "swap",
+            "from": 18,
+            "to": 24
+          },
+          "valid": true,
+          "score": 6320,
+          "objectiveProgress": 19,
+          "waves": 1
+        },
+        {
+          "at": 49650,
+          "action": {
+            "type": "swap",
+            "from": 9,
+            "to": 15
+          },
+          "valid": true,
+          "score": 6360,
+          "objectiveProgress": 19,
+          "waves": 1
+        },
+        {
+          "at": 50250,
+          "action": {
+            "type": "swap",
+            "from": 9,
+            "to": 15
+          },
+          "valid": true,
+          "score": 6420,
+          "objectiveProgress": 20,
+          "waves": 1
+        },
+        {
+          "at": 50850,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 2
+          },
+          "valid": true,
+          "score": 6450,
+          "objectiveProgress": 20,
+          "waves": 1
+        },
+        {
+          "at": 51450,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 8
+          },
+          "valid": true,
+          "score": 6510,
+          "objectiveProgress": 20,
+          "waves": 1
+        },
+        {
+          "at": 52050,
+          "action": {
+            "type": "swap",
+            "from": 6,
+            "to": 7
+          },
+          "valid": true,
+          "score": 6540,
+          "objectiveProgress": 20,
+          "waves": 1
+        },
+        {
+          "at": 52650,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 1
+          },
+          "valid": true,
+          "score": 6570,
+          "objectiveProgress": 20,
+          "waves": 1
+        },
+        {
+          "at": 53250,
+          "action": {
+            "type": "swap",
+            "from": 17,
+            "to": 23
+          },
+          "valid": true,
+          "score": 6660,
+          "objectiveProgress": 20,
+          "waves": 2
+        },
+        {
+          "at": 54300,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 21
+          },
+          "valid": true,
+          "score": 6780,
+          "objectiveProgress": 20,
+          "waves": 2
+        },
+        {
+          "at": 55350,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 15
+          },
+          "valid": true,
+          "score": 6810,
+          "objectiveProgress": 20,
+          "waves": 1
+        },
+        {
+          "at": 55950,
+          "action": {
+            "type": "swap",
+            "from": 27,
+            "to": 28
+          },
+          "valid": true,
+          "score": 6850,
+          "objectiveProgress": 20,
+          "waves": 1
+        },
+        {
+          "at": 56550,
+          "action": {
+            "type": "swap",
+            "from": 27,
+            "to": 33
+          },
+          "valid": true,
+          "score": 6910,
+          "objectiveProgress": 21,
+          "waves": 1
+        },
+        {
+          "at": 57150,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 16
+          },
+          "valid": true,
+          "score": 6940,
+          "objectiveProgress": 21,
+          "waves": 1
+        },
+        {
+          "at": 57750,
+          "action": {
+            "type": "swap",
+            "from": 10,
+            "to": 16
+          },
+          "valid": true,
+          "score": 7030,
+          "objectiveProgress": 21,
+          "waves": 2
+        },
+        {
+          "at": 58800,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 1
+          },
+          "valid": true,
+          "score": 7060,
+          "objectiveProgress": 21,
+          "waves": 1
+        },
+        {
+          "at": 59400,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 16
+          },
+          "valid": true,
+          "score": 7150,
+          "objectiveProgress": 21,
+          "waves": 2
+        },
+        {
+          "at": 60450,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 16
+          },
+          "valid": true,
+          "score": 7180,
+          "objectiveProgress": 21,
+          "waves": 1
+        },
+        {
+          "at": 61050,
+          "action": {
+            "type": "swap",
+            "from": 28,
+            "to": 34
+          },
+          "valid": true,
+          "score": 7210,
+          "objectiveProgress": 21,
+          "waves": 1
+        },
+        {
+          "at": 61650,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 4
+          },
+          "valid": true,
+          "score": 7240,
+          "objectiveProgress": 21,
+          "waves": 1
+        },
+        {
+          "at": 62250,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 7270,
+          "objectiveProgress": 21,
+          "waves": 1
+        },
+        {
+          "at": 62850,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 4
+          },
+          "valid": true,
+          "score": 7300,
+          "objectiveProgress": 21,
+          "waves": 1
+        },
+        {
+          "at": 63450,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 21
+          },
+          "valid": true,
+          "score": 7340,
+          "objectiveProgress": 21,
+          "waves": 1
+        },
+        {
+          "at": 64050,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 14
+          },
+          "valid": true,
+          "score": 7430,
+          "objectiveProgress": 22,
+          "waves": 1
+        },
+        {
+          "at": 64650,
+          "action": {
+            "type": "swap",
+            "from": 2,
+            "to": 3
+          },
+          "valid": true,
+          "score": 7490,
+          "objectiveProgress": 22,
+          "waves": 1
+        },
+        {
+          "at": 65250,
+          "action": {
+            "type": "swap",
+            "from": 4,
+            "to": 10
+          },
+          "valid": true,
+          "score": 7550,
+          "objectiveProgress": 22,
+          "waves": 1
+        },
+        {
+          "at": 65850,
+          "action": {
+            "type": "swap",
+            "from": 9,
+            "to": 10
+          },
+          "valid": true,
+          "score": 7590,
+          "objectiveProgress": 22,
+          "waves": 1
+        },
+        {
+          "at": 66450,
+          "action": {
+            "type": "swap",
+            "from": 16,
+            "to": 22
+          },
+          "valid": true,
+          "score": 7650,
+          "objectiveProgress": 23,
+          "waves": 1
+        },
+        {
+          "at": 67050,
+          "action": {
+            "type": "swap",
+            "from": 9,
+            "to": 15
+          },
+          "valid": true,
+          "score": 7680,
+          "objectiveProgress": 23,
+          "waves": 1
+        },
+        {
+          "at": 67650,
+          "action": {
+            "type": "swap",
+            "from": 20,
+            "to": 21
+          },
+          "valid": true,
+          "score": 9050,
+          "objectiveProgress": 24,
+          "waves": 7
+        },
+        {
+          "at": 70950,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 1
+          },
+          "valid": true,
+          "score": 9220,
+          "objectiveProgress": 25,
+          "waves": 2
+        },
+        {
+          "at": 72000,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 21
+          },
+          "valid": true,
+          "score": 9400,
+          "objectiveProgress": 25,
+          "waves": 2
+        },
+        {
+          "at": 73050,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 21
+          },
+          "valid": true,
+          "score": 9710,
+          "objectiveProgress": 27,
+          "waves": 3
+        },
+        {
+          "at": 74550,
+          "action": {
+            "type": "swap",
+            "from": 7,
+            "to": 13
+          },
+          "valid": true,
+          "score": 10030,
+          "objectiveProgress": 28,
+          "waves": 3
+        },
+        {
+          "at": 76050,
+          "action": {
+            "type": "swap",
+            "from": 22,
+            "to": 28
+          },
+          "valid": true,
+          "score": 10340,
+          "objectiveProgress": 28,
+          "waves": 3
+        },
+        {
+          "at": 77550,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 14
+          },
+          "valid": true,
+          "score": 10730,
+          "objectiveProgress": 29,
+          "waves": 4
+        },
+        {
+          "at": 79500,
+          "action": {
+            "type": "swap",
+            "from": 20,
+            "to": 21
+          },
+          "valid": true,
+          "score": 11080,
+          "objectiveProgress": 31,
+          "waves": 3
+        },
+        {
+          "at": 81000,
+          "action": {
+            "type": "swap",
+            "from": 28,
+            "to": 34
+          },
+          "valid": true,
+          "score": 11230,
+          "objectiveProgress": 32,
+          "waves": 2
+        },
+        {
+          "at": 82050,
+          "action": {
+            "type": "swap",
+            "from": 6,
+            "to": 12
+          },
+          "valid": true,
+          "score": 11380,
+          "objectiveProgress": 32,
+          "waves": 2
+        },
+        {
+          "at": 83100,
+          "action": {
+            "type": "swap",
+            "from": 14,
+            "to": 20
+          },
+          "valid": true,
+          "score": 11410,
+          "objectiveProgress": 32,
+          "waves": 1
+        },
+        {
+          "at": 83700,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 21
+          },
+          "valid": true,
+          "score": 11450,
+          "objectiveProgress": 32,
+          "waves": 1
+        },
+        {
+          "at": 84300,
+          "action": {
+            "type": "swap",
+            "from": 21,
+            "to": 27
+          },
+          "valid": true,
+          "score": 11550,
+          "objectiveProgress": 33,
+          "waves": 1
+        },
+        {
+          "at": 84900,
+          "action": {
+            "type": "swap",
+            "from": 21,
+            "to": 27
+          },
+          "valid": true,
+          "score": 11640,
+          "objectiveProgress": 34,
+          "waves": 1
+        },
+        {
+          "at": 85500,
+          "action": {
+            "type": "swap",
+            "from": 3,
+            "to": 9
+          },
+          "valid": true,
+          "score": 11690,
+          "objectiveProgress": 34,
+          "waves": 1
+        },
+        {
+          "at": 86100,
+          "action": {
+            "type": "swap",
+            "from": 15,
+            "to": 21
+          },
+          "valid": true,
+          "score": 11840,
+          "objectiveProgress": 35,
+          "waves": 2
+        },
+        {
+          "at": 87150,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 14
+          },
+          "valid": true,
+          "score": 11880,
+          "objectiveProgress": 35,
+          "waves": 1
+        },
+        {
+          "at": 87750,
+          "action": {
+            "type": "swap",
+            "from": 8,
+            "to": 14
+          },
+          "valid": true,
+          "score": 11970,
+          "objectiveProgress": 36,
+          "waves": 1
+        },
+        {
+          "at": 88350,
+          "action": {
+            "type": "swap",
+            "from": 1,
+            "to": 7
+          },
+          "valid": true,
+          "score": 12010,
+          "objectiveProgress": 36,
+          "waves": 1
+        },
+        {
+          "at": 88950,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 1
+          },
+          "valid": true,
+          "score": 12070,
+          "objectiveProgress": 37,
+          "waves": 1
+        },
+        {
+          "at": 89550,
+          "action": {
+            "type": "swap",
+            "from": 0,
+            "to": 6
+          },
+          "valid": true,
+          "score": 12100,
+          "objectiveProgress": 37,
+          "waves": 1
+        }
+      ],
+      "final": {
+        "status": "finished",
+        "ruleVersion": "pvp-match-v2.0.0",
+        "contentVersion": "match-objectives-v2.0.0",
+        "objective": {
+          "id": "special",
+          "target": 4,
+          "title": {
+            "zh": "特殊消除赛",
+            "en": "Special Effects",
+            "ar": "تفعيل الجواهر الخاصة"
+          },
+          "color": null
+        },
+        "objectiveProgress": 37,
+        "objectiveComplete": true,
+        "standings": [
+          {
+            "playerKey": "a",
+            "rank": 1,
+            "score": 37,
+            "rawScore": 12100,
+            "objectiveId": "special",
+            "objectiveComplete": true,
+            "forfeited": false
+          },
+          {
+            "playerKey": "b",
+            "rank": 2,
+            "score": 0,
+            "rawScore": 0,
+            "objectiveId": "special",
+            "objectiveComplete": false,
+            "forfeited": false
+          }
+        ],
+        "board": [
+          {
+            "id": 850,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 843,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 844,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 845,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 846,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 847,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 849,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 832,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 833,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 827,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 828,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 807,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 848,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 826,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 815,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 824,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 821,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 798,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 829,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 786,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 810,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 818,
+            "color": 2,
+            "special": null
+          },
+          {
+            "id": 806,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 772,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 638,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 782,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 787,
+            "color": 1,
+            "special": null
+          },
+          {
+            "id": 763,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 765,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 770,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 470,
+            "color": 4,
+            "special": null
+          },
+          {
+            "id": 389,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 748,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 741,
+            "color": 3,
+            "special": null
+          },
+          {
+            "id": 758,
+            "color": 0,
+            "special": null
+          },
+          {
+            "id": 683,
+            "color": 4,
+            "special": null
+          }
+        ],
+        "score": 12100,
+        "busyUntil": 90150,
+        "deadlineAt": 90000,
+        "durationMs": 90000,
+        "version": 103,
+        "maxCombo": 5,
+        "moves": 103,
+        "lastEventId": "a:103",
+        "forfeited": false
+      }
+    }
+  ]
+}

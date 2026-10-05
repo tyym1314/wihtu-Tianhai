@@ -1,0 +1,17 @@
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#06171c;color:#f3e4bf}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
+body{position:fixed;inset:0;height:100vh;height:100dvh}
+#native-game{position:absolute;inset:0;width:100%;height:100%}
+#native-game iframe{display:block;width:100%;height:100%;border:0}
+#native-status{position:absolute;inset:0;z-index:2;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% 30%,#143940,#06171c 75%);text-align:center}
+#native-status[hidden]{display:none}
+.native-transition{max-width:280px}
+.native-loader{display:block;margin:0 auto 24px;width:30px;height:30px;border:2px solid #d4b56c30;border-top-color:#e8cb86;border-radius:50%;animation:native-spin 1s linear infinite}
+#native-status[data-state="error"] .native-loader{animation:none;border-color:#d4b56c60}
+h1{font-size:18px;font-weight:600;margin:0 0 12px;letter-spacing:.03em}
+p{font-size:14px;line-height:1.6;color:#a9bbb9;margin:0 0 28px}
+#native-back{min-width:120px;min-height:44px;padding:10px 24px;border:1px solid #bd9e5b70;border-radius:24px;background:#ffffff06;color:#efd79e;font:inherit;font-size:14px;cursor:pointer}
+#native-back:focus-visible{outline:2px solid #f3d992;outline-offset:4px}
+@keyframes native-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.native-loader{animation:none}}

@@ -1,0 +1,124 @@
+import {createServer} from 'node:http';
+import {serveGameAsset as serveLegacy} from './game-assets.mjs';
+import {pool,walletPool,tx,closePools} from './db.mjs';
+import {id,hash,unseal,readBody,send,fail,ApiError} from './security.mjs';
+import {migrateWallet,createWalletServer} from './wallet/index.mjs';
+import {migratePlatform,seedPlatform,origin,login,adminUser,appById,createApp,audit,authenticatePartner,createSession,exchange,playSession,gamesFor,scope,upgradeArenaSandbox} from './platform.mjs';
+import {publicSession,spin,acknowledge,recoverPending,walletRequest,walletBalance} from './cycles.mjs';
+import {migratePvp,routePvp,tickPvp,readPvpMatch} from './pvp/index.mjs';
+import {compactRoomSnapshot} from './pvp/snapshot-transfer.mjs';
+import {getProfile} from './math/index.ts';
+import {ARENA_IDS,RELEASED_IDS} from '../shared/games.mjs';
+import {migratePortal,routePortal} from './portal.mjs';
+import {migrateWalletBindings} from './wallet-binding.mjs';
+import {routeIntegration} from './integration-routes.mjs';
+import {migrateIntegrationChecks,recoverIntegrationChecks} from './integration-checks.mjs';
+import {operationsStatus} from './operations-status.mjs';
+import {enginePoolStats,closeEnginePool} from './pvp/engine-pool.mjs';
+import {runtime,preflightRuntime,migrateRuntime,assertProductionAppReady} from './runtime-mode.mjs';
+import {migrateCredentials,routeCredentials} from './credentials.mjs';
+import {ApiRateLimits} from './rate-limit.mjs';
+import {clientAddress,adminSessionCookie} from './proxy-context.mjs';
+const PORT=Number(process.env.OASIS_API_PORT||8797),WALLET_PORT=Number(process.env.OASIS_WALLET_PORT||8798);
+const limiter=new ApiRateLimits();
+function rate(req,key,limit){limiter.ip(clientAddress(req),key,limit);}
+const authenticated=(req,fn)=>limiter.authenticate(clientAddress(req),fn);
+function checkOrigin(req){if(req.headers.origin!==origin)fail(403,'ORIGIN_FORBIDDEN');}
+const allowedPatch=new Set(['name','status','game_ids','math_profile','competitive_fee_bps']);
+async function adminRoutes(req,res,path,b){
+  if(path==='/api/admin/login'&&req.method==='POST'){checkOrigin(req);rate(req,'login',12);const r=await login(b.username,b.password);res.setHeader('set-cookie',adminSessionCookie(r.token,origin));return send(res,200,{user:r.user});}
+  const user=await adminUser(req);
+  if(path==='/api/admin/session'&&req.method==='GET')return send(res,200,{user});if(!user)fail(401,'LOGIN_REQUIRED');
+  if(req.method!=='GET')checkOrigin(req);
+  if(path==='/api/admin/logout'&&req.method==='POST'){const token=req.headers.cookie?.split(';').map(x=>x.trim()).find(x=>x.startsWith('oasis_admin='))?.split('=')[1];if(token)await pool.query('DELETE FROM gp_admin_sessions WHERE token_hash=$1',[hash(token)]);res.setHeader('set-cookie',adminSessionCookie('',origin,0));return send(res,200,{ok:true});}
+  if(path==='/api/admin/operations-status'&&req.method==='GET')return send(res,200,await operationsStatus());
+  if(path==='/api/admin/health'&&req.method==='GET'){await pool.query('SELECT 1');let wallet='unavailable';try{const r=await fetch(`http://127.0.0.1:${WALLET_PORT}/health`,{signal:AbortSignal.timeout(1000)});if(r.ok)wallet='ok';}catch{}return send(res,200,{api:'ok',database:'ok',wallet,engine_pool:enginePoolStats(),environment:runtime.environment,production_enabled:runtime.production&&runtime.admissionEnabled});}
+  if(path==='/api/admin/apps'&&req.method==='GET')return send(res,200,{apps:(await pool.query('SELECT * FROM gp_apps ORDER BY created_at')).rows});
+  if(path==='/api/admin/apps'&&req.method==='POST'){if(Object.keys(b).some(k=>k!=='name'))fail(400,'INVALID_REQUEST');return send(res,201,await createApp(b.name));}
+  const appMatch=path.match(/^\/api\/admin\/apps\/([A-Za-z0-9_-]+)(\/launch)?$/);
+  if(appMatch){const app=await appById(appMatch[1]);
+    if(appMatch[2]&&req.method==='POST'){if(runtime.production)fail(403,'PRODUCTION_LAUNCH_REQUIRES_PARTNER_BACKEND');const body={...scope(app),request_id:id('launch'),external_user_id:b.external_user_id||'demo_player',game_id:b.game_id,locale:'en',host_platform:'web'};return send(res,200,await createSession(app,body,JSON.stringify(body)));}
+    if(!appMatch[2]&&req.method==='PATCH'){
+      if(!Object.keys(b).length||Object.keys(b).some(k=>!allowedPatch.has(k)))fail(400,'INVALID_REQUEST');
+      if(b.name!==undefined&&(typeof b.name!=='string'||b.name.trim().length<2||b.name.length>60))fail(400,'INVALID_NAME');
+      if(b.status!==undefined&&!['active','paused'].includes(b.status))fail(400,'INVALID_STATUS');
+      if(b.game_ids!==undefined&&(!Array.isArray(b.game_ids)||b.game_ids.some(g=>!RELEASED_IDS.includes(g))||new Set(b.game_ids).size!==b.game_ids.length))fail(400,'INVALID_GAMES');
+      if(b.math_profile!==undefined&&!['98','99'].includes(b.math_profile))fail(400,'INVALID_PROFILE');
+      if(b.competitive_fee_bps!==undefined&&![300,500,800,1000].includes(b.competitive_fee_bps))fail(400,'INVALID_FEE');
+      const updated=await tx(async c=>{const locked=(await c.query('SELECT * FROM gp_apps WHERE id=$1 FOR UPDATE',[app.id])).rows[0];if(b.status==='active'||(locked.status==='active'&&(b.game_ids||b.math_profile)))await assertProductionAppReady(c,{...locked,...b});const changed=(await c.query('UPDATE gp_apps SET name=$1,status=$2,game_ids=$3,math_profile=$4,competitive_fee_bps=$6 WHERE id=$5 RETURNING *',[b.name?.trim()||locked.name,b.status||locked.status,JSON.stringify(b.game_ids||locked.game_ids),b.math_profile||locked.math_profile,app.id,b.competitive_fee_bps??locked.competitive_fee_bps])).rows[0];await audit(user.id,'app.configured',app.id,b,c);return changed;});return send(res,200,{app:updated});
+    }
+  }
+  if(path==='/api/admin/overview'&&req.method==='GET'){
+    const a=(await pool.query('SELECT count(*)::int n FROM gp_apps')).rows[0].n;
+    const c=(await pool.query("SELECT count(*)::int n,count(*) FILTER(WHERE status NOT IN ('SETTLED','REJECTED'))::int pending FROM gp_cycles")).rows[0];
+    const p=(await pool.query("SELECT count(*)::int n,count(*) FILTER(WHERE status NOT IN ('settled','cancelled','voided'))::int pending,COALESCE(sum((result->>'fee_minor')::bigint) FILTER(WHERE status='settled' AND NOT practice),0)::text fee FROM pvp_rooms")).rows[0];
+    return send(res,200,{apps_count:a,games_count:RELEASED_IDS.length,cycles_count:c.n+p.n,pending_count:c.pending+p.pending,fee_minor:p.fee,environment:runtime.environment,wallet_status:runtime.production?'external_wallet_required':'reference_wallet',released_games:RELEASED_IDS.length});
+  }
+  if(path==='/api/admin/rounds'&&req.method==='GET')return send(res,200,{rounds:(await pool.query(`
+    SELECT id,app_id,game_id,external_user_id,status,stake_minor,payout_minor,math_version,created_at,result_hash,'settle_'||id operation_id,'probability' category,false practice FROM gp_cycles
+    UNION ALL SELECT id,app_id,game_id,(SELECT string_agg(p->>'external_user_id',', ') FROM jsonb_array_elements(players) p),upper(status),entry_minor,
+    (CASE WHEN result IS NOT NULL THEN (SELECT sum((p->>'payout_minor')::bigint) FROM jsonb_array_elements(result->'payouts') p) ELSE NULL END)::bigint,rule_version,created_at,result_hash,'settle_'||id,'competitive',practice FROM pvp_rooms
+    ORDER BY created_at DESC LIMIT 200`)).rows});
+  if(path==='/api/admin/operations'&&req.method==='GET')return send(res,200,{operations:(await pool.query(`SELECT id,app_id,aggregate_id,path,state,attempts,response,created_at,updated_at FROM gp_operations UNION ALL SELECT id,app_id,room_id,path,state,attempts,response,created_at,updated_at FROM pvp_operations ORDER BY created_at DESC LIMIT 200`)).rows});
+  if(path==='/api/admin/audit'&&req.method==='GET')return send(res,200,{events:(await pool.query('SELECT * FROM gp_audit ORDER BY id DESC LIMIT 100')).rows});
+  if(path==='/api/admin/profiles'&&req.method==='GET')return send(res,200,{profiles:['thunder','tiger'].flatMap(g=>['98','99'].map(p=>getProfile(g,p)))});
+  fail(404,'NOT_FOUND');
+}
+export function createPlatformServer(){return createServer(async(req,res)=>{try{
+  const path=req.url||'/';if(path.includes('?')&&path.startsWith('/v1/'))fail(400,'INVALID_TARGET');
+  if(path==='/health/ready'&&req.method==='GET'){await pool.query('SELECT 1');return send(res,200,{status:'ok',environment:runtime.environment});}
+  if(path==='/health'&&req.method==='GET')return send(res,200,{status:'ok',environment:runtime.environment});
+  if(path.startsWith('/legacy/')||path.startsWith('/arena/')||path.startsWith('/play/'))return await serveLegacy(req,res,path);
+  const {raw,body}=await readBody(req);
+  if(path.startsWith('/api/admin/')||path.startsWith('/api/partner/')){
+    if(path.endsWith('/login'))rate(req,'portal-login',12);
+    if(path.includes('/integration/')&&req.method==='POST')rate(req,'integration-write',30);
+    if(await routeCredentials(req,res,path,body))return;
+    if(await routeIntegration(req,res,path,body))return;
+    if(await routePortal(req,res,path,body))return;
+  }
+  if(path.startsWith('/api/admin/'))return await adminRoutes(req,res,path,body);
+  if(path==='/v1/launch/exchange'&&req.method==='POST'){checkOrigin(req);rate(req,'exchange',limiter.config.EXCHANGE_IP);return send(res,200,await authenticated(req,()=>exchange(body)));}
+  if(path.startsWith('/v1/')){
+    const app=await authenticated(req,()=>authenticatePartner(req,raw,body));limiter.partner(app,req.method);
+    if(path==='/v1/sessions'&&req.method==='POST')return send(res,201,await createSession(app,body,raw));
+    if(path==='/v1/games'&&req.method==='GET')return send(res,200,gamesFor(app));
+    const matchQuery=path.match(/^\/v1\/matches\/([A-Za-z0-9_-]+)$/);
+    if(matchQuery&&req.method==='GET')return send(res,200,await readPvpMatch(app,matchQuery[1]));
+    const op=path.match(/^\/v1\/operations\/([A-Za-z0-9_-]+)$/);
+    if(op&&req.method==='GET'){const r=(await pool.query('SELECT id,app_id,path,raw_body,state,response,created_at,updated_at FROM gp_operations WHERE id=$1 AND app_id=$2 UNION ALL SELECT id,app_id,path,raw_body,state,response,created_at,updated_at FROM pvp_operations WHERE id=$1 AND app_id=$2',[op[1],app.id])).rows[0];if(!r)fail(404,'NOT_FOUND');if(r.response)return send(res,200,r.response);return send(res,202,{...scope(app),operation_id:r.id,state:'PENDING',kind:r.path.includes('probability')?r.path.split('/').pop()+'_probability':r.path.endsWith('/reservations')?'reserve':r.path.split('/').pop()+'_match',body_sha256:hash(r.raw_body),created_at:r.created_at,updated_at:r.updated_at});}
+    fail(404,'NOT_FOUND');
+  }
+  if(path==='/api/arena/session'&&req.method==='GET'){
+    const s=await authenticated(req,()=>playSession(req));limiter.player(s,'pvp','GET',path);if(!ARENA_IDS.includes(s.game_id))fail(403,'GAME_SESSION_REQUIRED');const app=await appById(s.app_id);
+    const active=(await pool.query('SELECT r.id,r.game_id FROM pvp_active_users u JOIN pvp_rooms r ON r.id=u.room_id WHERE u.app_id=$1 AND u.external_user_id=$2',[s.app_id,s.external_user_id])).rows[0];
+    let balance=null,balance_error=null;try{balance=await walletBalance(app,s.external_user_id);}catch(e){balance_error='BALANCE_UNAVAILABLE';}
+    return send(res,200,{session_id:s.id,external_user_id:s.external_user_id,game_id:s.game_id,scope:scope(app),balance,balance_error,competitive_fee_bps:app.competitive_fee_bps,active_room_id:active?.game_id===s.game_id?active.id:null,other_active_game:active&&active.game_id!==s.game_id?active.game_id:null});
+  }
+  if(path.startsWith('/api/pvp/')){if(req.method==='POST')checkOrigin(req);const session=await authenticated(req,()=>playSession(req));limiter.player(session,'pvp',req.method,path);const r=await routePvp(session,req.method,path,body);if(!r)fail(404,'NOT_FOUND');return send(res,r.status,req.method==='GET'&&r.status===200?compactRoomSnapshot(r.body,req.headers['x-oasis-known-actions']):r.body);}
+  const play=path.match(/^\/api\/play\/(thunder|tiger)\/(session|spin|ack|history|config)$/);
+  if(play){const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability',req.method,path);if(req.method==='POST')checkOrigin(req);if(s.game_id!==play[1])fail(403,'SCOPE_FORBIDDEN');const route=play[2];
+    if(route==='session'&&req.method==='GET'){
+      // Reattach a result fixed/settled during a lost response or process restart.
+      if(!s.state.pendingPlay){const lost=(await pool.query("SELECT c.* FROM gp_cycles c WHERE c.session_id=$1 AND c.status!='REJECTED' AND NOT EXISTS(SELECT 1 FROM gp_plays p WHERE p.cycle_id=c.id) ORDER BY c.created_at LIMIT 1",[s.id])).rows[0];if(lost){const r=await spin(s,{requestId:lost.request_id,bet:Number(lost.stake_minor)/100,expectedVersion:s.state.version});return send(res,200,r.session);}}
+      return send(res,200,await publicSession(s));
+    }
+    if(route==='spin'&&req.method==='POST')return send(res,200,await spin(s,body));
+    if(route==='ack'&&req.method==='POST')return send(res,200,await acknowledge(s,body));
+    if(route==='history'&&req.method==='GET')return send(res,200,{rounds:(await pool.query('SELECT payload FROM gp_plays WHERE session_id=$1 ORDER BY created_at DESC LIMIT 20',[s.id])).rows.map(r=>r.payload)});
+    if(route==='config'&&req.method==='GET'){let profile=(await appById(s.app_id)).math_profile;if(s.state.cycleId){const current=(await pool.query('SELECT * FROM gp_cycles WHERE id=$1',[s.state.cycleId])).rows[0];if(current?.result&&(s.state.pendingPlay||s.state.nextIndex<current.result.rounds.length))profile=current.math_profile;}return send(res,200,{...getProfile(s.game_id,profile),demoOnly:true,unitsPerCoin:100,betChoices:[10,50,100,200,500]});}
+    fail(405,'METHOD_NOT_ALLOWED');
+  }
+  fail(404,'NOT_FOUND');
+}catch(e){if(res.headersSent||res.destroyed)return;const status=e.status||500;if(status===429)res.setHeader('retry-after',String(e.retryAfterSeconds||60));if(status>=500&&!(e instanceof ApiError))console.error('[platform]',e.code||e.message);const message=(e.status?e.message:'服务暂时不可用，请保留原请求重试').slice(0,512);if((req.url||'').startsWith('/v1/')){const allowed=['INVALID_REQUEST','AMOUNT_MISMATCH','SIGNATURE_INVALID','TIMESTAMP_EXPIRED','NONCE_REPLAY','LAUNCH_CODE_INVALID','SCOPE_FORBIDDEN','GAME_DISABLED','NOT_FOUND','IDEMPOTENCY_CONFLICT','INVALID_STATE','RATE_LIMITED','INTERNAL_ERROR'];const code=allowed.includes(e.code)?e.code:status>=500?'INTERNAL_ERROR':status===403?'SCOPE_FORBIDDEN':status===409?'INVALID_STATE':'INVALID_REQUEST';send(res,status,{code,message,trace_id:id('trace'),retryable:status>=500||status===429});}else send(res,status,{error:{code:e.code||'INTERNAL_ERROR',message}});}});}
+await preflightRuntime(pool);await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateWalletBindings(pool);await migrateIntegrationChecks();await upgradeArenaSandbox();
+// Fail before listening if persisted credentials cannot be decrypted with this instance key.
+for(const key of (await pool.query('SELECT secret_enc FROM gp_keys')).rows)unseal(key.secret_enc);
+const wallet=process.env.OASIS_START_WALLET==='0'?null:createWalletServer(walletPool);if(wallet)await new Promise(r=>wallet.listen(WALLET_PORT,'127.0.0.1',r));
+const server=createPlatformServer();await new Promise(r=>server.listen(PORT,'127.0.0.1',r));
+const timer=setInterval(()=>recoverPending().catch(e=>console.error('[recovery]',e.code||e.message)),3000);timer.unref();
+const pvpTimer=setInterval(()=>tickPvp().catch(e=>console.error('[arena recovery]',e.code||e.message)),250);pvpTimer.unref();
+const integrationTimer=setInterval(()=>recoverIntegrationChecks().catch(e=>console.error('[integration recovery]',e.code||e.message)),3000);integrationTimer.unref();
+console.log(`OASIS ${runtime.environment} API http://127.0.0.1:${PORT}; reference wallet http://127.0.0.1:${WALLET_PORT}`);
+console.log('Local admin credentials: platform/.local/development-credentials.json');
+async function stop(){clearInterval(timer);clearInterval(pvpTimer);clearInterval(integrationTimer);await Promise.all([new Promise(r=>server.close(r)),wallet?new Promise(r=>wallet.close(r)):Promise.resolve()]);await closeEnginePool();await closePools();process.exit(0);}process.on('SIGTERM',stop);process.on('SIGINT',stop);

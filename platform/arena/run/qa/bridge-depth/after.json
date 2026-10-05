@@ -1,0 +1,91 @@
+{
+  "phase": "after",
+  "checkedAt": "2026-09-19T17:43:09.018Z",
+  "scope": "Declared deterministic engine snapshots with renderer extrapolation disabled only by this esbuild QA plugin. Not live gameplay or wallet acceptance.",
+  "positions": {
+    "full": [
+      {
+        "key": "p0",
+        "distance": 78,
+        "y": 0,
+        "lane": 1
+      },
+      {
+        "key": "p1",
+        "distance": 80,
+        "y": 0,
+        "lane": 0
+      },
+      {
+        "key": "p2",
+        "distance": 82,
+        "y": 0,
+        "lane": 2
+      },
+      {
+        "key": "p3",
+        "distance": 84,
+        "y": 0,
+        "lane": 2
+      }
+    ],
+    "partial": [
+      {
+        "key": "p0",
+        "distance": 47,
+        "y": 0,
+        "lane": 2
+      },
+      {
+        "key": "p1",
+        "distance": 49,
+        "y": 0,
+        "lane": 0
+      },
+      {
+        "key": "p2",
+        "distance": 51,
+        "y": 0,
+        "lane": 2
+      },
+      {
+        "key": "p3",
+        "distance": 53,
+        "y": 0,
+        "lane": 2
+      }
+    ],
+    "jump": [
+      {
+        "key": "p0",
+        "distance": 84.8,
+        "y": 1.1666667,
+        "lane": 1
+      },
+      {
+        "key": "p1",
+        "distance": 84.13333333333334,
+        "y": 0,
+        "lane": 0
+      },
+      {
+        "key": "p2",
+        "distance": 86.13333333333334,
+        "y": 0,
+        "lane": 2
+      },
+      {
+        "key": "p3",
+        "distance": 90.8,
+        "y": 0,
+        "lane": 2
+      }
+    ]
+  },
+  "errors": [],
+  "checks": [
+    "Real engine jump state clears the 84–87m authoritative gap at >0.9m height",
+    "All four current character assets and scene assets actually loaded",
+    "390 and 360 no horizontal overflow"
+  ]
+}

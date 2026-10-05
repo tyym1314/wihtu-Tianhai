@@ -1,0 +1,128 @@
+[
+  {
+    "source": "platform/arena/run/assets/atlases/run-fox-v4.webp",
+    "target": "platform/arena/run/assets/atlases/run-fox-v4-mobile-bd3571fd7e.webp",
+    "source_sha256": "3ea0a7a54a6f9d87de562a9d5f2a35c3c82241f8760a6b1cc8c028e2de88b68d",
+    "target_sha256": "bd3571fd7e15ec4d237cb37d899913ce09acf036f72c64c27337525b49f42f31",
+    "source_bytes": 303776,
+    "target_bytes": 249470,
+    "original_url": "./assets/atlases/run-fox-v4.webp",
+    "optimized_url": "./assets/atlases/run-fox-v4-mobile-bd3571fd7e.webp",
+    "url_kind": "module-relative",
+    "encoding_input": "platform/arena/run/assets/atlases/run-fox-v4.png",
+    "encoding_input_sha256": "919b2a6bb535ad9be07cbbe5d439be8c6d65f0b6b95dbaa7531e1881d6e63e1a",
+    "dimensions": {
+      "width": 1774,
+      "height": 887
+    },
+    "alpha_max_error": 0,
+    "encoder_yuv_psnr_db": 43.59,
+    "visible_alpha_weighted_rgb_psnr_db": 35.06950962732616,
+    "codec": "WebP quality82, alpha100, ICC retained; same dimensions/grid; alpha byte-identical to original PNG"
+  },
+  {
+    "source": "platform/arena/run/assets/atlases/run-cat-v4.webp",
+    "target": "platform/arena/run/assets/atlases/run-cat-v4-mobile-e8ac410768.webp",
+    "source_sha256": "84a3d4c7769dcdd6a6fe4cdc883dbf75329beeea03ce963701b7938f20072539",
+    "target_sha256": "e8ac4107684e9b5e2f39015e15b4351bddc5103e0a72a22983cd428c0f9ece76",
+    "source_bytes": 276608,
+    "target_bytes": 222070,
+    "original_url": "./assets/atlases/run-cat-v4.webp",
+    "optimized_url": "./assets/atlases/run-cat-v4-mobile-e8ac410768.webp",
+    "url_kind": "module-relative",
+    "encoding_input": "platform/arena/run/assets/atlases/run-cat-v4.png",
+    "encoding_input_sha256": "13e48bcdcf8e1169789010011434edf8f402d22b83229a4a3c8386d08e740467",
+    "dimensions": {
+      "width": 1774,
+      "height": 887
+    },
+    "alpha_max_error": 0,
+    "encoder_yuv_psnr_db": 44.04,
+    "visible_alpha_weighted_rgb_psnr_db": 36.46805466625419,
+    "codec": "WebP quality82, alpha100, ICC retained; same dimensions/grid; alpha byte-identical to original PNG"
+  },
+  {
+    "source": "platform/arena/run/assets/atlases/run-bear-v4.webp",
+    "target": "platform/arena/run/assets/atlases/run-bear-v4-mobile-9b7c40a00c.webp",
+    "source_sha256": "193900e9a8b8d238970f8ff45b6e727aec180a1d539f0079da6de8c52aaee953",
+    "target_sha256": "9b7c40a00c8f53e32d6988eea19dea6ca8838f726048f340138bfa45435fecc6",
+    "source_bytes": 297774,
+    "target_bytes": 236620,
+    "original_url": "./assets/atlases/run-bear-v4.webp",
+    "optimized_url": "./assets/atlases/run-bear-v4-mobile-9b7c40a00c.webp",
+    "url_kind": "module-relative",
+    "encoding_input": "platform/arena/run/assets/atlases/run-bear-v4.png",
+    "encoding_input_sha256": "9548cc6a56becac27d7907b2439abb328f708fdd6ca726ba567583b87e17bd1f",
+    "dimensions": {
+      "width": 1774,
+      "height": 887
+    },
+    "alpha_max_error": 0,
+    "encoder_yuv_psnr_db": 43.15,
+    "visible_alpha_weighted_rgb_psnr_db": 35.685600269770696,
+    "codec": "WebP quality82, alpha100, ICC retained; same dimensions/grid; alpha byte-identical to original PNG"
+  },
+  {
+    "source": "platform/arena/run/assets/atlases/run-rabbit-v4.webp",
+    "target": "platform/arena/run/assets/atlases/run-rabbit-v4-mobile-415ab8b203.webp",
+    "source_sha256": "9104dff935cc921985cb71daf91fae59e29a90c3e5f1f9d5b4bb351094a564e1",
+    "target_sha256": "415ab8b203d6da213598f8763a60abcb6cd7b03c1236a59c1ed4f5ff68fcc569",
+    "source_bytes": 251016,
+    "target_bytes": 204948,
+    "original_url": "./assets/atlases/run-rabbit-v4.webp",
+    "optimized_url": "./assets/atlases/run-rabbit-v4-mobile-415ab8b203.webp",
+    "url_kind": "module-relative",
+    "encoding_input": "platform/arena/run/assets/atlases/run-rabbit-v4.png",
+    "encoding_input_sha256": "074e9e16c4652632da94a9e25a774b5a31e0683cc20b5dfb6fd02784664158cf",
+    "dimensions": {
+      "width": 1774,
+      "height": 887
+    },
+    "alpha_max_error": 0,
+    "encoder_yuv_psnr_db": 44.64,
+    "visible_alpha_weighted_rgb_psnr_db": 35.98927221079465,
+    "codec": "WebP quality82, alpha100, ICC retained; same dimensions/grid; alpha byte-identical to original PNG"
+  },
+  {
+    "source": "platform/arena/run/assets/atlases/action-back.webp",
+    "target": "platform/arena/run/assets/atlases/action-back-mobile-81e5c62e42.webp",
+    "source_sha256": "a1c9b94b4fb7372c835ee1d1f9883c8178f86fcd154263abcf2edc3662a12628",
+    "target_sha256": "81e5c62e4220be8c7cc63ae1c0310beea3be7c09c6b0e961a7bdc7aa578ed57d",
+    "source_bytes": 498472,
+    "target_bytes": 355872,
+    "original_url": "./assets/atlases/action-back.webp",
+    "optimized_url": "./assets/atlases/action-back-mobile-81e5c62e42.webp",
+    "url_kind": "module-relative",
+    "encoding_input": "platform/arena/run/assets/atlases/action-back.png",
+    "encoding_input_sha256": "b86eb168eed6ecbc8cfb7e6e1ea220d439d7e20af49eab8cc12c16ddd8f0e3c4",
+    "dimensions": {
+      "width": 1254,
+      "height": 1254
+    },
+    "alpha_max_error": 0,
+    "encoder_yuv_psnr_db": 42.39,
+    "visible_alpha_weighted_rgb_psnr_db": 33.87434645623693,
+    "codec": "WebP quality82, alpha100, ICC retained; same dimensions/grid; alpha byte-identical to original PNG"
+  },
+  {
+    "source": "platform/arena/run/assets/atlases/front-win.webp",
+    "target": "platform/arena/run/assets/atlases/front-win-mobile-902055527a.webp",
+    "source_sha256": "a65dc7b45c04a9640eee07496486b7e2fc5d99c5ad760534716a65184d541485",
+    "target_sha256": "902055527a213b285a521ca893c5cf7a7b4a98aa0de69b5e61ff7db4c29b706f",
+    "source_bytes": 547882,
+    "target_bytes": 390330,
+    "original_url": "./assets/atlases/front-win.webp",
+    "optimized_url": "./assets/atlases/front-win-mobile-902055527a.webp",
+    "url_kind": "module-relative",
+    "encoding_input": "platform/arena/run/assets/atlases/front-win.png",
+    "encoding_input_sha256": "2a66c6f137f440c040c80b81a8f845deefbf0ef73125e1027b3fe52a44e34bc5",
+    "dimensions": {
+      "width": 1254,
+      "height": 1254
+    },
+    "alpha_max_error": 0,
+    "encoder_yuv_psnr_db": 42.17,
+    "visible_alpha_weighted_rgb_psnr_db": 34.574505791395154,
+    "codec": "WebP quality82, alpha100, ICC retained; same dimensions/grid; alpha byte-identical to original PNG"
+  }
+]

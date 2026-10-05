@@ -1,0 +1,182 @@
+{
+  "status": "PASS",
+  "scope": "Headless Chromium isolated bridge/presentation integration with mock wallet, not real partner acceptance or physical-device QA",
+  "checks": [
+    {
+      "game": "thunder",
+      "profile": "99",
+      "authSourceGuard": "PASS",
+      "render": "PASS",
+      "activeProfileRules": "PASS",
+      "profileSwitchRules": "PASS",
+      "platformSpinAck": "PASS",
+      "resetDisabled": "PASS",
+      "tokenMemoryOnly": "PASS",
+      "assetFailures": [],
+      "engineFixture": "zero-win complete cycle; mock wallet only"
+    },
+    {
+      "game": "tiger",
+      "profile": "99",
+      "authSourceGuard": "PASS",
+      "render": "PASS",
+      "activeProfileRules": "PASS",
+      "profileSwitchRules": "PASS",
+      "platformSpinAck": "PASS",
+      "resetDisabled": "PASS",
+      "tokenMemoryOnly": "PASS",
+      "assetFailures": [],
+      "engineFixture": "zero-win complete cycle; mock wallet only"
+    },
+    {
+      "game": "thunder",
+      "profile": "98",
+      "authSourceGuard": "PASS",
+      "render": "PASS",
+      "activeProfileRules": "PASS",
+      "profileSwitchRules": "PASS",
+      "platformSpinAck": "PASS",
+      "resetDisabled": "PASS",
+      "tokenMemoryOnly": "PASS",
+      "assetFailures": [],
+      "engineFixture": "zero-win complete cycle; mock wallet only"
+    },
+    {
+      "game": "tiger",
+      "profile": "98",
+      "authSourceGuard": "PASS",
+      "render": "PASS",
+      "activeProfileRules": "PASS",
+      "profileSwitchRules": "PASS",
+      "platformSpinAck": "PASS",
+      "resetDisabled": "PASS",
+      "tokenMemoryOnly": "PASS",
+      "assetFailures": [],
+      "engineFixture": "zero-win complete cycle; mock wallet only"
+    }
+  ],
+  "exchanges": 4,
+  "requests": [
+    {
+      "game": "thunder",
+      "action": "config",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "thunder",
+      "action": "session",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "thunder",
+      "action": "spin",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "thunder",
+      "action": "ack",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "thunder",
+      "action": "session",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "thunder",
+      "action": "config",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "tiger",
+      "action": "config",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "tiger",
+      "action": "session",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "tiger",
+      "action": "spin",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "tiger",
+      "action": "ack",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "tiger",
+      "action": "session",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "tiger",
+      "action": "config",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "thunder",
+      "action": "config",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "thunder",
+      "action": "session",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "thunder",
+      "action": "spin",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "thunder",
+      "action": "ack",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "thunder",
+      "action": "session",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "thunder",
+      "action": "config",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "tiger",
+      "action": "config",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "tiger",
+      "action": "session",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "tiger",
+      "action": "spin",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "tiger",
+      "action": "ack",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "tiger",
+      "action": "session",
+      "bearer": "Bearer fixture_token_only"
+    },
+    {
+      "game": "tiger",
+      "action": "config",
+      "bearer": "Bearer fixture_token_only"
+    }
+  ],
+  "pageErrors": []
+}

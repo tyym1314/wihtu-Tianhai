@@ -1,0 +1,9 @@
+{
+  "recorded_at": "2026-09-19T15:39:54.884072+00:00",
+  "note": "Current authoritative sources recorded after visual-only restoration; no authoritative source edits made in this task. This is an inventory, not an independent before/after hash comparison.",
+  "files": {
+    "constants.mjs": "520a9ccbf6099fde8c72fee862a685a53d78eaad0839e9ab59cac4ad6691820a",
+    "engine.mjs": "c4c922b19a5c66fdefd9d9f97e44d9e08709b0d6d91aba8f0f9aee7078edb212",
+    "physics.mjs": "c4216b64c5343ef00a85204244249f35036279f6116be2b0489c1531a25037aa"
+  }
+}

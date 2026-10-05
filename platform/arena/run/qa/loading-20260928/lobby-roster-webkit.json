@@ -1,0 +1,104 @@
+{
+  "scope": "Actual main.jsx and real isolated host/API, temporary production build differs only by a root-unmount test hook. Native response delivery is held after fetch headers (not a socket-hang measurement); underlying native fetch count and consumer aborts are observed. Separate asset QA proves real held-network abort. No room or wager created.",
+  "cases": [
+    {
+      "kind": "handoff",
+      "pending": [
+        {
+          "url": "/arena/assets/run-cat-v4-mobile-e8ac410768-9dJJCoq2.webp",
+          "aborted": false,
+          "delivered": false
+        },
+        {
+          "url": "/arena/assets/run-fox-v4-mobile-bd3571fd7e-DFRwfUro.webp",
+          "aborted": false,
+          "delivered": false
+        },
+        {
+          "url": "/arena/assets/action-back-mobile-81e5c62e42-YmJbuCwd.webp",
+          "aborted": false,
+          "delivered": false
+        },
+        {
+          "url": "/arena/assets/front-win-mobile-902055527a-CfGfLtdY.webp",
+          "aborted": false,
+          "delivered": false
+        },
+        {
+          "url": "/arena/assets/run-bear-v4-mobile-9b7c40a00c-g2yrkwh0.webp",
+          "aborted": false,
+          "delivered": false
+        },
+        {
+          "url": "/arena/assets/run-rabbit-v4-mobile-415ab8b203-AMHUm-8w.webp",
+          "aborted": false,
+          "delivered": false
+        }
+      ],
+      "after": [
+        {
+          "url": "/arena/assets/run-cat-v4-mobile-e8ac410768-9dJJCoq2.webp",
+          "aborted": false,
+          "delivered": true
+        },
+        {
+          "url": "/arena/assets/run-fox-v4-mobile-bd3571fd7e-DFRwfUro.webp",
+          "aborted": false,
+          "delivered": true
+        },
+        {
+          "url": "/arena/assets/action-back-mobile-81e5c62e42-YmJbuCwd.webp",
+          "aborted": false,
+          "delivered": true
+        },
+        {
+          "url": "/arena/assets/front-win-mobile-902055527a-CfGfLtdY.webp",
+          "aborted": false,
+          "delivered": true
+        },
+        {
+          "url": "/arena/assets/run-bear-v4-mobile-9b7c40a00c-g2yrkwh0.webp",
+          "aborted": false,
+          "delivered": true
+        },
+        {
+          "url": "/arena/assets/run-rabbit-v4-mobile-415ab8b203-AMHUm-8w.webp",
+          "aborted": false,
+          "delivered": true
+        }
+      ],
+      "mainModuleSource": "resolvedRunModule synchronous preload"
+    },
+    {
+      "kind": "unmount",
+      "after": {
+        "records": [
+          {
+            "url": "/arena/assets/run-cat-v4-mobile-e8ac410768-9dJJCoq2.webp",
+            "aborted": true,
+            "delivered": false
+          },
+          {
+            "url": "/arena/assets/run-fox-v4-mobile-bd3571fd7e-DFRwfUro.webp",
+            "aborted": true,
+            "delivered": false
+          },
+          {
+            "url": "/arena/assets/action-back-mobile-81e5c62e42-YmJbuCwd.webp",
+            "aborted": true,
+            "delivered": false
+          },
+          {
+            "url": "/arena/assets/front-win-mobile-902055527a-CfGfLtdY.webp",
+            "aborted": true,
+            "delivered": false
+          }
+        ],
+        "appCount": 0
+      }
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "browserClosed": true
+}

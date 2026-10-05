@@ -1,0 +1,41 @@
+{
+  "tool": "built-in image_gen",
+  "commonPrompt": "Use case: identity-preserve. Production mobile game character RUN-CYCLE SPRITE ATLAS. Reference image shows four rows of characters; preserve the specified character's exact anatomy, fur, proportions and costume from its row. Generate ONLY that ONE character, 8 distinct sequential smooth running frames in a clean 4 columns by 2 rows rectangular sprite sheet, ordered left-to-right top row then bottom row, seamless last-to-first run loop. Third-person BACK view from slightly above about 15 degrees, same locked camera and scale in all 8 cells. Natural alternating leg cycle: left foot contact, left compression, left push-off, airborne passing, right contact, right compression, right push-off, airborne passing. Arms counter-swing, head keeps facing directly away from viewer; restrained secondary motion of ears/tail/clothing, no turns. Entire character contained safely in every equal cell. Consistent body/head scale and horizontal center at 50% of each cell, lowest foot at 90% baseline. Soft detailed family-film 3D fur shading and warm key light. Widescreen image, exactly 4x2 equal cells, no grid lines, no text, no numbers, no UI, no floor, no shadow ground plane. Genuine transparent RGBA background. No extra characters or accessories.",
+  "reference": "run-back.png",
+  "grid": {
+    "columns": 4,
+    "rows": 2,
+    "frames": 8
+  },
+  "assets": [
+    {
+      "name": "fox",
+      "source": "/Users/tyym/.codex/generated_images/01a0afe3-5361-7781-9edd-5a548a4a4fa0/exec-32e7f1c4-b0c7-41ef-a120-f19cd0f3e1bf.png",
+      "subject": "FIRST ROW cream fennec fox with very large ears and teal scarf.",
+      "workspacePNG": "run-fox-v4.png",
+      "runtimeWebP": "run-fox-v4.webp"
+    },
+    {
+      "name": "cat",
+      "source": "/Users/tyym/.codex/generated_images/01a0afe3-5361-7781-9edd-5a548a4a4fa0/exec-1c01f1f3-64a2-43aa-94f5-deeb6bd7c1cb.png",
+      "subject": "SECOND ROW charcoal grey cat wearing coral orange vest, curved furry tail.",
+      "workspacePNG": "run-cat-v4.png",
+      "runtimeWebP": "run-cat-v4.webp"
+    },
+    {
+      "name": "bear",
+      "source": "/Users/tyym/.codex/generated_images/01a0afe3-5361-7781-9edd-5a548a4a4fa0/exec-f1dc55aa-8484-4ad0-a2e3-c3bc5f50542f.png",
+      "subject": "THIRD ROW honey brown cub wearing purple waistcoat, short rounded ears and short tail.",
+      "workspacePNG": "run-bear-v4.png",
+      "runtimeWebP": "run-bear-v4.webp"
+    },
+    {
+      "name": "rabbit",
+      "source": "/Users/tyym/.codex/generated_images/01a0afe3-5361-7781-9edd-5a548a4a4fa0/exec-83560fa1-cc27-4786-82d8-3da0cc1511bf.png",
+      "subject": "FOURTH ROW cream white rabbit wearing blue vest, long ears and short fluffy tail.",
+      "workspacePNG": "run-rabbit-v4.png",
+      "runtimeWebP": "run-rabbit-v4.webp"
+    }
+  ],
+  "encoding": "Original RGBA PNG preserved; Sharp WebP quality90 alphaQuality100; no image painting or geometry modifications during encoding."
+}

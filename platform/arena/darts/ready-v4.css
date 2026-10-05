@@ -1,0 +1,16 @@
+/* This near-end ready view is deliberately separate from MetalDart's hit-space
+   geometry. Incoming events still animate the original authoritative tip path. */
+.da-held-stage{height:122px;flex:none;margin-top:-9px;position:relative;isolation:isolate}
+.da-held-stage .da-ready-dart{position:absolute;display:block;left:50%;top:-19px;width:162px;height:144px;object-fit:contain;transform:translateX(-50%) rotate(-3deg);filter:drop-shadow(3px 7px 3px #000b);animation:da-ready-breathe 3.4s ease-in-out infinite;user-select:none;pointer-events:none;z-index:2}
+.da-held-stage svg.da-swipe-arc{left:50%;top:23px;width:246px;height:89px;transform:translateX(-50%);animation:da-swipe-pulse 3.4s ease-in-out infinite;filter:drop-shadow(0 0 4px #29d7ffa6);z-index:1}
+.da-gesture-instruction{margin-top:1px;min-height:19px}.da-message{margin:0 0 5px;min-height:19px;line-height:14px}
+@keyframes da-ready-breathe{50%{translate:0 -3px;rotate:1deg}}
+@keyframes da-swipe-pulse{0%,100%{opacity:.65}50%{opacity:1}}
+@media(max-height:810px){.da-held-stage{height:110px}.da-held-stage .da-ready-dart{width:151px;height:134px;top:-23px}.da-held-stage svg.da-swipe-arc{width:228px;height:82px;top:18px}.da-message{min-height:16px;font-size:7px}.da-gesture-instruction{min-height:18px;font-size:7px}}
+@media(prefers-reduced-motion:reduce){.da-held-stage .da-ready-dart,.da-held-stage svg.da-swipe-arc{animation:none}}
+@media(max-height:780px){
+ .da-scene{padding-top:5px;padding-bottom:7px}
+ .da-turn-strip{margin-top:4px}
+ .da-message{margin-bottom:3px}
+ .da-footer{padding-top:4px}
+}

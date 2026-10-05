@@ -1,0 +1,8 @@
+[Unit]
+Description=Backup OASIS database with its private keys and configuration
+After=docker.service
+Requires=docker.service
+[Service]
+Type=oneshot
+ExecStart=/opt/oasis/current/platform/deploy/backup.sh
+UMask=0077

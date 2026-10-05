@@ -1,0 +1,26 @@
+[Unit]
+Description=Read-only OASIS service, settlement and operations health checks
+After=network-online.target oasis-api.service oasis-demo.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=oasis
+WorkingDirectory=/opt/oasis/current/platform
+EnvironmentFile=/opt/oasis/private/runtime.env
+EnvironmentFile=-/opt/oasis/private/monitor.env
+Environment=OASIS_MONITOR_REPORT_GROUP_READ=1
+ExecStart=/usr/bin/node deploy/monitor.mjs
+TimeoutStartSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/oasis/private
+MemoryMax=192M
+TasksMax=32
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=oasis-monitor

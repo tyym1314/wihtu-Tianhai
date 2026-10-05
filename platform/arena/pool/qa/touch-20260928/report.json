@@ -1,0 +1,179 @@
+{
+  "checkedAt": "2026-09-28T11:41:38.219Z",
+  "scope": "Isolated current UI + actual HTTP game engine. Native Chrome touch and desktop WebKit pointer; not physical iPhone Safari acceptance. Actions count every attempted HTTP request before engine validation.",
+  "samples": [
+    {
+      "engine": "chromium",
+      "method": "Chrome CDP Input.dispatchTouchEvent: browser-trusted native touch",
+      "checks": [
+        "Canceled free-ball placement sends zero HTTP requests and cue remains unplaced",
+        "Lost capture never places a cue ball",
+        "Two-finger placement cannot commit from either pointer",
+        "Placement started in a previous server turn is discarded",
+        "Next intentional tap sends one place action accepted by the Pool engine",
+        "Pocket call waits for a valid release; canceled or lost-capture gesture never calls a pocket",
+        "Intentional pocket tap calls exactly one pocket through the real engine",
+        "Spin control cancels on second finger; neither finger keeps moving its marker"
+      ],
+      "events": [
+        {
+          "type": "pointerdown",
+          "id": 2,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointercancel",
+          "id": 2,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 2,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 3,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 3,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 3,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 4,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 5,
+          "primary": false,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 4,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 4,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 5,
+          "primary": false,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 5,
+          "primary": false,
+          "trusted": true,
+          "pointer": "touch"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "method": "Desktop WebKit Playwright mouse: browser-trusted native pointer; not iPhone touch",
+      "checks": [
+        "Canceled free-ball placement sends zero HTTP requests and cue remains unplaced",
+        "Lost capture never places a cue ball",
+        "Placement started in a previous server turn is discarded",
+        "Next intentional tap sends one place action accepted by the Pool engine",
+        "Pocket call waits for a valid release; canceled or lost-capture gesture never calls a pocket",
+        "Intentional pocket tap calls exactly one pocket through the real engine",
+        "Spin control stops changing when capture is lost"
+      ],
+      "events": [
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

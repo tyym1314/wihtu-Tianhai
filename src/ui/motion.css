@@ -1,0 +1,39 @@
+.motion-enabled{--motion-blue:#82dcff}
+.motion-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:26;pointer-events:none;contain:strict}
+.motion-hero-atmosphere{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+.motion-character{position:absolute;inset:0;background:url('/assets/thunder-main.png') center top/100% auto no-repeat;clip-path:polygon(61% 14%,82% 10%,99% 27%,100% 100%,55% 100%,54% 67%);transform-origin:77% 100%;animation:tt-character-breathe 6s ease-in-out infinite;will-change:filter,transform}
+.bonus-mode .motion-character{background-image:url('/assets/thunder-free.png')}
+.motion-character-aura{position:absolute;left:55%;top:17%;width:46%;height:85%;background:radial-gradient(ellipse at 60% 48%,#90ceff00 31%,#509aff55 59%,transparent 70%);mix-blend-mode:screen;opacity:.6;animation:tt-hero-aura 4.4s ease-in-out infinite}
+.motion-staff-halo{position:absolute;left:83%;top:15%;width:24%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff 0%,#e4ffff88 5%,#61c9ff44 15%,#247cff25 37%,transparent 65%);mix-blend-mode:screen;animation:tt-staff-charge 3.7s ease-in-out infinite}
+.motion-staff-halo:after{content:"";position:absolute;inset:30%;border:1px solid #abeaff66;border-radius:50%;box-shadow:0 0 18px #70bdff99;animation:tt-orbit-ring 5s linear infinite;transform:rotateX(67deg)}
+.motion-cloud{position:absolute;width:85%;height:32%;bottom:0;left:-20%;background:radial-gradient(ellipse,#5ba7ed25,transparent 68%);filter:blur(10px);mix-blend-mode:screen;animation:tt-cloud-drift 11s ease-in-out infinite alternate}
+.motion-cloud.secondary{width:65%;bottom:15%;left:56%;opacity:.7;animation-duration:15s;animation-delay:-6s}
+.motion-reels{position:absolute;inset:1px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:transparent;z-index:12;pointer-events:none;overflow:hidden;direction:ltr;isolation:isolate}
+.motion-reel{position:relative;overflow:hidden;background:#10192c;box-shadow:inset 1px 0 #b18b4055;isolation:isolate}
+.motion-reel:before,.motion-reel:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2}
+.motion-reel:before{background:linear-gradient(#020713e8 0,transparent 20%,transparent 79%,#020713e8 100%);box-shadow:inset 0 2px 9px #0009}
+.motion-reel:after{background:linear-gradient(90deg,transparent 14%,#8ac3ff12 50%,transparent 87%);opacity:.8}
+.motion-reel-strip{position:absolute;inset:0 0 auto;will-change:transform;filter:blur(1.2px);backface-visibility:hidden}
+.motion-reel-symbol{position:relative;width:100%;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 35%,#192b4b,#07111e 78%);overflow:hidden;border-bottom:1px solid #c5a45e2b;isolation:isolate}
+.motion-reel-symbol .symbol-art{inset:3%;animation:none!important;transform:none!important;opacity:1!important;filter:brightness(1.18) saturate(1.2)!important;transition:none}
+.motion-reel-symbol .multiplier-orb{inset:9%}
+.motion-reel.landing .motion-reel-strip{filter:none;transition:filter .35s ease-out}
+.motion-reel.landing:before{opacity:.22;transition:opacity .3s}
+.motion-reel.stopped{visibility:hidden}
+.motion-reel.landing:after{background:linear-gradient(0deg,transparent 30%,#bde7ff33 52%,transparent 74%);animation:tt-reel-glint .55s ease-out both}
+.motion-enabled .is-spinning .symbol-art,.motion-enabled.is-spinning .board>.cell .symbol-art{animation:none;filter:none;opacity:1}
+.motion-cell-impact{animation:tt-cell-impact .6s cubic-bezier(.15,.6,.15,1) both}
+.motion-board-impact{animation:tt-board-impact .38s ease-out both}
+.motion-celebrating .celebration-card{filter:drop-shadow(0 0 25px #c68d3b22)}
+.motion-celebrating .celebration-value{background:linear-gradient(180deg,#fffbe7 10%,#ffeda5 40%,#ffd35f 56%,#c48827 70%,#ffdd88 85%);background-clip:text;-webkit-background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 3px 0 #78501f) drop-shadow(0 0 18px #e9a52b66)}
+.motion-paused .motion-hero-atmosphere *{animation-play-state:paused!important}
+.motion-reduced .motion-hero-atmosphere,.motion-reduced .motion-canvas{display:none}
+@keyframes tt-character-breathe{0%,100%{transform:translateY(0) scale(1);filter:brightness(1.015)}50%{transform:translateY(-1px) scale(1.009);filter:brightness(1.12) saturate(1.05)}}
+@keyframes tt-hero-aura{0%,100%{opacity:.26;transform:scale(.97)}50%{opacity:.72;transform:scale(1.05)}}
+@keyframes tt-staff-charge{0%,100%{opacity:.4;filter:brightness(.95)}44%{opacity:.95;filter:brightness(1.4)}53%{opacity:.6;filter:brightness(1)}62%{opacity:1;filter:brightness(1.35)}}
+@keyframes tt-orbit-ring{to{transform:rotate(360deg) rotateX(67deg)}}
+@keyframes tt-cloud-drift{to{transform:translateX(43%) translateY(-10px);opacity:.65}}
+@keyframes tt-cell-impact{0%{filter:brightness(1);transform:scale(1)}23%{filter:brightness(1.8);transform:scale(1.075)}55%{filter:brightness(1.23);transform:scale(.975)}100%{filter:brightness(1);transform:scale(1)}}
+@keyframes tt-board-impact{0%,100%{transform:translateY(0)}18%{transform:translateY(1.8px)}40%{transform:translateY(-1px)}65%{transform:translateY(.6px)}}
+@keyframes tt-reel-glint{0%{opacity:0;transform:translateY(-40%)}45%{opacity:.85}100%{opacity:0;transform:translateY(50%)}}
+@media(prefers-reduced-motion:reduce){.motion-hero-atmosphere,.motion-canvas{display:none}.motion-cell-impact,.motion-board-impact{animation:none}}

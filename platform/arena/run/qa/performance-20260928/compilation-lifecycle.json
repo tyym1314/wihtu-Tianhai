@@ -1,0 +1,149 @@
+{
+  "checkedAt": "2026-09-28T12:04:51.608Z",
+  "scope": "Desktop WebKit real WebGL. Test-only PMREM/observer/compile/render exceptions, held GLB and exit microtask. Counters verify resource cleanup, not GC heap, iPhone or production acceptance.",
+  "passed": true,
+  "checks": [
+    {
+      "mode": "pmrem-error",
+      "state": {
+        "errors": [
+          "Error: Injected pmrem failure"
+        ],
+        "ready": 0,
+        "compileCalls": 0,
+        "renderCalls": 0,
+        "disposed": false,
+        "canvasCount": 0,
+        "resources": {
+          "raf": 0,
+          "resizeObservers": 0,
+          "contexts": 1,
+          "liveContexts": 0,
+          "blobURLs": 0
+        }
+      },
+      "uncaught": []
+    },
+    {
+      "mode": "resize-error",
+      "state": {
+        "errors": [
+          "Error: Injected resize failure"
+        ],
+        "ready": 0,
+        "compileCalls": 0,
+        "renderCalls": 0,
+        "disposed": false,
+        "canvasCount": 0,
+        "resources": {
+          "raf": 0,
+          "resizeObservers": 0,
+          "contexts": 1,
+          "liveContexts": 0,
+          "blobURLs": 0
+        }
+      },
+      "uncaught": []
+    },
+    {
+      "mode": "compile-error",
+      "state": {
+        "errors": [
+          "Error: Injected compile failure"
+        ],
+        "ready": 0,
+        "compileCalls": 1,
+        "renderCalls": 0,
+        "disposed": false,
+        "canvasCount": 0,
+        "resources": {
+          "raf": 0,
+          "resizeObservers": 0,
+          "contexts": 1,
+          "liveContexts": 0,
+          "blobURLs": 0
+        }
+      },
+      "uncaught": []
+    },
+    {
+      "mode": "render-error",
+      "state": {
+        "errors": [
+          "Error: Injected render failure"
+        ],
+        "ready": 0,
+        "compileCalls": 1,
+        "renderCalls": 0,
+        "disposed": false,
+        "canvasCount": 0,
+        "resources": {
+          "raf": 0,
+          "resizeObservers": 0,
+          "contexts": 1,
+          "liveContexts": 0,
+          "blobURLs": 0
+        }
+      },
+      "uncaught": []
+    },
+    {
+      "mode": "exit-loading",
+      "state": {
+        "errors": [],
+        "ready": 0,
+        "compileCalls": 0,
+        "renderCalls": 0,
+        "disposed": true,
+        "canvasCount": 0,
+        "resources": {
+          "raf": 0,
+          "resizeObservers": 0,
+          "contexts": 1,
+          "liveContexts": 0,
+          "blobURLs": 0
+        }
+      },
+      "uncaught": []
+    },
+    {
+      "mode": "exit-after-compile",
+      "state": {
+        "errors": [],
+        "ready": 0,
+        "compileCalls": 1,
+        "renderCalls": 0,
+        "disposed": true,
+        "canvasCount": 0,
+        "resources": {
+          "raf": 0,
+          "resizeObservers": 0,
+          "contexts": 1,
+          "liveContexts": 0,
+          "blobURLs": 0
+        }
+      },
+      "uncaught": []
+    },
+    {
+      "mode": "normal",
+      "state": {
+        "errors": [],
+        "ready": 1,
+        "compileCalls": 1,
+        "renderCalls": 5,
+        "disposed": false,
+        "rendersAtReady": 1,
+        "canvasCount": 1,
+        "resources": {
+          "raf": 1,
+          "resizeObservers": 1,
+          "contexts": 1,
+          "liveContexts": 1,
+          "blobURLs": 0
+        }
+      },
+      "uncaught": []
+    }
+  ]
+}

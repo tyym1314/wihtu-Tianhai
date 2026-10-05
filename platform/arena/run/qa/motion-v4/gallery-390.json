@@ -1,0 +1,104 @@
+{
+  "capturedAt": "2026-09-19T18:15:55.335Z",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "videoSize": {
+    "width": 390,
+    "height": 844
+  },
+  "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+  "scope": "Fixed 390×844 throughout; newly rendered recording, not cropped or resized from the multi-viewport QA video. Isolated actual HTTP engine and touch input. Explicit legal position fixtures. No wallet. Capture verification only, not a repeated full QA suite.",
+  "actions": [
+    {
+      "action": {
+        "type": "jump",
+        "observed_tick": 245
+      },
+      "event": {
+        "type": "input_accepted",
+        "playerKey": "p0",
+        "input": "jump",
+        "inputNo": 1,
+        "acceptedTick": 249,
+        "at": 1789841747820
+      }
+    },
+    {
+      "action": {
+        "type": "slide",
+        "observed_tick": 328
+      },
+      "event": {
+        "type": "input_accepted",
+        "playerKey": "p0",
+        "input": "slide",
+        "inputNo": 2,
+        "acceptedTick": 330,
+        "at": 1789841749169
+      }
+    }
+  ],
+  "fixtures": [
+    {
+      "name": "Gallery: visible running on legal unobstructed center lane",
+      "at": 1789841746229,
+      "tick": 152,
+      "players": [
+        {
+          "key": "p0",
+          "distance": 286,
+          "lane": 1
+        },
+        {
+          "key": "p1",
+          "distance": 287.5,
+          "lane": 0
+        },
+        {
+          "key": "p2",
+          "distance": 289,
+          "lane": 2
+        },
+        {
+          "key": "p3",
+          "distance": 290.5,
+          "lane": 2
+        }
+      ]
+    },
+    {
+      "name": "Gallery: explicit near-finish fixture, p1 ahead; engine resolves actual second-place p0 finish",
+      "at": 1789841750078,
+      "tick": 383,
+      "players": [
+        {
+          "key": "p0",
+          "distance": 476,
+          "lane": 1
+        },
+        {
+          "key": "p1",
+          "distance": 478,
+          "lane": 0
+        },
+        {
+          "key": "p2",
+          "distance": 474,
+          "lane": 2
+        },
+        {
+          "key": "p3",
+          "distance": 472,
+          "lane": 2
+        }
+      ]
+    }
+  ],
+  "winnerKeys": [
+    "p1"
+  ],
+  "errors": [],
+  "video": "run-v4-gallery-390.webm"
+}

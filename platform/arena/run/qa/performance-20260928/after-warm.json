@@ -1,0 +1,51 @@
+{
+  "label": "after-warm",
+  "program_count": {
+    "n": 362,
+    "p50": 12,
+    "p95": 12,
+    "max": 12
+  },
+  "scope": "Desktop Chrome Metal CPU4, 390x844 DPR3 mobile quality; fixed open-path snapshots every 400ms; no phone, gameplay or production acceptance. Long Tasks unavailable on WebKit.",
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+  "created_ms": 163.40000009536743,
+  "ready_at_ms": 762.6000003814697,
+  "frame_ms": {
+    "n": 361,
+    "p50": 16.699999999999818,
+    "p95": 16.700000000000728,
+    "max": 16.800000000000182
+  },
+  "render_submit_ms": {
+    "n": 362,
+    "p50": 1.1999998092651367,
+    "p95": 1.799999713897705,
+    "max": 5.600000381469727
+  },
+  "calls": {
+    "n": 362,
+    "p50": 114,
+    "p95": 120,
+    "max": 121
+  },
+  "triangles": {
+    "n": 362,
+    "p50": 150636,
+    "p95": 173376,
+    "max": 173788
+  },
+  "still_frames": 0,
+  "sampled_frames": 362,
+  "still_percent": 0,
+  "startup_long_tasks": [
+    {
+      "at": 27.300000190734863,
+      "ms": 185
+    },
+    {
+      "at": 323.7000002861023,
+      "ms": 439
+    }
+  ],
+  "errors": []
+}

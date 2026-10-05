@@ -1,0 +1,862 @@
+TAP version 13
+# Subtest: Six maps provide three graph families, including a real central supply choke
+ok 1 - Six maps provide three graph families, including a real central supply choke
+  ---
+  duration_ms: 1.721333
+  type: 'test'
+  ...
+# Subtest: All roads are legal and rotation preserves topology, travel times and starting positions
+ok 2 - All roads are legal and rotation preserves topology, travel times and starting positions
+  ---
+  duration_ms: 1.453416
+  type: 'test'
+  ...
+# Subtest: Every map completes a legal 250ms worker replay with captures and upgrade decisions
+ok 3 - Every map completes a legal 250ms worker replay with captures and upgrade decisions
+  ---
+  duration_ms: 244.830708
+  type: 'test'
+  ...
+# Subtest: Rotated simultaneous orders have equal growth, capture and rank without a seat bonus
+ok 4 - Rotated simultaneous orders have equal growth, capture and rank without a seat bonus
+  ---
+  duration_ms: 8.313167
+  type: 'test'
+  ...
+# Subtest: New serialized maps retain exact roads, pending armies and accepted results through recovery
+ok 5 - New serialized maps retain exact roads, pending armies and accepted results through recovery
+  ---
+  duration_ms: 42.583166
+  type: 'test'
+  ...
+# Subtest: Pinned 2.1 waiting, active, pending and finished states execute the complete original branch
+ok 6 - Pinned 2.1 waiting, active, pending and finished states execute the complete original branch
+  ---
+  duration_ms: 22.931666
+  type: 'test'
+  ...
+# Subtest: Bridgehead supply upgrade strategy breaks the equal-bot central stalemate legally
+ok 7 - Bridgehead supply upgrade strategy breaks the equal-bot central stalemate legally
+  ---
+  duration_ms: 80.614208
+  type: 'test'
+  ...
+# Subtest: All twelve training initial states preserve old geometry, objectives and entropy domain
+ok 8 - All twelve training initial states preserve old geometry, objectives and entropy domain
+  ---
+  duration_ms: 2.966542
+  type: 'test'
+  ...
+# Subtest: 2 seats: both 13-tower maps are connected, rotationally fair and road-planar
+ok 9 - 2 seats: both 13-tower maps are connected, rotationally fair and road-planar
+  ---
+  duration_ms: 3.5235
+  type: 'test'
+  ...
+# Subtest: 3 seats: both 13-tower maps are connected, rotationally fair and road-planar
+ok 10 - 3 seats: both 13-tower maps are connected, rotationally fair and road-planar
+  ---
+  duration_ms: 0.779916
+  type: 'test'
+  ...
+# Subtest: 4 seats: both 13-tower maps are connected, rotationally fair and road-planar
+ok 11 - 4 seats: both 13-tower maps are connected, rotationally fair and road-planar
+  ---
+  duration_ms: 0.91525
+  type: 'test'
+  ...
+# Subtest: Map selection uses entropy only; six descriptors give two maps per player count
+ok 12 - Map selection uses entropy only; six descriptors give two maps per player count
+  ---
+  duration_ms: 4.887709
+  type: 'test'
+  ...
+# Subtest: Initial reserves, neutral garrisons and shared countdown match public rules
+ok 13 - Initial reserves, neutral garrisons and shared countdown match public rules
+  ---
+  duration_ms: 1.459667
+  type: 'test'
+  ...
+# Subtest: Automatic production caps natural growth but retains all overflow reinforcements
+ok 14 - Automatic production caps natural growth but retains all overflow reinforcements
+  ---
+  duration_ms: 0.984334
+  type: 'test'
+  ...
+# Subtest: Lv.1 links create persistent routes, send one soldier per second and keep five
+ok 15 - Lv.1 links create persistent routes, send one soldier per second and keep five
+  ---
+  duration_ms: 1.069208
+  type: 'test'
+  ...
+# Subtest: Adding and stopping routes preserves departed armies and cannot reset dispatch cadence
+ok 16 - Adding and stopping routes preserves departed armies and cannot reset dispatch cadence
+  ---
+  duration_ms: 0.374541
+  type: 'test'
+  ...
+# Subtest: Friendly relay receives before re-dispatching and never teleports to the final target
+ok 17 - Friendly relay receives before re-dispatching and never teleports to the final target
+  ---
+  duration_ms: 0.376542
+  type: 'test'
+  ...
+# Subtest: Enemy towers are attackable; 20 against 15 captures with five and clears old commands
+ok 18 - Enemy towers are attackable; 20 against 15 captures with five and clears old commands
+  ---
+  duration_ms: 0.306084
+  type: 'test'
+  ...
+# Subtest: Equal attack leaves a zero-garrison tower with original owner, able to produce again
+ok 19 - Equal attack leaves a zero-garrison tower with original owner, able to produce again
+  ---
+  duration_ms: 0.145959
+  type: 'test'
+  ...
+# Subtest: Opposing soldiers cancel on their actual road and survivors continue travelling
+ok 20 - Opposing soldiers cancel on their actual road and survivors continue travelling
+  ---
+  duration_ms: 0.451167
+  type: 'test'
+  ...
+# Subtest: Different roads do not fight; arriving friendly packets merge without a troop cap
+ok 21 - Different roads do not fight; arriving friendly packets merge without a troop cap
+  ---
+  duration_ms: 0.190084
+  type: 'test'
+  ...
+# Subtest: Three-way arrivals use coalition cancellation and are independent of insertion/seat ordering
+ok 22 - Three-way arrivals use coalition cancellation and are independent of insertion/seat ordering
+  ---
+  duration_ms: 0.30825
+  type: 'test'
+  ...
+# Subtest: Upgrade spends local troops, freezes production/dispatch, accepts aid, completes with new rate
+ok 23 - Upgrade spends local troops, freezes production/dispatch, accepts aid, completes with new rate
+  ---
+  duration_ms: 0.475083
+  type: 'test'
+  ...
+# Subtest: Upgrading requires reserve, disallows duplicate cost, max level and citadel upgrades atomically
+ok 24 - Upgrading requires reserve, disallows duplicate cost, max level and citadel upgrades atomically
+  ---
+  duration_ms: 0.98125
+  type: 'test'
+  ...
+# Subtest: Capturing a construction site cancels unfinished work, keeps completed level and never gifts the upgrade
+ok 25 - Capturing a construction site cancels unfinished work, keeps completed level and never gifts the upgrade
+  ---
+  duration_ms: 0.235625
+  type: 'test'
+  ...
+# Subtest: A long clock jump equals many irregular observations with identical command history
+ok 26 - A long clock jump equals many irregular observations with identical command history
+  ---
+  duration_ms: 14.444875
+  type: 'test'
+  ...
+# Subtest: Troop conservation accounts only for production, upgrade cost and real casualties
+ok 27 - Troop conservation accounts only for production, upgrade cost and real casualties
+  ---
+  duration_ms: 0.477166
+  type: 'test'
+  ...
+# Subtest: Time-up ranks tower count first, total live troops second and preserves true ties
+ok 28 - Time-up ranks tower count first, total live troops second and preserves true ties
+  ---
+  duration_ms: 3.495125
+  type: 'test'
+  ...
+# Subtest: At exactly 180s combat freezes and late arriving armies count but never capture
+ok 29 - At exactly 180s combat freezes and late arriving armies count but never capture
+  ---
+  duration_ms: 2.492458
+  type: 'test'
+  ...
+# Subtest: Losing the final tower does not eliminate a player with troops still travelling
+ok 30 - Losing the final tower does not eliminate a player with troops still travelling
+  ---
+  duration_ms: 0.197542
+  type: 'test'
+  ...
+# Subtest: One remaining army/territory faction wins early without clearing neutral towers
+ok 31 - One remaining army/territory faction wins early without clearing neutral towers
+  ---
+  duration_ms: 0.09925
+  type: 'test'
+  ...
+# Subtest: Forfeit neutralizes towers, cancels orders/construction/armies; simultaneous exits void
+ok 32 - Forfeit neutralizes towers, cancels orders/construction/armies; simultaneous exits void
+  ---
+  duration_ms: 0.526084
+  type: 'test'
+  ...
+# Subtest: Common recovery pause shifts troop travel, simulation, production, construction and events together
+ok 33 - Common recovery pause shifts troop travel, simulation, production, construction and events together
+  ---
+  duration_ms: 1.580583
+  type: 'test'
+  ...
+# Subtest: Invalid commands and future-state ownership rejection never mutate the input
+ok 34 - Invalid commands and future-state ownership rejection never mutate the input
+  ---
+  duration_ms: 0.928584
+  type: 'test'
+  ...
+# Subtest: Identity, entropy, action rate and all timed entry points are validated atomically
+ok 35 - Identity, entropy, action rate and all timed entry points are validated atomically
+  ---
+  duration_ms: 1.435666
+  type: 'test'
+  ...
+# Subtest: 2-player bots use only legal public rules, finish and keep state bounded
+ok 36 - 2-player bots use only legal public rules, finish and keep state bounded
+  ---
+  duration_ms: 60.893583
+  type: 'test'
+  ...
+# Subtest: 3-player bots use only legal public rules, finish and keep state bounded
+ok 37 - 3-player bots use only legal public rules, finish and keep state bounded
+  ---
+  duration_ms: 64.264709
+  type: 'test'
+  ...
+# Subtest: 4-player bots use only legal public rules, finish and keep state bounded
+ok 38 - 4-player bots use only legal public rules, finish and keep state bounded
+  ---
+  duration_ms: 41.967416
+  type: 'test'
+  ...
+# Subtest: Public snapshots omit private state, retain seat colors across JSONB, and are detached
+ok 39 - Public snapshots omit private state, retain seat colors across JSONB, and are detached
+  ---
+  duration_ms: 0.512208
+  type: 'test'
+  ...
+# Subtest: Worker integrates bot orders and v2 actions while refusing any persisted v1 rule
+ok 40 - Worker integrates bot orders and v2 actions while refusing any persisted v1 rule
+  ---
+  duration_ms: 0.665125
+  type: 'test'
+  ...
+# Subtest: An off-grid upgrade completed before the arrival is kept by the capturing player
+ok 41 - An off-grid upgrade completed before the arrival is kept by the capturing player
+  ---
+  duration_ms: 0.177375
+  type: 'test'
+  ...
+# Subtest: Same-place three-way road combat is coalition-based rather than packet-order-based
+ok 42 - Same-place three-way road combat is coalition-based rather than packet-order-based
+  ---
+  duration_ms: 0.182958
+  type: 'test'
+  ...
+# Subtest: The valid player ID "null" never receives neutral towers, troops, production or an unearned win
+ok 43 - The valid player ID "null" never receives neutral towers, troops, production or an unearned win
+  ---
+  duration_ms: 3.616709
+  type: 'test'
+  ...
+# Subtest: A "null"-named player captures neutrals by real combat, while neutral defenders stay a separate coalition
+ok 44 - A "null"-named player captures neutrals by real combat, while neutral defenders stay a separate coalition
+  ---
+  duration_ms: 0.238583
+  type: 'test'
+  ...
+# Subtest: Elimination and forfeit of a "null"-named player cannot inherit remaining neutral territory
+ok 45 - Elimination and forfeit of a "null"-named player cannot inherit remaining neutral territory
+  ---
+  duration_ms: 3.774625
+  type: 'test'
+  ...
+# Subtest: Nullable or non-string bot identities cannot coerce to legal string-named players
+ok 46 - Nullable or non-string bot identities cannot coerce to legal string-named players
+  ---
+  duration_ms: 0.275333
+  type: 'test'
+  ...
+# Subtest: Independent 48px targets do not overlap at 320x314
+ok 47 - Independent 48px targets do not overlap at 320x314
+  ---
+  duration_ms: 8.143083
+  type: 'test'
+  ...
+# Subtest: Independent 48px targets do not overlap at 320x320
+ok 48 - Independent 48px targets do not overlap at 320x320
+  ---
+  duration_ms: 2.025917
+  type: 'test'
+  ...
+# Subtest: Independent 48px targets do not overlap at 360x420
+ok 49 - Independent 48px targets do not overlap at 360x420
+  ---
+  duration_ms: 1.472958
+  type: 'test'
+  ...
+# Subtest: Independent 48px targets do not overlap at 390x496
+ok 50 - Independent 48px targets do not overlap at 390x496
+  ---
+  duration_ms: 1.275042
+  type: 'test'
+  ...
+# Subtest: Independent 48px targets do not overlap at 390x540
+ok 51 - Independent 48px targets do not overlap at 390x540
+  ---
+  duration_ms: 1.702459
+  type: 'test'
+  ...
+# Subtest: Independent 48px targets do not overlap at 430x600
+ok 52 - Independent 48px targets do not overlap at 430x600
+  ---
+  duration_ms: 1.541
+  type: 'test'
+  ...
+# Subtest: Art is smaller than the old renderer at the 390px mobile viewport
+ok 53 - Art is smaller than the old renderer at the 390px mobile viewport
+  ---
+  duration_ms: 0.120709
+  type: 'test'
+  ...
+# Subtest: Lv.1 supports exactly 1 routes sharing 1 soldiers per second
+ok 54 - Lv.1 supports exactly 1 routes sharing 1 soldiers per second
+  ---
+  duration_ms: 5.270041
+  type: 'test'
+  ...
+# Subtest: Lv.2 supports exactly 2 routes sharing 2 soldiers per second
+ok 55 - Lv.2 supports exactly 2 routes sharing 2 soldiers per second
+  ---
+  duration_ms: 1.573583
+  type: 'test'
+  ...
+# Subtest: Lv.3 supports exactly 3 routes sharing 3 soldiers per second
+ok 56 - Lv.3 supports exactly 3 routes sharing 3 soldiers per second
+  ---
+  duration_ms: 1.696583
+  type: 'test'
+  ...
+# Subtest: The central citadel stays at two soldiers per second and two routes independently of its level field
+ok 57 - The central citadel stays at two soldiers per second and two routes independently of its level field
+  ---
+  duration_ms: 1.36575
+  type: 'test'
+  ...
+# Subtest: A single route receives the entire level allowance rather than one soldier per road
+ok 58 - A single route receives the entire level allowance rather than one soldier per road
+  ---
+  duration_ms: 0.688458
+  type: 'test'
+  ...
+# Subtest: Lv.3 with two active routes rotates its odd remainder with exact long-term equality
+ok 59 - Lv.3 with two active routes rotates its odd remainder with exact long-term equality
+  ---
+  duration_ms: 0.433291
+  type: 'test'
+  ...
+# Subtest: When attacks leave only one dispatchable soldier, all active routes take turns fairly and preserve five defenders
+ok 60 - When attacks leave only one dispatchable soldier, all active routes take turns fairly and preserve five defenders
+  ---
+  duration_ms: 1.409459
+  type: 'test'
+  ...
+# Subtest: Duplicate link is valid even at the route limit, preserves activation time and does not duplicate allocation
+ok 61 - Duplicate link is valid even at the route limit, preserves activation time and does not duplicate allocation
+  ---
+  duration_ms: 1.036
+  type: 'test'
+  ...
+# Subtest: Repeated link/unlink commands cannot borrow old dispatches or reset a tower allowance
+ok 62 - Repeated link/unlink commands cannot borrow old dispatches or reset a tower allowance
+  ---
+  duration_ms: 0.785958
+  type: 'test'
+  ...
+# Subtest: A route created exactly at a dispatch boundary cannot receive the already elapsed batch
+ok 63 - A route created exactly at a dispatch boundary cannot receive the already elapsed batch
+  ---
+  duration_ms: 0.856875
+  type: 'test'
+  ...
+# Subtest: Construction pauses all routes while permitting edits within the completed level limit
+ok 64 - Construction pauses all routes while permitting edits within the completed level limit
+  ---
+  duration_ms: 1.00125
+  type: 'test'
+  ...
+# Subtest: Unused dispatch allowance never banks up during idle or construction intervals
+ok 65 - Unused dispatch allowance never banks up during idle or construction intervals
+  ---
+  duration_ms: 1.197208
+  type: 'test'
+  ...
+# Subtest: Capturing or forfeiting a multi-route tower clears all lines and its round-robin cursor
+ok 66 - Capturing or forfeiting a multi-route tower clears all lines and its round-robin cursor
+  ---
+  duration_ms: 0.762333
+  type: 'test'
+  ...
+# Subtest: JSON persistence and common pause preserve every activation and odd-remainder rotation
+ok 67 - JSON persistence and common pause preserve every activation and odd-remainder rotation
+  ---
+  duration_ms: 4.192417
+  type: 'test'
+  ...
+# Subtest: Public routes stay detached and flat while public rules describe all rates and limits
+ok 68 - Public routes stay detached and flat while public rules describe all rates and limits
+  ---
+  duration_ms: 0.5105
+  type: 'test'
+  ...
+# Subtest: Unlink rejects enemy and non-adjacent towers atomically under the same command rate limit
+ok 69 - Unlink rejects enemy and non-adjacent towers atomically under the same command rate limit
+  ---
+  duration_ms: 0.406458
+  type: 'test'
+  ...
+# Subtest: Bots respect each level route capacity and open multiple useful fronts after upgrading
+ok 70 - Bots respect each level route capacity and open multiple useful fronts after upgrading
+  ---
+  duration_ms: 1.71175
+  type: 'test'
+  ...
+# Subtest: Equal opponents disappear at the exact contact before the next 500 ms snapshot
+ok 71 - Equal opponents disappear at the exact contact before the next 500 ms snapshot
+  ---
+  duration_ms: 1.088042
+  type: 'test'
+  ...
+# Subtest: Four against two leaves two travelling on their original schedule
+ok 72 - Four against two leaves two travelling on their original schedule
+  ---
+  duration_ms: 0.440917
+  type: 'test'
+  ...
+# Subtest: Offset departures collide at their actual off-centre position
+ok 73 - Offset departures collide at their actual off-centre position
+  ---
+  duration_ms: 0.339958
+  type: 'test'
+  ...
+# Subtest: Friendly opponents, same-direction packets, and different roads never cancel
+ok 74 - Friendly opponents, same-direction packets, and different roads never cancel
+  ---
+  duration_ms: 0.094209
+  type: 'test'
+  ...
+# Subtest: Simultaneous three-team contact is coalition cancellation, independent of input order
+ok 75 - Simultaneous three-team contact is coalition cancellation, independent of input order
+  ---
+  duration_ms: 0.171542
+  type: 'test'
+  ...
+# Subtest: Partial survivors can meet a later packet without disappearing or freezing early
+ok 76 - Partial survivors can meet a later packet without disappearing or freezing early
+  ---
+  duration_ms: 0.146917
+  type: 'test'
+  ...
+# Subtest: A new simulationAt rebase applies only new collisions, never old losses twice
+ok 77 - A new simulationAt rebase applies only new collisions, never old losses twice
+  ---
+  duration_ms: 0.17325
+  type: 'test'
+  ...
+# Subtest: Projection starts after simulationAt, even when the response serverNow is later
+ok 78 - Projection starts after simulationAt, even when the response serverNow is later
+  ---
+  duration_ms: 0.05575
+  type: 'test'
+  ...
+# Subtest: Curved roads and their reversed travel share exactly the same contact point
+ok 79 - Curved roads and their reversed travel share exactly the same contact point
+  ---
+  duration_ms: 0.288417
+  type: 'test'
+  ...
+# Subtest: One effect and one sound gate per geometric battle across render frames and confirmation
+ok 80 - One effect and one sound gate per geometric battle across render frames and confirmation
+  ---
+  duration_ms: 0.357417
+  type: 'test'
+  ...
+# Subtest: Differential: presentation agrees with authoritative road battles over 60 seeded scenarios
+ok 81 - Differential: presentation agrees with authoritative road battles over 60 seeded scenarios
+  ---
+  duration_ms: 23.137416
+  type: 'test'
+  ...
+# Subtest: Twelve browser-safe lesson descriptors declare actual objectives, setup and next-lesson order
+ok 82 - Twelve browser-safe lesson descriptors declare actual objectives, setup and next-lesson order
+  ---
+  duration_ms: 4.235459
+  type: 'test'
+  ...
+# Subtest: lesson-01 认识产兵: legal commands and actual simulation satisfy every server-owned objective
+ok 83 - lesson-01 认识产兵: legal commands and actual simulation satisfy every server-owned objective
+  ---
+  duration_ms: 3.096834
+  type: 'test'
+  ...
+# Subtest: lesson-02 持续派兵与驻守: legal commands and actual simulation satisfy every server-owned objective
+ok 84 - lesson-02 持续派兵与驻守: legal commands and actual simulation satisfy every server-owned objective
+  ---
+  duration_ms: 0.701459
+  type: 'test'
+  ...
+# Subtest: lesson-03 增援与前线中继: legal commands and actual simulation satisfy every server-owned objective
+ok 85 - lesson-03 增援与前线中继: legal commands and actual simulation satisfy every server-owned objective
+  ---
+  duration_ms: 1.600958
+  type: 'test'
+  ...
+# Subtest: lesson-04 道路交战与集火: legal commands and actual simulation satisfy every server-owned objective
+ok 86 - lesson-04 道路交战与集火: legal commands and actual simulation satisfy every server-owned objective
+  ---
+  duration_ms: 2.012625
+  type: 'test'
+  ...
+# Subtest: lesson-05 手动升级: legal commands and actual simulation satisfy every server-owned objective
+ok 87 - lesson-05 手动升级: legal commands and actual simulation satisfy every server-owned objective
+  ---
+  duration_ms: 0.374458
+  type: 'test'
+  ...
+# Subtest: lesson-06 岔路回防: legal commands and actual simulation satisfy every server-owned objective
+ok 88 - lesson-06 岔路回防: legal commands and actual simulation satisfy every server-owned objective
+  ---
+  duration_ms: 2.124791
+  type: 'test'
+  ...
+# Subtest: lesson-07 双翼补给: legal commands and actual simulation satisfy every server-owned objective
+ok 89 - lesson-07 双翼补给: legal commands and actual simulation satisfy every server-owned objective
+  ---
+  duration_ms: 5.431916
+  type: 'test'
+  ...
+# Subtest: lesson-08 桥头堡争夺: legal commands and actual simulation satisfy every server-owned objective
+ok 90 - lesson-08 桥头堡争夺: legal commands and actual simulation satisfy every server-owned objective
+  ---
+  duration_ms: 8.501458
+  type: 'test'
+  ...
+# Subtest: lesson-09 侧翼反攻: legal commands and actual simulation satisfy every server-owned objective
+ok 91 - lesson-09 侧翼反攻: legal commands and actual simulation satisfy every server-owned objective
+  ---
+  duration_ms: 39.134708
+  type: 'test'
+  ...
+# Subtest: lesson-10 三方合围抵消: legal commands and actual simulation satisfy every server-owned objective
+ok 92 - lesson-10 三方合围抵消: legal commands and actual simulation satisfy every server-owned objective
+  ---
+  duration_ms: 0.875959
+  type: 'test'
+  ...
+# Subtest: lesson-11 限时建立防线: legal commands and actual simulation satisfy every server-owned objective
+ok 93 - lesson-11 限时建立防线: legal commands and actual simulation satisfy every server-owned objective
+  ---
+  duration_ms: 37.416667
+  type: 'test'
+  ...
+# Subtest: lesson-12 完整对局考核: legal commands and actual simulation satisfy every server-owned objective
+ok 94 - lesson-12 完整对局考核: legal commands and actual simulation satisfy every server-owned objective
+  ---
+  duration_ms: 110.263709
+  type: 'test'
+  ...
+# Subtest: lesson-01: waiting or clicking an unsupported complete command cannot award training credit
+ok 95 - lesson-01: waiting or clicking an unsupported complete command cannot award training credit
+  ---
+  duration_ms: 3.37625
+  type: 'test'
+  ...
+# Subtest: lesson-02: waiting or clicking an unsupported complete command cannot award training credit
+ok 96 - lesson-02: waiting or clicking an unsupported complete command cannot award training credit
+  ---
+  duration_ms: 2.7985
+  type: 'test'
+  ...
+# Subtest: lesson-03: waiting or clicking an unsupported complete command cannot award training credit
+ok 97 - lesson-03: waiting or clicking an unsupported complete command cannot award training credit
+  ---
+  duration_ms: 2.941417
+  type: 'test'
+  ...
+# Subtest: lesson-04: waiting or clicking an unsupported complete command cannot award training credit
+ok 98 - lesson-04: waiting or clicking an unsupported complete command cannot award training credit
+  ---
+  duration_ms: 5.072459
+  type: 'test'
+  ...
+# Subtest: lesson-05: waiting or clicking an unsupported complete command cannot award training credit
+ok 99 - lesson-05: waiting or clicking an unsupported complete command cannot award training credit
+  ---
+  duration_ms: 2.051333
+  type: 'test'
+  ...
+# Subtest: lesson-06: waiting or clicking an unsupported complete command cannot award training credit
+ok 100 - lesson-06: waiting or clicking an unsupported complete command cannot award training credit
+  ---
+  duration_ms: 4.817834
+  type: 'test'
+  ...
+# Subtest: lesson-07: waiting or clicking an unsupported complete command cannot award training credit
+ok 101 - lesson-07: waiting or clicking an unsupported complete command cannot award training credit
+  ---
+  duration_ms: 7.532125
+  type: 'test'
+  ...
+# Subtest: lesson-08: waiting or clicking an unsupported complete command cannot award training credit
+ok 102 - lesson-08: waiting or clicking an unsupported complete command cannot award training credit
+  ---
+  duration_ms: 5.840167
+  type: 'test'
+  ...
+# Subtest: lesson-09: waiting or clicking an unsupported complete command cannot award training credit
+ok 103 - lesson-09: waiting or clicking an unsupported complete command cannot award training credit
+  ---
+  duration_ms: 5.7695
+  type: 'test'
+  ...
+# Subtest: lesson-10: waiting or clicking an unsupported complete command cannot award training credit
+ok 104 - lesson-10: waiting or clicking an unsupported complete command cannot award training credit
+  ---
+  duration_ms: 3.657208
+  type: 'test'
+  ...
+# Subtest: lesson-11: waiting or clicking an unsupported complete command cannot award training credit
+ok 105 - lesson-11: waiting or clicking an unsupported complete command cannot award training credit
+  ---
+  duration_ms: 1.078667
+  type: 'test'
+  ...
+# Subtest: lesson-12: waiting or clicking an unsupported complete command cannot award training credit
+ok 106 - lesson-12: waiting or clicking an unsupported complete command cannot award training credit
+  ---
+  duration_ms: 3.188375
+  type: 'test'
+  ...
+# Subtest: Continuous-line training requires real dispatch and regrowth, not merely two buttons
+ok 107 - Continuous-line training requires real dispatch and regrowth, not merely two buttons
+  ---
+  duration_ms: 0.764833
+  type: 'test'
+  ...
+# Subtest: Relay lesson waits for real reinforcements and the onward journey
+ok 108 - Relay lesson waits for real reinforcements and the onward journey
+  ---
+  duration_ms: 1.00575
+  type: 'test'
+  ...
+# Subtest: Upgrade lesson waits for completion and four units of new production
+ok 109 - Upgrade lesson waits for completion and four units of new production
+  ---
+  duration_ms: 0.173917
+  type: 'test'
+  ...
+# Subtest: Redirect training cannot pass by merely adding another route while the attack line remains active
+ok 110 - Redirect training cannot pass by merely adding another route while the attack line remains active
+  ---
+  duration_ms: 0.989417
+  type: 'test'
+  ...
+# Subtest: Redirect training also accepts stop-all followed by a new defensive route, without recalling attack troops
+ok 111 - Redirect training also accepts stop-all followed by a new defensive route, without recalling attack troops
+  ---
+  duration_ms: 0.913667
+  type: 'test'
+  ...
+# Subtest: Center challenge requires reinforcement and a continuous twelve-second hold
+ok 112 - Center challenge requires reinforcement and a continuous twelve-second hold
+  ---
+  duration_ms: 2.11525
+  type: 'test'
+  ...
+# Subtest: Three-way lesson demonstrates 5/4/2 cancellation but still requires a player conquest
+ok 113 - Three-way lesson demonstrates 5/4/2 cancellation but still requires a player conquest
+  ---
+  duration_ms: 1.0245
+  type: 'test'
+  ...
+# Subtest: Timed challenge runs the opposing AI and requires three distinct captures at its deadline
+ok 114 - Timed challenge runs the opposing AI and requires three distinct captures at its deadline
+  ---
+  duration_ms: 36.478583
+  type: 'test'
+  ...
+# Subtest: Restart restores the initial lesson; next lesson is a fresh scenario without carried troops
+ok 115 - Restart restores the initial lesson; next lesson is a fresh scenario without carried troops
+  ---
+  duration_ms: 0.315333
+  type: 'test'
+  ...
+# Subtest: Serialized training resumes with identical progress, and common pauses do not earn hold-time credit
+ok 116 - Serialized training resumes with identical progress, and common pauses do not earn hold-time credit
+  ---
+  duration_ms: 3.424
+  type: 'test'
+  ...
+# Subtest: Tutorial bot reaction profiles never change production or waive upgrade costs
+ok 117 - Tutorial bot reaction profiles never change production or waive upgrade costs
+  ---
+  duration_ms: 1.248666
+  type: 'test'
+  ...
+# Subtest: Competitive games cannot inherit tutorial geometry, timings, bots or completion state
+ok 118 - Competitive games cannot inherit tutorial geometry, timings, bots or completion state
+  ---
+  duration_ms: 0.846667
+  type: 'test'
+  ...
+# Subtest: Unknown lessons and incompatible learner/bot configurations are rejected
+ok 119 - Unknown lessons and incompatible learner/bot configurations are rejected
+  ---
+  duration_ms: 0.154458
+  type: 'test'
+  ...
+# Subtest: Quit marks the lesson failed and exposes no internal counters or mutable snapshot references
+ok 120 - Quit marks the lesson failed and exposes no internal counters or mutable snapshot references
+  ---
+  duration_ms: 0.226916
+  type: 'test'
+  ...
+# Subtest: lesson-01: real opposing AI defeats an idle learner or leaves its objective failed
+ok 121 - lesson-01: real opposing AI defeats an idle learner or leaves its objective failed
+  ---
+  duration_ms: 10.940584
+  type: 'test'
+  ...
+# Subtest: lesson-02: real opposing AI defeats an idle learner or leaves its objective failed
+ok 122 - lesson-02: real opposing AI defeats an idle learner or leaves its objective failed
+  ---
+  duration_ms: 9.369166
+  type: 'test'
+  ...
+# Subtest: lesson-03: real opposing AI defeats an idle learner or leaves its objective failed
+ok 123 - lesson-03: real opposing AI defeats an idle learner or leaves its objective failed
+  ---
+  duration_ms: 6.818792
+  type: 'test'
+  ...
+# Subtest: lesson-04: real opposing AI defeats an idle learner or leaves its objective failed
+ok 124 - lesson-04: real opposing AI defeats an idle learner or leaves its objective failed
+  ---
+  duration_ms: 8.027208
+  type: 'test'
+  ...
+# Subtest: lesson-05: real opposing AI defeats an idle learner or leaves its objective failed
+ok 125 - lesson-05: real opposing AI defeats an idle learner or leaves its objective failed
+  ---
+  duration_ms: 6.169583
+  type: 'test'
+  ...
+# Subtest: lesson-06: real opposing AI defeats an idle learner or leaves its objective failed
+ok 126 - lesson-06: real opposing AI defeats an idle learner or leaves its objective failed
+  ---
+  duration_ms: 5.438583
+  type: 'test'
+  ...
+# Subtest: lesson-07: real opposing AI defeats an idle learner or leaves its objective failed
+ok 127 - lesson-07: real opposing AI defeats an idle learner or leaves its objective failed
+  ---
+  duration_ms: 11.338416
+  type: 'test'
+  ...
+# Subtest: lesson-08: real opposing AI defeats an idle learner or leaves its objective failed
+ok 128 - lesson-08: real opposing AI defeats an idle learner or leaves its objective failed
+  ---
+  duration_ms: 16.153583
+  type: 'test'
+  ...
+# Subtest: lesson-09: real opposing AI defeats an idle learner or leaves its objective failed
+ok 129 - lesson-09: real opposing AI defeats an idle learner or leaves its objective failed
+  ---
+  duration_ms: 21.416791
+  type: 'test'
+  ...
+# Subtest: lesson-10: real opposing AI defeats an idle learner or leaves its objective failed
+ok 130 - lesson-10: real opposing AI defeats an idle learner or leaves its objective failed
+  ---
+  duration_ms: 22.590958
+  type: 'test'
+  ...
+# Subtest: lesson-11: real opposing AI defeats an idle learner or leaves its objective failed
+ok 131 - lesson-11: real opposing AI defeats an idle learner or leaves its objective failed
+  ---
+  duration_ms: 5.548
+  type: 'test'
+  ...
+# Subtest: lesson-12: real opposing AI defeats an idle learner or leaves its objective failed
+ok 132 - lesson-12: real opposing AI defeats an idle learner or leaves its objective failed
+  ---
+  duration_ms: 16.249125
+  type: 'test'
+  ...
+# Subtest: Cutting the last route completes the regrowth lesson without requiring a stop-all button
+ok 133 - Cutting the last route completes the regrowth lesson without requiring a stop-all button
+  ---
+  duration_ms: 0.570292
+  type: 'test'
+  ...
+# Subtest: Dual-flank challenge cannot be completed using the old three-command shortcut without real rear supplies
+ok 134 - Dual-flank challenge cannot be completed using the old three-command shortcut without real rear supplies
+  ---
+  duration_ms: 14.947625
+  type: 'test'
+  ...
+# Subtest: The counterattack requires a real flank and prevents the former direct home attack
+ok 135 - The counterattack requires a real flank and prevents the former direct home attack
+  ---
+  duration_ms: 30.804417
+  type: 'test'
+  ...
+# Subtest: Clock recovery shifts both bridgehead and recaptured-home hold intervals
+ok 136 - Clock recovery shifts both bridgehead and recaptured-home hold intervals
+  ---
+  duration_ms: 0.2415
+  type: 'test'
+  ...
+# Subtest: New training freezes its curriculum version and AI cadence in the serialized room
+ok 137 - New training freezes its curriculum version and AI cadence in the serialized room
+  ---
+  duration_ms: 0.632583
+  type: 'test'
+  ...
+# Subtest: Older serialized training retains its original AI reaction windows
+ok 138 - Older serialized training retains its original AI reaction windows
+  ---
+  duration_ms: 0.330417
+  type: 'test'
+  ...
+# Subtest: Older counterattack progress is not silently replaced by new bridge or reserve objectives
+ok 139 - Older counterattack progress is not silently replaced by new bridge or reserve objectives
+  ---
+  duration_ms: 0.128708
+  type: 'test'
+  ...
+# Subtest: Older timed training still requires its stored victory objective, and finished history stays frozen
+ok 140 - Older timed training still requires its stored victory objective, and finished history stays frozen
+  ---
+  duration_ms: 0.117208
+  type: 'test'
+  ...
+# Subtest: presentation intervals stop hidden, refresh immediately on return, and remove their listener
+ok 141 - presentation intervals stop hidden, refresh immediately on return, and remove their listener
+  ---
+  duration_ms: 0.448709
+  type: 'test'
+  ...
+# Subtest: initially hidden pages do not start an interval or sample a stale display
+ok 142 - initially hidden pages do not start an interval or sample a stale display
+  ---
+  duration_ms: 0.110167
+  type: 'test'
+  ...
+1..142
+# tests 142
+# suites 0
+# pass 142
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 557.379458

@@ -1,0 +1,49 @@
+{
+  "checkedAt": "2026-09-19T15:37:03.982Z",
+  "isolated": true,
+  "realDevice": false,
+  "report": [
+    {
+      "game": "ludo",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 844,
+      "bodyHeight": 844
+    },
+    {
+      "game": "ludo",
+      "width": 360,
+      "scrollWidth": 360,
+      "height": 800,
+      "bodyHeight": 800
+    },
+    {
+      "game": "jackaroo",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 844,
+      "bodyHeight": 844
+    },
+    {
+      "game": "jackaroo",
+      "width": 360,
+      "scrollWidth": 360,
+      "height": 800,
+      "bodyHeight": 800
+    },
+    {
+      "game": "domino",
+      "width": 390,
+      "scrollWidth": 390,
+      "height": 844,
+      "bodyHeight": 844
+    },
+    {
+      "game": "domino",
+      "width": 360,
+      "scrollWidth": 360,
+      "height": 800,
+      "bodyHeight": 800
+    }
+  ]
+}

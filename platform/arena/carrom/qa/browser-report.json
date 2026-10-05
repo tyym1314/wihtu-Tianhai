@@ -1,0 +1,57 @@
+{
+  "at": "2026-09-18T14:25:21.364Z",
+  "scope": "Desktop Chromium mobile emulation, isolated zero-value engine harness; not physical-device acceptance or wallet evidence.",
+  "reports": [
+    {
+      "name": "zh-390",
+      "width": 390,
+      "height": 844,
+      "locale": "zh",
+      "players": 2,
+      "layout": {
+        "width": 390,
+        "scroll": 390,
+        "height": 844,
+        "buttonBottom": 817,
+        "canvasWidth": 382
+      },
+      "shotDuration": 4208,
+      "shotCount": 2,
+      "errors": []
+    },
+    {
+      "name": "en-360",
+      "width": 360,
+      "height": 800,
+      "locale": "en",
+      "players": 2,
+      "layout": {
+        "width": 360,
+        "scroll": 360,
+        "height": 800,
+        "buttonBottom": 773,
+        "canvasWidth": 352
+      },
+      "shotDuration": 4208,
+      "shotCount": 2,
+      "errors": []
+    },
+    {
+      "name": "ar-team-390",
+      "width": 390,
+      "height": 844,
+      "locale": "ar",
+      "players": 4,
+      "layout": {
+        "width": 390,
+        "scroll": 390,
+        "height": 844,
+        "buttonBottom": 817,
+        "canvasWidth": 382
+      },
+      "shotDuration": 4208,
+      "shotCount": 2,
+      "errors": []
+    }
+  ]
+}

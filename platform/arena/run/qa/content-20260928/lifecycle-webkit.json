@@ -1,0 +1,313 @@
+{
+  "browser": "webkit",
+  "scope": "Desktop real WebGL, ten mount/unmount cycles. Resource/context observations only; no forced-GC heap claim, no iPhone acceptance.",
+  "samples": [
+    {
+      "cycle": 1,
+      "resources": {
+        "raf": 0,
+        "intervals": 1,
+        "resizeObservers": 0,
+        "workers": 0,
+        "canvases": 0,
+        "liveContexts": 0
+      },
+      "source": {
+        "objects": 30,
+        "disposeListeners": 0
+      }
+    },
+    {
+      "cycle": 2,
+      "resources": {
+        "raf": 0,
+        "intervals": 1,
+        "resizeObservers": 0,
+        "workers": 0,
+        "canvases": 0,
+        "liveContexts": 0
+      },
+      "source": {
+        "objects": 30,
+        "disposeListeners": 0
+      }
+    },
+    {
+      "cycle": 3,
+      "resources": {
+        "raf": 0,
+        "intervals": 1,
+        "resizeObservers": 0,
+        "workers": 0,
+        "canvases": 0,
+        "liveContexts": 0
+      },
+      "source": {
+        "objects": 30,
+        "disposeListeners": 0
+      }
+    },
+    {
+      "cycle": 4,
+      "resources": {
+        "raf": 0,
+        "intervals": 1,
+        "resizeObservers": 0,
+        "workers": 0,
+        "canvases": 0,
+        "liveContexts": 0
+      },
+      "source": {
+        "objects": 30,
+        "disposeListeners": 0
+      }
+    },
+    {
+      "cycle": 5,
+      "resources": {
+        "raf": 0,
+        "intervals": 1,
+        "resizeObservers": 0,
+        "workers": 0,
+        "canvases": 0,
+        "liveContexts": 0
+      },
+      "source": {
+        "objects": 30,
+        "disposeListeners": 0
+      }
+    },
+    {
+      "cycle": 6,
+      "resources": {
+        "raf": 0,
+        "intervals": 1,
+        "resizeObservers": 0,
+        "workers": 0,
+        "canvases": 0,
+        "liveContexts": 0
+      },
+      "source": {
+        "objects": 30,
+        "disposeListeners": 0
+      }
+    },
+    {
+      "cycle": 7,
+      "resources": {
+        "raf": 0,
+        "intervals": 1,
+        "resizeObservers": 0,
+        "workers": 0,
+        "canvases": 0,
+        "liveContexts": 0
+      },
+      "source": {
+        "objects": 30,
+        "disposeListeners": 0
+      }
+    },
+    {
+      "cycle": 8,
+      "resources": {
+        "raf": 0,
+        "intervals": 1,
+        "resizeObservers": 0,
+        "workers": 0,
+        "canvases": 0,
+        "liveContexts": 0
+      },
+      "source": {
+        "objects": 30,
+        "disposeListeners": 0
+      }
+    },
+    {
+      "cycle": 9,
+      "resources": {
+        "raf": 0,
+        "intervals": 1,
+        "resizeObservers": 0,
+        "workers": 0,
+        "canvases": 0,
+        "liveContexts": 0
+      },
+      "source": {
+        "objects": 30,
+        "disposeListeners": 0
+      }
+    },
+    {
+      "cycle": 10,
+      "resources": {
+        "raf": 0,
+        "intervals": 1,
+        "resizeObservers": 0,
+        "workers": 0,
+        "canvases": 0,
+        "liveContexts": 0
+      },
+      "source": {
+        "objects": 30,
+        "disposeListeners": 0
+      }
+    }
+  ],
+  "visibility": [
+    {
+      "hidden": true,
+      "resources": {
+        "raf": 0,
+        "intervals": 1,
+        "resizeObservers": 1,
+        "workers": 0,
+        "canvases": 1,
+        "liveContexts": 1
+      }
+    },
+    {
+      "hidden": false,
+      "resources": {
+        "raf": 1,
+        "intervals": 1,
+        "resizeObservers": 1,
+        "workers": 0,
+        "canvases": 1,
+        "liveContexts": 1
+      }
+    }
+  ],
+  "errors": [],
+  "baseline": {
+    "raf": 0,
+    "intervals": 1,
+    "resizeObservers": 0,
+    "workers": 0,
+    "canvases": 0,
+    "liveContexts": 0
+  },
+  "contexts": [
+    {
+      "contextLost": true,
+      "undeletedHandlesAtContextLoss": {
+        "Buffer": 1,
+        "Texture": 4,
+        "Program": 0,
+        "Framebuffer": 3,
+        "Renderbuffer": 0,
+        "VertexArray": 0,
+        "Shader": 4
+      }
+    },
+    {
+      "contextLost": true,
+      "undeletedHandlesAtContextLoss": {
+        "Buffer": 1,
+        "Texture": 4,
+        "Program": 0,
+        "Framebuffer": 3,
+        "Renderbuffer": 0,
+        "VertexArray": 0,
+        "Shader": 4
+      }
+    },
+    {
+      "contextLost": true,
+      "undeletedHandlesAtContextLoss": {
+        "Buffer": 1,
+        "Texture": 4,
+        "Program": 0,
+        "Framebuffer": 3,
+        "Renderbuffer": 0,
+        "VertexArray": 0,
+        "Shader": 4
+      }
+    },
+    {
+      "contextLost": true,
+      "undeletedHandlesAtContextLoss": {
+        "Buffer": 1,
+        "Texture": 4,
+        "Program": 0,
+        "Framebuffer": 3,
+        "Renderbuffer": 0,
+        "VertexArray": 0,
+        "Shader": 4
+      }
+    },
+    {
+      "contextLost": true,
+      "undeletedHandlesAtContextLoss": {
+        "Buffer": 1,
+        "Texture": 4,
+        "Program": 0,
+        "Framebuffer": 3,
+        "Renderbuffer": 0,
+        "VertexArray": 0,
+        "Shader": 4
+      }
+    },
+    {
+      "contextLost": true,
+      "undeletedHandlesAtContextLoss": {
+        "Buffer": 1,
+        "Texture": 4,
+        "Program": 0,
+        "Framebuffer": 3,
+        "Renderbuffer": 0,
+        "VertexArray": 0,
+        "Shader": 4
+      }
+    },
+    {
+      "contextLost": true,
+      "undeletedHandlesAtContextLoss": {
+        "Buffer": 1,
+        "Texture": 4,
+        "Program": 0,
+        "Framebuffer": 3,
+        "Renderbuffer": 0,
+        "VertexArray": 0,
+        "Shader": 4
+      }
+    },
+    {
+      "contextLost": true,
+      "undeletedHandlesAtContextLoss": {
+        "Buffer": 1,
+        "Texture": 4,
+        "Program": 0,
+        "Framebuffer": 3,
+        "Renderbuffer": 0,
+        "VertexArray": 0,
+        "Shader": 4
+      }
+    },
+    {
+      "contextLost": true,
+      "undeletedHandlesAtContextLoss": {
+        "Buffer": 1,
+        "Texture": 4,
+        "Program": 0,
+        "Framebuffer": 3,
+        "Renderbuffer": 0,
+        "VertexArray": 0,
+        "Shader": 4
+      }
+    },
+    {
+      "contextLost": true,
+      "undeletedHandlesAtContextLoss": {
+        "Buffer": 1,
+        "Texture": 4,
+        "Program": 0,
+        "Framebuffer": 3,
+        "Renderbuffer": 0,
+        "VertexArray": 0,
+        "Shader": 4
+      }
+    }
+  ],
+  "passed": true,
+  "serviceClosed": true
+}

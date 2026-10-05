@@ -1,0 +1,42 @@
+{
+  "label": "webkit-safe-compile",
+  "program_count": {
+    "n": 382,
+    "p50": 12,
+    "p95": 12,
+    "max": 12
+  },
+  "scope": "Desktop Playwright WebKit without CPU throttle, 390x844 DPR3 mobile quality; fixed open-path snapshots every 400ms; no phone, gameplay or production acceptance. Long Tasks unavailable on WebKit.",
+  "gpu": "Apple GPU",
+  "created_ms": 90,
+  "ready_at_ms": 285,
+  "frame_ms": {
+    "n": 381,
+    "p50": 17,
+    "p95": 19,
+    "max": 20
+  },
+  "render_submit_ms": {
+    "n": 382,
+    "p50": 1,
+    "p95": 3,
+    "max": 4
+  },
+  "calls": {
+    "n": 382,
+    "p50": 115,
+    "p95": 120,
+    "max": 121
+  },
+  "triangles": {
+    "n": 382,
+    "p50": 150616,
+    "p95": 173376,
+    "max": 173788
+  },
+  "still_frames": 0,
+  "sampled_frames": 382,
+  "still_percent": 0,
+  "startup_long_tasks": [],
+  "errors": []
+}

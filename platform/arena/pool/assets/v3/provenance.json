@@ -1,0 +1,16 @@
+{
+  "reference": "output/design/pvp-arena-concepts-v1/06-pool.png",
+  "board_original": "/Users/tyym/.codex/generated_images/01a0b06a-2b67-73d2-8819-3164d148773c/exec-882981b0-be37-4f67-9393-a8ea5281f1e4.png",
+  "guide": "geometry-guide.svg / geometry-guide.png",
+  "complete_prompt": "board-prompt.txt",
+  "runtime": "board-material.webp",
+  "encoding": "cwebp q92 alpha_q100, original PNG retained; no crop/resize/paint postprocessing",
+  "blender": "No new Blender asset: actual balls/cue remain Canvas",
+  "runtime_geometry": "Walnut/cloth/cushion material uses nine-slice mapping to exact ±3.25×±6.5 boundaries. Six pockets, balls, cue, aiming and collision animation remain real Canvas primitives driven by unchanged physics.",
+  "files": [
+    {
+      "path": "board-material.webp",
+      "bytes": 552996
+    }
+  ]
+}

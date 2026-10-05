@@ -1,0 +1,467 @@
+{
+  "created_at": "2026-09-19T18:16:20.225Z",
+  "status": "ASSET_AND_MOTION_RESTORATION_REVIEW",
+  "scope": "Original static concepts versus actual playable engine captures. Displayed rounds and money are isolated fixtures, not live wallet receipts. Mobile Chrome viewport validation is not a physical device FPS certification.",
+  "games": [
+    {
+      "id": "carrom",
+      "number": "01",
+      "name": "Carrom 弹盘",
+      "previousSize": [
+        390,
+        844
+      ],
+      "reference": "images/01-carrom.png",
+      "before": "images/carrom-before.png",
+      "previous": "images/carrom-previous.png",
+      "current": "images/carrom-current.png",
+      "result": "images/carrom-result.png",
+      "moment": "images/carrom-moment.png",
+      "video": "motion/carrom.mp4",
+      "crops": [
+        [
+          9,
+          44,
+          496,
+          912
+        ],
+        [
+          520,
+          44,
+          496,
+          912
+        ],
+        [
+          1030,
+          44,
+          496,
+          912
+        ]
+      ],
+      "tools": "Blender 预渲染 + Canvas 动态棋子",
+      "gap": "木质雕边、棋子接触阴影与金属高光不足；顶部信息挤占棋盘；通用奖杯替代专属胜利画面。",
+      "work": "胡桃木雕边棋盘、Blender 棋子与灯笼宫殿；本轮将下部操作区恢复为深绿 AIM 轨、雕花 striker 滑块与紧凑出杆按钮，真实碰撞和入袋保持。",
+      "preview": "http://127.0.0.1:18112/arena/review-preview.html?game=carrom",
+      "paths": {
+        "reference": "output/design/pvp-arena-concepts-v1/01-carrom.png",
+        "source": "platform/arena/carrom/CarromGame.jsx",
+        "current": "platform/review/visual-restoration/carrom-restored-390.png",
+        "result": "platform/review/visual-restoration/carrom-result-restored-390.png"
+      }
+    },
+    {
+      "id": "match",
+      "number": "02",
+      "name": "三消竞技",
+      "previousSize": [
+        390,
+        844
+      ],
+      "reference": "images/02-match.png",
+      "before": "images/match-before.png",
+      "previous": "images/match-previous.png",
+      "current": "images/match-current.png",
+      "result": "images/match-result.png",
+      "moment": "images/match-moment.png",
+      "video": "motion/match.mp4",
+      "crops": [
+        [
+          27,
+          35,
+          475,
+          934
+        ],
+        [
+          529,
+          35,
+          478,
+          934
+        ],
+        [
+          1034,
+          35,
+          475,
+          934
+        ]
+      ],
+      "tools": "精细分层角色 + 2.5D 宝石",
+      "gap": "参考是有身体、手臂和服装的狐狸；当前是头像。宝石面数和反射简化，下半部按钮及胜利页差距明显。",
+      "work": "高精宝石、24 帧狐狸表情与庆祝、连消碎裂和射线、四按钮底栏、狐狸举杯专属结算。",
+      "preview": "http://127.0.0.1:18112/arena/review-preview.html?game=match",
+      "paths": {
+        "reference": "output/design/pvp-arena-concepts-v1/02-match.png",
+        "source": "platform/arena/match/MatchGame.jsx",
+        "current": "platform/review/visual-restoration/match-restored-390.png",
+        "result": "platform/review/visual-restoration/match-result-restored-390.png"
+      }
+    },
+    {
+      "id": "golf",
+      "number": "03",
+      "name": "绿洲高尔夫",
+      "previousSize": [
+        390,
+        844
+      ],
+      "reference": "images/03-golf.png",
+      "before": "images/golf-before.png",
+      "previous": "images/golf-previous.png",
+      "current": "images/golf-current.png",
+      "result": "images/golf-result.png",
+      "moment": "images/golf-moment.png",
+      "video": "motion/golf.mp4",
+      "crops": [
+        [
+          67,
+          56,
+          448,
+          895
+        ],
+        [
+          544,
+          56,
+          447,
+          895
+        ],
+        [
+          1020,
+          56,
+          448,
+          895
+        ]
+      ],
+      "tools": "Blender 场景与材质 + Three.js",
+      "gap": "当前已是真 3D，但石桥、砂岩、水面和棕榈呈简化几何质感，缺参考图的自然材质和光照层次。",
+      "work": "本轮重建砂岩石岸、弧形棕榈叶与垂藤，重烘焙三洞阴影；细化水纹、浅水层、湿石脚和材质重复。保留实际球轨迹和入洞演出。",
+      "preview": "http://127.0.0.1:18112/arena/review-preview.html?game=golf",
+      "paths": {
+        "reference": "output/design/pvp-arena-concepts-v1/03-golf.png",
+        "source": "platform/arena/golf/GolfGame.jsx",
+        "current": "platform/review/visual-restoration/golf-restored-390.png",
+        "result": "platform/review/visual-restoration/golf-result-restored-390.png"
+      }
+    },
+    {
+      "id": "darts",
+      "number": "04",
+      "name": "飞镖对决",
+      "previousSize": [
+        390,
+        844
+      ],
+      "reference": "images/04-darts.png",
+      "before": "images/darts-before.png",
+      "previous": "images/darts-previous.png",
+      "current": "images/darts-current.png",
+      "result": "images/darts-result.png",
+      "moment": "images/darts-moment.png",
+      "video": "motion/darts.mp4",
+      "crops": [
+        [
+          15,
+          31,
+          491,
+          931
+        ],
+        [
+          528,
+          31,
+          489,
+          931
+        ],
+        [
+          1032,
+          31,
+          491,
+          931
+        ]
+      ],
+      "tools": "分层场馆 + 3D 飞镖 / 精细靶面",
+      "gap": "剪影城市和简化靶面替代蓝紫场馆，字符飞镖缺金属体积；命中与牛眼特写没有原稿冲击力。",
+      "work": "蓝紫宫殿与合法靶面；本轮从 Blender 实体重烘焙第一人称近端大尾翼准备姿势。真实飞行仍按镖尖/落点，含命中反馈与肖像结算。",
+      "preview": "http://127.0.0.1:18112/arena/review-preview.html?game=darts",
+      "paths": {
+        "reference": "output/design/pvp-arena-concepts-v1/04-darts.png",
+        "source": "platform/arena/darts/DartsGame.jsx",
+        "current": "platform/review/visual-restoration/darts-restored-390.png",
+        "result": "platform/review/visual-restoration/darts-result-restored-390.png"
+      }
+    },
+    {
+      "id": "ludo",
+      "number": "05",
+      "name": "Ludo 快速版",
+      "previousSize": [
+        390,
+        844
+      ],
+      "reference": "images/05-ludo.png",
+      "before": "images/ludo-before.png",
+      "previous": "images/ludo-previous.png",
+      "current": "images/ludo-current.png",
+      "result": "images/ludo-result.png",
+      "moment": "images/ludo-moment.png",
+      "video": "motion/ludo.mp4",
+      "crops": [
+        [
+          29,
+          57,
+          477,
+          878
+        ],
+        [
+          528,
+          57,
+          477,
+          878
+        ],
+        [
+          1030,
+          57,
+          478,
+          878
+        ]
+      ],
+      "tools": "Blender 烘焙棋盘 + 六面骰子",
+      "gap": "头像和骰盘偏小，玉石棋盘是平面渐变；底部操作区简化；缺吃子碰撞与角色举杯。",
+      "work": "金边玉石盘、Blender 棋子、六面骰子、逐格与吃子回家动画；终盘上方棋子举杯。",
+      "preview": "http://127.0.0.1:18112/arena/review-preview.html?game=ludo",
+      "paths": {
+        "reference": "output/design/pvp-arena-concepts-v1/05-ludo.png",
+        "source": "platform/arena/ludo/LudoGame.jsx",
+        "current": "platform/review/visual-restoration/ludo-restored-390.png",
+        "result": "platform/review/visual-restoration/ludo-result-restored-390.png"
+      }
+    },
+    {
+      "id": "pool",
+      "number": "06",
+      "name": "八球对决",
+      "previousSize": [
+        390,
+        844
+      ],
+      "reference": "images/06-pool.png",
+      "before": "images/pool-before.png",
+      "previous": "images/pool-previous.png",
+      "current": "images/pool-current.png",
+      "result": "images/pool-result.png",
+      "moment": "images/pool-moment.png",
+      "video": "motion/pool.mp4",
+      "crops": [
+        [
+          34,
+          57,
+          476,
+          886
+        ],
+        [
+          529,
+          57,
+          478,
+          886
+        ],
+        [
+          1028,
+          57,
+          477,
+          886
+        ]
+      ],
+      "tools": "Blender 固定视角烘焙 + Canvas 动态球",
+      "gap": "固定俯视可以保留；球桌木料/台呢、袋口深度、球反射和底部金属控件不够细，专属黑八结算缺失。",
+      "work": "午夜球馆、胡桃木/黄铜球桌、精细台呢、球杆及实际入袋、黑八奖杯与净变化明细。",
+      "preview": "http://127.0.0.1:18112/arena/review-preview.html?game=pool",
+      "paths": {
+        "reference": "output/design/pvp-arena-concepts-v1/06-pool.png",
+        "source": "platform/arena/pool/PoolGame.jsx",
+        "current": "platform/review/visual-restoration/pool-restored-390.png",
+        "result": "platform/review/visual-restoration/pool-result-restored-390.png"
+      }
+    },
+    {
+      "id": "bowling",
+      "number": "07",
+      "name": "保龄球对决",
+      "previousSize": [
+        390,
+        844
+      ],
+      "reference": "images/07-bowling.png",
+      "before": "images/bowling-before.png",
+      "previous": "images/bowling-previous.png",
+      "current": "images/bowling-current.png",
+      "result": "images/bowling-result.png",
+      "moment": "images/bowling-moment.png",
+      "video": "motion/bowling.mp4",
+      "crops": [
+        [
+          104,
+          54,
+          417,
+          888
+        ],
+        [
+          560,
+          54,
+          417,
+          888
+        ],
+        [
+          1015,
+          54,
+          417,
+          888
+        ]
+      ],
+      "tools": "Blender 模型 / 材质 + Three.js",
+      "gap": "已是真 3D，但低机位、球与瓶的占比、球道反射和霓虹照明没有对齐；全中和奖杯演出欠缺。",
+      "work": "本轮重排镜头与灯槽顶棚，恢复连续蓝紫侧柱和场馆纵深；灯牌嵌进后墙，低强度霓虹柔光保留深色墙面。真实球瓶、出球轨迹、全中与结算保留。",
+      "preview": "http://127.0.0.1:18112/arena/review-preview.html?game=bowling",
+      "paths": {
+        "reference": "output/design/pvp-arena-concepts-v1/07-bowling.png",
+        "source": "platform/arena/bowling/BowlingGame.jsx",
+        "current": "platform/review/visual-restoration/bowling-restored-390.png",
+        "result": "platform/review/visual-restoration/bowling-result-restored-390.png"
+      }
+    },
+    {
+      "id": "jackaroo",
+      "number": "08",
+      "name": "Jackaroo 搭档",
+      "previousSize": [
+        390,
+        844
+      ],
+      "reference": "images/08-jackaroo.png",
+      "before": "images/jackaroo-before.png",
+      "previous": "images/jackaroo-previous.png",
+      "current": "images/jackaroo-current.png",
+      "result": "images/jackaroo-result.png",
+      "moment": "images/jackaroo-moment.png",
+      "video": "motion/jackaroo.mp4",
+      "crops": [
+        [
+          18,
+          59,
+          489,
+          895
+        ],
+        [
+          529,
+          59,
+          489,
+          895
+        ],
+        [
+          1029,
+          59,
+          489,
+          895
+        ]
+      ],
+      "tools": "Blender 木盘烘焙 + 实时卡牌/弹珠",
+      "gap": "原图四边围桌座位变为顶部缩略条，厚胡桃木四叶盘变方板；选牌时棋盘会缩小；队伍结算层级缺失。",
+      "work": "四面围坐、胡桃木盘、独立弹珠与卡牌、同步交换；双人头像与团队/个人分账结算。",
+      "preview": "http://127.0.0.1:18112/arena/review-preview.html?game=jackaroo",
+      "paths": {
+        "reference": "output/design/pvp-arena-concepts-v1/08-jackaroo.png",
+        "source": "platform/arena/jackaroo/JackarooGame.jsx",
+        "current": "platform/review/visual-restoration/jackaroo-restored-390.png",
+        "result": "platform/review/visual-restoration/jackaroo-result-restored-390.png"
+      }
+    },
+    {
+      "id": "domino",
+      "number": "09",
+      "name": "多米诺对战",
+      "previousSize": [
+        390,
+        844
+      ],
+      "reference": "images/09-domino.png",
+      "before": "images/domino-before.png",
+      "previous": "images/domino-previous.png",
+      "current": "images/domino-current.png",
+      "result": "images/domino-result.png",
+      "moment": "images/domino-moment.png",
+      "video": "motion/domino.mp4",
+      "crops": [
+        [
+          18,
+          57,
+          485,
+          881
+        ],
+        [
+          530,
+          57,
+          485,
+          881
+        ],
+        [
+          1034,
+          57,
+          485,
+          881
+        ]
+      ],
+      "tools": "Blender 象牙牌烘焙 + 2.5D 分层",
+      "gap": "夜宫殿为简化剪影，上下人物头像和横牌托架缺失；牌从固定偏移出现，抽牌会让整手重播发牌。",
+      "work": "金灯拱廊、象牙牌和横向托架、实际出牌/单张抽牌路径、象牙牌与本局分数结算。",
+      "preview": "http://127.0.0.1:18112/arena/review-preview.html?game=domino",
+      "paths": {
+        "reference": "output/design/pvp-arena-concepts-v1/09-domino.png",
+        "source": "platform/arena/domino/DominoGame.jsx",
+        "current": "platform/review/visual-restoration/domino-restored-390.png",
+        "result": "platform/review/visual-restoration/domino-result-restored-390.png"
+      }
+    },
+    {
+      "id": "run",
+      "number": "10",
+      "name": "动物道具竞速",
+      "previousSize": [
+        390,
+        844
+      ],
+      "reference": "images/10-run.png",
+      "before": "images/run-before.png",
+      "previous": "images/run-previous.png",
+      "current": "images/run-current.png",
+      "result": "images/run-result.png",
+      "moment": "images/run-moment.png",
+      "video": "motion/run.mp4",
+      "crops": [
+        [
+          18,
+          59,
+          489,
+          895
+        ],
+        [
+          529,
+          59,
+          489,
+          895
+        ],
+        [
+          1029,
+          59,
+          490,
+          895
+        ]
+      ],
+      "tools": "Blender 骨骼角色 / 场景 + Three.js",
+      "gap": "差距在四位动物角色的造型、服装、骨骼与赛道层次；现有几何角色和通用榜单达不到原图风格。",
+      "work": "四角色各 8 帧跑步序列，按投影距离连续采样，快照之间也保持动画；跳跃影子落地、挤压回弹、立体石砌断桥；紧凑右栏 HUD 与居中圆形操作。实际名次与冠军举杯继续由结果决定。",
+      "preview": "http://127.0.0.1:18112/arena/review-preview.html?game=run",
+      "paths": {
+        "reference": "output/design/pvp-arena-concepts-v1/10-run.png",
+        "source": "platform/arena/run/RunGame.jsx",
+        "current": "platform/review/visual-restoration/run-restored-390.png",
+        "result": "platform/review/visual-restoration/run-result-restored-390.png"
+      }
+    }
+  ]
+}

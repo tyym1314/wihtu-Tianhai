@@ -1,0 +1,46 @@
+{
+  "runtime": "Desktop Chrome mobile viewports, isolated real local engine; no wallet, no physical-device acceptance",
+  "checks": [
+    {
+      "game": "golf",
+      "width": 390,
+      "blenderModelsLoaded": true,
+      "realPointerAction": true,
+      "actualEngineOutcome": true,
+      "viewportFits": true,
+      "calls": 299,
+      "triangles": 671426
+    },
+    {
+      "game": "golf",
+      "width": 360,
+      "blenderModelsLoaded": true,
+      "realPointerAction": true,
+      "actualEngineOutcome": true,
+      "viewportFits": true,
+      "calls": 306,
+      "triangles": 673114
+    },
+    {
+      "game": "bowling",
+      "width": 390,
+      "blenderModelsLoaded": true,
+      "realPointerAction": true,
+      "actualEngineOutcome": true,
+      "viewportFits": true,
+      "calls": 154,
+      "triangles": 257140
+    },
+    {
+      "game": "bowling",
+      "width": 360,
+      "blenderModelsLoaded": true,
+      "realPointerAction": true,
+      "actualEngineOutcome": true,
+      "viewportFits": true,
+      "calls": 154,
+      "triangles": 257140
+    }
+  ],
+  "errors": []
+}

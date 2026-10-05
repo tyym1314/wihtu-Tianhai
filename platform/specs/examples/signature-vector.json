@@ -1,0 +1,35 @@
+{
+  "status": "DESIGN_CONTRACT_TEST_VECTOR_NOT_A_LIVE_REQUEST",
+  "version": "gp-hmac-v1",
+  "method": "POST",
+  "canonical_target": "/wallet/v1/reservations",
+  "direction": "platform-to-wallet",
+  "key_id": "key_test_wallet_01",
+  "timestamp": "1789732800",
+  "nonce": "00112233445566778899aabbccddeeff",
+  "request_id": "req_reserve_0001",
+  "test_secret_utf8": "0123456789abcdef0123456789abcdef",
+  "test_secret_base64": "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+  "raw_body_utf8": "{\"partner_id\":\"partner_demo\",\"app_id\":\"app_demo\",\"environment\":\"sandbox\",\"wallet_scope_id\":\"main\",\"currency_id\":\"GOLD\",\"request_id\":\"req_reserve_0001\",\"match_id\":\"match_0001\",\"reservation_id\":\"reserve_0001\",\"external_user_id\":\"player_a\",\"seat_index\":0,\"amount_minor\":\"10000\",\"expires_at\":\"2026-09-18T12:02:00Z\",\"terms\":{\"game_id\":\"carrom\",\"rule_version\":\"pvp-carrom-v1.0.0\",\"payout_template_version\":\"winner-all-v1\",\"fee_bps\":500,\"entry_minor\":\"10000\",\"player_count\":2,\"team_size\":1}}",
+  "raw_body_byte_length": 484,
+  "body_sha256_hex": "a1b88018a073905fb32eb85dc1d89e2d9ec835c0b27ad9d1fefc3092e10b6862",
+  "canonical_string_utf8": "GP-HMAC-SHA256-V1\nplatform-to-wallet\nkey_test_wallet_01\n1789732800\n00112233445566778899aabbccddeeff\nreq_reserve_0001\nPOST\n/wallet/v1/reservations\na1b88018a073905fb32eb85dc1d89e2d9ec835c0b27ad9d1fefc3092e10b6862",
+  "canonical_string_byte_length": 210,
+  "signature_hex": "9ed141cc561cc48f7bdd19a06a7f08ca1372dd24eb0b9cd7b706133140be724d",
+  "signature_header": "v1=9ed141cc561cc48f7bdd19a06a7f08ca1372dd24eb0b9cd7b706133140be724d",
+  "headers": {
+    "Content-Type": "application/json; charset=utf-8",
+    "X-GP-Key-Id": "key_test_wallet_01",
+    "X-GP-Direction": "platform-to-wallet",
+    "X-GP-Timestamp": "1789732800",
+    "X-GP-Nonce": "00112233445566778899aabbccddeeff",
+    "X-GP-Request-Id": "req_reserve_0001",
+    "X-GP-Signature": "v1=9ed141cc561cc48f7bdd19a06a7f08ca1372dd24eb0b9cd7b706133140be724d"
+  },
+  "notes": [
+    "Test-only public secret. Never deploy this value.",
+    "Timestamp is fixed for reproducibility; normal replay/time checks reject it outside the 300-second window.",
+    "UTF-8, LF between lines, no trailing LF, no JSON reserialization after signing.",
+    "Use a fresh nonce and timestamp but unchanged request_id and raw body for a business retry."
+  ]
+}

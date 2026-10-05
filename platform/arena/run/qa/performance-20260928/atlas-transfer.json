@@ -1,0 +1,277 @@
+{
+  "checkedAt": "2026-09-28T12:04:23.225Z",
+  "scope": "Desktop Playwright WebKit, fresh context per case, actual same-origin HTTP with original image bytes and immutable cache. Before build restores anonymous CORS and all-character preloading in memory only. No public API, production deployment or iPhone acceptance.",
+  "results": [
+    {
+      "name": "before",
+      "serverRequests": [
+        {
+          "path": "/run-fox-v4-M5AOWLRS.webp",
+          "bytes": 303776,
+          "fetchMode": "cors",
+          "origin": "http://127.0.0.1:49207"
+        },
+        {
+          "path": "/run-cat-v4-7OZ7N5JL.webp",
+          "bytes": 276608,
+          "fetchMode": "cors",
+          "origin": "http://127.0.0.1:49207"
+        },
+        {
+          "path": "/run-bear-v4-DUT376V7.webp",
+          "bytes": 297774,
+          "fetchMode": "cors",
+          "origin": "http://127.0.0.1:49207"
+        },
+        {
+          "path": "/run-rabbit-v4-ZXITYH77.webp",
+          "bytes": 251016,
+          "fetchMode": "cors",
+          "origin": "http://127.0.0.1:49207"
+        },
+        {
+          "path": "/action-back-EEJL4TFP.webp",
+          "bytes": 498472,
+          "fetchMode": "cors",
+          "origin": "http://127.0.0.1:49207"
+        },
+        {
+          "path": "/front-win-CLPN3DGD.webp",
+          "bytes": 547882,
+          "fetchMode": "cors",
+          "origin": "http://127.0.0.1:49207"
+        },
+        {
+          "path": "/front-win-CLPN3DGD.webp",
+          "bytes": 547882,
+          "fetchMode": "no-cors",
+          "origin": null
+        }
+      ],
+      "serverImageBodyBytes": 2723410,
+      "frontRequests": 2,
+      "frontBytes": 1095764,
+      "runFiles": [
+        "/run-fox-v4-M5AOWLRS.webp",
+        "/run-cat-v4-7OZ7N5JL.webp",
+        "/run-bear-v4-DUT376V7.webp",
+        "/run-rabbit-v4-ZXITYH77.webp"
+      ],
+      "resources": [
+        {
+          "path": "/run-fox-v4-M5AOWLRS.webp",
+          "initiator": "img",
+          "encoded": 303776,
+          "decoded": 303776,
+          "transfer": 304076
+        },
+        {
+          "path": "/run-cat-v4-7OZ7N5JL.webp",
+          "initiator": "img",
+          "encoded": 276608,
+          "decoded": 276608,
+          "transfer": 276908
+        },
+        {
+          "path": "/run-bear-v4-DUT376V7.webp",
+          "initiator": "img",
+          "encoded": 297774,
+          "decoded": 297774,
+          "transfer": 298074
+        },
+        {
+          "path": "/run-rabbit-v4-ZXITYH77.webp",
+          "initiator": "img",
+          "encoded": 251016,
+          "decoded": 251016,
+          "transfer": 251316
+        },
+        {
+          "path": "/action-back-EEJL4TFP.webp",
+          "initiator": "img",
+          "encoded": 498472,
+          "decoded": 498472,
+          "transfer": 498772
+        },
+        {
+          "path": "/front-win-CLPN3DGD.webp",
+          "initiator": "img",
+          "encoded": 547882,
+          "decoded": 547882,
+          "transfer": 548182
+        },
+        {
+          "path": "/front-win-CLPN3DGD.webp",
+          "initiator": "css",
+          "encoded": 547882,
+          "decoded": 547882,
+          "transfer": 548182
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "after",
+      "serverRequests": [
+        {
+          "path": "/run-fox-v4-M5AOWLRS.webp",
+          "bytes": 303776,
+          "fetchMode": "no-cors",
+          "origin": null
+        },
+        {
+          "path": "/run-cat-v4-7OZ7N5JL.webp",
+          "bytes": 276608,
+          "fetchMode": "no-cors",
+          "origin": null
+        },
+        {
+          "path": "/action-back-EEJL4TFP.webp",
+          "bytes": 498472,
+          "fetchMode": "no-cors",
+          "origin": null
+        },
+        {
+          "path": "/front-win-CLPN3DGD.webp",
+          "bytes": 547882,
+          "fetchMode": "no-cors",
+          "origin": null
+        }
+      ],
+      "serverImageBodyBytes": 1626738,
+      "frontRequests": 1,
+      "frontBytes": 547882,
+      "runFiles": [
+        "/run-fox-v4-M5AOWLRS.webp",
+        "/run-cat-v4-7OZ7N5JL.webp"
+      ],
+      "resources": [
+        {
+          "path": "/run-fox-v4-M5AOWLRS.webp",
+          "initiator": "fetch",
+          "encoded": 303776,
+          "decoded": 303776,
+          "transfer": 304076
+        },
+        {
+          "path": "/run-cat-v4-7OZ7N5JL.webp",
+          "initiator": "fetch",
+          "encoded": 276608,
+          "decoded": 276608,
+          "transfer": 276908
+        },
+        {
+          "path": "/action-back-EEJL4TFP.webp",
+          "initiator": "fetch",
+          "encoded": 498472,
+          "decoded": 498472,
+          "transfer": 498772
+        },
+        {
+          "path": "/front-win-CLPN3DGD.webp",
+          "initiator": "fetch",
+          "encoded": 547882,
+          "decoded": 547882,
+          "transfer": 548182
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "after-expand",
+      "serverRequests": [
+        {
+          "path": "/run-fox-v4-M5AOWLRS.webp",
+          "bytes": 303776,
+          "fetchMode": "no-cors",
+          "origin": null
+        },
+        {
+          "path": "/run-cat-v4-7OZ7N5JL.webp",
+          "bytes": 276608,
+          "fetchMode": "no-cors",
+          "origin": null
+        },
+        {
+          "path": "/action-back-EEJL4TFP.webp",
+          "bytes": 498472,
+          "fetchMode": "no-cors",
+          "origin": null
+        },
+        {
+          "path": "/front-win-CLPN3DGD.webp",
+          "bytes": 547882,
+          "fetchMode": "no-cors",
+          "origin": null
+        },
+        {
+          "path": "/run-bear-v4-DUT376V7.webp",
+          "bytes": 297774,
+          "fetchMode": "no-cors",
+          "origin": null
+        },
+        {
+          "path": "/run-rabbit-v4-ZXITYH77.webp",
+          "bytes": 251016,
+          "fetchMode": "no-cors",
+          "origin": null
+        }
+      ],
+      "serverImageBodyBytes": 2175528,
+      "frontRequests": 1,
+      "frontBytes": 547882,
+      "runFiles": [
+        "/run-fox-v4-M5AOWLRS.webp",
+        "/run-cat-v4-7OZ7N5JL.webp",
+        "/run-bear-v4-DUT376V7.webp",
+        "/run-rabbit-v4-ZXITYH77.webp"
+      ],
+      "resources": [
+        {
+          "path": "/run-fox-v4-M5AOWLRS.webp",
+          "initiator": "fetch",
+          "encoded": 303776,
+          "decoded": 303776,
+          "transfer": 304076
+        },
+        {
+          "path": "/run-cat-v4-7OZ7N5JL.webp",
+          "initiator": "fetch",
+          "encoded": 276608,
+          "decoded": 276608,
+          "transfer": 276908
+        },
+        {
+          "path": "/action-back-EEJL4TFP.webp",
+          "initiator": "fetch",
+          "encoded": 498472,
+          "decoded": 498472,
+          "transfer": 498772
+        },
+        {
+          "path": "/front-win-CLPN3DGD.webp",
+          "initiator": "fetch",
+          "encoded": 547882,
+          "decoded": 547882,
+          "transfer": 548182
+        },
+        {
+          "path": "/run-bear-v4-DUT376V7.webp",
+          "initiator": "fetch",
+          "encoded": 297774,
+          "decoded": 297774,
+          "transfer": 298074
+        },
+        {
+          "path": "/run-rabbit-v4-ZXITYH77.webp",
+          "initiator": "fetch",
+          "encoded": 251016,
+          "decoded": 251016,
+          "transfer": 251316
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "savedImageBodyBytes": 1096672
+}

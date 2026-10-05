@@ -1,0 +1,14 @@
+/* Platform-only art finishing. Standalone originals and math stay unchanged. */
+.tiger-game .hero-sun{filter:drop-shadow(0 0 18px #ffd17777)}
+.tiger-game .reel-frame{box-shadow:inset 0 0 0 2px #fff3a6,inset 0 9px 24px #8b4b164f,0 0 0 3px #873718,0 9px 24px #441c126e}
+.tiger-game .reel-cell.winning:after{content:'';position:absolute;inset:7%;border:1px solid #fffad5;border-radius:16%;box-shadow:0 0 15px #ffc425,inset 0 0 17px #ffcb3466;animation:tiger-cell-aureole 1.2s ease-in-out infinite;pointer-events:none}
+.tiger-game .reel-cell.winning .symbol-art{filter:drop-shadow(0 0 5px #ffcd59) brightness(1.08)}
+.tiger-game .reel-column.landed{animation:tiger-column-recoil 240ms cubic-bezier(.2,.75,.3,1)}
+.tiger-game.is-spinning .hero-sun{animation-duration:1.8s}
+.tiger-game.feature-mode .tiger-mascot-halo{filter:drop-shadow(0 0 20px #ffd58577)}
+.tiger-game .tiger-spin:before{pointer-events:none}
+@media(max-width:760px){.tiger-game .tiger-stage{right:0;top:22px;width:72%;--tiger-character-size:min(72vw,326px)}.tiger-game .tiger-logo{left:4%;top:27%;width:32%}.tiger-game .tiger-logo strong{font-size:clamp(38px,11vw,51px)}.tiger-game .wallet-cell strong,.tiger-game .wallet-cell button{font-variant-numeric:tabular-nums;text-shadow:0 1px #fff6c2}.tiger-game .side-control{min-height:50px;box-shadow:inset 0 1px #ffe2a9aa,0 3px 0 #6f2719,0 5px 9px #571b1133}.tiger-game .bet-step{width:32px;height:32px;border:1px solid #fff3ba;box-shadow:inset 0 0 0 2px #d8963d,0 3px 0 #9b5325}.tiger-game .spin-row{gap:clamp(8px,2.9vw,16px)}}
+@media(max-width:350px){.tiger-game .tiger-stage{right:0;--tiger-character-size:252px}.tiger-game .spin-row{gap:8px}.tiger-game .bet-step{width:28px;height:28px}}
+@keyframes tiger-cell-aureole{0%,100%{opacity:.65;transform:scale(.97)}50%{opacity:1;transform:scale(1.015)}}
+@keyframes tiger-column-recoil{0%{translate:0 -2px}38%{translate:0 3px}70%{translate:0 -1px}100%{translate:0 0}}
+@media(prefers-reduced-motion:reduce){.tiger-game .reel-cell.winning:after,.tiger-game .reel-column.landed{animation:none!important}}

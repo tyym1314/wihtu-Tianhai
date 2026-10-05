@@ -1,0 +1,11 @@
+[Unit]
+Description=Check OASIS health every minute
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=60s
+AccuracySec=5s
+Unit=oasis-monitor.service
+
+[Install]
+WantedBy=timers.target

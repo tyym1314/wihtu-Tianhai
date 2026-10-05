@@ -1,0 +1,502 @@
+
+> oasis-game-platform@0.1.0 test:backend
+> tsx --test tests/*.test.mjs tests/*.test.ts
+
+TAP version 13
+# Subtest: three continuous shared courses contain tees/cups and deterministic fixed-step shots
+ok 1 - three continuous shared courses contain tees/cups and deterministic fixed-step shots
+  ---
+  duration_ms: 303.229583
+  type: 'test'
+  ...
+# Subtest: client cannot submit a position, score, out-of-bounds power, NaN, or shoot before busyUntil
+ok 2 - client cannot submit a position, score, out-of-bounds power, NaN, or shoot before busyUntil
+  ---
+  duration_ms: 2.143958
+  type: 'test'
+  ...
+# Subtest: falling through open boundary adds one shot plus one penalty and restores shot origin
+ok 3 - falling through open boundary adds one shot plus one penalty and restores shot origin
+  ---
+  duration_ms: 0.333458
+  type: 'test'
+  ...
+# Subtest: tenth accepted shot that holes counts ten; a tenth miss records twelve
+ok 4 - tenth accepted shot that holes counts ten; a tenth miss records twelve
+  ---
+  duration_ms: 1.327667
+  type: 'test'
+  ...
+# Subtest: 90-second deadline scores twelve even if the last accepted shot is still rolling
+ok 5 - 90-second deadline scores twelve even if the last accepted shot is still rolling
+  ---
+  duration_ms: 6.35975
+  type: 'test'
+  ...
+# Subtest: twenty-second timeouts add one, third consecutive timeout forfeits all simultaneously
+ok 6 - twenty-second timeouts add one, third consecutive timeout forfeits all simultaneously
+  ---
+  duration_ms: 0.191833
+  type: 'test'
+  ...
+# Subtest: three played holes progress through five-second intermissions, preserve ties, then end
+ok 7 - three played holes progress through five-second intermissions, preserve ties, then end
+  ---
+  duration_ms: 2.582708
+  type: 'test'
+  ...
+# Subtest: ghost balls cannot change another shot, and JSON recovery retains exact outcome
+ok 8 - ghost balls cannot change another shot, and JSON recovery retains exact outcome
+  ---
+  duration_ms: 3.399584
+  type: 'test'
+  ...
+# Subtest: forfeit batches never break ties by seat; pause shifting preserves relative animation time
+ok 9 - forfeit batches never break ties by seat; pause shifting preserves relative animation time
+  ---
+  duration_ms: 1.165125
+  type: 'test'
+  ...
+# Subtest: all three islands are playable from tee to cup using ordinary legal actions, without position edits
+ok 10 - all three islands are playable from tee to cup using ordinary legal actions, without position edits
+  ---
+  duration_ms: 79.182583
+  type: 'test'
+  ...
+# Subtest: a third timeout and another player disconnecting in the same tick void together
+ok 11 - a third timeout and another player disconnecting in the same tick void together
+  ---
+  duration_ms: 0.198959
+  type: 'test'
+  ...
+# Subtest: the same batch still preserves a third-hole score fixed before simultaneous forfeits
+ok 12 - the same batch still preserves a third-hole score fixed before simultaneous forfeits
+  ---
+  duration_ms: 0.18425
+  type: 'test'
+  ...
+# Subtest: initial boards are equal, stable, playable; each player has independent persistent streams
+ok 13 - initial boards are equal, stable, playable; each player has independent persistent streams
+  ---
+  duration_ms: 47.866625
+  type: 'test'
+  ...
+# Subtest: identical inputs and timestamps replay identical scores, boards and column refill positions through JSON
+ok 14 - identical inputs and timestamps replay identical scores, boards and column refill positions through JSON
+  ---
+  duration_ms: 32.231958
+  type: 'test'
+  ...
+# Subtest: private views cannot expose seed, other boards, refill counters or mutation references
+ok 15 - private views cannot expose seed, other boards, refill counters or mutation references
+  ---
+  duration_ms: 0.39
+  type: 'test'
+  ...
+# Subtest: invalid adjacent swaps bounce, score zero and still consume the server 150ms window
+ok 16 - invalid adjacent swaps bounce, score zero and still consume the server 150ms window
+  ---
+  duration_ms: 0.904958
+  type: 'test'
+  ...
+# Subtest: rejects malformed, diagonal, wrapped, out-of-range, outsider and late actions
+ok 17 - rejects malformed, diagonal, wrapped, out-of-range, outsider and late actions
+  ---
+  duration_ms: 0.991208
+  type: 'test'
+  ...
+# Subtest: four line creates the correctly oriented stripe, target has priority and original earns points
+ok 18 - four line creates the correctly oriented stripe, target has priority and original earns points
+  ---
+  duration_ms: 0.415709
+  type: 'test'
+  ...
+# Subtest: line five outranks a T/L bomb, and cascade creation uses row-major first cell
+ok 19 - line five outranks a T/L bomb, and cascade creation uses row-major first cell
+  ---
+  duration_ms: 0.372041
+  type: 'test'
+  ...
+# Subtest: intersecting runs clear each original only once; each connected cluster produces at most one special
+ok 20 - intersecting runs clear each original only once; each connected cluster produces at most one special
+  ---
+  duration_ms: 0.348416
+  type: 'test'
+  ...
+# Subtest: special effects chain once per old special and never double count hit cells
+ok 21 - special effects chain once per old special and never double count hit cells
+  ---
+  duration_ms: 1.097958
+  type: 'test'
+  ...
+# Subtest: rainbow swap clears the other color and also triggers an exchanged old stripe
+ok 22 - rainbow swap clears the other color and also triggers an exchanged old stripe
+  ---
+  duration_ms: 1.178083
+  type: 'test'
+  ...
+# Subtest: two rainbows clear all 36 original cells, and normal-special swaps work without a match
+ok 23 - two rainbows clear all 36 original cells, and normal-special swaps work without a match
+  ---
+  duration_ms: 2.377792
+  type: 'test'
+  ...
+# Subtest: passive rainbow chooses most common color, resolving equal counts by fixed palette order
+ok 24 - passive rainbow chooses most common color, resolving equal counts by fixed palette order
+  ---
+  duration_ms: 0.633334
+  type: 'test'
+  ...
+# Subtest: cascade multipliers cap at five and each following accepted swap restarts at one
+ok 25 - cascade multipliers cap at five and each following accepted swap restarts at one
+  ---
+  duration_ms: 3.239042
+  type: 'test'
+  ...
+# Subtest: infinite refill fixture is bounded to 20 waves then non-scoring deterministic reshuffle
+ok 26 - infinite refill fixture is bounded to 20 waves then non-scoring deterministic reshuffle
+  ---
+  duration_ms: 2.140458
+  type: 'test'
+  ...
+# Subtest: 32-attempt shuffle fallback is playable, preserves special types and is reproducible without scoring
+ok 27 - 32-attempt shuffle fallback is playable, preserves special types and is reproducible without scoring
+  ---
+  duration_ms: 5.710833
+  type: 'test'
+  ...
+# Subtest: deadline closes new actions but allows a previously accepted cascade to finish
+ok 28 - deadline closes new actions but allows a previously accepted cascade to finish
+  ---
+  duration_ms: 1.136875
+  type: 'test'
+  ...
+# Subtest: ties remain ties, atomic forfeits cannot accidentally reward the last iterated player
+ok 29 - ties remain ties, atomic forfeits cannot accidentally reward the last iterated player
+  ---
+  duration_ms: 0.441541
+  type: 'test'
+  ...
+# Subtest: shared pause shifts absolute clocks, bot actions use normal legal action validation
+ok 30 - shared pause shifts absolute clocks, bot actions use normal legal action validation
+  ---
+  duration_ms: 0.497583
+  type: 'test'
+  ...
+# Subtest: all four platform profiles are stable, frozen and independent of legacy versions
+ok 31 - all four platform profiles are stable, frozen and independent of legacy versions
+  ---
+  duration_ms: 0.551917
+  type: 'test'
+  ...
+# Subtest: cryptographic stream is reproducible, domain-separated and validates range/seed
+ok 32 - cryptographic stream is reproducible, domain-separated and validates range/seed
+  ---
+  duration_ms: 2.144709
+  type: 'test'
+  ...
+# Subtest: same seed/profile produces recoverable complete cycle and one conserved payout
+ok 33 - same seed/profile produces recoverable complete cycle and one conserved payout
+  ---
+  duration_ms: 65.944583
+  type: 'test'
+  ...
+# Subtest: Tiger99 retains the exact legacy outcome model and proves reachable 455x upper bound
+ok 34 - Tiger99 retains the exact legacy outcome model and proves reachable 455x upper bound
+  ---
+  duration_ms: 4.002458
+  type: 'test'
+  ...
+# Subtest: Thunder99 preserves uncapped legacy rounds within the new finite cycle rules
+ok 35 - Thunder99 preserves uncapped legacy rounds within the new finite cycle rules
+  ---
+  duration_ms: 9.249208
+  type: 'test'
+  ...
+# Subtest: Thunder hard gross cap clips last round and reconciles animation attribution
+ok 36 - Thunder hard gross cap clips last round and reconciles animation attribution
+  ---
+  duration_ms: 2.5415
+  type: 'test'
+  ...
+# Subtest: Thunder perpetual retrigger fixture terminates after exactly 100 free spins
+ok 37 - Thunder perpetual retrigger fixture terminates after exactly 100 free spins
+  ---
+  duration_ms: 14.348708
+  type: 'test'
+  ...
+# Subtest: unsupported stake and profile are rejected before RNG is used
+ok 38 - unsupported stake and profile are rejected before RNG is used
+  ---
+  duration_ms: 0.103167
+  type: 'test'
+  ...
+# Subtest: admin authentication, CSRF, credential-once creation and persistence
+ok 39 - admin authentication, CSRF, credential-once creation and persistence
+  ---
+  duration_ms: 411.468084
+  type: 'test'
+  ...
+# Subtest: HMAC rejects raw-body tampering, nonce replay, expired clocks and cross-App scope
+ok 40 - HMAC rejects raw-body tampering, nonce replay, expired clocks and cross-App scope
+  ---
+  duration_ms: 17.298375
+  type: 'test'
+  ...
+# Subtest: launch is atomic one-use, expires, and reauthorization invalidates old token
+ok 41 - launch is atomic one-use, expires, and reauthorization invalidates old token
+  ---
+  duration_ms: 21.4565
+  type: 'test'
+  ...
+# Subtest: both existing game render contracts settle once across twenty-four concurrent retries
+ok 42 - both existing game render contracts settle once across twenty-four concurrent retries
+  ---
+  duration_ms: 359.642083
+  type: 'test'
+  ...
+# Subtest: committed settlement with lost response survives process restart and restores same fixed result
+ok 43 - committed settlement with lost response survives process restart and restores same fixed result
+  ---
+  duration_ms: 299.887167
+  type: 'test'
+  ...
+# Subtest: insufficient treasury refuses before RNG; paused App cannot start new cycles
+ok 44 - insufficient treasury refuses before RNG; paused App cannot start new cycles
+  ---
+  duration_ms: 33.91875
+  type: 'test'
+  ...
+# [pvp isolation] created oasis_pvp_test_51230_7557b04ce76b398d; actual pool verified; wallet uses isolated database
+# Subtest: real 2-player reserve/capture/tied settlement persists one fee and complete roster
+ok 45 - real 2-player reserve/capture/tied settlement persists one fee and complete roster
+  ---
+  duration_ms: 274.970625
+  type: 'test'
+  ...
+# Subtest: real 3-player reserve/capture/tied settlement persists one fee and complete roster
+ok 46 - real 3-player reserve/capture/tied settlement persists one fee and complete roster
+  ---
+  duration_ms: 55.677125
+  type: 'test'
+  ...
+# Subtest: real 4-player reserve/capture/tied settlement persists one fee and complete roster
+ok 47 - real 4-player reserve/capture/tied settlement persists one fee and complete roster
+  ---
+  duration_ms: 48.907667
+  type: 'test'
+  ...
+# Subtest: all five entry tiers conserve the 5% total-pot fee and return principal within payout
+ok 48 - all five entry tiers conserve the 5% total-pot fee and return principal within payout
+  ---
+  duration_ms: 155.360417
+  type: 'test'
+  ...
+# Subtest: actions are private, sequenced, concurrent-replay safe and survive a module reload
+ok 49 - actions are private, sequenced, concurrent-replay safe and survive a module reload
+  ---
+  duration_ms: 66.224834
+  type: 'test'
+  ...
+# Subtest: App/game isolation and one active seat prevent user impersonation or double-entry
+ok 50 - App/game isolation and one active seat prevent user impersonation or double-entry
+  ---
+  duration_ms: 18.126208
+  type: 'test'
+  ...
+# Subtest: free practice names all bots and never sends a financial operation
+ok 51 - free practice names all bots and never sends a financial operation
+  ---
+  duration_ms: 55.486667
+  type: 'test'
+  ...
+# Subtest: atomic gift racing funding cannot overdraw; failed lobby releases any successful holds
+ok 52 - atomic gift racing funding cannot overdraw; failed lobby releases any successful holds
+  ---
+  duration_ms: 23.732583
+  type: 'test'
+  ...
+# Subtest: 30-second heartbeat batches simultaneous disconnects to void; reconnect before deadline preserves board and seat
+ok 53 - 30-second heartbeat batches simultaneous disconnects to void; reconnect before deadline preserves board and seat
+  ---
+  duration_ms: 72.793584
+  type: 'test'
+  ...
+# Subtest: pause stops new admission, keeps accepted result settlement; shared service outage over60s refunds
+ok 54 - pause stops new admission, keeps accepted result settlement; shared service outage over60s refunds
+  ---
+  duration_ms: 60.628208
+  type: 'test'
+  ...
+# Subtest: Golf paid two-player shot is authoritative and forfeit settles with the same wallet protocol
+ok 55 - Golf paid two-player shot is authoritative and forfeit settles with the same wallet protocol
+  ---
+  duration_ms: 43.285666
+  type: 'test'
+  ...
+# Subtest: dropped successful capture and settlement HTTP responses recover by original durable operation IDs
+ok 56 - dropped successful capture and settlement HTTP responses recover by original durable operation IDs
+  ---
+  duration_ms: 51.347166
+  type: 'test'
+  ...
+# Subtest: fresh OS processes restore the exact room, shuffled seats and board without creating a new entry
+ok 57 - fresh OS processes restore the exact room, shuffled seats and board without creating a new entry
+  ---
+  duration_ms: 373.326
+  type: 'test'
+  ...
+# Subtest: four-player tied winners split minor-unit remainder by frozen random seat, never by account ID
+ok 58 - four-player tied winners split minor-unit remainder by frozen random seat, never by account ID
+  ---
+  duration_ms: 32.564541
+  type: 'test'
+  ...
+# Subtest: readiness expiry records a cancellation tombstone and never captures entries
+ok 59 - readiness expiry records a cancellation tombstone and never captures entries
+  ---
+  duration_ms: 9.548291
+  type: 'test'
+  ...
+# Subtest: short shared-service pause shifts clock and heartbeat equally, preserving the same seed/board
+ok 60 - short shared-service pause shifts clock and heartbeat equally, preserving the same seed/board
+  ---
+  duration_ms: 26.773125
+  type: 'test'
+  ...
+# Subtest: cancelling an unknown-but-committed capture refunds all seats through one void settlement
+ok 61 - cancelling an unknown-but-committed capture refunds all seats through one void settlement
+  ---
+  duration_ms: 26.900416
+  type: 'test'
+  ...
+# Subtest: Golf 3 real players share the same atomic capture and winner settlement
+ok 62 - Golf 3 real players share the same atomic capture and winner settlement
+  ---
+  duration_ms: 25.8605
+  type: 'test'
+  ...
+# Subtest: Golf 4 real players share the same atomic capture and winner settlement
+ok 63 - Golf 4 real players share the same atomic capture and winner settlement
+  ---
+  duration_ms: 31.063375
+  type: 'test'
+  ...
+# Subtest: an App fee change cannot rewrite a waiting room economic contract
+ok 64 - an App fee change cannot rewrite a waiting room economic contract
+  ---
+  duration_ms: 23.221375
+  type: 'test'
+  ...
+# Subtest: leaving free practice immediately ends all bots, frees the seat, replays safely and permits a new room
+ok 65 - leaving free practice immediately ends all bots, frees the seat, replays safely and permits a new room
+  ---
+  duration_ms: 83.527958
+  type: 'test'
+  ...
+# [pvp isolation] dropped oasis_pvp_test_51230_7557b04ce76b398d; verified absent from pg_database
+# Subtest: A01/A02 real PG concurrent capture and settlement replay produce one durable effect
+ok 66 - A01/A02 real PG concurrent capture and settlement replay produce one durable effect
+  ---
+  duration_ms: 187.553583
+  type: 'test'
+  ...
+# Subtest: A03 durable receipt survives new HTTP server instance and original-ID query
+ok 67 - A03 durable receipt survives new HTTP server instance and original-ID query
+  ---
+  duration_ms: 34.531459
+  type: 'test'
+  ...
+# Subtest: A04 cancellation tombstone blocks late reserve and late capture
+ok 68 - A04 cancellation tombstone blocks late reserve and late capture
+  ---
+  duration_ms: 34.110458
+  type: 'test'
+  ...
+# Subtest: A05 expired member rejects whole capture; captured void refunds everybody and no fee
+ok 69 - A05 expired member rejects whole capture; captured void refunds everybody and no fee
+  ---
+  duration_ms: 34.707042
+  type: 'test'
+  ...
+# Subtest: A06 simultaneous gift and game reserve cannot spend frozen funds or overdraw
+ok 70 - A06 simultaneous gift and game reserve cannot spend frozen funds or overdraw
+  ---
+  duration_ms: 7.533375
+  type: 'test'
+  ...
+# Subtest: A07 tenant/App/environment and wallet/currency scope isolation
+ok 71 - A07 tenant/App/environment and wallet/currency scope isolation
+  ---
+  duration_ms: 24.324541
+  type: 'test'
+  ...
+# Subtest: A08 approved full-cycle liability, accept fence and settlement while available budget is zero
+ok 72 - A08 approved full-cycle liability, accept fence and settlement while available budget is zero
+  ---
+  duration_ms: 48.883333
+  type: 'test'
+  ...
+# Subtest: probability refuses unapproved profiles, wrong caps, expired pre-accept and cancellation races
+ok 73 - probability refuses unapproved profiles, wrong caps, expired pre-accept and cancellation races
+  ---
+  duration_ms: 20.697625
+  type: 'test'
+  ...
+# Subtest: A09 nonce replay, tampered raw body, duplicate JSON key and event duplicates never pay
+ok 74 - A09 nonce replay, tampered raw body, duplicate JSON key and event duplicates never pay
+  ---
+  duration_ms: 18.27375
+  type: 'test'
+  ...
+# Subtest: invalid payout rolls back every user/fee then a new valid settlement succeeds
+ok 75 - invalid payout rolls back every user/fee then a new valid settlement succeeds
+  ---
+  duration_ms: 22.755833
+  type: 'test'
+  ...
+# Subtest: business IDs cannot be reused across wallet scopes in same App/environment
+ok 76 - business IDs cannot be reused across wallet scopes in same App/environment
+  ---
+  duration_ms: 13.917292
+  type: 'test'
+  ...
+# Subtest: actual committed response loss is recovered by query and same business retry
+ok 77 - actual committed response loss is recovered by query and same business retry
+  ---
+  duration_ms: 19.746584
+  type: 'test'
+  ...
+# Subtest: three-player fee rounding and tied first-place remainder use seat order
+ok 78 - three-player fee rounding and tied first-place remainder use seat order
+  ---
+  duration_ms: 21.776667
+  type: 'test'
+  ...
+# Subtest: 2v2 team members share rank and win pool atomically
+ok 79 - 2v2 team members share rank and win pool atomically
+  ---
+  duration_ms: 26.576542
+  type: 'test'
+  ...
+# Subtest: HMAC helper reproduces the published byte-exact fixed vector
+ok 80 - HMAC helper reproduces the published byte-exact fixed vector
+  ---
+  duration_ms: 0.800333
+  type: 'test'
+  ...
+# Subtest: concurrent capture/cancel and accept/cancel serialize to one legal terminal boundary
+ok 81 - concurrent capture/cancel and accept/cancel serialize to one legal terminal boundary
+  ---
+  duration_ms: 41.677
+  type: 'test'
+  ...
+1..81
+# tests 81
+# suites 0
+# pass 81
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1816.212666

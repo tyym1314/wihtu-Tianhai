@@ -1,0 +1,27 @@
+{
+  "input": {
+    "type": "roll",
+    "offset": 0,
+    "angle": 0.18,
+    "power": 0.63,
+    "spin": 0
+  },
+  "pins": 0,
+  "gutter": true,
+  "preview": {
+    "angle": 0.18,
+    "offset": 0,
+    "power": 0.63
+  },
+  "events": [
+    {
+      "type": "gutter",
+      "t": 1383
+    },
+    {
+      "type": "settled",
+      "t": 2300,
+      "down": []
+    }
+  ]
+}

@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>连线占塔 · 设计评审</title>
+    <style>
+      :root {
+        --bg: #090f0d;
+        --panel: #111b16;
+        --line: rgba(207, 175, 106, .2);
+        --gold: #e4c58b;
+        --text: #f3eee1;
+        --muted: #a7b1a7;
+        --green: #8cdbad;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(ellipse at 10% 0, rgba(41, 93, 64, .25), transparent 38%),
+          radial-gradient(ellipse at 95% 5%, rgba(112, 88, 38, .12), transparent 32%),
+          var(--bg);
+        color: var(--text);
+        font: 15px/1.7 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+      a { color: inherit; }
+      a:focus-visible { outline: 3px solid var(--green); outline-offset: 5px; }
+      .wrap { width: min(1580px, calc(100% - 64px)); margin: 0 auto; }
+      .masthead { padding: 48px 0 28px; }
+      .eyebrow { display: flex; align-items: center; gap: 10px; color: var(--gold); font-size: 12px; letter-spacing: .16em; }
+      .sigil { display: inline-block; width: 10px; height: 10px; transform: rotate(45deg); border: 1px solid var(--gold); background: #254b36; }
+      .headline { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-top: 12px; }
+      h1 { margin: 0; font-size: clamp(30px, 3vw, 46px); font-weight: 650; line-height: 1.25; letter-spacing: .025em; }
+      .intro { margin: 14px 0 0; color: var(--muted); max-width: 680px; }
+      .status { flex: none; border: 1px solid var(--line); color: var(--gold); padding: 8px 15px; border-radius: 100px; font-size: 12px; letter-spacing: .06em; }
+      .navigation { position: sticky; top: 0; z-index: 2; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(9, 15, 13, .97); }
+      nav { display: flex; align-items: center; gap: 8px; padding: 10px 0; overflow-x: auto; }
+      nav a { flex: none; min-height: 44px; display: inline-flex; align-items: center; padding: 0 17px; border-radius: 8px; text-decoration: none; color: var(--muted); font-size: 13px; }
+      nav a:hover { background: #1b2b21; color: var(--text); }
+      .nav-note { margin-left: auto; padding-left: 16px; color: #829087; white-space: nowrap; font-size: 12px; }
+      .gallery { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; padding: 30px 0 36px; align-items: start; }
+      .card { min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 14px 32px rgba(0, 0, 0, .16); }
+      .card-header { padding: 18px 17px 15px; }
+      .card-kicker { display: flex; align-items: center; justify-content: space-between; color: var(--gold); font-size: 11px; letter-spacing: .07em; }
+      .number { font-variant-numeric: tabular-nums; color: #8b977e; }
+      h2 { font-size: 18px; font-weight: 600; line-height: 1.4; margin: 8px 0 0; }
+      .artwork { display: block; position: relative; background: #080e0b; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); text-decoration: none; }
+      .artwork img { display: block; width: 100%; height: auto; }
+      .open-label { position: absolute; bottom: 12px; right: 12px; padding: 5px 10px; border: 1px solid rgba(228, 197, 139, .45); border-radius: 20px; color: #f9efd9; background: rgba(9, 15, 13, .86); font-size: 11px; opacity: 0; transition: opacity .15s ease; }
+      .artwork:hover .open-label, .artwork:focus-visible .open-label { opacity: 1; }
+      .caption { padding: 15px 17px 17px; }
+      .caption p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+      .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+      .tag { border: 1px solid rgba(140, 219, 173, .16); border-radius: 5px; padding: 2px 7px; color: #c4d5c4; font-size: 10px; }
+      .review { border-top: 1px solid var(--line); padding: 26px 0 28px; }
+      .review-title { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+      .review-title h2 { margin: 0; font-size: 15px; color: var(--gold); }
+      .review-title a { color: var(--muted); font-size: 12px; text-underline-offset: 4px; }
+      .checkpoints { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 26px; margin-top: 18px; }
+      .checkpoint strong { display: block; font-size: 13px; font-weight: 500; }
+      .checkpoint p { margin: 5px 0 0; font-size: 12px; color: var(--muted); }
+      footer { border-top: 1px solid rgba(207, 175, 106, .12); padding: 18px 0 34px; color: #8d9a90; font-size: 11px; }
+      @media (max-width: 1050px) and (min-width: 681px) {
+        .wrap { width: calc(100% - 40px); }
+        .gallery { gap: 12px; }
+        .card-header, .caption { padding-left: 12px; padding-right: 12px; }
+        h2 { font-size: 15px; }
+        .nav-note { display: none; }
+      }
+      @media (max-width: 680px) {
+        .wrap { width: calc(100% - 32px); }
+        .masthead { padding-top: 30px; padding-bottom: 22px; }
+        .headline { display: block; }
+        h1 { font-size: 31px; }
+        .status { display: inline-block; margin-top: 16px; }
+        .intro { font-size: 13px; }
+        nav { gap: 1px; }
+        nav a { padding: 0 11px; font-size: 12px; }
+        .nav-note { display: none; }
+        .gallery { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 22px; }
+        .card { border-radius: 14px; }
+        .open-label { opacity: 1; }
+        .checkpoints { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+        .review-title { align-items: flex-start; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        .open-label { transition: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="masthead wrap">
+      <div class="eyebrow"><span class="sigil" aria-hidden="true"></span>浮空王城 · 移动端竖屏方案</div>
+      <div class="headline">
+        <div>
+          <h1>连线占塔 · 设计评审</h1>
+          <p class="intro">持续派兵、手动升级、领土争夺。四张画面呈现同一套已确认规则下的战场与操作。</p>
+        </div>
+        <span class="status">静态设计稿 · 第 4 版</span>
+      </div>
+    </header>
+
+    <div class="navigation">
+      <nav class="wrap" aria-label="设计图导航">
+        <a href="#battle-2p">双人实战</a>
+        <a href="#upgrade">升级预览</a>
+        <a href="#battle-3p">三人娱乐</a>
+        <a href="#battle-4p">四人娱乐</a>
+        <span class="nav-note">点击画面，打开完整原图 ↗</span>
+      </nav>
+    </div>
+
+    <main class="wrap">
+      <div class="gallery">
+        <article class="card" id="battle-2p">
+          <header class="card-header">
+            <div class="card-kicker"><span>1V1 · 领土争夺</span><span class="number">01 / 04</span></div>
+            <h2>双人持续兵线</h2>
+          </header>
+          <a class="artwork" href="battle-2p.png" target="_blank" rel="noopener" aria-label="在新标签页打开双人实战原图">
+            <img src="battle-2p.png" alt="连线占塔双人实战设计，展示塔的归属、驻兵、持续兵线和领土排名" decoding="async" />
+            <span class="open-label" aria-hidden="true">查看原图 ↗</span>
+          </a>
+          <div class="caption">
+            <p>拖线指定进攻或增援方向。每座塔一条出线，兵线持续输送，已出发的部队继续行军。</p>
+            <div class="tags"><span class="tag">13 塔战场</span><span class="tag">自动产兵</span><span class="tag">持续派兵</span></div>
+          </div>
+        </article>
+
+        <article class="card" id="upgrade">
+          <header class="card-header">
+            <div class="card-kicker"><span>建筑操作 · 升级详情</span><span class="number">02 / 04</span></div>
+            <h2>手动升级预览</h2>
+          </header>
+          <a class="artwork" href="upgrade.png" target="_blank" rel="noopener" aria-label="在新标签页打开手动升级原图">
+            <img src="upgrade.png" alt="兵营手动升级设计，展示升级耗兵、剩余驻兵、产兵提升与施工时间" loading="lazy" decoding="async" />
+            <span class="open-label" aria-hidden="true">查看原图 ↗</span>
+          </a>
+          <div class="caption">
+            <p>确认前看清耗兵与收益。升级消耗本塔驻兵，施工期间暂停产兵和出兵，战局继续。</p>
+            <div class="tags"><span class="tag">Lv.1 → Lv.2</span><span class="tag">36 → 16 兵</span><span class="tag">3 秒施工</span></div>
+          </div>
+        </article>
+
+        <article class="card" id="battle-3p">
+          <header class="card-header">
+            <div class="card-kicker"><span>3 人 · 娱乐 / 好友房</span><span class="number">03 / 04</span></div>
+            <h2>三人娱乐</h2>
+          </header>
+          <a class="artwork" href="battle-3p.png" target="_blank" rel="noopener" aria-label="在新标签页打开三人实战原图">
+            <img src="battle-3p.png" alt="连线占塔三人娱乐设计，展示三方身份、对称道路和多方争夺" loading="lazy" decoding="async" />
+            <span class="open-label" aria-hidden="true">查看原图 ↗</span>
+          </a>
+          <div class="caption">
+            <p>三方公开争夺领土。颜色与阵营标记共同识别敌我，兼顾扩张、支援和侧翼防守。</p>
+            <div class="tags"><span class="tag">三向对称</span><span class="tag">公开兵力</span><span class="tag">无奖池娱乐</span></div>
+          </div>
+        </article>
+
+        <article class="card" id="battle-4p">
+          <header class="card-header">
+            <div class="card-kicker"><span>4 人 · 娱乐 / 好友房</span><span class="number">04 / 04</span></div>
+            <h2>四人娱乐</h2>
+          </header>
+          <a class="artwork" href="battle-4p.png" target="_blank" rel="noopener" aria-label="在新标签页打开四人实战原图">
+            <img src="battle-4p.png" alt="连线占塔四人娱乐设计，展示四方领土、行军方向和占塔数与总兵力" loading="lazy" decoding="async" />
+            <span class="open-label" aria-hidden="true">查看原图 ↗</span>
+          </a>
+          <div class="caption">
+            <p>四方信息保持清楚，道路与箭头表达每支队伍的去向。到时先比塔数，再比总活兵。</p>
+            <div class="tags"><span class="tag">四向对称</span><span class="tag">领土优先</span><span class="tag">无奖池娱乐</span></div>
+          </div>
+        </article>
+      </div>
+
+      <section class="review" aria-labelledby="review-title">
+        <div class="review-title">
+          <h2 id="review-title">这次重点看四件事</h2>
+          <a href="REVIEW.md">完整审图清单 ↗</a>
+        </div>
+        <div class="checkpoints">
+          <div class="checkpoint"><strong>战场是否一眼能读懂</strong><p>归属、驻兵、等级和阵营总兵力分开表达；塔数与实际画面匹配。</p></div>
+          <div class="checkpoint"><strong>兵线是否表达真实方向</strong><p>每塔最多一条出线，箭头与士兵朝向一致，进攻与增援均沿相邻道路。</p></div>
+          <div class="checkpoint"><strong>升级代价是否说清楚</strong><p>消耗本塔驻兵，显示升级后的留守兵力、自然产兵上限和施工状态。</p></div>
+          <div class="checkpoint"><strong>手机画面是否足够清楚</strong><p>建筑、道路和按钮互不遮挡；多方战场也能辨认兵线与关键数字。</p></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap">本页展示静态设计稿。新玩法尚需实现；动画流畅度、操作手感、点击热区与真机表现需在可玩版本中验收。</footer>
+  </body>
+</html>

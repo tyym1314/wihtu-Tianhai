@@ -1,0 +1,60 @@
+.tiger-mascot {
+  --tiger-art: url('/assets/tiger/character-idle.png');
+  position: absolute;
+  width: var(--tiger-character-size, 252px);
+  aspect-ratio: 1;
+  left: 50%;
+  top: var(--tiger-character-top, 0px);
+  transform: translateX(-50%);
+  pointer-events: none;
+  isolation: isolate;
+  contain: layout style;
+}
+.tiger-mascot-pose, .tiger-mascot-breath, .tiger-head-pose,
+.tiger-head-idle, .tiger-left-pose, .tiger-left-idle,
+.tiger-right-pose, .tiger-right-idle, .tiger-tail-idle, .tiger-sprite {
+  position: absolute; inset: 0;
+}
+.tiger-sprite { background-image: var(--tiger-art); background-size: 100% 100%; background-repeat: no-repeat; }
+.tiger-mascot-pose { transform-origin: 52% 90%; }
+.tiger-mascot-breath { transform-origin: 54% 82%; animation: tiger-breath 3.8s ease-in-out infinite; }
+.tiger-part-body { clip-path: polygon(28% 38%, 41% 43%, 56% 47%, 67% 49%, 76% 44%, 79% 66%, 83% 100%, 15% 100%, 18% 68%); }
+.tiger-part-head, .tiger-part-blink { clip-path: polygon(0 0, 100% 0, 100% 41%, 81% 41%, 79% 45%, 68% 49%, 53% 47%, 36% 43%, 23% 38%, 0 35%); }
+.tiger-head-pose, .tiger-head-idle { transform-origin: 56% 45%; }
+.tiger-head-idle { animation: tiger-head-idle 5.2s ease-in-out infinite; }
+.tiger-part-blink { background-image: url('/assets/tiger/character-blink.png'); opacity: 0; animation: tiger-blink 5.8s step-end infinite; }
+.tiger-left-pose, .tiger-left-idle { transform-origin: 33% 47%; }
+.tiger-part-left { clip-path: polygon(0 35%, 31% 38%, 36% 44%, 34% 51%, 27% 62%, 0 66%); }
+.tiger-left-idle { animation: tiger-left-idle 4.4s ease-in-out infinite; }
+.tiger-right-pose, .tiger-right-idle { transform-origin: 73% 52%; }
+.tiger-part-right { clip-path: polygon(69% 45%, 100% 43%, 100% 74%, 79% 72%, 74% 65%, 71% 57%); }
+.tiger-right-idle { animation: tiger-right-idle 4.4s ease-in-out -.7s infinite; }
+.tiger-tail-idle { transform-origin: 23% 84%; animation: tiger-tail 3.5s ease-in-out infinite; }
+.tiger-part-tail { clip-path: polygon(0 59%, 21% 59%, 24% 69%, 29% 79%, 26% 91%, 0 91%); }
+.tiger-mascot-halo { position: absolute; inset: -8% -15% 17%; border-radius: 50%; background: radial-gradient(ellipse, #fff2b92a 0, #ffd75319 39%, transparent 69%); animation: tiger-halo 3.5s ease-in-out infinite; }
+.tiger-mascot-sparkles { position: absolute; inset: -3% -10% 20%; }
+.tiger-mascot-sparkles i { position: absolute; width: 4px; height: 4px; border-radius: 1px; background: #fff6c7; box-shadow: 0 0 7px #ffc34e, 0 0 12px #fff; animation: tiger-sparkle 3s ease-in-out infinite; }
+.tiger-mascot-sparkles i:nth-child(1) { left: 15%; top: 34%; animation-delay: -.8s; }
+.tiger-mascot-sparkles i:nth-child(2) { left: 78%; top: 17%; animation-delay: -1.6s; }
+.tiger-mascot-sparkles i:nth-child(3) { left: 92%; top: 58%; animation-delay: -.3s; }
+.tiger-mascot-sparkles i:nth-child(4) { left: 6%; top: 76%; animation-delay: -2.1s; }
+.tiger-mascot-sparkles i:nth-child(5) { left: 37%; top: 7%; animation-delay: -2.8s; }
+.tiger-mascot-sparkles i:nth-child(6) { left: 74%; top: 87%; animation-delay: -1.1s; }
+.tiger-mascot.is-cheering { --tiger-art: url('/assets/tiger/character-win.png'); }
+.tiger-mascot.is-cheering .tiger-part-body { clip-path: polygon(28% 37%, 42% 43%, 56% 47%, 67% 49%, 77% 39%, 80% 64%, 83% 100%, 15% 100%, 20% 61%); }
+.tiger-mascot.is-cheering .tiger-part-left { clip-path: polygon(0 0, 30% 0, 34% 35%, 39% 42%, 34% 53%, 24% 59%, 0 54%); }
+.tiger-mascot.is-cheering .tiger-part-right { clip-path: polygon(78% 0, 100% 0, 100% 59%, 80% 60%, 71% 53%, 71% 43%, 80% 32%); }
+.tiger-mascot.is-cheering .tiger-part-blink { visibility: hidden; }
+.tiger-mascot.is-cheering .tiger-mascot-halo { background: radial-gradient(ellipse, #fff4b582 0, #ffd54834 45%, transparent 71%); }
+.tiger-mascot.is-cheering .tiger-mascot-sparkles i { animation-duration: 1.2s; width: 6px; height: 6px; }
+.tiger-mascot[data-action='anticipation'] .tiger-mascot-halo { background: radial-gradient(ellipse, #ffe88d66 0, #ffb12622 45%, transparent 70%); }
+.tiger-mascot.is-paused *, .tiger-mascot.is-paused *::before { animation-play-state: paused !important; }
+@keyframes tiger-breath { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-1.8px) scale(1.007,1.012); } }
+@keyframes tiger-head-idle { 0%,100% { transform: rotate(-1deg); } 45% { transform: rotate(1.2deg) translateY(-.6px); } 75% { transform: rotate(.5deg); } }
+@keyframes tiger-blink { 0%,43%,47%,79%,82%,100% { opacity: 0; } 44%,46%,80%,81% { opacity: 1; } }
+@keyframes tiger-left-idle { 0%,100% { transform: rotate(-1deg); } 50% { transform: rotate(2deg); } }
+@keyframes tiger-right-idle { 0%,100% { transform: rotate(1deg); } 50% { transform: rotate(-2deg); } }
+@keyframes tiger-tail { 0%,100% { transform: rotate(-2deg); } 50% { transform: rotate(3.5deg); } }
+@keyframes tiger-halo { 0%,100% { opacity: .55; transform: scale(.97); } 50% { opacity: 1; transform: scale(1.05); } }
+@keyframes tiger-sparkle { 0%,100% { opacity: 0; transform: translateY(6px) rotate(0) scale(.2); } 45% { opacity: .9; transform: translateY(-8px) rotate(80deg) scale(1); } 80% { opacity: 0; transform: translateY(-24px) rotate(120deg) scale(.2); } }
+@media (prefers-reduced-motion: reduce) { .tiger-mascot * { animation: none !important; } }

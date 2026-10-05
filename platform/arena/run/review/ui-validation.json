@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-09-19T16:35:46.473Z",
+  "scope": "Isolated real authoritative engine + HTTP polling + Three WebGL. Midcourse item/screenshots use declared fixture positions; no wallet acceptance claimed.",
+  "checks": [
+    "touch left server accepted",
+    "touch right server accepted",
+    "touch jump server accepted",
+    "touch slide server accepted",
+    "real touch shield confirmed in response, consumed once at first collider; second collider produces ordinary hit",
+    "held boost activated on server",
+    "real touch horizontal swipe",
+    "rapid simultaneous inputs single request",
+    "390 layout and touch targets",
+    "360 layout and touch targets",
+    "Arabic layout, sound and exit"
+  ],
+  "pageErrors": [],
+  "renderer": "Chrome headless SwiftShader, not physical-device performance proof"
+}

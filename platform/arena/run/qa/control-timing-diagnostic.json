@@ -1,0 +1,283 @@
+{
+  "tick": 969,
+  "player": {
+    "key": "p0",
+    "name": "LINA",
+    "seatIndex": 0,
+    "isBot": false,
+    "character": "fox",
+    "distanceU": 22120,
+    "checkpointU": 18000,
+    "lane": 1,
+    "fromLane": 1,
+    "changeStartTick": 881,
+    "changeEndTick": 881,
+    "jumpStartTick": null,
+    "slideUntilTick": 0,
+    "stunUntilTick": 0,
+    "immuneUntilTick": 0,
+    "fallStartTick": null,
+    "fallUntilTick": null,
+    "shieldUntilTick": 0,
+    "boostUntilTick": 0,
+    "inventory": null,
+    "claimedItems": [
+      "shield-60"
+    ],
+    "resolvedObstacles": [
+      "crate-24-1",
+      "crate-73-1"
+    ],
+    "hits": 1,
+    "inputNo": 5,
+    "appliedInputNo": 5,
+    "lastInputTick": 953,
+    "pendingInput": null,
+    "lastEvent": {
+      "id": 19,
+      "type": "shield_hit",
+      "playerKey": "p0",
+      "tick": 960,
+      "at": 1789835617532,
+      "obstacleId": "crate-73-1"
+    },
+    "finishTick": null,
+    "finishedAt": null,
+    "forfeited": false,
+    "forfeitedAt": null
+  },
+  "actions": [
+    {
+      "action": {
+        "type": "left",
+        "observed_tick": 496
+      },
+      "event": {
+        "type": "input_accepted",
+        "playerKey": "p0",
+        "input": "left",
+        "inputNo": 1,
+        "acceptedTick": 498,
+        "at": 1789835609830
+      }
+    },
+    {
+      "action": {
+        "type": "right",
+        "observed_tick": 625
+      },
+      "event": {
+        "type": "input_accepted",
+        "playerKey": "p0",
+        "input": "right",
+        "inputNo": 2,
+        "acceptedTick": 631,
+        "at": 1789835612041
+      }
+    },
+    {
+      "action": {
+        "type": "jump",
+        "observed_tick": 707
+      },
+      "event": {
+        "type": "input_accepted",
+        "playerKey": "p0",
+        "input": "jump",
+        "inputNo": 3,
+        "acceptedTick": 716,
+        "at": 1789835613457
+      }
+    },
+    {
+      "action": {
+        "type": "slide",
+        "observed_tick": 829
+      },
+      "event": {
+        "type": "input_accepted",
+        "playerKey": "p0",
+        "input": "slide",
+        "inputNo": 4,
+        "acceptedTick": 835,
+        "at": 1789835615447
+      }
+    },
+    {
+      "action": {
+        "type": "item",
+        "observed_tick": 948
+      },
+      "event": {
+        "type": "input_accepted",
+        "playerKey": "p0",
+        "input": "item",
+        "inputNo": 5,
+        "acceptedTick": 953,
+        "at": 1789835617405
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": 1,
+      "type": "jump",
+      "playerKey": "p1",
+      "tick": 164,
+      "at": 1789835604265.3333,
+      "inputNo": 1,
+      "item": null
+    },
+    {
+      "id": 2,
+      "type": "jump",
+      "playerKey": "p2",
+      "tick": 164,
+      "at": 1789835604265.3333,
+      "inputNo": 1,
+      "item": null
+    },
+    {
+      "id": 3,
+      "type": "jump",
+      "playerKey": "p3",
+      "tick": 164,
+      "at": 1789835604265.3333,
+      "inputNo": 1,
+      "item": null
+    },
+    {
+      "id": 4,
+      "type": "hit",
+      "playerKey": "p0",
+      "tick": 176,
+      "at": 1789835604465.3333,
+      "obstacleId": "crate-24-1"
+    },
+    {
+      "id": 5,
+      "type": "left",
+      "playerKey": "p0",
+      "tick": 498,
+      "at": 1789835609832,
+      "inputNo": 1,
+      "item": null
+    },
+    {
+      "id": 6,
+      "type": "hit",
+      "playerKey": "p3",
+      "tick": 532,
+      "at": 1789835610398.6667,
+      "obstacleId": "crate-24-1"
+    },
+    {
+      "id": 7,
+      "type": "right",
+      "playerKey": "p0",
+      "tick": 631,
+      "at": 1789835612048.6667,
+      "inputNo": 2,
+      "item": null
+    },
+    {
+      "id": 8,
+      "type": "hit",
+      "playerKey": "p1",
+      "tick": 692,
+      "at": 1789835613065.3333,
+      "obstacleId": "beam-43-0"
+    },
+    {
+      "id": 9,
+      "type": "hit",
+      "playerKey": "p2",
+      "tick": 699,
+      "at": 1789835613182,
+      "obstacleId": "beam-43-2"
+    },
+    {
+      "id": 10,
+      "type": "jump",
+      "playerKey": "p0",
+      "tick": 716,
+      "at": 1789835613465.3333,
+      "inputNo": 3,
+      "item": null
+    },
+    {
+      "id": 11,
+      "type": "fall",
+      "playerKey": "p2",
+      "tick": 818,
+      "at": 1789835615165.3333,
+      "checkpoint": 30
+    },
+    {
+      "id": 12,
+      "type": "slide",
+      "playerKey": "p0",
+      "tick": 835,
+      "at": 1789835615448.6667,
+      "inputNo": 4,
+      "item": null
+    },
+    {
+      "id": 13,
+      "type": "item_pickup",
+      "playerKey": "p0",
+      "tick": 837,
+      "at": 1789835615482,
+      "item": "shield"
+    },
+    {
+      "id": 14,
+      "type": "item_pickup",
+      "playerKey": "p3",
+      "tick": 853,
+      "at": 1789835615748.6667,
+      "item": "shield"
+    },
+    {
+      "id": 15,
+      "type": "item_pickup",
+      "playerKey": "p1",
+      "tick": 871,
+      "at": 1789835616048.6667,
+      "item": "shield"
+    },
+    {
+      "id": 16,
+      "type": "hit",
+      "playerKey": "p3",
+      "tick": 928,
+      "at": 1789835616998.6667,
+      "obstacleId": "crate-73-1"
+    },
+    {
+      "id": 17,
+      "type": "hit",
+      "playerKey": "p1",
+      "tick": 946,
+      "at": 1789835617298.6667,
+      "obstacleId": "crate-73-0"
+    },
+    {
+      "id": 18,
+      "type": "item_used",
+      "playerKey": "p0",
+      "tick": 953,
+      "at": 1789835617415.3333,
+      "inputNo": 5,
+      "item": "shield"
+    },
+    {
+      "id": 19,
+      "type": "shield_hit",
+      "playerKey": "p0",
+      "tick": 960,
+      "at": 1789835617532,
+      "obstacleId": "crate-73-1"
+    }
+  ]
+}

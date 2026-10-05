@@ -1,0 +1,3369 @@
+[
+  {
+    "key": "p0",
+    "time": 399.3,
+    "snapshotTick": 64,
+    "authoritativeDistance": 286.4,
+    "visualDistance": 286.6759999984741,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 1,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 416,
+    "snapshotTick": 64,
+    "authoritativeDistance": 286.4,
+    "visualDistance": 286.8095999984741,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 1,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 432.7,
+    "snapshotTick": 64,
+    "authoritativeDistance": 286.4,
+    "visualDistance": 286.9431999984741,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 1,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 449.3,
+    "snapshotTick": 64,
+    "authoritativeDistance": 286.4,
+    "visualDistance": 287.0759999984741,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 1,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 466,
+    "snapshotTick": 64,
+    "authoritativeDistance": 286.4,
+    "visualDistance": 287.2095999984741,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 2,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 482.7,
+    "snapshotTick": 64,
+    "authoritativeDistance": 286.4,
+    "visualDistance": 287.3431999984741,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 2,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 499.4,
+    "snapshotTick": 64,
+    "authoritativeDistance": 286.4,
+    "visualDistance": 287.4767999984741,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 2,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 516,
+    "snapshotTick": 64,
+    "authoritativeDistance": 286.4,
+    "visualDistance": 287.6095999984741,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 2,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 532.7,
+    "snapshotTick": 73,
+    "authoritativeDistance": 287.6,
+    "visualDistance": 287.71280000076297,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 3,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 549.4,
+    "snapshotTick": 73,
+    "authoritativeDistance": 287.6,
+    "visualDistance": 287.84640000076297,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 3,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 566,
+    "snapshotTick": 73,
+    "authoritativeDistance": 287.6,
+    "visualDistance": 287.97920000076294,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 3,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 582.6,
+    "snapshotTick": 73,
+    "authoritativeDistance": 287.6,
+    "visualDistance": 288.112000000763,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 3,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 599.3,
+    "snapshotTick": 73,
+    "authoritativeDistance": 287.6,
+    "visualDistance": 288.245600000763,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 4,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 616.1,
+    "snapshotTick": 73,
+    "authoritativeDistance": 287.6,
+    "visualDistance": 288.38000000076295,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 4,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 632.7,
+    "snapshotTick": 73,
+    "authoritativeDistance": 287.6,
+    "visualDistance": 288.512800000763,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 4,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 649.4,
+    "snapshotTick": 73,
+    "authoritativeDistance": 287.6,
+    "visualDistance": 288.646400000763,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 4,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 666,
+    "snapshotTick": 73,
+    "authoritativeDistance": 287.6,
+    "visualDistance": 288.77920000076296,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 682.6,
+    "snapshotTick": 82,
+    "authoritativeDistance": 288.8,
+    "visualDistance": 288.8952000015259,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 699.4,
+    "snapshotTick": 82,
+    "authoritativeDistance": 288.8,
+    "visualDistance": 289.02960000152586,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 716.1,
+    "snapshotTick": 82,
+    "authoritativeDistance": 288.8,
+    "visualDistance": 289.16320000152587,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 732.7,
+    "snapshotTick": 82,
+    "authoritativeDistance": 288.8,
+    "visualDistance": 289.2960000015259,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 749.3,
+    "snapshotTick": 82,
+    "authoritativeDistance": 288.8,
+    "visualDistance": 289.4288000015259,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 6,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 766,
+    "snapshotTick": 82,
+    "authoritativeDistance": 288.8,
+    "visualDistance": 289.5624000015259,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 6,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 782.7,
+    "snapshotTick": 82,
+    "authoritativeDistance": 288.8,
+    "visualDistance": 289.6960000015259,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 6,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 799.3,
+    "snapshotTick": 82,
+    "authoritativeDistance": 288.8,
+    "visualDistance": 289.8288000015259,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 6,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 816,
+    "snapshotTick": 82,
+    "authoritativeDistance": 288.8,
+    "visualDistance": 289.9624000015259,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 7,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 832.6,
+    "snapshotTick": 91,
+    "authoritativeDistance": 290,
+    "visualDistance": 290.0815999992371,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 7,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 849.3,
+    "snapshotTick": 91,
+    "authoritativeDistance": 290,
+    "visualDistance": 290.2151999992371,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 7,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 866.1,
+    "snapshotTick": 91,
+    "authoritativeDistance": 290,
+    "visualDistance": 290.34959999923706,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 7,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 882.6,
+    "snapshotTick": 91,
+    "authoritativeDistance": 290,
+    "visualDistance": 290.48159999923706,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 0,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 899.3,
+    "snapshotTick": 91,
+    "authoritativeDistance": 290,
+    "visualDistance": 290.61519999923706,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 0,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 916,
+    "snapshotTick": 91,
+    "authoritativeDistance": 290,
+    "visualDistance": 290.74879999923706,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 0,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 932.7,
+    "snapshotTick": 91,
+    "authoritativeDistance": 290,
+    "visualDistance": 290.88239999923707,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 0,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 949.3,
+    "snapshotTick": 91,
+    "authoritativeDistance": 290,
+    "visualDistance": 291.01519999923704,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 1,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 966,
+    "snapshotTick": 91,
+    "authoritativeDistance": 290,
+    "visualDistance": 291.14879999923704,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 1,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 982.7,
+    "snapshotTick": 100,
+    "authoritativeDistance": 291.2,
+    "visualDistance": 291.26480000076293,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 1,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 999.3,
+    "snapshotTick": 100,
+    "authoritativeDistance": 291.2,
+    "visualDistance": 291.3976000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 1,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1016,
+    "snapshotTick": 100,
+    "authoritativeDistance": 291.2,
+    "visualDistance": 291.5312000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 2,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1032.7,
+    "snapshotTick": 100,
+    "authoritativeDistance": 291.2,
+    "visualDistance": 291.6648000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 2,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1049.4,
+    "snapshotTick": 100,
+    "authoritativeDistance": 291.2,
+    "visualDistance": 291.7984000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 2,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1066,
+    "snapshotTick": 100,
+    "authoritativeDistance": 291.2,
+    "visualDistance": 291.93120000076294,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 2,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1082.7,
+    "snapshotTick": 100,
+    "authoritativeDistance": 291.2,
+    "visualDistance": 292.06480000076294,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 3,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1099.3,
+    "snapshotTick": 100,
+    "authoritativeDistance": 291.2,
+    "visualDistance": 292.1976000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 3,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1116,
+    "snapshotTick": 100,
+    "authoritativeDistance": 291.2,
+    "visualDistance": 292.3312000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 3,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1132.6,
+    "snapshotTick": 109,
+    "authoritativeDistance": 292.4,
+    "visualDistance": 292.4560000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 3,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1149.4,
+    "snapshotTick": 109,
+    "authoritativeDistance": 292.4,
+    "visualDistance": 292.59040000076294,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 3,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1166,
+    "snapshotTick": 109,
+    "authoritativeDistance": 292.4,
+    "visualDistance": 292.7232000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 4,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1182.7,
+    "snapshotTick": 109,
+    "authoritativeDistance": 292.4,
+    "visualDistance": 292.8568000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 4,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1199.3,
+    "snapshotTick": 109,
+    "authoritativeDistance": 292.4,
+    "visualDistance": 292.9896000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 4,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1216,
+    "snapshotTick": 109,
+    "authoritativeDistance": 292.4,
+    "visualDistance": 293.1232000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 4,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1232.7,
+    "snapshotTick": 109,
+    "authoritativeDistance": 292.4,
+    "visualDistance": 293.2568000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1249.4,
+    "snapshotTick": 109,
+    "authoritativeDistance": 292.4,
+    "visualDistance": 293.3904000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1266,
+    "snapshotTick": 109,
+    "authoritativeDistance": 292.4,
+    "visualDistance": 293.5232000007629,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1282.6,
+    "snapshotTick": 118,
+    "authoritativeDistance": 293.6,
+    "visualDistance": 293.62800000076294,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1299.4,
+    "snapshotTick": 118,
+    "authoritativeDistance": 293.6,
+    "visualDistance": 293.76240000076297,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 6,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1316,
+    "snapshotTick": 118,
+    "authoritativeDistance": 293.6,
+    "visualDistance": 293.89520000076294,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 6,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1332.7,
+    "snapshotTick": 118,
+    "authoritativeDistance": 293.6,
+    "visualDistance": 294.02880000076294,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 6,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1349.3,
+    "snapshotTick": 118,
+    "authoritativeDistance": 293.6,
+    "visualDistance": 294.161600000763,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 6,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1366,
+    "snapshotTick": 118,
+    "authoritativeDistance": 293.6,
+    "visualDistance": 294.295200000763,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 7,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1382.7,
+    "snapshotTick": 118,
+    "authoritativeDistance": 293.6,
+    "visualDistance": 294.428800000763,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 7,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1399.4,
+    "snapshotTick": 118,
+    "authoritativeDistance": 293.6,
+    "visualDistance": 294.562400000763,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 7,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1416,
+    "snapshotTick": 118,
+    "authoritativeDistance": 293.6,
+    "visualDistance": 294.69520000076295,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 7,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1432.6,
+    "snapshotTick": 128,
+    "authoritativeDistance": 294.93333333333334,
+    "visualDistance": 294.94213333333335,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 0,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1449.3,
+    "snapshotTick": 128,
+    "authoritativeDistance": 294.93333333333334,
+    "visualDistance": 295.07573333333335,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 0,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1466,
+    "snapshotTick": 128,
+    "authoritativeDistance": 294.93333333333334,
+    "visualDistance": 295.20933333333335,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 0,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1482.7,
+    "snapshotTick": 128,
+    "authoritativeDistance": 294.93333333333334,
+    "visualDistance": 295.34293333333335,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 0,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1499.3,
+    "snapshotTick": 128,
+    "authoritativeDistance": 294.93333333333334,
+    "visualDistance": 295.4757333333333,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 1,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1516,
+    "snapshotTick": 128,
+    "authoritativeDistance": 294.93333333333334,
+    "visualDistance": 295.6093333333333,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 1,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1532.6,
+    "snapshotTick": 128,
+    "authoritativeDistance": 294.93333333333334,
+    "visualDistance": 295.74213333333336,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 1,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1549.3,
+    "snapshotTick": 128,
+    "authoritativeDistance": 294.93333333333334,
+    "visualDistance": 295.87573333333336,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 1,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1566,
+    "snapshotTick": 128,
+    "authoritativeDistance": 294.93333333333334,
+    "visualDistance": 296.00933333333336,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 2,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1582.7,
+    "snapshotTick": 128,
+    "authoritativeDistance": 294.93333333333334,
+    "visualDistance": 296.14293333333336,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 2,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1599.3,
+    "snapshotTick": 137,
+    "authoritativeDistance": 296.1333333333333,
+    "visualDistance": 296.2365333325704,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 2,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1616,
+    "snapshotTick": 137,
+    "authoritativeDistance": 296.1333333333333,
+    "visualDistance": 296.3701333325704,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 2,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1632.6,
+    "snapshotTick": 137,
+    "authoritativeDistance": 296.1333333333333,
+    "visualDistance": 296.50293333257036,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 3,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1649.3,
+    "snapshotTick": 137,
+    "authoritativeDistance": 296.1333333333333,
+    "visualDistance": 296.63653333257037,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 3,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1666,
+    "snapshotTick": 137,
+    "authoritativeDistance": 296.1333333333333,
+    "visualDistance": 296.77013333257037,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 3,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1682.6,
+    "snapshotTick": 137,
+    "authoritativeDistance": 296.1333333333333,
+    "visualDistance": 296.9029333325704,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 3,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.7502818489289741,
+      0.5005636978579482
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1699.3,
+    "snapshotTick": 137,
+    "authoritativeDistance": 296.1333333333333,
+    "visualDistance": 297.0365333325704,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 4,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1716,
+    "snapshotTick": 137,
+    "authoritativeDistance": 296.1333333333333,
+    "visualDistance": 297.1701333325704,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 4,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1732.7,
+    "snapshotTick": 137,
+    "authoritativeDistance": 296.1333333333333,
+    "visualDistance": 297.3037333325704,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 4,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1749.3,
+    "snapshotTick": 146,
+    "authoritativeDistance": 297.3333333333333,
+    "visualDistance": 297.42293333409623,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 4,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.0002818489289740699,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1766,
+    "snapshotTick": 146,
+    "authoritativeDistance": 297.3333333333333,
+    "visualDistance": 297.55653333409623,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1782.6,
+    "snapshotTick": 146,
+    "authoritativeDistance": 297.3333333333333,
+    "visualDistance": 297.68933333409626,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1799.3,
+    "snapshotTick": 146,
+    "authoritativeDistance": 297.3333333333333,
+    "visualDistance": 297.82293333409626,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1815.9,
+    "snapshotTick": 146,
+    "authoritativeDistance": 297.3333333333333,
+    "visualDistance": 297.95573333409624,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1832.7,
+    "snapshotTick": 146,
+    "authoritativeDistance": 297.3333333333333,
+    "visualDistance": 298.09013333409627,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 5,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.2502818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1849.3,
+    "snapshotTick": 146,
+    "authoritativeDistance": 297.3333333333333,
+    "visualDistance": 298.22293333409624,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 6,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1865.9,
+    "snapshotTick": 146,
+    "authoritativeDistance": 297.3333333333333,
+    "visualDistance": 298.35573333409627,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 6,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1882.7,
+    "snapshotTick": 146,
+    "authoritativeDistance": 297.3333333333333,
+    "visualDistance": 298.49013333409624,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 6,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  },
+  {
+    "key": "p0",
+    "time": 1899.3,
+    "snapshotTick": 155,
+    "authoritativeDistance": 298.53333333333336,
+    "visualDistance": 298.6005333325704,
+    "visualHeight": 0,
+    "clip": "run",
+    "character": "fox",
+    "frame": 6,
+    "frameCount": 8,
+    "sheet": "run",
+    "uv": [
+      0.5002818489289741,
+      0.0005636978579481398
+    ],
+    "repeat": [
+      0.24943630214205187,
+      0.49887260428410374
+    ],
+    "imageSize": [
+      1774,
+      887
+    ],
+    "source": "http://127.0.0.1:61645/run-fox-v4-M5AOWLRS.webp",
+    "groundShadowHeight": 0.012,
+    "shadowWorldY": 0.012,
+    "ringWorldY": 0.018,
+    "shadowOpacity": 0.18,
+    "shadowScale": 1,
+    "spriteScale": [
+      1.65,
+      1.65,
+      1
+    ],
+    "visible": true
+  }
+]

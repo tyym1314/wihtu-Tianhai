@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: A01/A02 real PG concurrent capture and settlement replay produce one durable effect
+ok 1 - A01/A02 real PG concurrent capture and settlement replay produce one durable effect
+  ---
+  duration_ms: 237.87725
+  type: 'test'
+  ...
+# Subtest: A03 durable receipt survives new HTTP server instance and original-ID query
+ok 2 - A03 durable receipt survives new HTTP server instance and original-ID query
+  ---
+  duration_ms: 31.877541
+  type: 'test'
+  ...
+# Subtest: A04 cancellation tombstone blocks late reserve and late capture
+ok 3 - A04 cancellation tombstone blocks late reserve and late capture
+  ---
+  duration_ms: 33.057
+  type: 'test'
+  ...
+# Subtest: A05 expired member rejects whole capture; captured void refunds everybody and no fee
+ok 4 - A05 expired member rejects whole capture; captured void refunds everybody and no fee
+  ---
+  duration_ms: 46.576875
+  type: 'test'
+  ...
+# Subtest: A06 simultaneous gift and game reserve cannot spend frozen funds or overdraw
+ok 5 - A06 simultaneous gift and game reserve cannot spend frozen funds or overdraw
+  ---
+  duration_ms: 9.76775
+  type: 'test'
+  ...
+# Subtest: A07 tenant/App/environment and wallet/currency scope isolation
+ok 6 - A07 tenant/App/environment and wallet/currency scope isolation
+  ---
+  duration_ms: 28.046
+  type: 'test'
+  ...
+# Subtest: A08 approved full-cycle liability, accept fence and settlement while available budget is zero
+ok 7 - A08 approved full-cycle liability, accept fence and settlement while available budget is zero
+  ---
+  duration_ms: 44.642375
+  type: 'test'
+  ...
+# Subtest: probability refuses unapproved profiles, wrong caps, expired pre-accept and cancellation races
+ok 8 - probability refuses unapproved profiles, wrong caps, expired pre-accept and cancellation races
+  ---
+  duration_ms: 17.95175
+  type: 'test'
+  ...
+# Subtest: A09 nonce replay, tampered raw body, duplicate JSON key and event duplicates never pay
+ok 9 - A09 nonce replay, tampered raw body, duplicate JSON key and event duplicates never pay
+  ---
+  duration_ms: 17.175375
+  type: 'test'
+  ...
+# Subtest: invalid payout rolls back every user/fee then a new valid settlement succeeds
+ok 10 - invalid payout rolls back every user/fee then a new valid settlement succeeds
+  ---
+  duration_ms: 19.348167
+  type: 'test'
+  ...
+# Subtest: business IDs cannot be reused across wallet scopes in same App/environment
+ok 11 - business IDs cannot be reused across wallet scopes in same App/environment
+  ---
+  duration_ms: 9.740875
+  type: 'test'
+  ...
+# Subtest: actual committed response loss is recovered by query and same business retry
+ok 12 - actual committed response loss is recovered by query and same business retry
+  ---
+  duration_ms: 15.518292
+  type: 'test'
+  ...
+# Subtest: three-player fee rounding and tied first-place remainder use seat order
+ok 13 - three-player fee rounding and tied first-place remainder use seat order
+  ---
+  duration_ms: 17.15475
+  type: 'test'
+  ...
+# Subtest: 2v2 team members share rank and win pool atomically
+ok 14 - 2v2 team members share rank and win pool atomically
+  ---
+  duration_ms: 21.63075
+  type: 'test'
+  ...
+# Subtest: HMAC helper reproduces the published byte-exact fixed vector
+ok 15 - HMAC helper reproduces the published byte-exact fixed vector
+  ---
+  duration_ms: 0.45475
+  type: 'test'
+  ...
+# Subtest: concurrent capture/cancel and accept/cancel serialize to one legal terminal boundary
+ok 16 - concurrent capture/cancel and accept/cancel serialize to one legal terminal boundary
+  ---
+  duration_ms: 28.567125
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 659.345958

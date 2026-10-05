@@ -1,0 +1,275 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "stage-e-local-sandbox",
+  "updatedAt": "2026-09-19",
+  "pathBase": "repository-root",
+  "notes": [
+    "阶段 E 共 13 款游戏已接本地沙箱：11 款竞技与 2 款概率；均未完成生产或真机验收。",
+    "ruleVersion 为拟冻结的实现版本标签；旧两款版本直接取自当前数学源文件。",
+    "设计图是静态概念，不是分层美术、3D、动画或真实设备验收。",
+    "probability 无 PvP 服务费配置；RTP 不得根据本清单自行视为已验证。"
+  ],
+  "games": [
+    {
+      "id": "carrom",
+      "name": "Carrom 弹盘",
+      "nameEn": "Carrom",
+      "category": "competitive",
+      "players": [
+        2,
+        4
+      ],
+      "mode": "1v1 / 2v2",
+      "rendering": "2.5D board + authoritative planar physics",
+      "ruleVersion": "pvp-carrom-v1.0.0",
+      "status": "local-sandbox-game",
+      "designStage": "playable-build-physical-device-review-pending",
+      "conceptPath": "output/design/pvp-arena-concepts-v1/01-carrom.png",
+      "rulesPath": "platform/specs/game-rules-v1.md",
+      "feeBpsDefault": 500,
+      "implementationStatus": "local-authoritative-multiplayer"
+    },
+    {
+      "id": "match",
+      "name": "三消对战",
+      "nameEn": "Match Arena",
+      "category": "competitive",
+      "players": [
+        2,
+        3,
+        4
+      ],
+      "mode": "90 秒独立同条件棋盘，积分/宝石收集/特殊触发三目标",
+      "rendering": "SVG 2.5D jewels + layered animated character",
+      "ruleVersion": "pvp-match-v2.0.0",
+      "status": "local-sandbox-sample",
+      "designStage": "playable-sample-physical-device-review-pending",
+      "conceptPath": "output/design/pvp-arena-concepts-v1/02-match.png",
+      "rulesPath": "platform/specs/game-rules-v1.md",
+      "feeBpsDefault": 500,
+      "implementationStatus": "local-authoritative-multiplayer"
+    },
+    {
+      "id": "golf",
+      "name": "绿洲高尔夫",
+      "nameEn": "Oasis Golf",
+      "category": "competitive",
+      "players": [
+        2,
+        3,
+        4
+      ],
+      "mode": "3 洞个人杆数赛",
+      "rendering": "Three.js 3D + authoritative ball simulation",
+      "ruleVersion": "pvp-golf-v1.1.0",
+      "status": "local-sandbox-sample",
+      "designStage": "playable-sample-physical-device-review-pending",
+      "conceptPath": "output/design/pvp-arena-concepts-v1/03-golf.png",
+      "rulesPath": "platform/specs/game-rules-v1.md",
+      "feeBpsDefault": 500,
+      "implementationStatus": "local-authoritative-multiplayer"
+    },
+    {
+      "id": "darts",
+      "name": "飞镖",
+      "nameEn": "Darts",
+      "category": "competitive",
+      "players": [
+        2
+      ],
+      "mode": "301 直出，等轮结束",
+      "rendering": "2.5D / local 3D dart + deterministic target",
+      "ruleVersion": "pvp-darts-v1.0.0",
+      "status": "local-sandbox-game",
+      "designStage": "playable-build-physical-device-review-pending",
+      "conceptPath": "output/design/pvp-arena-concepts-v1/04-darts.png",
+      "rulesPath": "platform/specs/game-rules-v1.md",
+      "feeBpsDefault": 500,
+      "implementationStatus": "local-authoritative-multiplayer"
+    },
+    {
+      "id": "ludo",
+      "name": "快速飞行棋",
+      "nameEn": "Ludo Quick",
+      "category": "competitive",
+      "players": [
+        2,
+        4
+      ],
+      "mode": "每人 2 子个人赛",
+      "rendering": "layered SVG/CSS 2.5D board with authoritative rules",
+      "ruleVersion": "pvp-ludo-v1.1.0",
+      "status": "local-sandbox-game",
+      "designStage": "playable-build-physical-device-review-pending",
+      "conceptPath": "output/design/pvp-arena-concepts-v1/05-ludo.png",
+      "rulesPath": "platform/specs/game-rules-v1.md",
+      "feeBpsDefault": 500,
+      "implementationStatus": "local-authoritative-multiplayer"
+    },
+    {
+      "id": "pool",
+      "name": "八球",
+      "nameEn": "Pool",
+      "category": "competitive",
+      "players": [
+        2
+      ],
+      "mode": "1v1 八球，本项目移动端规则",
+      "rendering": "Canvas 2.5D table and balls + authoritative planar physics",
+      "ruleVersion": "pvp-pool-v1.0.0",
+      "status": "local-sandbox-game",
+      "designStage": "playable-build-physical-device-review-pending",
+      "conceptPath": "output/design/pvp-arena-concepts-v1/06-pool.png",
+      "rulesPath": "platform/specs/game-rules-v1.md",
+      "feeBpsDefault": 500,
+      "implementationStatus": "local-authoritative-multiplayer"
+    },
+    {
+      "id": "bowling",
+      "name": "霓虹保龄球",
+      "nameEn": "Neon Bowl",
+      "category": "competitive",
+      "players": [
+        2,
+        3,
+        4
+      ],
+      "mode": "3 frame 个人计分赛，末局补投",
+      "rendering": "Three.js 3D lane, ball and pins",
+      "ruleVersion": "pvp-bowling-v1.1.0",
+      "status": "local-sandbox-game",
+      "designStage": "playable-build-physical-device-review-pending",
+      "conceptPath": "output/design/pvp-arena-concepts-v1/07-bowling.png",
+      "rulesPath": "platform/specs/game-rules-v1.md",
+      "feeBpsDefault": 500,
+      "implementationStatus": "local-authoritative-multiplayer"
+    },
+    {
+      "id": "jackaroo",
+      "name": "Jackaroo 弹珠牌棋",
+      "nameEn": "Jackaroo",
+      "category": "competitive",
+      "players": [
+        4
+      ],
+      "mode": "固定对座 2v2，每人 4 珠",
+      "rendering": "layered SVG/CSS 2.5D board with authoritative rules",
+      "ruleVersion": "pvp-jackaroo-v1.0.0",
+      "status": "local-sandbox-game",
+      "designStage": "playable-build-physical-device-review-pending",
+      "conceptPath": "output/design/pvp-arena-concepts-v1/08-jackaroo.png",
+      "rulesPath": "platform/specs/game-rules-v1.md",
+      "feeBpsDefault": 500,
+      "implementationStatus": "local-authoritative-multiplayer"
+    },
+    {
+      "id": "domino",
+      "name": "多米诺",
+      "nameEn": "Domino Duel",
+      "category": "competitive",
+      "players": [
+        2,
+        4
+      ],
+      "mode": "双六 28 牌个人抽牌赛，单手决胜",
+      "rendering": "layered SVG/CSS 2.5D board with authoritative rules",
+      "ruleVersion": "pvp-domino-v1.0.0",
+      "status": "local-sandbox-game",
+      "designStage": "playable-build-physical-device-review-pending",
+      "conceptPath": "output/design/pvp-arena-concepts-v1/09-domino.png",
+      "rulesPath": "platform/specs/game-rules-v1.md",
+      "feeBpsDefault": 500,
+      "implementationStatus": "local-authoritative-multiplayer"
+    },
+    {
+      "id": "run",
+      "name": "沙丘竞速",
+      "nameEn": "Dune Dash",
+      "category": "competitive",
+      "players": [
+        2,
+        3,
+        4
+      ],
+      "mode": "三赛道短程个人竞速",
+      "rendering": "Three.js 3D characters, course and authoritative movement",
+      "ruleVersion": "pvp-run-v2.0.0",
+      "status": "local-sandbox-game",
+      "designStage": "playable-build-physical-device-review-pending",
+      "conceptPath": "output/design/pvp-arena-concepts-v1/10-run.png",
+      "rulesPath": "platform/specs/game-rules-v1.md",
+      "feeBpsDefault": 500,
+      "implementationStatus": "local-authoritative-multiplayer"
+    },
+    {
+      "id": "towerlink",
+      "name": "连线占塔",
+      "nameEn": "Tower Link",
+      "category": "competitive",
+      "players": [
+        2,
+        3,
+        4
+      ],
+      "mode": "随等级提升出兵速度与出线路数的限时领土争夺",
+      "rendering": "2.5D illustrated battlefield with batched troop animation",
+      "ruleVersion": "towerlink-v2.2.0",
+      "status": "local-sandbox-game",
+      "designStage": "playable-build-physical-device-review-pending",
+      "conceptPath": "platform/design/towerlink-v4/battle-2p.png",
+      "rulesPath": "platform/specs/towerlink-v2-integration.md",
+      "feeBpsDefault": 500,
+      "implementationStatus": "local-authoritative-multiplayer",
+      "maps": [
+        "duel-twin-bridges",
+        "duel-ring-flank",
+        "trio-confluence",
+        "trio-outer-triangle",
+        "quad-crossroads",
+        "quad-island-ring"
+      ]
+    },
+    {
+      "id": "thunder",
+      "name": "雷霆王座",
+      "nameEn": "Thunder Throne",
+      "category": "probability",
+      "players": [
+        1
+      ],
+      "mode": "独立原型保留；平台服务端数学与钱包沙箱适配",
+      "rendering": "existing 2D layered character, reels and effects",
+      "ruleVersion": "thunder-0.1.0",
+      "mathVersion": "thunder-0.1.0",
+      "status": "local-sandbox-adapted-prototype",
+      "designStage": "existing-demo-retained-platform-sandbox",
+      "conceptPath": null,
+      "referencePath": "README.md",
+      "mathSourcePath": "src/game/engine.ts",
+      "rulesPath": "platform/specs/game-rules-v1.md",
+      "implementationStatus": "local-authoritative-probability-wallet",
+      "rtpProfileStatus": "existing-math-only-new-profiles-not-validated"
+    },
+    {
+      "id": "tiger",
+      "name": "虎虎生财",
+      "nameEn": "Fortune Tiger",
+      "category": "probability",
+      "players": [
+        1
+      ],
+      "mode": "独立原型保留；平台服务端数学与钱包沙箱适配",
+      "rendering": "existing 2D layered character, reels and effects",
+      "ruleVersion": "tiger-original-1.0.0",
+      "mathVersion": "tiger-original-1.0.0",
+      "status": "local-sandbox-adapted-prototype",
+      "designStage": "existing-demo-retained-platform-sandbox",
+      "conceptPath": null,
+      "referencePath": "README-TIGER.md",
+      "mathSourcePath": "src/tiger/math.ts",
+      "rulesPath": "platform/specs/game-rules-v1.md",
+      "implementationStatus": "local-authoritative-probability-wallet",
+      "rtpProfileStatus": "existing-math-only-new-profiles-not-validated"
+    }
+  ]
+}

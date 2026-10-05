@@ -1,0 +1,114 @@
+{
+  "at": "2026-09-19T18:03:37.069Z",
+  "scope": "Actual engines in isolated Chrome mobile emulation. Explicit local zero-value Carrom pocket arrangement; no platform/wallet requests or physical-device claims.",
+  "reports": [
+    {
+      "game": "darts",
+      "width": 390,
+      "height": 844,
+      "layout": {
+        "width": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      "evidence": {
+        "input": "CDP touchStart/move/end; gesture processed by real engine",
+        "heldBox": {
+          "x": 110.85846710205078,
+          "y": 508.5343933105469,
+          "width": 168.28768157958984,
+          "height": 151.11203002929688
+        },
+        "hit": {
+          "score": 18,
+          "label": "18",
+          "number": 18,
+          "multiplier": 1,
+          "x": 0.3,
+          "y": -0.428147,
+          "durationMs": 568,
+          "distance": 0.216216
+        },
+        "remaining": 283,
+        "flightMs": 650,
+        "heldHiddenDuringFlight": true,
+        "heldRestoredAfterImpact": true,
+        "authoritativeEndpoint": true
+      },
+      "errors": [],
+      "badAssets": []
+    },
+    {
+      "game": "darts",
+      "width": 360,
+      "height": 800,
+      "layout": {
+        "width": 360,
+        "scrollWidth": 360,
+        "scrollHeight": 800
+      },
+      "evidence": {
+        "input": "CDP touchStart/move/end; gesture processed by real engine",
+        "heldBox": {
+          "x": 101.59552001953125,
+          "y": 473.7660827636719,
+          "width": 156.8135986328125,
+          "height": 140.58700561523438
+        },
+        "hit": {
+          "score": 18,
+          "label": "18",
+          "number": 18,
+          "multiplier": 1,
+          "x": 0.3,
+          "y": -0.430631,
+          "durationMs": 553,
+          "distance": 0.235294
+        },
+        "remaining": 283,
+        "flightMs": 650,
+        "heldHiddenDuringFlight": true,
+        "heldRestoredAfterImpact": true,
+        "authoritativeEndpoint": true
+      },
+      "errors": [],
+      "badAssets": []
+    },
+    {
+      "game": "darts",
+      "width": 430,
+      "height": 932,
+      "layout": {
+        "width": 430,
+        "scrollWidth": 430,
+        "scrollHeight": 932
+      },
+      "evidence": {
+        "input": "CDP touchStart/move/end; gesture processed by real engine",
+        "heldBox": {
+          "x": 130.87852478027344,
+          "y": 528.4833984375,
+          "width": 168.24794006347656,
+          "height": 151.06683349609375
+        },
+        "hit": {
+          "score": 18,
+          "label": "18",
+          "number": 18,
+          "multiplier": 1,
+          "x": 0.3,
+          "y": -0.426792,
+          "durationMs": 569,
+          "distance": 0.205128
+        },
+        "remaining": 283,
+        "flightMs": 650,
+        "heldHiddenDuringFlight": true,
+        "heldRestoredAfterImpact": true,
+        "authoritativeEndpoint": true
+      },
+      "errors": [],
+      "badAssets": []
+    }
+  ]
+}

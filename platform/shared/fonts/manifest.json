@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "downloaded_at": "2026-10-04T08:08:50.920024+00:00",
+  "upstream": "https://github.com/google/fonts",
+  "license_repository_commit": "9710da1eacb3be272583c3224dcb70f9da6eadbb",
+  "derivation": "Unmodified official Google Fonts WOFF2 script subsets. No text-based glyph subset and no re-encoding.",
+  "fonts": [
+    {
+      "id": "dm-sans",
+      "family": "DM Sans",
+      "subset": "latin",
+      "style": "normal",
+      "weight": [
+        400,
+        700
+      ],
+      "file": "dm-sans-latin-468d56b6b2.woff2",
+      "bytes": 36980,
+      "sha256": "468d56b6b25b05b70190b6c233d773f6f1770e8579827ce022a57f03fa8002fb",
+      "source_url": "https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K6z9mXg.woff2",
+      "upstream_css": "review/deep-mobile-20261004/fonts/upstream/dm-sans.css",
+      "unicode_range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+      "license": "OFL-1.1",
+      "license_file": "dm-sans-OFL.txt",
+      "license_sha256": "9af36190332437f5ecd09974de43c1f7c77a310a996cdd8ceb25628b458840e1",
+      "license_source_url": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/dmsans/OFL.txt",
+      "axes": [
+        {
+          "tag": "wght",
+          "min": 100.0,
+          "default": 400.0,
+          "max": 1000.0
+        }
+      ],
+      "unicode_cmap_count": 222,
+      "css_file": "dm-sans.css",
+      "css_sha256": "5ffeb74ef0697339ff112b6a639aa99d70988ac03aaa173350ada07a14f06c59",
+      "source_css_url": "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400..700&display=swap"
+    },
+    {
+      "id": "cormorant-garamond",
+      "family": "Cormorant Garamond",
+      "subset": "latin",
+      "style": "normal",
+      "weight": [
+        400,
+        700
+      ],
+      "file": "cormorant-garamond-latin-5d618c462b.woff2",
+      "bytes": 37776,
+      "sha256": "5d618c462b7a5b74f442e1548880086af71764d9cc7d35c16ab45353da934621",
+      "source_url": "https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYqXtKky2F7g.woff2",
+      "upstream_css": "review/deep-mobile-20261004/fonts/upstream/cormorant-garamond.css",
+      "unicode_range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+      "license": "OFL-1.1",
+      "license_file": "cormorant-garamond-OFL.txt",
+      "license_sha256": "60700d351cac4650c51f3f9db318d2a420f8b45052dba2715eb5fec41f0f6956",
+      "license_source_url": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/cormorantgaramond/OFL.txt",
+      "axes": [
+        {
+          "tag": "wght",
+          "min": 300.0,
+          "default": 300.0,
+          "max": 700.0
+        }
+      ],
+      "unicode_cmap_count": 229,
+      "css_file": "cormorant-garamond.css",
+      "css_sha256": "2c73cb28bda065482f518d3329fd8d431912dc7f82f2787bb07a72ef9ad968fc",
+      "source_css_url": "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400..700&display=swap"
+    },
+    {
+      "id": "cinzel",
+      "family": "Cinzel",
+      "subset": "latin",
+      "style": "normal",
+      "weight": [
+        400,
+        700
+      ],
+      "file": "cinzel-latin-ef95296c77.woff2",
+      "bytes": 25888,
+      "sha256": "ef95296c778719c3d658a8284d65078100450948851b9114485ada01d9d3d3f8",
+      "source_url": "https://fonts.gstatic.com/s/cinzel/v26/8vIJ7ww63mVu7gt79mT7PkRXMw.woff2",
+      "upstream_css": "review/deep-mobile-20261004/fonts/upstream/cinzel.css",
+      "unicode_range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+      "license": "OFL-1.1",
+      "license_file": "cinzel-OFL.txt",
+      "license_sha256": "f2b3029aba64c378bf0963b62945eee15e564fe4330b934c8f2eb058282b5e83",
+      "license_source_url": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/cinzel/OFL.txt",
+      "axes": [
+        {
+          "tag": "wght",
+          "min": 400.0,
+          "default": 400.0,
+          "max": 900.0
+        }
+      ],
+      "unicode_cmap_count": 220,
+      "css_file": "cinzel.css",
+      "css_sha256": "5b5c9327e4d15ba80f0ccbc75f4bbc0014cf29d2566bf8ecd81d81cc0c22f48e",
+      "source_css_url": "https://fonts.googleapis.com/css2?family=Cinzel:wght@400..700&display=swap"
+    },
+    {
+      "id": "noto-sans-arabic",
+      "family": "Noto Sans Arabic",
+      "subset": "arabic",
+      "style": "normal",
+      "weight": [
+        400,
+        700
+      ],
+      "file": "noto-sans-arabic-arabic-69cdf0bf00.woff2",
+      "bytes": 166152,
+      "sha256": "69cdf0bf005fdc9cc13fb5a8581697eb9ba8f761aeaf255fc717d14c62c38891",
+      "source_url": "https://fonts.gstatic.com/s/notosansarabic/v33/nwpCtLGrOAZMl5nJ_wfgRg3DrWFZWsnVBJ_sS6tlqHHFlj4wv4rqxzLIhjE.woff2",
+      "upstream_css": "review/deep-mobile-20261004/fonts/upstream/noto-sans-arabic.css",
+      "unicode_range": "U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1",
+      "license": "OFL-1.1",
+      "license_file": "noto-sans-arabic-OFL.txt",
+      "license_sha256": "07fc70bfeb985cc1a87a8587d0a0c80bab11c86c9dc3fd95b6f0cb332f983e96",
+      "license_source_url": "https://raw.githubusercontent.com/google/fonts/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/notosansarabic/OFL.txt",
+      "axes": [
+        {
+          "tag": "wght",
+          "min": 100.0,
+          "default": 400.0,
+          "max": 900.0
+        }
+      ],
+      "unicode_cmap_count": 1226,
+      "css_file": "noto-sans-arabic.css",
+      "css_sha256": "d37719255c27ed9c07611f520a81a8998a92b43ff931739ea48da968ef390aba",
+      "source_css_url": "https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400..700&display=swap"
+    }
+  ],
+  "chinese_fallback": "Chinese uses platform system-ui, PingFang SC, Hiragino Sans GB, Microsoft YaHei and Noto Sans CJK SC. No downloadable Noto Sans SC subset; dynamic user text retains native OS coverage.",
+  "total_woff2_bytes": 266796
+}

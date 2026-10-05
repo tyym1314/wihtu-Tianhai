@@ -1,0 +1,48 @@
+{
+  "scope": "Mac webkit headless, mobile viewport 390x844 DPR 3 (renderer caps 2), native CPU speed, real production renderer/WebP textures, repeat 500ms snapshot fixture, no API or physical-device acceptance.",
+  "workload": {
+    "towers": 13,
+    "armies": 42,
+    "orders": 15
+  },
+  "projection": {
+    "thirtyFramesMs": {
+      "n": 1000,
+      "p50": 0,
+      "p95": 0,
+      "p99": 1,
+      "max": 1,
+      "mean": 0.013
+    },
+    "distinctArraysFirstSnapshot": 5,
+    "distinctArmyObjectsFirstSnapshot": 186,
+    "checksum": 1119000
+  },
+  "render": {
+    "frameCpuMs": {
+      "n": 600,
+      "p50": 0,
+      "p95": 1,
+      "p99": 1,
+      "max": 1,
+      "mean": 0.345
+    },
+    "rafIntervalsMs": {
+      "n": 599,
+      "p50": 17,
+      "p95": 18,
+      "p99": 18,
+      "max": 19,
+      "mean": 16.669449081803005
+    },
+    "over33ms": 0
+  },
+  "at": "2026-09-28T09:30:47.856Z",
+  "label": "webkit-after",
+  "errors": [],
+  "sources": {
+    "tower-scene.js": "e459f2484c8924e021768089dfc85b69b437373960058ac691e1b151e94ccd6d",
+    "TowerLinkGame.jsx": "e511242d547e61503409cc0224a9151ae9328f7a6e9ea2f380653c55be938494",
+    "troop-presentation.mjs": "af287095e3e9848554d509633d307a6f911c01a6a27a9b4ddfe9e48ee4ff240e"
+  }
+}

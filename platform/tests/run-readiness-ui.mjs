@@ -1,0 +1,55 @@
+/** Cold assets, real HTTP engine, input staleness. Desktop WebGL only; no wallet/device claim. */
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {reviewServer} from '../arena/run/review-harness.mjs';
+const server=await reviewServer();
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',args:['--enable-webgl','--use-angle=metal']});
+const out=new URL('../review/android/run-readiness/',import.meta.url);await mkdir(out,{recursive:true});
+const checks=[],errors=[];
+let releaseAssets;const assets=new Promise(r=>{releaseAssets=r;});
+let freeze=false,frozen=null,rejectOne=false,pollHeld=false,releasePoll;const heldPoll=new Promise(r=>{releasePoll=r;});
+try{
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+ const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/*.glb',async route=>{await assets;await route.continue();});
+ await page.route('**/room',async route=>{if(pollHeld)await heldPoll;const response=await route.fetch();const data=await response.json();if(!freeze)frozen=data;await route.fulfill({response,json:freeze?frozen:data});});
+ await page.route('**/action',async route=>{if(rejectOne){rejectOne=false;pollHeld=true;return route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({code:'STALE_INPUT',error:'Refresh the authoritative race state'})});}await route.continue();});
+ await page.goto(server.origin+'?locale=zh',{waitUntil:'domcontentloaded'});
+ await page.getByTestId('run-loading').waitFor();
+ await page.waitForTimeout(600);
+ assert.equal(await page.getByTestId('run-jump').isDisabled(),true);
+ await page.keyboard.press('ArrowUp');await page.waitForTimeout(100);assert.equal(server.actions.length,0);
+ await page.screenshot({path:new URL('loading-390.png',out).pathname});
+ checks.push('Cold GLB held: visible loading and disabled touch/keyboard inputs, no action request');
+ releaseAssets();
+ await page.waitForSelector('[data-testid=run-track][data-ready=true]');
+ await page.waitForSelector('[data-testid=run-scene][data-input-ready=true]');
+ function clearPath(){server.configure(s=>{for(const p of s.players){p.distanceU=286*300;p.checkpointU=270*300;p.lane=p.fromLane=1;p.changeStartTick=p.changeEndTick=s.tick;p.jumpStartTick=null;p.slideUntilTick=0;p.stunUntilTick=0;p.fallStartTick=p.fallUntilTick=null;p.pendingInput=null;p.lastInputTick=s.tick-20;}s.players[1].lane=s.players[1].fromLane=0;s.players[2].lane=s.players[2].fromLane=2;});}
+ clearPath();await page.waitForTimeout(250);
+ let response=page.waitForResponse(r=>r.url().endsWith('/action'));await page.getByTestId('run-jump').tap();assert.equal((await response).status(),200);
+ assert.equal(server.actions.at(-1).action.type,'jump');
+ await page.screenshot({path:new URL('ready-390.png',out).pathname});
+ checks.push('Full WebGL/assets rendered, newer HTTP tick received, real tap accepted by authoritative engine');
+ clearPath();await page.waitForTimeout(250);freeze=true;
+ await page.waitForTimeout(1800);assert.equal(await page.getByTestId('run-jump').isDisabled(),true);
+ const before=server.actions.length;await page.keyboard.press('ArrowUp');assert.equal(server.actions.length,before);
+ freeze=false;await page.waitForSelector('[data-testid=run-scene][data-input-ready=true]');
+ checks.push('Repeated stale HTTP snapshot stays disabled, fresh server tick restores input');
+ clearPath();await page.waitForTimeout(250);
+ const beforeBlock=server.actions.length;
+ await page.evaluate(()=>{const start=performance.now();while(performance.now()-start<1700){}document.querySelector('[data-testid=run-jump]').click();});
+ await page.waitForTimeout(200);assert.equal(server.actions.length,beforeBlock);
+ checks.push('1700 ms blocked JS task then same-task click is rejected without stale request');
+ clearPath();await page.waitForTimeout(250);rejectOne=true;
+ response=page.waitForResponse(r=>r.url().endsWith('/action'));await page.getByTestId('run-jump').tap();assert.equal((await response).status(),409);
+ await page.waitForTimeout(100);assert.equal(await page.getByTestId('run-jump').isDisabled(),true);
+ assert.ok((await page.locator('.run-speed [role=status]').textContent()).includes('同步'));
+ pollHeld=false;releasePoll();
+ await page.waitForSelector('[data-testid=run-scene][data-input-ready=true]');
+ clearPath();await page.waitForTimeout(250);response=page.waitForResponse(r=>r.url().endsWith('/action'));await page.getByTestId('run-jump').tap();assert.equal((await response).status(),200);
+ checks.push('Injected STALE_INPUT waits without replay; following fresh poll permits a new real action');
+ assert.deepEqual(errors,[]);
+ await writeFile(new URL('report.json',out),JSON.stringify({checkedAt:new Date().toISOString(),scope:'Desktop Chrome Metal WebGL + isolated real HTTP engine; GLB delay, repeated snapshots and one STALE_INPUT explicitly injected. No Android/production/financial acceptance claimed.',checks,pageErrors:errors},null,2));
+ console.log(JSON.stringify({checks,pageErrors:errors},null,2));await context.close();
+}finally{releaseAssets();releasePoll();await browser.close();await server.close();}

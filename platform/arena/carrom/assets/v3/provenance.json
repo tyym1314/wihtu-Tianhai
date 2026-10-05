@@ -1,0 +1,32 @@
+{
+  "reference": "output/design/pvp-arena-concepts-v1/01-carrom.png",
+  "board_original": "/Users/tyym/.codex/generated_images/01a0b06a-2b67-73d2-8819-3164d148773c/exec-4d28f1d2-b95d-46b5-acbd-54d955bcc916.png",
+  "guide": "geometry-guide.svg / geometry-guide.png",
+  "complete_prompt": "board-prompt.txt",
+  "runtime": "board-material.webp",
+  "encoding": "cwebp q92 alpha_q100, original PNG retained; no crop/resize/paint postprocessing",
+  "blender": "render-discs.py / carrom-disc-source.blend",
+  "runtime_geometry": "Walnut frame and maple bed use nine-slice mapping to exact ±4.5 playing boundaries; four pockets and baselines remain code. Four original Blender lathed discs preserve physical radii, contact shadows, server collision paths and particle events.",
+  "files": [
+    {
+      "path": "board-material.webp",
+      "bytes": 331554
+    },
+    {
+      "path": "disc-black.webp",
+      "bytes": 12028
+    },
+    {
+      "path": "disc-queen.webp",
+      "bytes": 18048
+    },
+    {
+      "path": "disc-striker.webp",
+      "bytes": 15682
+    },
+    {
+      "path": "disc-white.webp",
+      "bytes": 8086
+    }
+  ]
+}

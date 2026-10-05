@@ -1,0 +1,8 @@
+{
+  "checkedAt": "2026-09-20",
+  "comparedAgainst": "../restoration-preserved-source.json",
+  "unchanged": {
+    "level.mjs": true,
+    "engine.mjs": true
+  }
+}

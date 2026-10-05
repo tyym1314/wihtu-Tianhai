@@ -1,0 +1,17 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import {performance} from 'node:perf_hooks';
+import * as current from '../../physics.mjs';
+import * as engine from '../../engine.mjs';
+const physics=await readFile(new URL('physics-v1-before.txt',import.meta.url),'utf8'),constants=await readFile(new URL('constants-v1-before.txt',import.meta.url),'utf8');
+const src=physics.replace("from 'cannon-es'",'from '+JSON.stringify(import.meta.resolve('cannon-es'))).replace("import{PHYSICS_VERSION,LANE,PIN_LAYOUT,PHYSICS}from'./constants.mjs';",constants.replaceAll('export ',''));
+const before=await import('data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
+const e=current,base={type:'roll',offset:0,angle:0,power:.78,spin:0},cases=[],ids=e.PIN_LAYOUT.map(p=>p.id);
+for(const power of [.25,.35,.45,.55,.6,.65,.7,.75,.78,.8,.85,.9,.95,1])cases.push({group:'center-power',standing:ids,action:{...base,power}});
+for(let a=-.2;a<=.2001;a+=.01)cases.push({group:'angle',standing:ids,action:{...base,angle:+a.toFixed(2)}});
+for(const side of[-1,1])for(const offset of[.12,.16,.2,.24,.28])for(const power of[.5,.7,.85,1])cases.push({group:'pocket',standing:ids,action:{...base,offset:side*offset,power}});
+for(const offset of[-.85,.85])for(const angle of[-.2,.2])for(const power of[.25,1])for(const spin of[-1,1])cases.push({group:'boundary',standing:ids,action:{...base,offset,angle,power,spin}});
+for(const side of[-1,1])for(let offset=.12;offset<=.3001;offset+=.02)for(const power of[.6,.7,.8,.9,1])cases.push({group:'dense-pocket',standing:ids,action:{...base,offset:side*Number(offset.toFixed(2)),power}});
+let seed=0x4b6f776c;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};for(let i=0;i<100;i++)cases.push({group:'seeded',standing:i<50?ids:ids.filter(()=>random()>.4),action:{...base,offset:(random()*2-1)*.85,angle:(random()*2-1)*.1,power:.25+random()*.75,spin:random()*2-1}});
+const rows=[];for(const c of cases){const start=performance.now(),r=e.simulateRoll(c.standing,c.action);rows.push({...c,down:r.down,remaining:r.remaining,gutter:r.gutter,contact:r.contact,outcome:r.outcome,duration:r.duration,maxPinSpeed:r.maxPinSpeed,maxPinAngular:r.maxPinAngular,computeMs:Math.round((performance.now()-start)*100)/100,before:(()=>{const b=before.simulateRoll(c.standing,c.action);return{down:b.down,remaining:b.remaining,gutter:b.gutter,outcome:b.outcome};})()});}
+const bot=engine.createState('a'.repeat(64),1000,{players:[{key:'p0',seatIndex:0,isBot:true},{key:'p1',seatIndex:1,isBot:true}]});let now=1001;for(let i=0;i<7&&bot.status==='active';i++){for(const p of bot.players){const a=engine.botAction(bot,p.key,now);if(a)engine.act(bot,p.key,a,now);}now=Math.max(...bot.players.map(p=>p.busyUntil))+1;engine.tick(bot,now);}
+const summary={bot:{score:engine.view(bot,'p0').me.score,frames:bot.players[0].frames},ruleVersion:engine.RULE_VERSION,physicsVersion:engine.PHYSICS_VERSION,cases:rows.length,faults:rows.filter(r=>r.outcome==='fault'),center:rows.filter(r=>r.group==='center-power').map(r=>({power:r.action.power,pins:r.down.length,before:r.before.down.length})),strikes:rows.filter(r=>r.down.length===10).map(r=>({group:r.group,action:r.action})),maxMs:Math.max(...rows.map(r=>r.computeMs))};await writeFile(new URL('parameter-matrix.json',import.meta.url),JSON.stringify({summary,rows},null,2));console.log(JSON.stringify(summary,null,2));

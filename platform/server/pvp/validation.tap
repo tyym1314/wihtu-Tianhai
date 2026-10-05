@@ -1,0 +1,136 @@
+TAP version 13
+# Subtest: real 2-player reserve/capture/tied settlement persists one fee and complete roster
+ok 1 - real 2-player reserve/capture/tied settlement persists one fee and complete roster
+  ---
+  duration_ms: 124.283875
+  type: 'test'
+  ...
+# Subtest: real 3-player reserve/capture/tied settlement persists one fee and complete roster
+ok 2 - real 3-player reserve/capture/tied settlement persists one fee and complete roster
+  ---
+  duration_ms: 57.949959
+  type: 'test'
+  ...
+# Subtest: real 4-player reserve/capture/tied settlement persists one fee and complete roster
+ok 3 - real 4-player reserve/capture/tied settlement persists one fee and complete roster
+  ---
+  duration_ms: 55.183084
+  type: 'test'
+  ...
+# Subtest: all five entry tiers conserve the 5% total-pot fee and return principal within payout
+ok 4 - all five entry tiers conserve the 5% total-pot fee and return principal within payout
+  ---
+  duration_ms: 167.730167
+  type: 'test'
+  ...
+# Subtest: actions are private, sequenced, concurrent-replay safe and survive a module reload
+ok 5 - actions are private, sequenced, concurrent-replay safe and survive a module reload
+  ---
+  duration_ms: 43.770084
+  type: 'test'
+  ...
+# Subtest: App/game isolation and one active seat prevent user impersonation or double-entry
+ok 6 - App/game isolation and one active seat prevent user impersonation or double-entry
+  ---
+  duration_ms: 11.836875
+  type: 'test'
+  ...
+# Subtest: free practice names all bots and never sends a financial operation
+ok 7 - free practice names all bots and never sends a financial operation
+  ---
+  duration_ms: 42.28825
+  type: 'test'
+  ...
+# Subtest: atomic gift racing funding cannot overdraw; failed lobby releases any successful holds
+ok 8 - atomic gift racing funding cannot overdraw; failed lobby releases any successful holds
+  ---
+  duration_ms: 14.273292
+  type: 'test'
+  ...
+# Subtest: 30-second heartbeat batches simultaneous disconnects to void; reconnect before deadline preserves board and seat
+ok 9 - 30-second heartbeat batches simultaneous disconnects to void; reconnect before deadline preserves board and seat
+  ---
+  duration_ms: 32.51175
+  type: 'test'
+  ...
+# Subtest: pause stops new admission, keeps accepted result settlement; shared service outage over60s refunds
+ok 10 - pause stops new admission, keeps accepted result settlement; shared service outage over60s refunds
+  ---
+  duration_ms: 40.713959
+  type: 'test'
+  ...
+# Subtest: Golf paid two-player shot is authoritative and forfeit settles with the same wallet protocol
+ok 11 - Golf paid two-player shot is authoritative and forfeit settles with the same wallet protocol
+  ---
+  duration_ms: 30.366208
+  type: 'test'
+  ...
+# Subtest: dropped successful capture and settlement HTTP responses recover by original durable operation IDs
+ok 12 - dropped successful capture and settlement HTTP responses recover by original durable operation IDs
+  ---
+  duration_ms: 36.249042
+  type: 'test'
+  ...
+# Subtest: fresh OS processes restore the exact room, shuffled seats and board without creating a new entry
+ok 13 - fresh OS processes restore the exact room, shuffled seats and board without creating a new entry
+  ---
+  duration_ms: 367.239041
+  type: 'test'
+  ...
+# Subtest: four-player tied winners split minor-unit remainder by frozen random seat, never by account ID
+ok 14 - four-player tied winners split minor-unit remainder by frozen random seat, never by account ID
+  ---
+  duration_ms: 44.607875
+  type: 'test'
+  ...
+# Subtest: readiness expiry records a cancellation tombstone and never captures entries
+ok 15 - readiness expiry records a cancellation tombstone and never captures entries
+  ---
+  duration_ms: 10.971
+  type: 'test'
+  ...
+# Subtest: short shared-service pause shifts clock and heartbeat equally, preserving the same seed/board
+ok 16 - short shared-service pause shifts clock and heartbeat equally, preserving the same seed/board
+  ---
+  duration_ms: 21.795375
+  type: 'test'
+  ...
+# Subtest: cancelling an unknown-but-committed capture refunds all seats through one void settlement
+ok 17 - cancelling an unknown-but-committed capture refunds all seats through one void settlement
+  ---
+  duration_ms: 27.287833
+  type: 'test'
+  ...
+# Subtest: Golf 3 real players share the same atomic capture and winner settlement
+ok 18 - Golf 3 real players share the same atomic capture and winner settlement
+  ---
+  duration_ms: 26.417875
+  type: 'test'
+  ...
+# Subtest: Golf 4 real players share the same atomic capture and winner settlement
+ok 19 - Golf 4 real players share the same atomic capture and winner settlement
+  ---
+  duration_ms: 34.671833
+  type: 'test'
+  ...
+# Subtest: an App fee change cannot rewrite a waiting room economic contract
+ok 20 - an App fee change cannot rewrite a waiting room economic contract
+  ---
+  duration_ms: 25.0335
+  type: 'test'
+  ...
+# Subtest: leaving free practice immediately ends all bots, frees the seat, replays safely and permits a new room
+ok 21 - leaving free practice immediately ends all bots, frees the seat, replays safely and permits a new room
+  ---
+  duration_ms: 100.331458
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1501.132375

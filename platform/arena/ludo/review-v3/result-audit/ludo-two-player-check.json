@@ -1,0 +1,6 @@
+{
+  "fixture": "Two-player Ludo second seat is green according to engine, wins",
+  "gameColor": 2,
+  "seatIndex": 1,
+  "backgroundPosition": "33.3333% 0px"
+}

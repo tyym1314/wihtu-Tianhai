@@ -1,0 +1,19 @@
+{
+  "game": "jackaroo",
+  "realEnginePass": true,
+  "realEngineSwap": true,
+  "atomicSeven": true,
+  "pathCapture": true,
+  "partialSevenDisabled": true,
+  "viewports": [
+    360,
+    390
+  ],
+  "locales": [
+    "en",
+    "zh",
+    "ar"
+  ],
+  "pageErrors": [],
+  "checkedAt": "2026-09-19T15:38:41.390Z"
+}

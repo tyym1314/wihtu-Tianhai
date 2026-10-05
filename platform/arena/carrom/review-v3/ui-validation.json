@@ -1,0 +1,57 @@
+{
+  "at": "2026-09-19T16:29:38.569Z",
+  "scope": "Isolated actual-engine Chrome mobile emulation. No platform, wallet, or paid room requests. Shared portrait PNG/WebP only routed from its real local source. Not physical-device acceptance.",
+  "reports": [
+    {
+      "game": "carrom",
+      "width": 390,
+      "height": 844,
+      "layout": {
+        "width": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      "evidence": {
+        "action": "actual touch aim and shot",
+        "shotId": 1,
+        "frames": 128,
+        "collisionEvents": 4
+      },
+      "errors": []
+    },
+    {
+      "game": "carrom",
+      "width": 360,
+      "height": 800,
+      "layout": {
+        "width": 360,
+        "scrollWidth": 360,
+        "scrollHeight": 800
+      },
+      "evidence": {
+        "action": "actual touch aim and shot",
+        "shotId": 1,
+        "frames": 128,
+        "collisionEvents": 4
+      },
+      "errors": []
+    },
+    {
+      "game": "carrom",
+      "width": 430,
+      "height": 932,
+      "layout": {
+        "width": 430,
+        "scrollWidth": 430,
+        "scrollHeight": 932
+      },
+      "evidence": {
+        "action": "actual touch aim and shot",
+        "shotId": 1,
+        "frames": 128,
+        "collisionEvents": 4
+      },
+      "errors": []
+    }
+  ]
+}

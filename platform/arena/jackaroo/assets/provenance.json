@@ -1,0 +1,12 @@
+{
+  "generatedAt": "2026-09-19",
+  "tool": "image_gen.imagegen",
+  "originalArtwork": true,
+  "reference": "output/design/pvp-arena-concepts-v1/08-jackaroo.png",
+  "prompt": "Use case: stylized-concept. Production mobile board-game environment asset, portrait 1024x1536. Original premium Middle Eastern majlis tabletop viewed perfectly top-down: deep forest emerald velvet felt occupying a clean uninterrupted center, an ornate lit brass lantern partially clipped at upper left, lush realistic palm fronds upper right, a fine burgundy Persian rug crossing the extreme lower-left corner, a brass Arabic coffee pot and small warm gold tea cup clipped at lower right. Rich cinematic golden directional light, realistic fabric weave and exquisite tiny etched metal detail, very polished 3D game art. Composition MUST leave the central 75% width and central 80% height very quiet dark green felt for a separately rendered interactive board and cards. Objects only at very outer edges. No board, no holes, no marbles, no cards, no text, no people, no UI, no border, no logo. Atmospheric premium gold and emerald palette.",
+  "source": "majlis-source.png",
+  "delivery": "majlis.webp",
+  "deliveryDimensions": "768×1152",
+  "conversion": "cwebp resizing and lossy WebP encoding only; source preserved",
+  "scope": "Environment only; interactive board, tiles, marbles, state and controls are rendered separately."
+}

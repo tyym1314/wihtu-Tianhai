@@ -1,0 +1,53 @@
+vite v7.3.6 building client environment for production...
+transforming...
+
+/arena/assets/match-palace.png referenced in /arena/assets/match-palace.png didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/arena/assets/restoration/player-portraits-v2.png referenced in /arena/assets/restoration/player-portraits-v2.png didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/arena/assets/restoration/trophies-v2.png referenced in /arena/assets/restoration/trophies-v2.png didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/arena/assets/restoration/fox-poses-v2.png referenced in /arena/assets/restoration/fox-poses-v2.png didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/arena/assets/restoration/gems-v2.png referenced in /arena/assets/restoration/gems-v2.png didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 1651 modules transformed.
+rendering chunks...
+computing gzip size...
+../../../../../../../tmp/oasis-restoration-arena-20260919/index.html                               0.48 kB │ gzip:   0.32 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/players-atlas-BJZwm6F1.webp      70.70 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/palace-C3dEQYWq.webp             75.74 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/majlis-DUvgr9WP.webp            131.43 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/emerald-palace-corfLABz.webp    227.19 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/midnight-club-D-h4RlH0.png    2,322.73 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/night-room-Bc846tvA.png       2,481.52 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/LudoGame-BpfxDA_2.css             4.12 kB │ gzip:   1.46 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/BowlingGame-BF-5d2Uf.css         10.59 kB │ gzip:   3.30 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/RunGame-DMdEn4XA.css             11.27 kB │ gzip:   3.27 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/DartsGame-DWK8DNz1.css           12.74 kB │ gzip:   3.93 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/restoration-Cr39z0jQ.css         13.44 kB │ gzip:   4.13 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/GolfGame-CcYNjhX6.css            14.62 kB │ gzip:   4.39 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/JackarooGame-5GimK0G3.css        15.22 kB │ gzip:   4.05 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/CarromGame-mQE1cG2Z.css          16.79 kB │ gzip:   4.72 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/DominoGame-DS4rUghH.css          18.04 kB │ gzip:   5.18 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/PoolGame-D9vqtJpJ.css            19.12 kB │ gzip:   5.75 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/MatchGame-ntHqoNaG.css           27.35 kB │ gzip:   7.18 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/index-swyngCAa.css               30.62 kB │ gzip:   8.43 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/chevron-left-kdX7-99h.js          0.13 kB │ gzip:   0.14 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/flag-DP0CbCbL.js                  0.22 kB │ gzip:   0.20 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/info-C29EHDJa.js                  0.33 kB │ gzip:   0.22 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/trophy-BlKqbJr4.js                0.46 kB │ gzip:   0.28 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/RoomEnvironment-Dgb9iaCY.js       2.01 kB │ gzip:   0.85 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/restoration-is1SsdTo.js           9.36 kB │ gzip:   4.21 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/LudoGame-CLONEWoE.js             13.20 kB │ gzip:   6.21 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/DominoGame-CAw0YKNa.js           13.97 kB │ gzip:   5.89 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/DartsGame-BeP1mMIi.js            16.74 kB │ gzip:   6.87 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/MatchGame-BrNe-jh4.js            16.75 kB │ gzip:   6.94 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/JackarooGame-BmUhpa5_.js         22.24 kB │ gzip:   9.58 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/CarromGame-Cx-elZcA.js           25.42 kB │ gzip:  10.60 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/PoolGame-DPaf9PtG.js             28.25 kB │ gzip:  11.77 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/RunGame-hb1g5Hjr.js              30.13 kB │ gzip:  13.53 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/GolfGame-9T7otxfx.js             41.48 kB │ gzip:  17.24 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/BowlingGame-DYPMsQxK.js          43.85 kB │ gzip:  15.11 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/index-8KjyR7Y9.js               280.73 kB │ gzip:  91.81 kB
+../../../../../../../tmp/oasis-restoration-arena-20260919/assets/three-CAe0A6Ez.js               532.61 kB │ gzip: 135.47 kB
+✓ built in 1.70s

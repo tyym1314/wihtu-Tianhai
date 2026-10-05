@@ -1,0 +1,658 @@
+{
+  "checkedAt": "2026-09-28T11:43:26.821Z",
+  "scope": "Current UI and isolated real HTTP engines; legal deterministic positions are configured explicitly. Chrome trusted touch and desktop WebKit trusted pointer; not physical iPhone Safari acceptance. Every HTTP attempt counted before validation.",
+  "samples": [
+    {
+      "engine": "chromium",
+      "width": 390,
+      "height": 844,
+      "method": "Chrome trusted native touch: Playwright tap and CDP touchStart/move/end scrolling",
+      "checks": [
+        "All four player portraits occupy a separate strip outside the board",
+        "916 legal actions retained; unchanged snapshot clock ticks add zero effect derivations or Board renders over 1150 ms",
+        "Large numbered selectors choose owned marble and intended opponent; one real swap accepted",
+        "3+4 split uses 44 px step targets, partial plan cannot submit, full plan makes one atomic engine action with path captures",
+        "Primary confirmation stays visible while composing; small disjoint SVG targets were not expanded"
+      ],
+      "errors": [],
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "card": "D7"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "card": "D7"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "card": "D7"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "marbleChoice": "p0:0"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "marbleChoice": "p0:0"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "marbleChoice": "p0:0"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "splitStep": "3"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "splitStep": "3"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "splitStep": "3"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "marbleChoice": "p0:1"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "marbleChoice": "p0:1"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "marbleChoice": "p0:1"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "splitStep": "4"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "splitStep": "4"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "splitStep": "4"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "jack-confirm"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "jack-confirm"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "jack-confirm"
+          }
+        }
+      ],
+      "memoSample": {
+        "legalActions": 916,
+        "waitMs": 1150,
+        "deriveVisits": 0,
+        "boardRenders": 0,
+        "clockAdvanced": true
+      }
+    },
+    {
+      "engine": "chromium",
+      "width": 360,
+      "height": 844,
+      "method": "Chrome trusted native touch: Playwright tap and CDP touchStart/move/end scrolling",
+      "checks": [
+        "All four player portraits occupy a separate strip outside the board",
+        "Large numbered selectors choose owned marble and intended opponent; one real swap accepted",
+        "3+4 split uses 44 px step targets, partial plan cannot submit, full plan makes one atomic engine action with path captures",
+        "Primary confirmation stays visible while composing; small disjoint SVG targets were not expanded"
+      ],
+      "errors": [],
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "card": "D7"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "card": "D7"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "card": "D7"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "marbleChoice": "p0:0"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "marbleChoice": "p0:0"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "marbleChoice": "p0:0"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "splitStep": "3"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "splitStep": "3"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "splitStep": "3"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "marbleChoice": "p0:1"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "marbleChoice": "p0:1"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "marbleChoice": "p0:1"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "splitStep": "4"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "splitStep": "4"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "splitStep": "4"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "jack-confirm"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "jack-confirm"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "jack-confirm"
+          }
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "width": 390,
+      "height": 844,
+      "method": "Desktop WebKit trusted native mouse pointer; native wheel for hand scrolling",
+      "checks": [
+        "All four player portraits occupy a separate strip outside the board",
+        "916 legal actions retained; unchanged snapshot clock ticks add zero effect derivations or Board renders over 1150 ms",
+        "Large numbered selectors choose owned marble and intended opponent; one real swap accepted",
+        "3+4 split uses 44 px step targets, partial plan cannot submit, full plan makes one atomic engine action with path captures",
+        "Primary confirmation stays visible while composing; small disjoint SVG targets were not expanded"
+      ],
+      "errors": [],
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "card": "D7"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "card": "D7"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "card": "D7"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "marbleChoice": "p0:0"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "marbleChoice": "p0:0"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "marbleChoice": "p0:0"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "splitStep": "3"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "splitStep": "3"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "splitStep": "3"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "marbleChoice": "p0:1"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "marbleChoice": "p0:1"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "marbleChoice": "p0:1"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "splitStep": "4"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "splitStep": "4"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "splitStep": "4"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "jack-confirm"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "jack-confirm"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "jack-confirm"
+          }
+        }
+      ],
+      "memoSample": {
+        "legalActions": 916,
+        "waitMs": 1150,
+        "deriveVisits": 0,
+        "boardRenders": 0,
+        "clockAdvanced": true
+      }
+    },
+    {
+      "engine": "webkit",
+      "width": 360,
+      "height": 844,
+      "method": "Desktop WebKit trusted native mouse pointer; native wheel for hand scrolling",
+      "checks": [
+        "All four player portraits occupy a separate strip outside the board",
+        "Large numbered selectors choose owned marble and intended opponent; one real swap accepted",
+        "3+4 split uses 44 px step targets, partial plan cannot submit, full plan makes one atomic engine action with path captures",
+        "Primary confirmation stays visible while composing; small disjoint SVG targets were not expanded"
+      ],
+      "errors": [],
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "card": "D7"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "card": "D7"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "card": "D7"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "marbleChoice": "p0:0"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "marbleChoice": "p0:0"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "marbleChoice": "p0:0"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "splitStep": "3"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "splitStep": "3"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "splitStep": "3"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "marbleChoice": "p0:1"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "marbleChoice": "p0:1"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "marbleChoice": "p0:1"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "splitStep": "4"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "splitStep": "4"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "splitStep": "4"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "jack-confirm"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "jack-confirm"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "jack-confirm"
+          }
+        }
+      ]
+    }
+  ]
+}

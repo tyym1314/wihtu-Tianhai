@@ -1,0 +1,2466 @@
+[
+  {
+    "game": "carrom",
+    "width": 390,
+    "errors": [],
+    "w": 390,
+    "h": 844,
+    "scrollW": 390,
+    "scrollH": 844,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "VICTORY\n\n◆\n搭档同心 · 胜队夺冠\n◆",
+        "x": 10,
+        "y": 20,
+        "w": 370,
+        "h": 98.1875,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n190\n奖池 400\n服务费 20",
+        "x": 22,
+        "y": 472.1875,
+        "w": 346,
+        "h": 144,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 754,
+        "w": 346,
+        "h": 50,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 28,
+        "y": 73.1875,
+        "w": 334,
+        "h": 334,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 22,
+        "y": 818,
+        "w": 346,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "carrom",
+    "width": 360,
+    "errors": [],
+    "w": 360,
+    "h": 800,
+    "scrollW": 360,
+    "scrollH": 800,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "VICTORY\n\n◆\n搭档同心 · 胜队夺冠\n◆",
+        "x": 7,
+        "y": 15,
+        "w": 346,
+        "h": 87.59375,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n190\n奖池 400\n服务费 20",
+        "x": 19,
+        "y": 438.59375,
+        "w": 322,
+        "h": 137,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 715,
+        "w": 322,
+        "h": 50,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 13,
+        "y": 57.59375,
+        "w": 334,
+        "h": 334,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 19,
+        "y": 777,
+        "w": 322,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "match",
+    "width": 390,
+    "errors": [],
+    "w": 390,
+    "h": 844,
+    "scrollW": 390,
+    "scrollH": 844,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "VICTORY\n\n◆\n冠军 · 1st PLACE\n◆",
+        "x": 0,
+        "y": 230,
+        "w": 390,
+        "h": 131.6875,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380",
+        "x": 53.140625,
+        "y": 374.6875,
+        "w": 283.71875,
+        "h": 55,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 667.6875,
+        "w": 346,
+        "h": 99,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 80,
+        "y": -12,
+        "w": 230,
+        "h": 306.65625,
+        "display": "block",
+        "backgroundPosition": "33.3333% 0px"
+      }
+    ],
+    "ranks": [
+      {
+        "text": "1\n你\n分\n0",
+        "x": 22,
+        "y": 446.6875,
+        "w": 346,
+        "h": 42,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "2\nOmar\nBOT · 分\n0",
+        "x": 22,
+        "y": 493.6875,
+        "w": 346,
+        "h": 42,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "3\nLina\nBOT · 分\n0",
+        "x": 22,
+        "y": 540.6875,
+        "w": 346,
+        "h": 42,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "4\nNoor\nBOT · 分\n0",
+        "x": 22,
+        "y": 587.6875,
+        "w": 346,
+        "h": 42,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 22,
+        "y": 780.6875,
+        "w": 346,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "match",
+    "width": 360,
+    "errors": [],
+    "w": 360,
+    "h": 800,
+    "scrollW": 360,
+    "scrollH": 800,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "VICTORY\n\n◆\n冠军 · 1st PLACE\n◆",
+        "x": 0,
+        "y": 212,
+        "w": 360,
+        "h": 123.09375,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380",
+        "x": 47.984375,
+        "y": 348.09375,
+        "w": 264.03125,
+        "h": 52,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 618.09375,
+        "w": 322,
+        "h": 99,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 71.5,
+        "y": -15,
+        "w": 217,
+        "h": 289.328125,
+        "display": "block",
+        "backgroundPosition": "33.3333% 0px"
+      }
+    ],
+    "ranks": [
+      {
+        "text": "1\n你\n分\n0",
+        "x": 19,
+        "y": 417.09375,
+        "w": 322,
+        "h": 38,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "2\nOmar\nBOT · 分\n0",
+        "x": 19,
+        "y": 460.09375,
+        "w": 322,
+        "h": 38,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "3\nLina\nBOT · 分\n0",
+        "x": 19,
+        "y": 503.09375,
+        "w": 322,
+        "h": 38,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "4\nNoor\nBOT · 分\n0",
+        "x": 19,
+        "y": 546.09375,
+        "w": 322,
+        "h": 38,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 19,
+        "y": 729.09375,
+        "w": 322,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "golf",
+    "width": 390,
+    "errors": [],
+    "w": 390,
+    "h": 844,
+    "scrollW": 390,
+    "scrollH": 860,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "OASIS GOLF\nVICTORY",
+        "x": 10,
+        "y": 20,
+        "w": 370,
+        "h": 115.1875,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 22,
+        "y": 358.1875,
+        "w": 346,
+        "h": 144,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 721.1875,
+        "w": 346,
+        "h": 99,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 60,
+        "y": 110.1875,
+        "w": 270,
+        "h": 270,
+        "display": "block",
+        "backgroundPosition": "50% 0%"
+      }
+    ],
+    "ranks": [
+      {
+        "text": "1\n你\n0",
+        "x": 22,
+        "y": 517.1875,
+        "w": 346,
+        "h": 39,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "2\nOmar\n0",
+        "x": 22,
+        "y": 561.1875,
+        "w": 346,
+        "h": 39,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "3\nLina\n0",
+        "x": 22,
+        "y": 605.1875,
+        "w": 346,
+        "h": 39,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "4\nNoor\n0",
+        "x": 22,
+        "y": 649.1875,
+        "w": 346,
+        "h": 39,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 22,
+        "y": 834.1875,
+        "w": 346,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "golf",
+    "width": 360,
+    "errors": [],
+    "w": 360,
+    "h": 800,
+    "scrollW": 360,
+    "scrollH": 803,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "OASIS GOLF\nVICTORY",
+        "x": 7,
+        "y": 15,
+        "w": 346,
+        "h": 106.59375,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 19,
+        "y": 320.59375,
+        "w": 322,
+        "h": 137,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 668.59375,
+        "w": 322,
+        "h": 99,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 46.5,
+        "y": 96.59375,
+        "w": 267,
+        "h": 267,
+        "display": "block",
+        "backgroundPosition": "50% 0%"
+      }
+    ],
+    "ranks": [
+      {
+        "text": "1\n你\n0",
+        "x": 19,
+        "y": 472.59375,
+        "w": 322,
+        "h": 38,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "2\nOmar\n0",
+        "x": 19,
+        "y": 515.59375,
+        "w": 322,
+        "h": 38,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "3\nLina\n0",
+        "x": 19,
+        "y": 558.59375,
+        "w": 322,
+        "h": 38,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "4\nNoor\n0",
+        "x": 19,
+        "y": 601.59375,
+        "w": 322,
+        "h": 38,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 19,
+        "y": 779.59375,
+        "w": 322,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "darts",
+    "width": 390,
+    "errors": [],
+    "w": 390,
+    "h": 844,
+    "scrollW": 390,
+    "scrollH": 844,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 301,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 301,
+        "rank": 2,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "VICTORY",
+        "x": 10,
+        "y": 35,
+        "w": 370,
+        "h": 97.1875,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n190\n入场 100\n净变化 +90",
+        "x": 22,
+        "y": 401.1875,
+        "w": 346,
+        "h": 145,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 754,
+        "w": 346,
+        "h": 50,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 44.20001220703125,
+        "y": 103.38751220703125,
+        "w": 301.5999755859375,
+        "h": 301.5999755859375,
+        "display": "block",
+        "backgroundPosition": "75% 0%"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 22,
+        "y": 818,
+        "w": 346,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "darts",
+    "width": 360,
+    "errors": [],
+    "w": 360,
+    "h": 800,
+    "scrollW": 360,
+    "scrollH": 800,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 301,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 301,
+        "rank": 2,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "VICTORY",
+        "x": 7,
+        "y": 30,
+        "w": 346,
+        "h": 88.59375,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n190\n入场 100\n净变化 +90",
+        "x": 19,
+        "y": 366.59375,
+        "w": 322,
+        "h": 137,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 715,
+        "w": 322,
+        "h": 50,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 41.160003662109375,
+        "y": 90.25375366210938,
+        "w": 277.67999267578125,
+        "h": 277.67999267578125,
+        "display": "block",
+        "backgroundPosition": "75% 0%"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 19,
+        "y": 777,
+        "w": 322,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "ludo",
+    "width": 390,
+    "errors": [],
+    "w": 390,
+    "h": 844,
+    "scrollW": 390,
+    "scrollH": 844,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "VICTORY",
+        "x": 12,
+        "y": 363,
+        "w": 366,
+        "h": 102.1875,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 47.953125,
+        "y": 465.1875,
+        "w": 294.09375,
+        "h": 149,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 736,
+        "w": 346,
+        "h": 68,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 107.5,
+        "y": 97,
+        "w": 175,
+        "h": 350,
+        "display": "block",
+        "backgroundPosition": "0% 0px"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 22,
+        "y": 818,
+        "w": 346,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "ludo",
+    "width": 360,
+    "errors": [],
+    "w": 360,
+    "h": 800,
+    "scrollW": 360,
+    "scrollH": 800,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "VICTORY",
+        "x": 9,
+        "y": 338,
+        "w": 342,
+        "h": 95.59375,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 43.15625,
+        "y": 433.59375,
+        "w": 273.6875,
+        "h": 142,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 697,
+        "w": 322,
+        "h": 68,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 92.5,
+        "y": 85,
+        "w": 175,
+        "h": 350,
+        "display": "block",
+        "backgroundPosition": "0% 0px"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 19,
+        "y": 777,
+        "w": 322,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "pool",
+    "width": 390,
+    "errors": [],
+    "w": 390,
+    "h": 844,
+    "scrollW": 390,
+    "scrollH": 844,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "SKILL BRINGS US CLOSER\nVICTORY",
+        "x": 10,
+        "y": 20,
+        "w": 370,
+        "h": 115.1875,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n190\n入场 100\n净变化 +90",
+        "x": 22,
+        "y": 425.1875,
+        "w": 346,
+        "h": 157,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 739,
+        "w": 346,
+        "h": 65,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 32,
+        "y": 113.1875,
+        "w": 326,
+        "h": 326,
+        "display": "block",
+        "backgroundPosition": "0% 100%"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 22,
+        "y": 818,
+        "w": 346,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "pool",
+    "width": 360,
+    "errors": [],
+    "w": 360,
+    "h": 800,
+    "scrollW": 360,
+    "scrollH": 800,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "SKILL BRINGS US CLOSER\nVICTORY",
+        "x": 7,
+        "y": 15,
+        "w": 346,
+        "h": 106.59375,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n190\n入场 100\n净变化 +90",
+        "x": 19,
+        "y": 387.59375,
+        "w": 322,
+        "h": 137,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 700,
+        "w": 322,
+        "h": 65,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 17,
+        "y": 99.59375,
+        "w": 326,
+        "h": 326,
+        "display": "block",
+        "backgroundPosition": "0% 100%"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 19,
+        "y": 777,
+        "w": 322,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "bowling",
+    "width": 390,
+    "errors": [],
+    "w": 390,
+    "h": 844,
+    "scrollW": 390,
+    "scrollH": 844,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "NEON BOWL\nVICTORY",
+        "x": 10,
+        "y": 80,
+        "w": 370,
+        "h": 112,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 22,
+        "y": 428,
+        "w": 346,
+        "h": 138,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 663,
+        "w": 346,
+        "h": 99,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [
+      {
+        "text": "你\n0\nVS\nOmar\n0",
+        "x": 22,
+        "y": 20,
+        "w": 346,
+        "h": 60,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "你\n0\nVS\nOmar\n0",
+        "x": 22,
+        "y": 574,
+        "w": 346,
+        "h": 60,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "trophy": [
+      {
+        "text": "",
+        "x": 50,
+        "y": 169,
+        "w": 290,
+        "h": 290,
+        "display": "block",
+        "backgroundPosition": "25% 100%"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 22,
+        "y": 776,
+        "w": 346,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "bowling",
+    "width": 360,
+    "errors": [],
+    "w": 360,
+    "h": 800,
+    "scrollW": 360,
+    "scrollH": 800,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "NEON BOWL\nVICTORY",
+        "x": 7,
+        "y": 75,
+        "w": 346,
+        "h": 106,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 19,
+        "y": 385,
+        "w": 322,
+        "h": 137,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 615,
+        "w": 322,
+        "h": 99,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [
+      {
+        "text": "你\n0\nVS\nOmar\n0",
+        "x": 19,
+        "y": 15,
+        "w": 322,
+        "h": 60,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "你\n0\nVS\nOmar\n0",
+        "x": 19,
+        "y": 530,
+        "w": 322,
+        "h": 60,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "trophy": [
+      {
+        "text": "",
+        "x": 46.5,
+        "y": 158,
+        "w": 267,
+        "h": 267,
+        "display": "block",
+        "backgroundPosition": "25% 100%"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 19,
+        "y": 726,
+        "w": 322,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "jackaroo",
+    "width": 390,
+    "errors": [],
+    "w": 390,
+    "h": 844,
+    "scrollW": 390,
+    "scrollH": 850,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "TEAM · BETTER TOGETHER\nVICTORY\n\n◆\n搭档同心 · 胜队夺冠\n◆",
+        "x": 10,
+        "y": 358,
+        "w": 370,
+        "h": 106.59375,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n190\n奖池 400\n服务费 20",
+        "x": 37,
+        "y": 587.59375,
+        "w": 316,
+        "h": 84,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 710.59375,
+        "w": 346,
+        "h": 99,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 70,
+        "y": 135,
+        "w": 250,
+        "h": 250,
+        "display": "block",
+        "backgroundPosition": "50% 100%"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 22,
+        "y": 823.59375,
+        "w": 346,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "jackaroo",
+    "width": 360,
+    "errors": [],
+    "w": 360,
+    "h": 800,
+    "scrollW": 360,
+    "scrollH": 816,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "TEAM · BETTER TOGETHER\nVICTORY\n\n◆\n搭档同心 · 胜队夺冠\n◆",
+        "x": 7,
+        "y": 341,
+        "w": 346,
+        "h": 99.09375,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n190\n奖池 400\n服务费 20",
+        "x": 34,
+        "y": 563.09375,
+        "w": 292,
+        "h": 84,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 682.09375,
+        "w": 322,
+        "h": 99,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 46.5,
+        "y": 130,
+        "w": 267,
+        "h": 267,
+        "display": "block",
+        "backgroundPosition": "50% 100%"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 19,
+        "y": 793.09375,
+        "w": 322,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "domino",
+    "width": 390,
+    "errors": [],
+    "w": 390,
+    "h": 844,
+    "scrollW": 390,
+    "scrollH": 844,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "DOMINO DUEL\nVICTORY\n\n◆\n冠军 · 1st PLACE\n◆",
+        "x": 10,
+        "y": 20,
+        "w": 370,
+        "h": 139.1875,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 22,
+        "y": 477.1875,
+        "w": 346,
+        "h": 112,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 742,
+        "w": 346,
+        "h": 62,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 45,
+        "y": 104.1875,
+        "w": 300,
+        "h": 300,
+        "display": "block",
+        "backgroundPosition": "75% 100%"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 22,
+        "y": 818,
+        "w": 346,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "domino",
+    "width": 360,
+    "errors": [],
+    "w": 360,
+    "h": 800,
+    "scrollW": 360,
+    "scrollH": 800,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "DOMINO DUEL\nVICTORY\n\n◆\n冠军 · 1st PLACE\n◆",
+        "x": 7,
+        "y": 15,
+        "w": 346,
+        "h": 128.59375,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 19,
+        "y": 443.59375,
+        "w": 322,
+        "h": 112,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 703,
+        "w": 322,
+        "h": 62,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [
+      {
+        "text": "",
+        "x": 46.5,
+        "y": 88.59375,
+        "w": 267,
+        "h": 267,
+        "display": "block",
+        "backgroundPosition": "75% 100%"
+      }
+    ],
+    "ranks": [],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 19,
+        "y": 777,
+        "w": 322,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "run",
+    "width": 390,
+    "errors": [],
+    "w": 390,
+    "h": 844,
+    "scrollW": 390,
+    "scrollH": 844,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "OASIS RUN\nVICTORY",
+        "x": 10,
+        "y": 20,
+        "w": 370,
+        "h": 115.1875,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 22,
+        "y": 460.1875,
+        "w": 346,
+        "h": 144,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 641.1875,
+        "w": 346,
+        "h": 50,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [],
+    "ranks": [
+      {
+        "text": "1你米0",
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "2OmarBOT · 米0",
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "3LinaBOT · 米0",
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "4NoorBOT · 米0",
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 22,
+        "y": 705.1875,
+        "w": 346,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  },
+  {
+    "game": "run",
+    "width": 360,
+    "errors": [],
+    "w": 360,
+    "h": 800,
+    "scrollW": 360,
+    "scrollH": 800,
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "heading": [
+      {
+        "text": "OASIS RUN\nVICTORY",
+        "x": 7,
+        "y": 15,
+        "w": 346,
+        "h": 106.59375,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 19,
+        "y": 423.59375,
+        "w": 322,
+        "h": 137,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 593.59375,
+        "w": 322,
+        "h": 50,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "duos": [],
+    "trophy": [],
+    "ranks": [
+      {
+        "text": "1你米0",
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "2OmarBOT · 米0",
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "3LinaBOT · 米0",
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      },
+      {
+        "text": "4NoorBOT · 米0",
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "display": "flex",
+        "backgroundPosition": "0% 0%"
+      }
+    ],
+    "details": [
+      {
+        "text": "查看对局明细",
+        "x": 19,
+        "y": 655.59375,
+        "w": 322,
+        "h": 11,
+        "display": "block",
+        "backgroundPosition": "0% 0%"
+      }
+    ]
+  }
+]

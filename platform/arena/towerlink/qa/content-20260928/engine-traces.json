@@ -1,0 +1,4313 @@
+{
+  "at": "2026-09-28T11:25:51.435Z",
+  "ruleVersion": "towerlink-v2.2.0",
+  "scope": "Deterministic authority-engine replay, no browser timing or human balance claim",
+  "maps": [
+    {
+      "id": "duel-central-gates",
+      "topology": "bridgehead",
+      "edges": 12,
+      "cycleRank": 0,
+      "components": [
+        13
+      ],
+      "withoutCore": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "innerEdges": 0,
+      "leafCount": 8
+    },
+    {
+      "id": "duel-ring-flank-v2",
+      "topology": "flank",
+      "edges": 20,
+      "cycleRank": 8,
+      "components": [
+        13
+      ],
+      "withoutCore": [
+        12
+      ],
+      "innerEdges": 0,
+      "leafCount": 0
+    },
+    {
+      "id": "trio-supply-web",
+      "topology": "supply-web",
+      "edges": 24,
+      "cycleRank": 12,
+      "components": [
+        13
+      ],
+      "withoutCore": [
+        12
+      ],
+      "innerEdges": 3,
+      "leafCount": 0
+    },
+    {
+      "id": "trio-central-gates",
+      "topology": "bridgehead",
+      "edges": 12,
+      "cycleRank": 0,
+      "components": [
+        13
+      ],
+      "withoutCore": [
+        4,
+        4,
+        4
+      ],
+      "innerEdges": 0,
+      "leafCount": 9
+    },
+    {
+      "id": "quad-supply-web",
+      "topology": "supply-web",
+      "edges": 24,
+      "cycleRank": 12,
+      "components": [
+        13
+      ],
+      "withoutCore": [
+        12
+      ],
+      "innerEdges": 4,
+      "leafCount": 0
+    },
+    {
+      "id": "quad-island-flank",
+      "topology": "flank",
+      "edges": 20,
+      "cycleRank": 8,
+      "components": [
+        13
+      ],
+      "withoutCore": [
+        12
+      ],
+      "innerEdges": 0,
+      "leafCount": 0
+    }
+  ],
+  "breakthroughs": [
+    {
+      "level": "duel-central-gates",
+      "seed": "00000000000000000000000000000000",
+      "idle": false,
+      "centralRush": true,
+      "centralCapturedAt": 29250,
+      "status": "finished",
+      "finishReason": "deadline",
+      "finishedAt": 181000,
+      "ranks": [
+        {
+          "playerKey": "p0",
+          "rank": 1,
+          "score": 10,
+          "towers": 10,
+          "totalTroops": 877,
+          "forfeited": false,
+          "eliminated": false
+        },
+        {
+          "playerKey": "p1",
+          "rank": 2,
+          "score": 3,
+          "towers": 3,
+          "totalTroops": 110,
+          "forfeited": false,
+          "eliminated": false
+        }
+      ],
+      "captures": 11,
+      "upgrades": 10,
+      "actions": [
+        {
+          "now": 1000,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 0
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 1250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 8
+          }
+        },
+        {
+          "now": 11250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 12
+          }
+        },
+        {
+          "now": 14250,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 4
+          }
+        },
+        {
+          "now": 14500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 12
+          }
+        },
+        {
+          "now": 22250,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 8
+          }
+        },
+        {
+          "now": 29250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 9
+          }
+        },
+        {
+          "now": 29500,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 8,
+            "to": 12
+          }
+        },
+        {
+          "now": 29750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 7
+          }
+        },
+        {
+          "now": 30000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 11
+          }
+        },
+        {
+          "now": 34250,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 10
+          }
+        },
+        {
+          "now": 37250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 3
+          }
+        },
+        {
+          "now": 38250,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 8
+          }
+        },
+        {
+          "now": 38500,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 8,
+            "to": 7
+          }
+        },
+        {
+          "now": 38750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 12
+          }
+        },
+        {
+          "now": 39000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 8
+          }
+        },
+        {
+          "now": 48250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 1
+          }
+        },
+        {
+          "now": 48500,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 12,
+            "to": 9
+          }
+        },
+        {
+          "now": 48750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 10
+          }
+        },
+        {
+          "now": 48750,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 10
+          }
+        },
+        {
+          "now": 49250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 5
+          }
+        },
+        {
+          "now": 49500,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 12,
+            "to": 11
+          }
+        },
+        {
+          "now": 51250,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 10,
+            "to": 3
+          }
+        },
+        {
+          "now": 51500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 10
+          }
+        },
+        {
+          "now": 65250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 9,
+            "to": 1
+          }
+        },
+        {
+          "now": 65500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 2
+          }
+        },
+        {
+          "now": 65750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 9
+          }
+        },
+        {
+          "now": 66250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 11,
+            "to": 5
+          }
+        },
+        {
+          "now": 66500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 6
+          }
+        },
+        {
+          "now": 66750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 5,
+            "to": 11
+          }
+        },
+        {
+          "now": 78250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 9,
+            "to": 2
+          }
+        },
+        {
+          "now": 78500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 12
+          }
+        },
+        {
+          "now": 78750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 9
+          }
+        },
+        {
+          "now": 79250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 11,
+            "to": 6
+          }
+        },
+        {
+          "now": 79500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 12
+          }
+        },
+        {
+          "now": 79750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 11
+          }
+        },
+        {
+          "now": 87250,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 9
+          }
+        },
+        {
+          "now": 88250,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 11
+          }
+        },
+        {
+          "now": 101750,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 9
+          }
+        },
+        {
+          "now": 102750,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 11
+          }
+        }
+      ]
+    },
+    {
+      "level": "trio-central-gates",
+      "seed": "00000000000000000000000000000003",
+      "idle": false,
+      "centralRush": true,
+      "centralCapturedAt": 37250,
+      "status": "finished",
+      "finishReason": "deadline",
+      "finishedAt": 181000,
+      "ranks": [
+        {
+          "playerKey": "p0",
+          "rank": 1,
+          "score": 5,
+          "towers": 5,
+          "totalTroops": 235,
+          "forfeited": false,
+          "eliminated": false
+        },
+        {
+          "playerKey": "p1",
+          "rank": 2,
+          "score": 4,
+          "towers": 4,
+          "totalTroops": 226,
+          "forfeited": false,
+          "eliminated": false
+        },
+        {
+          "playerKey": "p2",
+          "rank": 2,
+          "score": 4,
+          "towers": 4,
+          "totalTroops": 226,
+          "forfeited": false,
+          "eliminated": false
+        }
+      ],
+      "captures": 10,
+      "upgrades": 9,
+      "actions": [
+        {
+          "now": 1000,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 0
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 10
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 11
+          }
+        },
+        {
+          "now": 1250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 9
+          }
+        },
+        {
+          "now": 11250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 12
+          }
+        },
+        {
+          "now": 14250,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 3
+          }
+        },
+        {
+          "now": 14250,
+          "key": "p2",
+          "action": {
+            "type": "upgrade",
+            "towerId": 6
+          }
+        },
+        {
+          "now": 14500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 12
+          }
+        },
+        {
+          "now": 14500,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 12
+          }
+        },
+        {
+          "now": 22250,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 9
+          }
+        },
+        {
+          "now": 34250,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 10
+          }
+        },
+        {
+          "now": 34250,
+          "key": "p2",
+          "action": {
+            "type": "upgrade",
+            "towerId": 11
+          }
+        },
+        {
+          "now": 37250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 9,
+            "to": 12
+          }
+        },
+        {
+          "now": 37250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 2
+          }
+        },
+        {
+          "now": 37250,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 5
+          }
+        },
+        {
+          "now": 37500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 1
+          }
+        },
+        {
+          "now": 37750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 8
+          }
+        },
+        {
+          "now": 38000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 10
+          }
+        },
+        {
+          "now": 38250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 11
+          }
+        },
+        {
+          "now": 41750,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 9
+          }
+        },
+        {
+          "now": 48750,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 10
+          }
+        },
+        {
+          "now": 48750,
+          "key": "p2",
+          "action": {
+            "type": "upgrade",
+            "towerId": 11
+          }
+        },
+        {
+          "now": 51000,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 10,
+            "to": 2
+          }
+        },
+        {
+          "now": 51000,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 11,
+            "to": 5
+          }
+        },
+        {
+          "now": 51250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 4
+          }
+        },
+        {
+          "now": 51250,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 7
+          }
+        },
+        {
+          "now": 51500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 10
+          }
+        },
+        {
+          "now": 51500,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 5,
+            "to": 11
+          }
+        },
+        {
+          "now": 53000,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 9,
+            "to": 1
+          }
+        },
+        {
+          "now": 53250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 9,
+            "to": 8
+          }
+        },
+        {
+          "now": 53500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 12
+          }
+        },
+        {
+          "now": 53750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 9
+          }
+        },
+        {
+          "now": 54000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 9
+          }
+        },
+        {
+          "now": 62000,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 10,
+            "to": 4
+          }
+        },
+        {
+          "now": 62000,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 11,
+            "to": 7
+          }
+        },
+        {
+          "now": 62250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 62250,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 11
+          }
+        }
+      ]
+    }
+  ],
+  "games": [
+    {
+      "level": "duel-central-gates",
+      "seed": "00000000000000000000000000000000",
+      "idle": false,
+      "centralRush": false,
+      "centralCapturedAt": null,
+      "status": "finished",
+      "finishReason": "deadline",
+      "finishedAt": 181000,
+      "ranks": [
+        {
+          "playerKey": "p0",
+          "rank": 1,
+          "score": 3,
+          "towers": 3,
+          "totalTroops": 110,
+          "forfeited": false,
+          "eliminated": false
+        },
+        {
+          "playerKey": "p1",
+          "rank": 1,
+          "score": 3,
+          "towers": 3,
+          "totalTroops": 110,
+          "forfeited": false,
+          "eliminated": false
+        }
+      ],
+      "captures": 4,
+      "upgrades": 6,
+      "actions": [
+        {
+          "now": 1000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 8
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 14250,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 0
+          }
+        },
+        {
+          "now": 14250,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 4
+          }
+        },
+        {
+          "now": 14500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 12
+          }
+        },
+        {
+          "now": 14500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 12
+          }
+        },
+        {
+          "now": 34250,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 8
+          }
+        },
+        {
+          "now": 34250,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 10
+          }
+        },
+        {
+          "now": 37250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 7
+          }
+        },
+        {
+          "now": 37250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 3
+          }
+        },
+        {
+          "now": 48750,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 8
+          }
+        },
+        {
+          "now": 48750,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 10
+          }
+        },
+        {
+          "now": 51250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 8,
+            "to": 7
+          }
+        },
+        {
+          "now": 51250,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 10,
+            "to": 3
+          }
+        },
+        {
+          "now": 51500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 8
+          }
+        },
+        {
+          "now": 51500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 10
+          }
+        }
+      ]
+    },
+    {
+      "level": "duel-ring-flank-v2",
+      "seed": "00000000000000000000000000000003",
+      "idle": false,
+      "centralRush": false,
+      "centralCapturedAt": 101625,
+      "status": "finished",
+      "finishReason": "deadline",
+      "finishedAt": 181000,
+      "ranks": [
+        {
+          "playerKey": "p0",
+          "rank": 1,
+          "score": 9,
+          "towers": 9,
+          "totalTroops": 443,
+          "forfeited": false,
+          "eliminated": false
+        },
+        {
+          "playerKey": "p1",
+          "rank": 2,
+          "score": 4,
+          "towers": 4,
+          "totalTroops": 157,
+          "forfeited": false,
+          "eliminated": false
+        }
+      ],
+      "captures": 14,
+      "upgrades": 17,
+      "actions": [
+        {
+          "now": 1000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 3
+          }
+        },
+        {
+          "now": 15500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 2
+          }
+        },
+        {
+          "now": 15500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 2
+          }
+        },
+        {
+          "now": 15750,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "now": 15750,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 4,
+            "to": 3
+          }
+        },
+        {
+          "now": 16000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 7
+          }
+        },
+        {
+          "now": 16000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 5
+          }
+        },
+        {
+          "now": 30500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 6
+          }
+        },
+        {
+          "now": 30500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 5,
+            "to": 6
+          }
+        },
+        {
+          "now": 30750,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 0,
+            "to": 7
+          }
+        },
+        {
+          "now": 30750,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 4,
+            "to": 5
+          }
+        },
+        {
+          "now": 31000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 8
+          }
+        },
+        {
+          "now": 31000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 44000,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 0
+          }
+        },
+        {
+          "now": 44000,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 4
+          }
+        },
+        {
+          "now": 44250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 12
+          }
+        },
+        {
+          "now": 44250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 12
+          }
+        },
+        {
+          "now": 47000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "now": 47000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 3
+          }
+        },
+        {
+          "now": 77000,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 8
+          }
+        },
+        {
+          "now": 77000,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 10
+          }
+        },
+        {
+          "now": 78500,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 1
+          }
+        },
+        {
+          "now": 78500,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 3
+          }
+        },
+        {
+          "now": 81500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 9
+          }
+        },
+        {
+          "now": 85500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 9
+          }
+        },
+        {
+          "now": 85750,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 4,
+            "to": 3
+          }
+        },
+        {
+          "now": 86000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 10
+          }
+        },
+        {
+          "now": 86250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 5
+          }
+        },
+        {
+          "now": 93000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 12
+          }
+        },
+        {
+          "now": 93250,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 2,
+            "to": 9
+          }
+        },
+        {
+          "now": 93500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 1
+          }
+        },
+        {
+          "now": 98500,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 10
+          }
+        },
+        {
+          "now": 101750,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 8
+          }
+        },
+        {
+          "now": 102000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 11
+          }
+        },
+        {
+          "now": 102250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 0,
+            "to": 8
+          }
+        },
+        {
+          "now": 102500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 9
+          }
+        },
+        {
+          "now": 102750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 7
+          }
+        },
+        {
+          "now": 103000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 7
+          }
+        },
+        {
+          "now": 107750,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 1,
+            "to": 9
+          }
+        },
+        {
+          "now": 108000,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 12,
+            "to": 9
+          }
+        },
+        {
+          "now": 108250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 2
+          }
+        },
+        {
+          "now": 108500,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 1
+          }
+        },
+        {
+          "now": 108750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 10
+          }
+        },
+        {
+          "now": 117500,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 5
+          }
+        },
+        {
+          "now": 118500,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 7
+          }
+        },
+        {
+          "now": 120500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 5,
+            "to": 11
+          }
+        },
+        {
+          "now": 121500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 11
+          }
+        },
+        {
+          "now": 121750,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 0,
+            "to": 7
+          }
+        },
+        {
+          "now": 122000,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 8,
+            "to": 7
+          }
+        },
+        {
+          "now": 126250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 12
+          }
+        },
+        {
+          "now": 126500,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 5,
+            "to": 11
+          }
+        },
+        {
+          "now": 130500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 3
+          }
+        },
+        {
+          "now": 130500,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 3,
+            "to": 10
+          }
+        },
+        {
+          "now": 130750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 7
+          }
+        },
+        {
+          "now": 133000,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 11
+          }
+        },
+        {
+          "now": 133000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 5,
+            "to": 11
+          }
+        },
+        {
+          "now": 133250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 12,
+            "to": 11
+          }
+        },
+        {
+          "now": 133500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 5
+          }
+        },
+        {
+          "now": 133750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 5
+          }
+        },
+        {
+          "now": 136500,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 7
+          }
+        },
+        {
+          "now": 141500,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 2
+          }
+        },
+        {
+          "now": 147500,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 5
+          }
+        },
+        {
+          "now": 149500,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 6
+          }
+        },
+        {
+          "now": 150500,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 2
+          }
+        },
+        {
+          "now": 159500,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 6
+          }
+        }
+      ]
+    },
+    {
+      "level": "trio-supply-web",
+      "seed": "00000000000000000000000000000000",
+      "idle": false,
+      "centralRush": false,
+      "centralCapturedAt": null,
+      "status": "finished",
+      "finishReason": "deadline",
+      "finishedAt": 181000,
+      "ranks": [
+        {
+          "playerKey": "p0",
+          "rank": 2,
+          "score": 5,
+          "towers": 5,
+          "totalTroops": 228,
+          "forfeited": false,
+          "eliminated": false
+        },
+        {
+          "playerKey": "p1",
+          "rank": 3,
+          "score": 1,
+          "towers": 1,
+          "totalTroops": 2,
+          "forfeited": false,
+          "eliminated": false
+        },
+        {
+          "playerKey": "p2",
+          "rank": 1,
+          "score": 7,
+          "towers": 7,
+          "totalTroops": 243,
+          "forfeited": false,
+          "eliminated": false
+        }
+      ],
+      "captures": 17,
+      "upgrades": 15,
+      "actions": [
+        {
+          "now": 1000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 2
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 5
+          }
+        },
+        {
+          "now": 15000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 9
+          }
+        },
+        {
+          "now": 15000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 10
+          }
+        },
+        {
+          "now": 15000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 5,
+            "to": 4
+          }
+        },
+        {
+          "now": 15250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "now": 15250,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 3,
+            "to": 2
+          }
+        },
+        {
+          "now": 15250,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 5
+          }
+        },
+        {
+          "now": 15500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 8
+          }
+        },
+        {
+          "now": 15500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 4
+          }
+        },
+        {
+          "now": 15500,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 7
+          }
+        },
+        {
+          "now": 29000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 9
+          }
+        },
+        {
+          "now": 29000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 11
+          }
+        },
+        {
+          "now": 29250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 0,
+            "to": 8
+          }
+        },
+        {
+          "now": 29250,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 7
+          }
+        },
+        {
+          "now": 29500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 9
+          }
+        },
+        {
+          "now": 29500,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 11
+          }
+        },
+        {
+          "now": 31000,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 0
+          }
+        },
+        {
+          "now": 31000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 4
+          }
+        },
+        {
+          "now": 31250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 12
+          }
+        },
+        {
+          "now": 31250,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 2,
+            "to": 10
+          }
+        },
+        {
+          "now": 31500,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 1,
+            "to": 9
+          }
+        },
+        {
+          "now": 31500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 1
+          }
+        },
+        {
+          "now": 31750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 2
+          }
+        },
+        {
+          "now": 32000,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 8,
+            "to": 9
+          }
+        },
+        {
+          "now": 32250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 7
+          }
+        },
+        {
+          "now": 34000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "now": 37000,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 3
+          }
+        },
+        {
+          "now": 37250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 5
+          }
+        },
+        {
+          "now": 37500,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 10,
+            "to": 4
+          }
+        },
+        {
+          "now": 37750,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 11
+          }
+        },
+        {
+          "now": 38250,
+          "key": "p2",
+          "action": {
+            "type": "upgrade",
+            "towerId": 6
+          }
+        },
+        {
+          "now": 38500,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 12
+          }
+        },
+        {
+          "now": 38750,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 7,
+            "to": 11
+          }
+        },
+        {
+          "now": 39000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 8
+          }
+        },
+        {
+          "now": 40000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 2
+          }
+        },
+        {
+          "now": 41250,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 5
+          }
+        },
+        {
+          "now": 61250,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 9
+          }
+        },
+        {
+          "now": 64250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 10
+          }
+        },
+        {
+          "now": 64250,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 10
+          }
+        },
+        {
+          "now": 64500,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 11,
+            "to": 12
+          }
+        },
+        {
+          "now": 64750,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 10
+          }
+        },
+        {
+          "now": 65000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 9
+          }
+        },
+        {
+          "now": 66000,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 1
+          }
+        },
+        {
+          "now": 70000,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 4
+          }
+        },
+        {
+          "now": 72000,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 2
+          }
+        },
+        {
+          "now": 73000,
+          "key": "p2",
+          "action": {
+            "type": "upgrade",
+            "towerId": 5
+          }
+        },
+        {
+          "now": 74000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 12
+          }
+        },
+        {
+          "now": 74000,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 3,
+            "to": 2
+          }
+        },
+        {
+          "now": 74250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 9,
+            "to": 10
+          }
+        },
+        {
+          "now": 74250,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 3,
+            "to": 4
+          }
+        },
+        {
+          "now": 74500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 11
+          }
+        },
+        {
+          "now": 74500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 10
+          }
+        },
+        {
+          "now": 74750,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 75000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 10
+          }
+        },
+        {
+          "now": 78250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 12
+          }
+        },
+        {
+          "now": 78500,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 2,
+            "to": 10
+          }
+        },
+        {
+          "now": 78750,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 79000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 2
+          }
+        },
+        {
+          "now": 90750,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 9
+          }
+        },
+        {
+          "now": 94750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 10
+          }
+        },
+        {
+          "now": 97500,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 1
+          }
+        },
+        {
+          "now": 104500,
+          "key": "p2",
+          "action": {
+            "type": "upgrade",
+            "towerId": 5
+          }
+        },
+        {
+          "now": 139000,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 3,
+            "to": 2
+          }
+        },
+        {
+          "now": 139000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 139250,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 3,
+            "to": 10
+          }
+        },
+        {
+          "now": 139250,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 5
+          }
+        },
+        {
+          "now": 139500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 4
+          }
+        },
+        {
+          "now": 139500,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 3
+          }
+        },
+        {
+          "now": 139750,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 5,
+            "to": 11
+          }
+        },
+        {
+          "now": 140000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 7
+          }
+        },
+        {
+          "now": 144000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 10
+          }
+        },
+        {
+          "now": 144000,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 144250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 10
+          }
+        },
+        {
+          "now": 144250,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 11,
+            "to": 10
+          }
+        },
+        {
+          "now": 144500,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 12,
+            "to": 10
+          }
+        },
+        {
+          "now": 144750,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 3
+          }
+        },
+        {
+          "now": 145000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 9
+          }
+        },
+        {
+          "now": 147250,
+          "key": "p2",
+          "action": {
+            "type": "upgrade",
+            "towerId": 11
+          }
+        },
+        {
+          "now": 160750,
+          "key": "p2",
+          "action": {
+            "type": "upgrade",
+            "towerId": 11
+          }
+        },
+        {
+          "now": 165500,
+          "key": "p2",
+          "action": {
+            "type": "upgrade",
+            "towerId": 4
+          }
+        },
+        {
+          "now": 168000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 10
+          }
+        },
+        {
+          "now": 168250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "now": 168500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 3
+          }
+        },
+        {
+          "now": 168750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 9
+          }
+        },
+        {
+          "now": 169000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 8
+          }
+        },
+        {
+          "now": 172000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 12
+          }
+        },
+        {
+          "now": 172000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 172250,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 2,
+            "to": 10
+          }
+        },
+        {
+          "now": 172250,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 10
+          }
+        },
+        {
+          "now": 172500,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 9,
+            "to": 10
+          }
+        },
+        {
+          "now": 172500,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 10
+          }
+        },
+        {
+          "now": 174000,
+          "key": "p2",
+          "action": {
+            "type": "upgrade",
+            "towerId": 7
+          }
+        },
+        {
+          "now": 178000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 10
+          }
+        },
+        {
+          "now": 178000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 3
+          }
+        },
+        {
+          "now": 178250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 10
+          }
+        },
+        {
+          "now": 178250,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 178500,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 11,
+            "to": 10
+          }
+        },
+        {
+          "now": 178750,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 12,
+            "to": 10
+          }
+        }
+      ]
+    },
+    {
+      "level": "trio-central-gates",
+      "seed": "00000000000000000000000000000003",
+      "idle": false,
+      "centralRush": false,
+      "centralCapturedAt": null,
+      "status": "finished",
+      "finishReason": "deadline",
+      "finishedAt": 181000,
+      "ranks": [
+        {
+          "playerKey": "p0",
+          "rank": 1,
+          "score": 4,
+          "towers": 4,
+          "totalTroops": 226,
+          "forfeited": false,
+          "eliminated": false
+        },
+        {
+          "playerKey": "p1",
+          "rank": 1,
+          "score": 4,
+          "towers": 4,
+          "totalTroops": 226,
+          "forfeited": false,
+          "eliminated": false
+        },
+        {
+          "playerKey": "p2",
+          "rank": 1,
+          "score": 4,
+          "towers": 4,
+          "totalTroops": 226,
+          "forfeited": false,
+          "eliminated": false
+        }
+      ],
+      "captures": 9,
+      "upgrades": 9,
+      "actions": [
+        {
+          "now": 1000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 9
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 10
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 11
+          }
+        },
+        {
+          "now": 14250,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 0
+          }
+        },
+        {
+          "now": 14250,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 3
+          }
+        },
+        {
+          "now": 14250,
+          "key": "p2",
+          "action": {
+            "type": "upgrade",
+            "towerId": 6
+          }
+        },
+        {
+          "now": 14500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 12
+          }
+        },
+        {
+          "now": 14500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 12
+          }
+        },
+        {
+          "now": 14500,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 12
+          }
+        },
+        {
+          "now": 34250,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 9
+          }
+        },
+        {
+          "now": 34250,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 10
+          }
+        },
+        {
+          "now": 34250,
+          "key": "p2",
+          "action": {
+            "type": "upgrade",
+            "towerId": 11
+          }
+        },
+        {
+          "now": 37250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 1
+          }
+        },
+        {
+          "now": 37250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 2
+          }
+        },
+        {
+          "now": 37250,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 5
+          }
+        },
+        {
+          "now": 48750,
+          "key": "p0",
+          "action": {
+            "type": "upgrade",
+            "towerId": 9
+          }
+        },
+        {
+          "now": 48750,
+          "key": "p1",
+          "action": {
+            "type": "upgrade",
+            "towerId": 10
+          }
+        },
+        {
+          "now": 48750,
+          "key": "p2",
+          "action": {
+            "type": "upgrade",
+            "towerId": 11
+          }
+        },
+        {
+          "now": 51000,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 9,
+            "to": 1
+          }
+        },
+        {
+          "now": 51000,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 10,
+            "to": 2
+          }
+        },
+        {
+          "now": 51000,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 11,
+            "to": 5
+          }
+        },
+        {
+          "now": 51250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 8
+          }
+        },
+        {
+          "now": 51250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 4
+          }
+        },
+        {
+          "now": 51250,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 7
+          }
+        },
+        {
+          "now": 51500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 9
+          }
+        },
+        {
+          "now": 51500,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 10
+          }
+        },
+        {
+          "now": 51500,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 5,
+            "to": 11
+          }
+        },
+        {
+          "now": 62000,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 9,
+            "to": 8
+          }
+        },
+        {
+          "now": 62000,
+          "key": "p1",
+          "action": {
+            "type": "unlink",
+            "from": 10,
+            "to": 4
+          }
+        },
+        {
+          "now": 62000,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 11,
+            "to": 7
+          }
+        },
+        {
+          "now": 62250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 9
+          }
+        },
+        {
+          "now": 62250,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 62250,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 11
+          }
+        }
+      ]
+    },
+    {
+      "level": "quad-supply-web",
+      "seed": "00000000000000000000000000000000",
+      "idle": false,
+      "centralRush": false,
+      "centralCapturedAt": null,
+      "status": "finished",
+      "finishReason": "conquest",
+      "finishedAt": 122375,
+      "ranks": [
+        {
+          "playerKey": "p0",
+          "rank": 2,
+          "score": 0,
+          "towers": 0,
+          "totalTroops": 0,
+          "forfeited": false,
+          "eliminated": true
+        },
+        {
+          "playerKey": "p1",
+          "rank": 2,
+          "score": 0,
+          "towers": 0,
+          "totalTroops": 0,
+          "forfeited": false,
+          "eliminated": true
+        },
+        {
+          "playerKey": "p2",
+          "rank": 2,
+          "score": 0,
+          "towers": 0,
+          "totalTroops": 0,
+          "forfeited": false,
+          "eliminated": true
+        },
+        {
+          "playerKey": "p3",
+          "rank": 1,
+          "score": 13,
+          "towers": 13,
+          "totalTroops": 322,
+          "forfeited": false,
+          "eliminated": false
+        }
+      ],
+      "captures": 16,
+      "upgrades": 12,
+      "actions": [
+        {
+          "now": 1000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 1
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 3
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 5
+          }
+        },
+        {
+          "now": 15500,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 10
+          }
+        },
+        {
+          "now": 15500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 5,
+            "to": 11
+          }
+        },
+        {
+          "now": 15750,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 4,
+            "to": 3
+          }
+        },
+        {
+          "now": 15750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 5
+          }
+        },
+        {
+          "now": 16000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 16000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 7
+          }
+        },
+        {
+          "now": 25250,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 11
+          }
+        },
+        {
+          "now": 25500,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 3,
+            "to": 10
+          }
+        },
+        {
+          "now": 25750,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 26000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 5
+          }
+        },
+        {
+          "now": 26250,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 2
+          }
+        },
+        {
+          "now": 30500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 8
+          }
+        },
+        {
+          "now": 30750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 7
+          }
+        },
+        {
+          "now": 31000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 11
+          }
+        },
+        {
+          "now": 34250,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 6
+          }
+        },
+        {
+          "now": 34500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 12
+          }
+        },
+        {
+          "now": 34750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 5,
+            "to": 11
+          }
+        },
+        {
+          "now": 35000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 5,
+            "to": 4
+          }
+        },
+        {
+          "now": 37250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 5
+          }
+        },
+        {
+          "now": 47250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 12
+          }
+        },
+        {
+          "now": 47500,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 7,
+            "to": 8
+          }
+        },
+        {
+          "now": 47750,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 0
+          }
+        },
+        {
+          "now": 59250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 9
+          }
+        },
+        {
+          "now": 59500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 9
+          }
+        },
+        {
+          "now": 59500,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 8,
+            "to": 12
+          }
+        },
+        {
+          "now": 59750,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "now": 59750,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 9
+          }
+        },
+        {
+          "now": 60000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 7
+          }
+        },
+        {
+          "now": 60000,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 11,
+            "to": 12
+          }
+        },
+        {
+          "now": 60250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 10
+          }
+        },
+        {
+          "now": 60500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 10
+          }
+        },
+        {
+          "now": 68250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 2
+          }
+        },
+        {
+          "now": 68500,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 8,
+            "to": 9
+          }
+        },
+        {
+          "now": 68750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 12,
+            "to": 9
+          }
+        },
+        {
+          "now": 69000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 0
+          }
+        },
+        {
+          "now": 70500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 5
+          }
+        },
+        {
+          "now": 73250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 3
+          }
+        },
+        {
+          "now": 73500,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 11
+          }
+        },
+        {
+          "now": 73750,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 7
+          }
+        },
+        {
+          "now": 74000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 8
+          }
+        },
+        {
+          "now": 88250,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 10
+          }
+        },
+        {
+          "now": 91250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 4
+          }
+        },
+        {
+          "now": 93500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 8
+          }
+        },
+        {
+          "now": 93750,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "now": 94000,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 7
+          }
+        },
+        {
+          "now": 94250,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 12,
+            "to": 8
+          }
+        },
+        {
+          "now": 94500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 7
+          }
+        },
+        {
+          "now": 94750,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 9
+          }
+        },
+        {
+          "now": 96500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 9
+          }
+        },
+        {
+          "now": 100500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 5
+          }
+        },
+        {
+          "now": 102750,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 10
+          }
+        },
+        {
+          "now": 108500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 0
+          }
+        },
+        {
+          "now": 109500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 3
+          }
+        },
+        {
+          "now": 109750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 10,
+            "to": 4
+          }
+        },
+        {
+          "now": 110000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 7
+          }
+        },
+        {
+          "now": 112250,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 9
+          }
+        },
+        {
+          "now": 113500,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 1
+          }
+        },
+        {
+          "now": 113750,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 3,
+            "to": 2
+          }
+        },
+        {
+          "now": 114000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 4
+          }
+        },
+        {
+          "now": 114250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 2
+          }
+        },
+        {
+          "now": 114500,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 5
+          }
+        },
+        {
+          "now": 114750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 12,
+            "to": 10
+          }
+        },
+        {
+          "now": 115000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 9
+          }
+        },
+        {
+          "now": 115250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 1
+          }
+        },
+        {
+          "now": 116500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 4
+          }
+        },
+        {
+          "now": 118500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 0
+          }
+        },
+        {
+          "now": 119500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 2
+          }
+        },
+        {
+          "now": 119750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 8,
+            "to": 0
+          }
+        },
+        {
+          "now": 120000,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 9,
+            "to": 1
+          }
+        },
+        {
+          "now": 120250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 8
+          }
+        },
+        {
+          "now": 120500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 5
+          }
+        },
+        {
+          "now": 122250,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 9
+          }
+        }
+      ]
+    },
+    {
+      "level": "quad-island-flank",
+      "seed": "00000000000000000000000000000003",
+      "idle": false,
+      "centralRush": false,
+      "centralCapturedAt": null,
+      "status": "finished",
+      "finishReason": "conquest",
+      "finishedAt": 138375,
+      "ranks": [
+        {
+          "playerKey": "p0",
+          "rank": 2,
+          "score": 0,
+          "towers": 0,
+          "totalTroops": 0,
+          "forfeited": false,
+          "eliminated": true
+        },
+        {
+          "playerKey": "p1",
+          "rank": 2,
+          "score": 0,
+          "towers": 0,
+          "totalTroops": 0,
+          "forfeited": false,
+          "eliminated": true
+        },
+        {
+          "playerKey": "p2",
+          "rank": 2,
+          "score": 0,
+          "towers": 0,
+          "totalTroops": 0,
+          "forfeited": false,
+          "eliminated": true
+        },
+        {
+          "playerKey": "p3",
+          "rank": 1,
+          "score": 13,
+          "towers": 13,
+          "totalTroops": 489,
+          "forfeited": false,
+          "eliminated": false
+        }
+      ],
+      "captures": 16,
+      "upgrades": 13,
+      "actions": [
+        {
+          "now": 1000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p1",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 1
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 3
+          }
+        },
+        {
+          "now": 1000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 5
+          }
+        },
+        {
+          "now": 15500,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 10
+          }
+        },
+        {
+          "now": 15500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 5,
+            "to": 11
+          }
+        },
+        {
+          "now": 15750,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 4,
+            "to": 3
+          }
+        },
+        {
+          "now": 15750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 5
+          }
+        },
+        {
+          "now": 16000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 16000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 7
+          }
+        },
+        {
+          "now": 25250,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 12
+          }
+        },
+        {
+          "now": 25500,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 3,
+            "to": 10
+          }
+        },
+        {
+          "now": 25750,
+          "key": "p2",
+          "action": {
+            "type": "unlink",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 26000,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 5
+          }
+        },
+        {
+          "now": 26250,
+          "key": "p2",
+          "action": {
+            "type": "link",
+            "from": 3,
+            "to": 2
+          }
+        },
+        {
+          "now": 30500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 8
+          }
+        },
+        {
+          "now": 30750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 7
+          }
+        },
+        {
+          "now": 31000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 11
+          }
+        },
+        {
+          "now": 32250,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 6
+          }
+        },
+        {
+          "now": 32500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 12
+          }
+        },
+        {
+          "now": 32750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 5,
+            "to": 11
+          }
+        },
+        {
+          "now": 33000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 5,
+            "to": 4
+          }
+        },
+        {
+          "now": 35250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 5
+          }
+        },
+        {
+          "now": 47250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 12
+          }
+        },
+        {
+          "now": 47500,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 7,
+            "to": 8
+          }
+        },
+        {
+          "now": 47750,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 0
+          }
+        },
+        {
+          "now": 53750,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 9
+          }
+        },
+        {
+          "now": 54000,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 11
+          }
+        },
+        {
+          "now": 54250,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 8,
+            "to": 12
+          }
+        },
+        {
+          "now": 54500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 12,
+            "to": 10
+          }
+        },
+        {
+          "now": 54750,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 0
+          }
+        },
+        {
+          "now": 55000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 7
+          }
+        },
+        {
+          "now": 56250,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 11
+          }
+        },
+        {
+          "now": 59250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 5
+          }
+        },
+        {
+          "now": 59500,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 9
+          }
+        },
+        {
+          "now": 59750,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "now": 60000,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 8
+          }
+        },
+        {
+          "now": 65500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 5
+          }
+        },
+        {
+          "now": 67250,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 12
+          }
+        },
+        {
+          "now": 67500,
+          "key": "p0",
+          "action": {
+            "type": "unlink",
+            "from": 1,
+            "to": 9
+          }
+        },
+        {
+          "now": 67750,
+          "key": "p0",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 2
+          }
+        },
+        {
+          "now": 78000,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 7
+          }
+        },
+        {
+          "now": 78250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "now": 78500,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 7
+          }
+        },
+        {
+          "now": 81500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 5
+          }
+        },
+        {
+          "now": 91500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 0
+          }
+        },
+        {
+          "now": 101500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 0
+          }
+        },
+        {
+          "now": 102500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 2
+          }
+        },
+        {
+          "now": 102750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 8,
+            "to": 0
+          }
+        },
+        {
+          "now": 103000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 8,
+            "to": 12
+          }
+        },
+        {
+          "now": 103250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 6
+          }
+        },
+        {
+          "now": 103500,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 7,
+            "to": 6
+          }
+        },
+        {
+          "now": 103750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 11,
+            "to": 5
+          }
+        },
+        {
+          "now": 104000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 3
+          }
+        },
+        {
+          "now": 104250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 6,
+            "to": 11
+          }
+        },
+        {
+          "now": 104500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 7,
+            "to": 8
+          }
+        },
+        {
+          "now": 114500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 4
+          }
+        },
+        {
+          "now": 117500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 118500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 1
+          }
+        },
+        {
+          "now": 121500,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 1,
+            "to": 9
+          }
+        },
+        {
+          "now": 124250,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 8
+          }
+        },
+        {
+          "now": 124500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 4
+          }
+        },
+        {
+          "now": 128250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 9,
+            "to": 2
+          }
+        },
+        {
+          "now": 128500,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 1
+          }
+        },
+        {
+          "now": 128750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 1,
+            "to": 9
+          }
+        },
+        {
+          "now": 129000,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 12,
+            "to": 9
+          }
+        },
+        {
+          "now": 133000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 2,
+            "to": 3
+          }
+        },
+        {
+          "now": 133250,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 10,
+            "to": 3
+          }
+        },
+        {
+          "now": 133500,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 4,
+            "to": 10
+          }
+        },
+        {
+          "now": 133750,
+          "key": "p3",
+          "action": {
+            "type": "unlink",
+            "from": 6,
+            "to": 11
+          }
+        },
+        {
+          "now": 134000,
+          "key": "p3",
+          "action": {
+            "type": "link",
+            "from": 11,
+            "to": 5
+          }
+        },
+        {
+          "now": 134750,
+          "key": "p3",
+          "action": {
+            "type": "upgrade",
+            "towerId": 11
+          }
+        }
+      ]
+    }
+  ]
+}

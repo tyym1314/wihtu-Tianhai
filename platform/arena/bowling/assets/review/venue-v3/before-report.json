@@ -1,0 +1,31 @@
+{
+  "scope": "Bowling isolated zero-wallet engine, actual pointer actions, desktop Chrome viewports; not physical phones",
+  "mode": "before",
+  "checks": [
+    {
+      "width": 360,
+      "height": 800,
+      "assets": true,
+      "layout": true,
+      "drawCalls": 154,
+      "triangles": 257140
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "assets": true,
+      "layout": true,
+      "drawCalls": 154,
+      "triangles": 257140
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "assets": true,
+      "layout": true,
+      "drawCalls": 154,
+      "triangles": 257140
+    }
+  ],
+  "errors": []
+}

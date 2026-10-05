@@ -1,0 +1,55 @@
+{
+  "scope": "Golf-only isolated zero-wallet real engine and pointer QA; desktop Chrome viewports, not physical phones",
+  "mode": "after",
+  "checks": [
+    {
+      "width": 360,
+      "height": 800,
+      "assets": true,
+      "layout": true,
+      "realShot": true,
+      "holed": true,
+      "drawCalls": 311,
+      "triangles": 807680,
+      "sounds": [
+        "shot",
+        "win"
+      ],
+      "actions": 1,
+      "score": 1
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "assets": true,
+      "layout": true,
+      "realShot": true,
+      "holed": true,
+      "drawCalls": 312,
+      "triangles": 810344,
+      "sounds": [
+        "shot",
+        "win"
+      ],
+      "actions": 1,
+      "score": 1
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "assets": true,
+      "layout": true,
+      "realShot": true,
+      "holed": true,
+      "drawCalls": 312,
+      "triangles": 810344,
+      "sounds": [
+        "shot",
+        "win"
+      ],
+      "actions": 1,
+      "score": 1
+    }
+  ],
+  "errors": []
+}

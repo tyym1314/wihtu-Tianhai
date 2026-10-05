@@ -1,0 +1,24 @@
+{
+  "scope": "Golf-only isolated zero-wallet real engine and pointer QA; desktop Chrome viewports, not physical phones",
+  "mode": "after",
+  "checks": [
+    {
+      "width": 390,
+      "height": 844,
+      "assets": true,
+      "layout": true,
+      "realShot": true,
+      "holed": true,
+      "drawCalls": 312,
+      "triangles": 810344,
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "sounds": [
+        "shot",
+        "win"
+      ],
+      "actions": 1,
+      "score": 1
+    }
+  ],
+  "errors": []
+}

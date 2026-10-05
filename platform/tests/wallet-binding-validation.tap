@@ -1,0 +1,78 @@
+TAP version 13
+# [wallet-binding isolation] created two independent databases oasis_binding_50997_5cc6fc549a76, oasis_binding_wallet_50997_5cc6fc549a76
+# Subtest: origin validation uses exact deployment entries and rejects path, credentials, encoded host and unsafe schemes
+ok 1 - origin validation uses exact deployment entries and rejects path, credentials, encoded host and unsafe schemes
+  ---
+  duration_ms: 295.908917
+  type: 'test'
+  ...
+# Subtest: only a pristine paused App binds, direction keys stay separate and reference balances never migrate
+ok 2 - only a pristine paused App binds, direction keys stay separate and reference balances never migrate
+  ---
+  duration_ms: 20.789083
+  type: 'test'
+  ...
+# Subtest: active Apps, existing sessions, existing rooms and existing outbox records cannot rebind
+ok 3 - active Apps, existing sessions, existing rooms and existing outbox records cannot rebind
+  ---
+  duration_ms: 21.204292
+  type: 'test'
+  ...
+# Subtest: concurrent binding has one winner and App row lock observes a session committed ahead of binding
+ok 4 - concurrent binding has one winner and App row lock observes a session committed ahead of binding
+  ---
+  duration_ms: 14.411083
+  type: 'test'
+  ...
+# Subtest: signed balance probe reaches separate wallet DB and changes no money or operation records
+ok 5 - signed balance probe reaches separate wallet DB and changes no money or operation records
+  ---
+  duration_ms: 19.78225
+  type: 'test'
+  ...
+# Subtest: binding pins exact scope and wallet key, never silently switching to a newer active key
+ok 6 - binding pins exact scope and wallet key, never silently switching to a newer active key
+  ---
+  duration_ms: 9.885875
+  type: 'test'
+  ...
+# Subtest: redirect is rejected without contacting its target; oversized and malformed responses fail closed
+ok 7 - redirect is rejected without contacting its target; oversized and malformed responses fail closed
+  ---
+  duration_ms: 24.058625
+  type: 'test'
+  ...
+# Subtest: timeout preserves unknown outcome and does not wait indefinitely
+ok 8 - timeout preserves unknown outcome and does not wait indefinitely
+  ---
+  duration_ms: 3008.568417
+  type: 'test'
+  ...
+# Subtest: balance response must match schema, user, currency precision and full trusted scope
+ok 9 - balance response must match schema, user, currency precision and full trusted scope
+  ---
+  duration_ms: 15.038917
+  type: 'test'
+  ...
+# Subtest: committed independent-wallet response loss recovers by original ID with one financial effect
+ok 10 - committed independent-wallet response loss recovers by original ID with one financial effect
+  ---
+  duration_ms: 56.955208
+  type: 'test'
+  ...
+# Subtest: standalone process imports a private config, refuses the main database and preserves balances on restart
+ok 11 - standalone process imports a private config, refuses the main database and preserves balances on restart
+  ---
+  duration_ms: 280.932917
+  type: 'test'
+  ...
+# [wallet-binding isolation] both test databases dropped and absence verified
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3972.090916

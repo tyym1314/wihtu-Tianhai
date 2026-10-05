@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: three continuous shared courses contain tees/cups and deterministic fixed-step shots
+ok 1 - three continuous shared courses contain tees/cups and deterministic fixed-step shots
+  ---
+  duration_ms: 638.736709
+  type: 'test'
+  ...
+# Subtest: client cannot submit a position, score, out-of-bounds power, NaN, or shoot before busyUntil
+ok 2 - client cannot submit a position, score, out-of-bounds power, NaN, or shoot before busyUntil
+  ---
+  duration_ms: 2.37875
+  type: 'test'
+  ...
+# Subtest: falling through open boundary adds one shot plus one penalty and restores shot origin
+ok 3 - falling through open boundary adds one shot plus one penalty and restores shot origin
+  ---
+  duration_ms: 0.374
+  type: 'test'
+  ...
+# Subtest: tenth accepted shot that holes counts ten; a tenth miss records twelve
+ok 4 - tenth accepted shot that holes counts ten; a tenth miss records twelve
+  ---
+  duration_ms: 1.249375
+  type: 'test'
+  ...
+# Subtest: 90-second deadline scores twelve even if the last accepted shot is still rolling
+ok 5 - 90-second deadline scores twelve even if the last accepted shot is still rolling
+  ---
+  duration_ms: 23.870792
+  type: 'test'
+  ...
+# Subtest: twenty-second timeouts add one, third consecutive timeout forfeits all simultaneously
+ok 6 - twenty-second timeouts add one, third consecutive timeout forfeits all simultaneously
+  ---
+  duration_ms: 0.462875
+  type: 'test'
+  ...
+# Subtest: three played holes progress through five-second intermissions, preserve ties, then end
+ok 7 - three played holes progress through five-second intermissions, preserve ties, then end
+  ---
+  duration_ms: 21.453958
+  type: 'test'
+  ...
+# Subtest: ghost balls cannot change another shot, and JSON recovery retains exact outcome
+ok 8 - ghost balls cannot change another shot, and JSON recovery retains exact outcome
+  ---
+  duration_ms: 66.958792
+  type: 'test'
+  ...
+# Subtest: forfeit batches never break ties by seat; pause shifting preserves relative animation time
+ok 9 - forfeit batches never break ties by seat; pause shifting preserves relative animation time
+  ---
+  duration_ms: 4.265375
+  type: 'test'
+  ...
+# Subtest: all three islands are playable from tee to cup using ordinary legal actions, without position edits
+ok 10 - all three islands are playable from tee to cup using ordinary legal actions, without position edits
+  ---
+  duration_ms: 172.033333
+  type: 'test'
+  ...
+# Subtest: a third timeout and another player disconnecting in the same tick void together
+ok 11 - a third timeout and another player disconnecting in the same tick void together
+  ---
+  duration_ms: 0.797375
+  type: 'test'
+  ...
+# Subtest: the same batch still preserves a third-hole score fixed before simultaneous forfeits
+ok 12 - the same batch still preserves a third-hole score fixed before simultaneous forfeits
+  ---
+  duration_ms: 0.313292
+  type: 'test'
+  ...
+# Subtest: third consecutive timeout cannot complete the final hole and beat an already valid finisher
+ok 13 - third consecutive timeout cannot complete the final hole and beat an already valid finisher
+  ---
+  duration_ms: 0.099291
+  type: 'test'
+  ...
+# Subtest: same-tick third timeouts at the last-hole stroke limit void all players before awarding completed scores
+ok 14 - same-tick third timeouts at the last-hole stroke limit void all players before awarding completed scores
+  ---
+  duration_ms: 0.095083
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 995.801792

@@ -1,0 +1,27 @@
+[Unit]
+Description=OASIS HTTPS guest demo lobby
+After=oasis-api.service
+Requires=oasis-api.service
+PartOf=oasis-api.service
+
+[Service]
+Type=simple
+User=oasis
+Group=oasis
+WorkingDirectory=/opt/oasis/current/platform
+EnvironmentFile=/opt/oasis/private/runtime.env
+ExecStart=/usr/bin/node --import tsx deploy/demo-host.mjs
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/oasis/private
+MemoryMax=512M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

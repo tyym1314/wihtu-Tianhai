@@ -1,0 +1,5 @@
+import React from 'react';
+const PAWNS=[new URL('./assets/v3/pawn-0.webp',import.meta.url).href,new URL('./assets/v3/pawn-1.webp',import.meta.url).href,new URL('./assets/v3/pawn-2.webp',import.meta.url).href,new URL('./assets/v3/pawn-3.webp',import.meta.url).href];
+const EMERALD=new URL('../jackaroo/assets/v3/marble-emerald.webp',import.meta.url).href,IVORY=new URL('../jackaroo/assets/v3/marble-ivory.webp',import.meta.url).href;
+/** Original Blender renders. The selection/hit geometry stays separate from visual alpha. */
+export default function RoyalPawn({color=0,tint,selected=false,marble=false,protected:protectedPiece=false}){return <g className={selected?'bk-pawn-selected':''} pointerEvents="none"><ellipse cy={marble?7:8} rx={marble?10:12} ry={marble?4:5} fill="#120b09" opacity=".46"/>{selected&&<ellipse cy="3" rx="15" ry="14" className="bk-pawn-glow"/>}{marble?<image href={/^#[ef]/i.test(tint||'')?IVORY:EMERALD} x="-13.65" y="-13.65" width="27.3" height="27.3"/>:<image href={PAWNS[color%4]} x="-29" y="-35" width="58" height="58"/>}{marble&&protectedPiece&&<circle r="13.5" stroke="#ffe7a5" strokeWidth="2" fill="none" strokeDasharray="3 2"/>}</g>;}

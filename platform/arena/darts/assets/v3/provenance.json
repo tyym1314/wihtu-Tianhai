@@ -1,0 +1,20 @@
+{
+  "reference": "output/design/pvp-arena-concepts-v1/04-darts.png",
+  "board_original": "/Users/tyym/.codex/generated_images/01a0b06a-2b67-73d2-8819-3164d148773c/exec-e1e0fe97-9330-4a13-b99f-ce9dbfdd96c6.png",
+  "guide": "geometry-guide.svg / geometry-guide.png",
+  "complete_prompt": "board-prompt.txt",
+  "runtime": "board-material.webp",
+  "encoding": "cwebp q92 alpha_q100, original PNG retained; no crop/resize/paint postprocessing",
+  "blender": "render-dart.py / metal-dart-source.blend / metal-dart-anchor.json",
+  "runtime_geometry": "Generated gold case and sampled sisal textures sit beneath exact SVG sectors and RINGS. Red/green bands use exact geometric clipping, never the approximate raster boundaries. Original Blender metal dart has a measured transparent-image tip anchor; all flight positions terminate at event.hit.x/y over authoritative650ms.",
+  "files": [
+    {
+      "path": "board-material.webp",
+      "bytes": 496426
+    },
+    {
+      "path": "metal-dart.webp",
+      "bytes": 19122
+    }
+  ]
+}

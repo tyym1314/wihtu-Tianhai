@@ -1,0 +1,39 @@
+{
+  "at": "2026-09-19T16:32:34.349Z",
+  "scope": "Isolated actual-engine Chrome mobile emulation. No platform, wallet, or paid room requests. Shared portrait PNG/WebP only routed from its real local source. Not physical-device acceptance.",
+  "reports": [
+    {
+      "game": "darts",
+      "width": 390,
+      "height": 844,
+      "layout": {
+        "width": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      "evidence": {
+        "action": "actual recorded pointer gesture",
+        "hit": {
+          "score": 18,
+          "label": "18",
+          "number": 18,
+          "multiplier": 1,
+          "x": 0.3,
+          "y": -0.427799,
+          "durationMs": 470,
+          "distance": 0.216216
+        },
+        "remaining": 283,
+        "flightOrigin": {
+          "hit-x": 0.3,
+          "hit-y": -0.427799,
+          "tip-x": 0.38,
+          "tip-y": 1.85
+        },
+        "authoritativeFlightEndpoint": true,
+        "flightMs": 650
+      },
+      "errors": []
+    }
+  ]
+}

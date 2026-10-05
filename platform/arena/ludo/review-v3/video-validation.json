@@ -1,0 +1,50 @@
+{
+  "at": "2026-09-19T16:33:16.442Z",
+  "scope": "Actual-engine local zero-value setup, real UI actions; no fabricated settlement, platform API or wallet access; mobile viewport emulation, not physical device.",
+  "reports": [
+    {
+      "game": "ludo",
+      "video": "/Users/tyym/Documents/codes/game/platform/arena/ludo/review-v3/ludo-motion-390.webm",
+      "evidence": {
+        "scenario": "declared zero-value capture setup",
+        "actions": [
+          "roll",
+          "select legal pawn",
+          "move"
+        ],
+        "captured": 2
+      },
+      "errors": []
+    },
+    {
+      "game": "jackaroo",
+      "video": "/Users/tyym/Documents/codes/game/platform/arena/jackaroo/review-v3/jackaroo-motion-390.webm",
+      "evidence": {
+        "scenario": "declared zero-value legal J-swap setup",
+        "actions": [
+          "select J",
+          "swap mode",
+          "own marble",
+          "opponent marble",
+          "confirm"
+        ],
+        "progressAfter": 29
+      },
+      "errors": []
+    },
+    {
+      "game": "domino",
+      "video": "/Users/tyym/Documents/codes/game/platform/arena/domino/review-v3/domino-motion-390.webm",
+      "evidence": {
+        "actions": [
+          "select legal hand tile",
+          "connect matching endpoint"
+        ],
+        "tileId": "d_1_5",
+        "end": "left",
+        "actionCount": 1
+      },
+      "errors": []
+    }
+  ]
+}

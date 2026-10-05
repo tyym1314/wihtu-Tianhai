@@ -1,0 +1,30 @@
+{
+  "kind": "Static design gallery",
+  "physical_device_tested": false,
+  "game_ui_tested": false,
+  "images": [
+    {
+      "file": "battle-2p-v2.png",
+      "loaded": true,
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "file": "upgrade.png",
+      "loaded": true,
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "file": "battle-4p.png",
+      "loaded": true,
+      "width": 852,
+      "height": 1846
+    }
+  ],
+  "mobile": {
+    "width": 390,
+    "scrollWidth": 390
+  },
+  "passed": true
+}

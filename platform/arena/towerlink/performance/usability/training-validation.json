@@ -1,0 +1,7169 @@
+{
+  "trainingVersion": "tower-training-20260928-v2",
+  "scope": "Deterministic server simulation. Both sides use legal commands; learner commands have at least 500 ms spacing. Idle controls actually execute opponent AI. Not proof of human difficulty or competitive balance.",
+  "results": [
+    {
+      "lessonId": "lesson-01",
+      "title": "认识产兵",
+      "objective": "观察自动产生至少 3 兵，并占领标记的中立塔。",
+      "graph": {
+        "towers": 5,
+        "edges": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "terrain": null
+      },
+      "ai": {
+        "intervalMs": 8000,
+        "startsAfterMs": 60000
+      },
+      "success": {
+        "durationMs": 15375,
+        "completed": true,
+        "failed": false,
+        "reason": "training-complete",
+        "winnerKeys": [
+          "p0"
+        ],
+        "heldTowers": 2,
+        "playerCommands": 1,
+        "aiCommands": 0,
+        "progress": [
+          {
+            "id": "produced",
+            "label": "自动产兵",
+            "current": 3,
+            "target": 3,
+            "done": true
+          },
+          {
+            "id": "capture",
+            "label": "占领目标塔",
+            "current": 1,
+            "target": 1,
+            "done": true
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 0,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          }
+        ]
+      },
+      "idle": {
+        "durationMs": 180000,
+        "completed": false,
+        "failed": true,
+        "reason": "deadline",
+        "winnerKeys": [
+          "p1"
+        ],
+        "heldTowers": 1,
+        "playerCommands": 0,
+        "aiCommands": 15,
+        "progress": [
+          {
+            "id": "produced",
+            "label": "自动产兵",
+            "current": 3,
+            "target": 3,
+            "done": true
+          },
+          {
+            "id": "capture",
+            "label": "占领目标塔",
+            "current": 0,
+            "target": 1,
+            "done": false
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 60000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 68000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 76000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 84000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 92000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 100000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 108000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 116000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 124000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 132000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 140000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 148000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 2,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 156000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 164000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 172000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "lesson-02",
+      "title": "持续派兵与驻守",
+      "objective": "向目标持续派出至少 8 兵，停止出兵后再自动产生 2 兵。",
+      "graph": {
+        "towers": 5,
+        "edges": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "terrain": null
+      },
+      "ai": {
+        "intervalMs": 8000,
+        "startsAfterMs": 60000
+      },
+      "success": {
+        "durationMs": 10000,
+        "completed": true,
+        "failed": false,
+        "reason": "training-complete",
+        "winnerKeys": [
+          "p0"
+        ],
+        "heldTowers": 1,
+        "playerCommands": 2,
+        "aiCommands": 0,
+        "progress": [
+          {
+            "id": "sent",
+            "label": "持续派兵",
+            "current": 8,
+            "target": 8,
+            "done": true
+          },
+          {
+            "id": "stopped",
+            "label": "停止出兵",
+            "current": 1,
+            "target": 1,
+            "done": true
+          },
+          {
+            "id": "regrown",
+            "label": "停止后产兵",
+            "current": 2,
+            "target": 2,
+            "done": true
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 0,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 8000,
+            "player": "p0",
+            "action": {
+              "type": "stop",
+              "towerId": 0
+            }
+          }
+        ]
+      },
+      "idle": {
+        "durationMs": 180000,
+        "completed": false,
+        "failed": true,
+        "reason": "deadline",
+        "winnerKeys": [
+          "p1"
+        ],
+        "heldTowers": 1,
+        "playerCommands": 0,
+        "aiCommands": 15,
+        "progress": [
+          {
+            "id": "sent",
+            "label": "持续派兵",
+            "current": 0,
+            "target": 8,
+            "done": false
+          },
+          {
+            "id": "stopped",
+            "label": "停止出兵",
+            "current": 0,
+            "target": 1,
+            "done": false
+          },
+          {
+            "id": "regrown",
+            "label": "停止后产兵",
+            "current": 0,
+            "target": 2,
+            "done": false
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 60000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 68000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 76000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 84000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 92000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 100000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 108000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 116000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 124000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 132000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 140000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 148000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 2,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 156000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 164000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 172000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "lesson-03",
+      "title": "增援与前线中继",
+      "objective": "后方增援前线至少 8 兵，再由前线继续派兵并占领目标塔。",
+      "graph": {
+        "towers": 5,
+        "edges": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "terrain": null
+      },
+      "ai": {
+        "intervalMs": 6000,
+        "startsAfterMs": 45000
+      },
+      "success": {
+        "durationMs": 20000,
+        "completed": true,
+        "failed": false,
+        "reason": "training-complete",
+        "winnerKeys": [
+          "p0"
+        ],
+        "heldTowers": 3,
+        "playerCommands": 2,
+        "aiCommands": 0,
+        "progress": [
+          {
+            "id": "reinforced",
+            "label": "后方向前线增援",
+            "current": 8,
+            "target": 8,
+            "done": true
+          },
+          {
+            "id": "relayed",
+            "label": "前线继续派兵",
+            "current": 8,
+            "target": 8,
+            "done": true
+          },
+          {
+            "id": "capture",
+            "label": "占领目标塔",
+            "current": 1,
+            "target": 1,
+            "done": true
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 0,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 4
+            }
+          }
+        ]
+      },
+      "idle": {
+        "durationMs": 153750,
+        "completed": false,
+        "failed": true,
+        "reason": "training-failed",
+        "winnerKeys": [
+          "p1"
+        ],
+        "heldTowers": 0,
+        "playerCommands": 0,
+        "aiCommands": 19,
+        "progress": [
+          {
+            "id": "reinforced",
+            "label": "后方向前线增援",
+            "current": 0,
+            "target": 8,
+            "done": false
+          },
+          {
+            "id": "relayed",
+            "label": "前线继续派兵",
+            "current": 0,
+            "target": 8,
+            "done": false
+          },
+          {
+            "id": "capture",
+            "label": "占领目标塔",
+            "current": 0,
+            "target": 1,
+            "done": false
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 45000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 51000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 57000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 63000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 69000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 2,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 75000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 81000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 3,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 87000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 93000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 99000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 105000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 111000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 117000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 123000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 129000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 135000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 141000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 0
+            }
+          },
+          {
+            "atMs": 147000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 0
+            }
+          },
+          {
+            "atMs": 153000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "lesson-04",
+      "title": "道路交战与集火",
+      "objective": "在标记道路发生至少 8 兵损耗的交战，并夺取敌方前哨。",
+      "graph": {
+        "towers": 7,
+        "edges": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            6
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            6
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            2,
+            6
+          ],
+          [
+            3,
+            5
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            4,
+            6
+          ]
+        ],
+        "terrain": null
+      },
+      "ai": {
+        "intervalMs": 5000,
+        "startsAfterMs": 15000
+      },
+      "success": {
+        "durationMs": 20000,
+        "completed": true,
+        "failed": false,
+        "reason": "training-complete",
+        "winnerKeys": [
+          "p0"
+        ],
+        "heldTowers": 3,
+        "playerCommands": 2,
+        "aiCommands": 1,
+        "progress": [
+          {
+            "id": "roadCasualties",
+            "label": "道路交战损耗",
+            "current": 8,
+            "target": 8,
+            "done": true
+          },
+          {
+            "id": "capture",
+            "label": "夺取前哨",
+            "current": 1,
+            "target": 1,
+            "done": true
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 0,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 15000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 5
+            }
+          }
+        ]
+      },
+      "idle": {
+        "durationMs": 109625,
+        "completed": false,
+        "failed": true,
+        "reason": "training-failed",
+        "winnerKeys": [
+          "p1"
+        ],
+        "heldTowers": 0,
+        "playerCommands": 0,
+        "aiCommands": 19,
+        "progress": [
+          {
+            "id": "roadCasualties",
+            "label": "道路交战损耗",
+            "current": 0,
+            "target": 8,
+            "done": false
+          },
+          {
+            "id": "capture",
+            "label": "夺取前哨",
+            "current": 0,
+            "target": 1,
+            "done": false
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 15000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 5
+            }
+          },
+          {
+            "atMs": 20000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 25000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 30000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 5,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 35000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 40000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 45000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 54500,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 59500,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 5,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 64500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 69500,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 74500,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 79500,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 84500,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 6,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 89500,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 94500,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 99500,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 104500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 109500,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 6
+            }
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "lesson-05",
+      "title": "手动升级",
+      "objective": "完成一座兵营的 Lv.2 升级，随后由它实际产生至少 4 兵。",
+      "graph": {
+        "towers": 5,
+        "edges": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "terrain": null
+      },
+      "ai": {
+        "intervalMs": 8000,
+        "startsAfterMs": 60000
+      },
+      "success": {
+        "durationMs": 5000,
+        "completed": true,
+        "failed": false,
+        "reason": "training-complete",
+        "winnerKeys": [
+          "p0"
+        ],
+        "heldTowers": 1,
+        "playerCommands": 1,
+        "aiCommands": 0,
+        "progress": [
+          {
+            "id": "upgraded",
+            "label": "完成 Lv.2 升级",
+            "current": 1,
+            "target": 1,
+            "done": true
+          },
+          {
+            "id": "advancedProduced",
+            "label": "升级后实际产兵",
+            "current": 4,
+            "target": 4,
+            "done": true
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 0,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 0
+            }
+          }
+        ]
+      },
+      "idle": {
+        "durationMs": 180000,
+        "completed": false,
+        "failed": true,
+        "reason": "deadline",
+        "winnerKeys": [
+          "p1"
+        ],
+        "heldTowers": 1,
+        "playerCommands": 0,
+        "aiCommands": 15,
+        "progress": [
+          {
+            "id": "upgraded",
+            "label": "完成 Lv.2 升级",
+            "current": 0,
+            "target": 1,
+            "done": false
+          },
+          {
+            "id": "advancedProduced",
+            "label": "升级后实际产兵",
+            "current": 0,
+            "target": 4,
+            "done": false
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 60000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 68000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 76000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 84000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 92000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 100000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 108000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 116000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 124000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 132000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 140000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 148000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 2,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 156000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 164000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 172000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "lesson-06",
+      "title": "岔路回防",
+      "objective": "先向右翼派出 4 兵，再断开旧线，向受攻击的左翼送达至少 4 兵。",
+      "graph": {
+        "towers": 5,
+        "edges": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "terrain": "river"
+      },
+      "ai": {
+        "intervalMs": 1800,
+        "startsAfterMs": 2000
+      },
+      "success": {
+        "durationMs": 12375,
+        "completed": true,
+        "failed": false,
+        "reason": "training-complete",
+        "winnerKeys": [
+          "p0"
+        ],
+        "heldTowers": 2,
+        "playerCommands": 3,
+        "aiCommands": 3,
+        "progress": [
+          {
+            "id": "outbound",
+            "label": "先向右侧派兵",
+            "current": 4,
+            "target": 4,
+            "done": true
+          },
+          {
+            "id": "changed",
+            "label": "移除右路并连接左路",
+            "current": 1,
+            "target": 1,
+            "done": true
+          },
+          {
+            "id": "defended",
+            "label": "回防增援抵达",
+            "current": 4,
+            "target": 4,
+            "done": true
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 0,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 2000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 3875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 4000,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 4500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 5750,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 4
+            }
+          }
+        ]
+      },
+      "idle": {
+        "durationMs": 65375,
+        "completed": false,
+        "failed": true,
+        "reason": "training-failed",
+        "winnerKeys": [
+          "p1"
+        ],
+        "heldTowers": 0,
+        "playerCommands": 0,
+        "aiCommands": 10,
+        "progress": [
+          {
+            "id": "outbound",
+            "label": "先向右侧派兵",
+            "current": 0,
+            "target": 4,
+            "done": false
+          },
+          {
+            "id": "changed",
+            "label": "移除右路并连接左路",
+            "current": 0,
+            "target": 1,
+            "done": false
+          },
+          {
+            "id": "defended",
+            "label": "回防增援抵达",
+            "current": 0,
+            "target": 4,
+            "done": false
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 2000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 3875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 5750,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 16875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 18750,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 20625,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 29875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 31750,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 47875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 52875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "lesson-07",
+      "title": "双翼补给",
+      "objective": "升级后方，向两翼各送达 6 兵；两翼分别攻入前哨，并保住后方夺取前哨。",
+      "graph": {
+        "towers": 7,
+        "edges": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            6
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            2,
+            6
+          ],
+          [
+            3,
+            5
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            5,
+            6
+          ]
+        ],
+        "terrain": "river"
+      },
+      "ai": {
+        "intervalMs": 1500,
+        "startsAfterMs": 2000
+      },
+      "success": {
+        "durationMs": 18625,
+        "completed": true,
+        "failed": false,
+        "reason": "training-complete",
+        "winnerKeys": [
+          "p0"
+        ],
+        "heldTowers": 4,
+        "playerCommands": 7,
+        "aiCommands": 5,
+        "progress": [
+          {
+            "id": "suppliedLeft",
+            "label": "后方向左翼补给",
+            "current": 6,
+            "target": 6,
+            "done": true
+          },
+          {
+            "id": "suppliedRight",
+            "label": "后方向右翼补给",
+            "current": 6,
+            "target": 6,
+            "done": true
+          },
+          {
+            "id": "leftAttack",
+            "label": "左翼真实抵达",
+            "current": 4,
+            "target": 4,
+            "done": true
+          },
+          {
+            "id": "rightAttack",
+            "label": "右翼真实抵达",
+            "current": 4,
+            "target": 4,
+            "done": true
+          },
+          {
+            "id": "upgraded",
+            "label": "后方升级完成",
+            "current": 1,
+            "target": 1,
+            "done": true
+          },
+          {
+            "id": "capture",
+            "label": "夺取前哨",
+            "current": 1,
+            "target": 1,
+            "done": true
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 0,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 0
+            }
+          },
+          {
+            "atMs": 500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 1000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 1500,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 2000,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 2000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 3000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 3500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 3500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 5000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 15500,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 5,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 17000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 1
+            }
+          }
+        ]
+      },
+      "idle": {
+        "durationMs": 96625,
+        "completed": false,
+        "failed": true,
+        "reason": "training-failed",
+        "winnerKeys": [
+          "p1"
+        ],
+        "heldTowers": 0,
+        "playerCommands": 0,
+        "aiCommands": 23,
+        "progress": [
+          {
+            "id": "suppliedLeft",
+            "label": "后方向左翼补给",
+            "current": 0,
+            "target": 6,
+            "done": false
+          },
+          {
+            "id": "suppliedRight",
+            "label": "后方向右翼补给",
+            "current": 0,
+            "target": 6,
+            "done": false
+          },
+          {
+            "id": "leftAttack",
+            "label": "左翼真实抵达",
+            "current": 0,
+            "target": 4,
+            "done": false
+          },
+          {
+            "id": "rightAttack",
+            "label": "右翼真实抵达",
+            "current": 0,
+            "target": 4,
+            "done": false
+          },
+          {
+            "id": "upgraded",
+            "label": "后方升级完成",
+            "current": 0,
+            "target": 1,
+            "done": false
+          },
+          {
+            "id": "capture",
+            "label": "夺取前哨",
+            "current": 0,
+            "target": 1,
+            "done": false
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 2000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 3500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 5000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 15500,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 5,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 17000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 19500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 21000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 45500,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 50875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 52375,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 5,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 53875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 6,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 55375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 56875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 58375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 66875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 69500,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 71000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 6
+            }
+          },
+          {
+            "atMs": 78875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 80375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 81875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 85875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 91625,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 6
+            }
+          },
+          {
+            "atMs": 93875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "lesson-08",
+      "title": "桥头堡争夺",
+      "objective": "夺取中央要塞，控制期间送达 8 名援军，并连续守住 12 秒。",
+      "graph": {
+        "towers": 13,
+        "edges": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            7
+          ],
+          [
+            0,
+            8
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            9
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            9
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            3,
+            10
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            11
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            6,
+            11
+          ],
+          [
+            7,
+            8
+          ],
+          [
+            8,
+            12
+          ],
+          [
+            9,
+            12
+          ],
+          [
+            10,
+            12
+          ],
+          [
+            11,
+            12
+          ]
+        ],
+        "terrain": "river"
+      },
+      "ai": {
+        "intervalMs": 1600,
+        "startsAfterMs": 2000
+      },
+      "success": {
+        "durationMs": 24250,
+        "completed": true,
+        "failed": false,
+        "reason": "training-complete",
+        "winnerKeys": [
+          "p0"
+        ],
+        "heldTowers": 3,
+        "playerCommands": 3,
+        "aiCommands": 4,
+        "progress": [
+          {
+            "id": "capture",
+            "label": "夺取要塞",
+            "current": 1,
+            "target": 1,
+            "done": true
+          },
+          {
+            "id": "reinforcedCore",
+            "label": "控制期间送达援军",
+            "current": 8,
+            "target": 8,
+            "done": true
+          },
+          {
+            "id": "heldSeconds",
+            "label": "连续控制要塞",
+            "current": 12,
+            "target": 12,
+            "done": true
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 0,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 8
+            }
+          },
+          {
+            "atMs": 500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 2000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 3000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 16375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 18000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 19625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 5
+            }
+          }
+        ]
+      },
+      "idle": {
+        "durationMs": 97250,
+        "completed": false,
+        "failed": true,
+        "reason": "training-failed",
+        "winnerKeys": [
+          "p1"
+        ],
+        "heldTowers": 0,
+        "playerCommands": 0,
+        "aiCommands": 45,
+        "progress": [
+          {
+            "id": "capture",
+            "label": "夺取要塞",
+            "current": 0,
+            "target": 1,
+            "done": false
+          },
+          {
+            "id": "reinforcedCore",
+            "label": "控制期间送达援军",
+            "current": 0,
+            "target": 8,
+            "done": false
+          },
+          {
+            "id": "heldSeconds",
+            "label": "连续控制要塞",
+            "current": 0,
+            "target": 12,
+            "done": false
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 2000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 16375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 18000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 19625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 23250,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 24875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 26500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 28125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 33375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 35000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 36625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 38250,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 39875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 41500,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 2,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 43125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 44750,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 5,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 46375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 48000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 10,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 49625,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 51250,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 12,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 52875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 54500,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 5
+            }
+          },
+          {
+            "atMs": 56125,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 11
+            }
+          },
+          {
+            "atMs": 57750,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 59375,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 12,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 61000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 62625,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 64250,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 5
+            }
+          },
+          {
+            "atMs": 65875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 6
+            }
+          },
+          {
+            "atMs": 67500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 69125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 70750,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 72375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 74000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 6
+            }
+          },
+          {
+            "atMs": 75625,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 77250,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 11,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 78875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 7,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 80500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 82125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 83750,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 87375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 7
+            }
+          },
+          {
+            "atMs": 90375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 7,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 92250,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 94625,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 11
+            }
+          },
+          {
+            "atMs": 96375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 8
+            }
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "lesson-09",
+      "title": "侧翼反攻",
+      "objective": "占领侧翼中继站，再夺回出生塔；保住预备兵营并连续控制出生塔 10 秒。",
+      "graph": {
+        "towers": 13,
+        "edges": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            7
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            8
+          ],
+          [
+            1,
+            9
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            9
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            3,
+            10
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            11
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            6,
+            11
+          ],
+          [
+            7,
+            8
+          ],
+          [
+            9,
+            10
+          ],
+          [
+            9,
+            12
+          ],
+          [
+            10,
+            11
+          ],
+          [
+            10,
+            12
+          ],
+          [
+            11,
+            12
+          ]
+        ],
+        "terrain": "broken-road"
+      },
+      "ai": {
+        "intervalMs": 1400,
+        "startsAfterMs": 1000
+      },
+      "success": {
+        "durationMs": 53375,
+        "completed": true,
+        "failed": false,
+        "reason": "training-complete",
+        "winnerKeys": [
+          "p0"
+        ],
+        "heldTowers": 3,
+        "playerCommands": 5,
+        "aiCommands": 15,
+        "progress": [
+          {
+            "id": "bridgeCaptured",
+            "label": "占领侧翼中继站",
+            "current": 1,
+            "target": 1,
+            "done": true
+          },
+          {
+            "id": "recaptured",
+            "label": "夺回出生塔",
+            "current": 1,
+            "target": 1,
+            "done": true
+          },
+          {
+            "id": "homeHeldSeconds",
+            "label": "控制出生塔",
+            "current": 10,
+            "target": 10,
+            "done": true
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 0,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 8
+            }
+          },
+          {
+            "atMs": 1500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 4000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 9250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 15375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 16875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 18250,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 18375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 28750,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 32375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 33875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 35375,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 36875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 38375,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 39875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 46125,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 47625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 49125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 50625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 52125,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 2,
+              "to": 9
+            }
+          }
+        ]
+      },
+      "idle": {
+        "durationMs": 124250,
+        "completed": false,
+        "failed": true,
+        "reason": "training-failed",
+        "winnerKeys": [
+          "p1"
+        ],
+        "heldTowers": 0,
+        "playerCommands": 0,
+        "aiCommands": 61,
+        "progress": [
+          {
+            "id": "bridgeCaptured",
+            "label": "占领侧翼中继站",
+            "current": 0,
+            "target": 1,
+            "done": false
+          },
+          {
+            "id": "recaptured",
+            "label": "夺回出生塔",
+            "current": 0,
+            "target": 1,
+            "done": false
+          },
+          {
+            "id": "homeHeldSeconds",
+            "label": "控制出生塔",
+            "current": 0,
+            "target": 10,
+            "done": false
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 1500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 14375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 15875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 17375,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 18875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 20375,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 21875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 26375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 27875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 29375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 30875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 32375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 33875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 7,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 35375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 36875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 38375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 39875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 41375,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 42875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 44375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 45875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 47375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 48875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 50375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 51875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 7,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 53375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 54875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 9,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 56375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 57875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 7
+            }
+          },
+          {
+            "atMs": 59375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 9
+            }
+          },
+          {
+            "atMs": 60875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 62375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 63875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 2,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 65375,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 3,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 66875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 5,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 68375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 11
+            }
+          },
+          {
+            "atMs": 69875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 7
+            }
+          },
+          {
+            "atMs": 71375,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 6,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 72875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 9,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 74375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 75875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 10,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 77375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 78875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 6
+            }
+          },
+          {
+            "atMs": 80375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 9
+            }
+          },
+          {
+            "atMs": 81875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 5
+            }
+          },
+          {
+            "atMs": 83375,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 11,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 84875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 86375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 87875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 89375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 90875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 92375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 93875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 95375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 96875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 98375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 6
+            }
+          },
+          {
+            "atMs": 99875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 101375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 102875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 104375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 7,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 106875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "lesson-10",
+      "title": "三方合围抵消",
+      "objective": "观察中央 5／4／2 兵同刻交战，再亲自占领标记的中立塔。",
+      "graph": {
+        "towers": 13,
+        "edges": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            8
+          ],
+          [
+            0,
+            9
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            9
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            10
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            3,
+            10
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            11
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            6,
+            11
+          ],
+          [
+            7,
+            8
+          ],
+          [
+            7,
+            11
+          ],
+          [
+            8,
+            9
+          ],
+          [
+            9,
+            10
+          ],
+          [
+            9,
+            11
+          ],
+          [
+            9,
+            12
+          ],
+          [
+            10,
+            11
+          ],
+          [
+            10,
+            12
+          ],
+          [
+            11,
+            12
+          ]
+        ],
+        "terrain": null
+      },
+      "ai": {
+        "intervalMs": 4000,
+        "startsAfterMs": 15000
+      },
+      "success": {
+        "durationMs": 14000,
+        "completed": true,
+        "failed": false,
+        "reason": "training-complete",
+        "winnerKeys": [
+          "p0"
+        ],
+        "heldTowers": 3,
+        "playerCommands": 1,
+        "aiCommands": 0,
+        "progress": [
+          {
+            "id": "coalition",
+            "label": "观察三方抵消",
+            "current": 1,
+            "target": 1,
+            "done": true
+          },
+          {
+            "id": "capture",
+            "label": "亲自占领目标塔",
+            "current": 1,
+            "target": 1,
+            "done": true
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 0,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          }
+        ]
+      },
+      "idle": {
+        "durationMs": 152125,
+        "completed": false,
+        "failed": true,
+        "reason": "training-failed",
+        "winnerKeys": [
+          "p1",
+          "p2"
+        ],
+        "heldTowers": 0,
+        "playerCommands": 0,
+        "aiCommands": 70,
+        "progress": [
+          {
+            "id": "coalition",
+            "label": "观察三方抵消",
+            "current": 1,
+            "target": 1,
+            "done": true
+          },
+          {
+            "id": "capture",
+            "label": "亲自占领目标塔",
+            "current": 0,
+            "target": 1,
+            "done": false
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 15000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 15000,
+            "player": "p2",
+            "action": {
+              "type": "upgrade",
+              "towerId": 6
+            }
+          },
+          {
+            "atMs": 19000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 19000,
+            "player": "p2",
+            "action": {
+              "type": "upgrade",
+              "towerId": 11
+            }
+          },
+          {
+            "atMs": 23000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 23000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 27000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 27000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 31000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 31000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 35000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 35000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 39000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 39000,
+            "player": "p2",
+            "action": {
+              "type": "unlink",
+              "from": 6,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 43000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 43000,
+            "player": "p2",
+            "action": {
+              "type": "upgrade",
+              "towerId": 6
+            }
+          },
+          {
+            "atMs": 47000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 47000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 51000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 51000,
+            "player": "p2",
+            "action": {
+              "type": "unlink",
+              "from": 11,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 55000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 10,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 55000,
+            "player": "p2",
+            "action": {
+              "type": "upgrade",
+              "towerId": 5
+            }
+          },
+          {
+            "atMs": 59000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 59000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 7,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 63000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 63000,
+            "player": "p2",
+            "action": {
+              "type": "unlink",
+              "from": 11,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 67000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 67000,
+            "player": "p2",
+            "action": {
+              "type": "upgrade",
+              "towerId": 7
+            }
+          },
+          {
+            "atMs": 71000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 71000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 75000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 75000,
+            "player": "p2",
+            "action": {
+              "type": "upgrade",
+              "towerId": 7
+            }
+          },
+          {
+            "atMs": 79000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 79000,
+            "player": "p2",
+            "action": {
+              "type": "unlink",
+              "from": 6,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 83000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 83000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 87000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 87000,
+            "player": "p2",
+            "action": {
+              "type": "upgrade",
+              "towerId": 8
+            }
+          },
+          {
+            "atMs": 91000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 91000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 95000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 2,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 95000,
+            "player": "p2",
+            "action": {
+              "type": "upgrade",
+              "towerId": 8
+            }
+          },
+          {
+            "atMs": 99000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 99000,
+            "player": "p2",
+            "action": {
+              "type": "unlink",
+              "from": 11,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 103000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 3,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 103000,
+            "player": "p2",
+            "action": {
+              "type": "unlink",
+              "from": 12,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 107000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 107000,
+            "player": "p2",
+            "action": {
+              "type": "upgrade",
+              "towerId": 11
+            }
+          },
+          {
+            "atMs": 111000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 111000,
+            "player": "p2",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 115000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 115000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 119000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 119000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 123000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 123000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 127000,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 127000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 131000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 131000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 7,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 135000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 135000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 139000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 139000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 143000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 143000,
+            "player": "p2",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 147000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 147000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 151000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 151000,
+            "player": "p2",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 9
+            }
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "lesson-11",
+      "title": "限时建立防线",
+      "objective": "亲自夺取 3 座不同的塔；45 秒结束时保住两处补给基地，并控制至少 5 塔。",
+      "graph": {
+        "towers": 13,
+        "edges": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            7
+          ],
+          [
+            0,
+            8
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            9
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            9
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            3,
+            10
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            11
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            6,
+            11
+          ],
+          [
+            7,
+            8
+          ],
+          [
+            8,
+            12
+          ],
+          [
+            9,
+            12
+          ],
+          [
+            10,
+            12
+          ],
+          [
+            11,
+            12
+          ]
+        ],
+        "terrain": "river"
+      },
+      "ai": {
+        "intervalMs": 1400,
+        "startsAfterMs": 1000
+      },
+      "success": {
+        "durationMs": 45000,
+        "completed": true,
+        "failed": false,
+        "reason": "deadline",
+        "winnerKeys": [
+          "p0"
+        ],
+        "heldTowers": 5,
+        "playerCommands": 24,
+        "aiCommands": 19,
+        "progress": [
+          {
+            "id": "distinctCaptures",
+            "label": "亲自夺取不同塔",
+            "current": 3,
+            "target": 3,
+            "done": true
+          },
+          {
+            "id": "timeUp",
+            "label": "到时判定",
+            "current": 1,
+            "target": 1,
+            "done": true
+          },
+          {
+            "id": "heldBases",
+            "label": "到时保住补给基地",
+            "current": 2,
+            "target": 2,
+            "done": true
+          },
+          {
+            "id": "heldTowers",
+            "label": "到时控制塔数",
+            "current": 5,
+            "target": 5,
+            "done": true
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 0,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 0
+            }
+          },
+          {
+            "atMs": 500,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 8
+            }
+          },
+          {
+            "atMs": 1000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 1500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 1500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 3000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 4500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 11500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 12000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 12500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 13000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 13500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 7,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 14000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 15250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 15625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 15750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 17125,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 10,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 18625,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 20125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 21625,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 22500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 23000,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 23125,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 23500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 24000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 24500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 24625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 25000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 25500,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 26000,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 26125,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 11,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 26500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 27000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 27500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 27625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 28500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 29125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 30625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 32125,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 12,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 33625,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 35125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 36625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 38125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 12
+            }
+          }
+        ]
+      },
+      "idle": {
+        "durationMs": 45000,
+        "completed": false,
+        "failed": true,
+        "reason": "deadline",
+        "winnerKeys": [
+          "p1"
+        ],
+        "heldTowers": 2,
+        "playerCommands": 0,
+        "aiCommands": 23,
+        "progress": [
+          {
+            "id": "distinctCaptures",
+            "label": "亲自夺取不同塔",
+            "current": 0,
+            "target": 3,
+            "done": false
+          },
+          {
+            "id": "timeUp",
+            "label": "到时判定",
+            "current": 1,
+            "target": 1,
+            "done": true
+          },
+          {
+            "id": "heldBases",
+            "label": "到时保住补给基地",
+            "current": 2,
+            "target": 2,
+            "done": true
+          },
+          {
+            "id": "heldTowers",
+            "label": "到时控制塔数",
+            "current": 2,
+            "target": 5,
+            "done": false
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 1500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 3000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 4500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 15625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 17125,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 10,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 18625,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 20125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 21625,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 23125,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 24625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 26125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 27625,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 11,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 29125,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 11
+            }
+          },
+          {
+            "atMs": 30625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 32125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 33625,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 35125,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 9,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 36625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 38125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 39625,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 9
+            }
+          },
+          {
+            "atMs": 41125,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 11,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 42625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 44125,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 5
+            }
+          }
+        ]
+      }
+    },
+    {
+      "lessonId": "lesson-12",
+      "title": "完整对局考核",
+      "objective": "按照正式的 180 秒规则，击败公开标记的 AI 对手。",
+      "graph": {
+        "towers": 13,
+        "edges": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            7
+          ],
+          [
+            0,
+            8
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            9
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            2,
+            9
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            3,
+            10
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            11
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            6,
+            11
+          ],
+          [
+            7,
+            8
+          ],
+          [
+            8,
+            9
+          ],
+          [
+            8,
+            11
+          ],
+          [
+            8,
+            12
+          ],
+          [
+            9,
+            10
+          ],
+          [
+            9,
+            12
+          ],
+          [
+            10,
+            11
+          ],
+          [
+            10,
+            12
+          ],
+          [
+            11,
+            12
+          ]
+        ],
+        "terrain": null
+      },
+      "ai": {
+        "intervalMs": 1200,
+        "startsAfterMs": 0
+      },
+      "success": {
+        "durationMs": 130375,
+        "completed": true,
+        "failed": false,
+        "reason": "conquest",
+        "winnerKeys": [
+          "p0"
+        ],
+        "heldTowers": 13,
+        "playerCommands": 144,
+        "aiCommands": 16,
+        "progress": [
+          {
+            "id": "won",
+            "label": "正式规则获胜",
+            "current": 1,
+            "target": 1,
+            "done": true
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 0,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 0
+            }
+          },
+          {
+            "atMs": 500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 1250,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 11500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 12000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 12500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 15375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 16625,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 17875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 21500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 22000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 22500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 7,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 25250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 7,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 25750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 7,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 29250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 7,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 29750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 7,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 30250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 31250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 31375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 31750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 32250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 32625,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 32750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 33875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 36500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 37000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 44500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 45000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 45500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 46000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 46125,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 46500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 47250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 47375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 47750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 48250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 48750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 49125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 51250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 51750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 9,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 52250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 52750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 53250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 53750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 54250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 54750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 55250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 55750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 56250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 56750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 57250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 57750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 58250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 58750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 59250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 59750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 60250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 60750,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 0
+            }
+          },
+          {
+            "atMs": 61250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 61750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 62250,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 8
+            }
+          },
+          {
+            "atMs": 62750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 63250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 63750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 64250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 64750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 67250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 11,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 67750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 68250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 69250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 9,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 69750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 70250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 11,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 70750,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 71250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 71750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 72250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 72750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 73250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 73750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 74250,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 9
+            }
+          },
+          {
+            "atMs": 74750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 75250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 75750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 76250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 76750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 77250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 79375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 3
+            }
+          },
+          {
+            "atMs": 80625,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 81250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 81750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 82250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 82750,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 8
+            }
+          },
+          {
+            "atMs": 83250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 83625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 83750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 84250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 84750,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 1
+            }
+          },
+          {
+            "atMs": 85250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 85750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 86250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 11,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 86750,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 7
+            }
+          },
+          {
+            "atMs": 87250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 87750,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 9
+            }
+          },
+          {
+            "atMs": 88250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 88750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 89250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 89750,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 6
+            }
+          },
+          {
+            "atMs": 90250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 90250,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 90750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 91250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 91500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 91750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 95000,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 0,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 95500,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 11
+            }
+          },
+          {
+            "atMs": 96000,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 12,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 96500,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 97000,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 9,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 97500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 0,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 98000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 98500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 100375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 100500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 101000,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 12,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 101500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 102000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 102500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 9,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 103000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 103500,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 11
+            }
+          },
+          {
+            "atMs": 104000,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 104500,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          },
+          {
+            "atMs": 105000,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 9,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 105500,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 106000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 106500,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 5
+            }
+          },
+          {
+            "atMs": 107000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 107500,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 6
+            }
+          },
+          {
+            "atMs": 109500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 9,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 110000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 114250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 114750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 115250,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 115750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 116250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 11,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 116750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 117250,
+            "player": "p0",
+            "action": {
+              "type": "upgrade",
+              "towerId": 5
+            }
+          },
+          {
+            "atMs": 117750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 122500,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 11,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 123000,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 124250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 124750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 126250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 6,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 126750,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 7,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 127250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 10,
+              "to": 4
+            }
+          },
+          {
+            "atMs": 127750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 128250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 8,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 128750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 129250,
+            "player": "p0",
+            "action": {
+              "type": "unlink",
+              "from": 9,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 129750,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 7,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 130250,
+            "player": "p0",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 11
+            }
+          }
+        ]
+      },
+      "idle": {
+        "durationMs": 103125,
+        "completed": false,
+        "failed": true,
+        "reason": "training-failed",
+        "winnerKeys": [
+          "p1"
+        ],
+        "heldTowers": 0,
+        "playerCommands": 0,
+        "aiCommands": 51,
+        "progress": [
+          {
+            "id": "won",
+            "label": "正式规则获胜",
+            "current": 0,
+            "target": 1,
+            "done": false
+          }
+        ],
+        "trace": [
+          {
+            "atMs": 1250,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 15375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 16625,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 3
+            }
+          },
+          {
+            "atMs": 17875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 31375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 32625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 33875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 35125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 36375,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 37625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 44250,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 4
+            }
+          },
+          {
+            "atMs": 45500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 47250,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 4,
+              "to": 5
+            }
+          },
+          {
+            "atMs": 48500,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 49750,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 51000,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 2,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 52250,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 53500,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 54750,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 60250,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 61500,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 1,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 62750,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 64000,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 1,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 65375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 7,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 66625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 11
+            }
+          },
+          {
+            "atMs": 67875,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 6,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 69125,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 5
+            }
+          },
+          {
+            "atMs": 70375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 11,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 71625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 12,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 72875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 10
+            }
+          },
+          {
+            "atMs": 74125,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 9,
+              "to": 12
+            }
+          },
+          {
+            "atMs": 75375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 76625,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 2,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 77875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 9
+            }
+          },
+          {
+            "atMs": 79125,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 3,
+              "to": 10
+            }
+          },
+          {
+            "atMs": 80375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 6
+            }
+          },
+          {
+            "atMs": 81625,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 11
+            }
+          },
+          {
+            "atMs": 82875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 8
+            }
+          },
+          {
+            "atMs": 84125,
+            "player": "p1",
+            "action": {
+              "type": "unlink",
+              "from": 7,
+              "to": 8
+            }
+          },
+          {
+            "atMs": 85375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 7,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 86625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 2,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 87875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 8,
+              "to": 0
+            }
+          },
+          {
+            "atMs": 89125,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 8
+            }
+          },
+          {
+            "atMs": 90375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 11
+            }
+          },
+          {
+            "atMs": 91625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 3,
+              "to": 2
+            }
+          },
+          {
+            "atMs": 92875,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 5
+            }
+          },
+          {
+            "atMs": 94125,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 6,
+              "to": 7
+            }
+          },
+          {
+            "atMs": 95375,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 5,
+              "to": 6
+            }
+          },
+          {
+            "atMs": 96625,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 9,
+              "to": 1
+            }
+          },
+          {
+            "atMs": 97875,
+            "player": "p1",
+            "action": {
+              "type": "link",
+              "from": 10,
+              "to": 9
+            }
+          },
+          {
+            "atMs": 100375,
+            "player": "p1",
+            "action": {
+              "type": "upgrade",
+              "towerId": 2
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

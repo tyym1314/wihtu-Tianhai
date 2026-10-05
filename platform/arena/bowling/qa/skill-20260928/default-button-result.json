@@ -1,0 +1,203 @@
+{
+  "input": {
+    "type": "roll",
+    "offset": 0,
+    "angle": 0,
+    "power": 0.78,
+    "spin": 0
+  },
+  "pins": 8,
+  "gutter": false,
+  "preview": null,
+  "events": [
+    {
+      "type": "hit",
+      "t": 1500,
+      "pinId": 1
+    },
+    {
+      "type": "hit",
+      "t": 1600,
+      "pinId": 2
+    },
+    {
+      "type": "pin_hit",
+      "t": 1717,
+      "pinId": 3
+    },
+    {
+      "type": "pin_hit",
+      "t": 1833,
+      "pinId": 3
+    },
+    {
+      "type": "pin_hit",
+      "t": 1967,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 2067,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 2167,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 2267,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 2367,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 2467,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 2633,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 2767,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 2867,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 2967,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 3067,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 3217,
+      "pinId": 6
+    },
+    {
+      "type": "pin_hit",
+      "t": 3417,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 3533,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 3717,
+      "pinId": 6
+    },
+    {
+      "type": "pin_hit",
+      "t": 3817,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 3917,
+      "pinId": 6
+    },
+    {
+      "type": "pin_hit",
+      "t": 4083,
+      "pinId": 6
+    },
+    {
+      "type": "pin_hit",
+      "t": 4233,
+      "pinId": 6
+    },
+    {
+      "type": "pin_hit",
+      "t": 4350,
+      "pinId": 6
+    },
+    {
+      "type": "pin_hit",
+      "t": 4450,
+      "pinId": 6
+    },
+    {
+      "type": "pin_hit",
+      "t": 4567,
+      "pinId": 6
+    },
+    {
+      "type": "pin_hit",
+      "t": 4683,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 4817,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 4917,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 5017,
+      "pinId": 6
+    },
+    {
+      "type": "pin_hit",
+      "t": 5183,
+      "pinId": 6
+    },
+    {
+      "type": "pin_hit",
+      "t": 5333,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 5467,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 5567,
+      "pinId": 1
+    },
+    {
+      "type": "pin_hit",
+      "t": 5733,
+      "pinId": 1
+    },
+    {
+      "type": "settled",
+      "t": 6117,
+      "down": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        9,
+        10
+      ]
+    }
+  ]
+}

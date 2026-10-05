@@ -1,0 +1,315 @@
+{
+  "time": "2026-09-19T16:26:20.999Z",
+  "runtime": "Chromium desktop mobile viewport emulation; actual pointer events + actual engine; isolated loopback HTTP esbuild harness with static image URL bundling",
+  "network": "No production server, coins, partner wallet or physical device involved",
+  "results": [
+    {
+      "game": "darts",
+      "width": 390,
+      "gestureSamples": 8,
+      "durationMs": 509,
+      "serverHit": "BULL",
+      "remaining": 251,
+      "impactVisible": true,
+      "horizontalOverflow": false,
+      "secondPointerHit": "T20",
+      "tripleLabelCorrect": true,
+      "flightAnimationObserved": true,
+      "flightMs": 650,
+      "flightEndpointMatchesAuthority": true,
+      "decodedAssets": [
+        "/assets/night-room-ISVUCQJH.png",
+        "/arena/assets/restoration/player-portraits-v2.webp"
+      ]
+    },
+    {
+      "game": "domino",
+      "width": 390,
+      "players": 2,
+      "action": {
+        "tileId": "d_4_5",
+        "end": "left"
+      },
+      "handBefore": 7,
+      "handAfter": 6,
+      "chainAfter": 2,
+      "horizontalOverflow": false,
+      "placementAnimationRunning": true,
+      "handToChainFlightObserved": true,
+      "peerEventViaView": "play",
+      "peerEventId": 3,
+      "decodedAssets": [
+        "/assets/palace-ABKCYDEJ.webp",
+        "/assets/players-atlas-X3YP7OLI.webp",
+        "/assets/board-material-DHXFVVVN.webp"
+      ]
+    },
+    {
+      "game": "domino",
+      "width": 390,
+      "players": 4,
+      "action": {
+        "tileId": "d_4_6",
+        "end": "left"
+      },
+      "handBefore": 7,
+      "handAfter": 6,
+      "chainAfter": 2,
+      "horizontalOverflow": false,
+      "placementAnimationRunning": true,
+      "handToChainFlightObserved": true,
+      "peerEventViaView": "play",
+      "peerEventId": 3,
+      "decodedAssets": [
+        "/assets/palace-ABKCYDEJ.webp",
+        "/assets/players-atlas-X3YP7OLI.webp",
+        "/assets/board-material-DHXFVVVN.webp"
+      ]
+    },
+    {
+      "game": "domino",
+      "width": 390,
+      "drawStopsAtFirstPlayable": true,
+      "drawn": 2,
+      "remainingStock": 1,
+      "longChainUnique": 28,
+      "longChainAllLinksMatch": true
+    },
+    {
+      "game": "darts",
+      "width": 360,
+      "gestureSamples": 8,
+      "durationMs": 496,
+      "serverHit": "BULL",
+      "remaining": 251,
+      "impactVisible": true,
+      "horizontalOverflow": false,
+      "secondPointerHit": "T20",
+      "tripleLabelCorrect": true,
+      "flightAnimationObserved": true,
+      "flightMs": 650,
+      "flightEndpointMatchesAuthority": true,
+      "decodedAssets": [
+        "/assets/night-room-ISVUCQJH.png",
+        "/arena/assets/restoration/player-portraits-v2.webp"
+      ]
+    },
+    {
+      "game": "domino",
+      "width": 360,
+      "players": 2,
+      "action": {
+        "tileId": "d_4_5",
+        "end": "left"
+      },
+      "handBefore": 7,
+      "handAfter": 6,
+      "chainAfter": 2,
+      "horizontalOverflow": false,
+      "placementAnimationRunning": true,
+      "handToChainFlightObserved": true,
+      "peerEventViaView": "play",
+      "peerEventId": 3,
+      "decodedAssets": [
+        "/assets/palace-ABKCYDEJ.webp",
+        "/assets/players-atlas-X3YP7OLI.webp",
+        "/assets/board-material-DHXFVVVN.webp"
+      ]
+    },
+    {
+      "game": "domino",
+      "width": 360,
+      "players": 4,
+      "action": {
+        "tileId": "d_4_6",
+        "end": "left"
+      },
+      "handBefore": 7,
+      "handAfter": 6,
+      "chainAfter": 2,
+      "horizontalOverflow": false,
+      "placementAnimationRunning": true,
+      "handToChainFlightObserved": true,
+      "peerEventViaView": "play",
+      "peerEventId": 3,
+      "decodedAssets": [
+        "/assets/palace-ABKCYDEJ.webp",
+        "/assets/players-atlas-X3YP7OLI.webp",
+        "/assets/board-material-DHXFVVVN.webp"
+      ]
+    },
+    {
+      "game": "domino",
+      "width": 360,
+      "drawStopsAtFirstPlayable": true,
+      "drawn": 2,
+      "remainingStock": 1,
+      "longChainUnique": 28,
+      "longChainAllLinksMatch": true
+    }
+  ],
+  "errors": [],
+  "failedRequests": [],
+  "assetResponses": [
+    {
+      "path": "/assets/metal-dart-PZ7WFMRS.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/board-material-JPG5TWZH.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/night-room-ISVUCQJH.png",
+      "status": 200,
+      "mime": "image/png"
+    },
+    {
+      "path": "/arena/assets/restoration/player-portraits-v2.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/ivory-tile-GGZZQT2J.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/palace-ABKCYDEJ.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/players-atlas-X3YP7OLI.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/board-material-DHXFVVVN.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/ivory-tile-GGZZQT2J.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/palace-ABKCYDEJ.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/players-atlas-X3YP7OLI.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/board-material-DHXFVVVN.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/ivory-tile-GGZZQT2J.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/players-atlas-X3YP7OLI.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/palace-ABKCYDEJ.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/board-material-DHXFVVVN.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/metal-dart-PZ7WFMRS.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/board-material-JPG5TWZH.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/night-room-ISVUCQJH.png",
+      "status": 200,
+      "mime": "image/png"
+    },
+    {
+      "path": "/arena/assets/restoration/player-portraits-v2.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/ivory-tile-GGZZQT2J.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/palace-ABKCYDEJ.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/players-atlas-X3YP7OLI.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/board-material-DHXFVVVN.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/ivory-tile-GGZZQT2J.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/palace-ABKCYDEJ.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/players-atlas-X3YP7OLI.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/board-material-DHXFVVVN.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/ivory-tile-GGZZQT2J.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/palace-ABKCYDEJ.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/players-atlas-X3YP7OLI.webp",
+      "status": 200,
+      "mime": "image/webp"
+    },
+    {
+      "path": "/assets/board-material-DHXFVVVN.webp",
+      "status": 200,
+      "mime": "image/webp"
+    }
+  ]
+}

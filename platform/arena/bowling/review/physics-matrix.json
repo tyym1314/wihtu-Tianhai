@@ -1,0 +1,1499 @@
+{
+  "at": "2026-09-28T10:08:50.644Z",
+  "ruleVersion": "pvp-bowling-v1.1.0",
+  "physicsVersion": "bowling-rigid-v1.1.0",
+  "runtime": "Node v22.22.3 darwin/arm64; local sequential authority simulation, not mobile device",
+  "cases": 106,
+  "faults": 0,
+  "maxComputeMs": 143.71,
+  "p95ComputeMs": 92.59,
+  "medianComputeMs": 35.8,
+  "maxViewBytes": 60630,
+  "maxDurationMs": 11483,
+  "rows": [
+    {
+      "group": "boundary",
+      "action": {
+        "offset": -0.85,
+        "angle": -0.2,
+        "power": 0.25,
+        "spin": -1
+      },
+      "fault": false,
+      "durationMs": 2717,
+      "computeMs": 23.29,
+      "viewBytes": 7330,
+      "down": 0
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": -0.85,
+        "angle": -0.2,
+        "power": 0.25,
+        "spin": 1
+      },
+      "fault": false,
+      "durationMs": 2717,
+      "computeMs": 13.51,
+      "viewBytes": 7338,
+      "down": 0
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": -0.85,
+        "angle": -0.2,
+        "power": 1,
+        "spin": -1
+      },
+      "fault": false,
+      "durationMs": 2033,
+      "computeMs": 6.16,
+      "viewBytes": 6267,
+      "down": 0
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": -0.85,
+        "angle": -0.2,
+        "power": 1,
+        "spin": 1
+      },
+      "fault": false,
+      "durationMs": 2033,
+      "computeMs": 4.7,
+      "viewBytes": 6254,
+      "down": 0
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": -0.85,
+        "angle": 0.2,
+        "power": 0.25,
+        "spin": -1
+      },
+      "fault": false,
+      "durationMs": 5633,
+      "computeMs": 20.68,
+      "viewBytes": 18323,
+      "down": 2
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": -0.85,
+        "angle": 0.2,
+        "power": 0.25,
+        "spin": 1
+      },
+      "fault": false,
+      "durationMs": 2717,
+      "computeMs": 5.74,
+      "viewBytes": 7302,
+      "down": 0
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": -0.85,
+        "angle": 0.2,
+        "power": 1,
+        "spin": -1
+      },
+      "fault": false,
+      "durationMs": 3800,
+      "computeMs": 6.61,
+      "viewBytes": 12003,
+      "down": 2
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": -0.85,
+        "angle": 0.2,
+        "power": 1,
+        "spin": 1
+      },
+      "fault": false,
+      "durationMs": 3133,
+      "computeMs": 4.8,
+      "viewBytes": 9309,
+      "down": 1
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": 0.85,
+        "angle": -0.2,
+        "power": 0.25,
+        "spin": -1
+      },
+      "fault": false,
+      "durationMs": 2717,
+      "computeMs": 3.19,
+      "viewBytes": 7318,
+      "down": 0
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": 0.85,
+        "angle": -0.2,
+        "power": 0.25,
+        "spin": 1
+      },
+      "fault": false,
+      "durationMs": 4400,
+      "computeMs": 6.39,
+      "viewBytes": 16111,
+      "down": 3
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": 0.85,
+        "angle": -0.2,
+        "power": 1,
+        "spin": -1
+      },
+      "fault": false,
+      "durationMs": 3117,
+      "computeMs": 3.81,
+      "viewBytes": 9437,
+      "down": 1
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": 0.85,
+        "angle": -0.2,
+        "power": 1,
+        "spin": 1
+      },
+      "fault": false,
+      "durationMs": 4400,
+      "computeMs": 5.03,
+      "viewBytes": 14538,
+      "down": 2
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": 0.85,
+        "angle": 0.2,
+        "power": 0.25,
+        "spin": -1
+      },
+      "fault": false,
+      "durationMs": 2717,
+      "computeMs": 3.98,
+      "viewBytes": 7266,
+      "down": 0
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": 0.85,
+        "angle": 0.2,
+        "power": 0.25,
+        "spin": 1
+      },
+      "fault": false,
+      "durationMs": 2717,
+      "computeMs": 2.85,
+      "viewBytes": 7276,
+      "down": 0
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": 0.85,
+        "angle": 0.2,
+        "power": 1,
+        "spin": -1
+      },
+      "fault": false,
+      "durationMs": 2033,
+      "computeMs": 3.34,
+      "viewBytes": 6218,
+      "down": 0
+    },
+    {
+      "group": "boundary",
+      "action": {
+        "offset": 0.85,
+        "angle": 0.2,
+        "power": 1,
+        "spin": 1
+      },
+      "fault": false,
+      "durationMs": 2033,
+      "computeMs": 3.18,
+      "viewBytes": 6241,
+      "down": 0
+    },
+    {
+      "group": "center",
+      "action": {
+        "offset": 0,
+        "angle": 0,
+        "power": 0.25,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 8900,
+      "computeMs": 98.42,
+      "viewBytes": 53129,
+      "down": 7
+    },
+    {
+      "group": "center",
+      "action": {
+        "offset": 0,
+        "angle": 0,
+        "power": 0.5,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 7067,
+      "computeMs": 63.01,
+      "viewBytes": 38650,
+      "down": 7
+    },
+    {
+      "group": "center",
+      "action": {
+        "offset": 0,
+        "angle": 0,
+        "power": 0.78,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 6117,
+      "computeMs": 48.68,
+      "viewBytes": 39377,
+      "down": 8
+    },
+    {
+      "group": "center",
+      "action": {
+        "offset": 0,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 5417,
+      "computeMs": 30.22,
+      "viewBytes": 31124,
+      "down": 8
+    },
+    {
+      "group": "center",
+      "action": {
+        "offset": 0,
+        "angle": 0,
+        "power": 0.8166666666666667,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 6350,
+      "computeMs": 24.13,
+      "viewBytes": 36804,
+      "down": 9
+    },
+    {
+      "group": "center",
+      "action": {
+        "offset": 0,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 6850,
+      "computeMs": 89.36,
+      "viewBytes": 45714,
+      "down": 8
+    },
+    {
+      "group": "center-hook",
+      "action": {
+        "offset": 0,
+        "angle": 0,
+        "power": 0.25,
+        "spin": -1
+      },
+      "fault": false,
+      "durationMs": 10633,
+      "computeMs": 114.01,
+      "viewBytes": 55088,
+      "down": 8
+    },
+    {
+      "group": "center-hook",
+      "action": {
+        "offset": 0,
+        "angle": 0,
+        "power": 0.25,
+        "spin": 1
+      },
+      "fault": false,
+      "durationMs": 5733,
+      "computeMs": 75.33,
+      "viewBytes": 33969,
+      "down": 6
+    },
+    {
+      "group": "center-hook",
+      "action": {
+        "offset": 0,
+        "angle": 0,
+        "power": 1,
+        "spin": -1
+      },
+      "fault": false,
+      "durationMs": 4283,
+      "computeMs": 27.89,
+      "viewBytes": 29517,
+      "down": 9
+    },
+    {
+      "group": "center-hook",
+      "action": {
+        "offset": 0,
+        "angle": 0,
+        "power": 1,
+        "spin": 1
+      },
+      "fault": false,
+      "durationMs": 5950,
+      "computeMs": 51.19,
+      "viewBytes": 39370,
+      "down": 10
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": -0.2,
+        "angle": 0,
+        "power": 0.25,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 5633,
+      "computeMs": 20.95,
+      "viewBytes": 28833,
+      "down": 7
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": -0.2,
+        "angle": 0,
+        "power": 0.5,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 9333,
+      "computeMs": 98.58,
+      "viewBytes": 48376,
+      "down": 7
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": -0.2,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 6933,
+      "computeMs": 72.61,
+      "viewBytes": 40405,
+      "down": 8
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": -0.2,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 8200,
+      "computeMs": 57.88,
+      "viewBytes": 51182,
+      "down": 10
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": -0.2,
+        "angle": 0.005000000000000001,
+        "power": 0.25,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 5200,
+      "computeMs": 30.11,
+      "viewBytes": 26630,
+      "down": 5
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": -0.2,
+        "angle": 0.005000000000000001,
+        "power": 0.5,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 5467,
+      "computeMs": 86.16,
+      "viewBytes": 39090,
+      "down": 8
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": -0.2,
+        "angle": 0.005000000000000001,
+        "power": 0.8,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 7150,
+      "computeMs": 37.05,
+      "viewBytes": 39475,
+      "down": 9
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": -0.2,
+        "angle": 0.005000000000000001,
+        "power": 1,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 5133,
+      "computeMs": 27.83,
+      "viewBytes": 29601,
+      "down": 7
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": 0.2,
+        "angle": 0,
+        "power": 0.25,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 5783,
+      "computeMs": 12.14,
+      "viewBytes": 26830,
+      "down": 6
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": 0.2,
+        "angle": 0,
+        "power": 0.5,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 4483,
+      "computeMs": 35.67,
+      "viewBytes": 25849,
+      "down": 7
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": 0.2,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 5150,
+      "computeMs": 47.27,
+      "viewBytes": 35099,
+      "down": 8
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": 0.2,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 4817,
+      "computeMs": 39.44,
+      "viewBytes": 33214,
+      "down": 8
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": 0.2,
+        "angle": -0.005000000000000001,
+        "power": 0.25,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 5533,
+      "computeMs": 35.88,
+      "viewBytes": 27080,
+      "down": 6
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": 0.2,
+        "angle": -0.005000000000000001,
+        "power": 0.5,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 4667,
+      "computeMs": 32.25,
+      "viewBytes": 27188,
+      "down": 8
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": 0.2,
+        "angle": -0.005000000000000001,
+        "power": 0.8,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 4933,
+      "computeMs": 42.85,
+      "viewBytes": 31923,
+      "down": 9
+    },
+    {
+      "group": "pocket",
+      "action": {
+        "offset": 0.2,
+        "angle": -0.005000000000000001,
+        "power": 1,
+        "spin": 0
+      },
+      "fault": false,
+      "durationMs": 4917,
+      "computeMs": 16.62,
+      "viewBytes": 25795,
+      "down": 5
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.6453650055453182,
+        "angle": 0.06413325961296713,
+        "power": 0.5872254044516012,
+        "spin": -0.8842779169790447
+      },
+      "fault": false,
+      "durationMs": 4800,
+      "computeMs": 32.39,
+      "viewBytes": 29073,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.14795533912256362,
+        "angle": -0.005145921430916389,
+        "power": 0.7674913002410904,
+        "spin": -0.643773918505758
+      },
+      "fault": false,
+      "durationMs": 5367,
+      "computeMs": 25.1,
+      "viewBytes": 33736,
+      "down": 9
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.44878284670412544,
+        "angle": -0.05369750630892148,
+        "power": 0.5452250022208318,
+        "spin": 0.5303269592113793
+      },
+      "fault": false,
+      "durationMs": 7750,
+      "computeMs": 86.06,
+      "viewBytes": 49126,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.6200462234206497,
+        "angle": -0.05304921366723387,
+        "power": 0.9172020779224113,
+        "spin": -0.42452058335766196
+      },
+      "fault": false,
+      "durationMs": 6133,
+      "computeMs": 56.6,
+      "viewBytes": 45392,
+      "down": 9
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.42372035328298807,
+        "angle": 0.03323712410022771,
+        "power": 0.7006851172773167,
+        "spin": 0.5250320141203701
+      },
+      "fault": false,
+      "durationMs": 5950,
+      "computeMs": 51.63,
+      "viewBytes": 40079,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.39946422437205914,
+        "angle": 0.015338309526476747,
+        "power": 0.6916115988278762,
+        "spin": -0.40376013284549117
+      },
+      "fault": false,
+      "durationMs": 4683,
+      "computeMs": 50.63,
+      "viewBytes": 29438,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.23594265207648277,
+        "angle": 0.03291253432648123,
+        "power": 0.4494907403131947,
+        "spin": -0.32914453325793147
+      },
+      "fault": false,
+      "durationMs": 4900,
+      "computeMs": 23.85,
+      "viewBytes": 28695,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.540855388250202,
+        "angle": 0.03488579994682888,
+        "power": 0.5176030836300924,
+        "spin": 0.19954762468114495
+      },
+      "fault": false,
+      "durationMs": 5317,
+      "computeMs": 34.02,
+      "viewBytes": 34911,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.3133704135194421,
+        "angle": -0.02603719201853632,
+        "power": 0.5745965641690418,
+        "spin": -0.938601456116885
+      },
+      "fault": false,
+      "durationMs": 4417,
+      "computeMs": 29.36,
+      "viewBytes": 26043,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.5742054420523346,
+        "angle": -0.03684973311793459,
+        "power": 0.7010728145251051,
+        "spin": -0.590270986314863
+      },
+      "fault": false,
+      "durationMs": 9083,
+      "computeMs": 143.71,
+      "viewBytes": 56888,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.22188387103378773,
+        "angle": 0.028187704248786236,
+        "power": 0.3822574525838718,
+        "spin": -0.9644982698373497
+      },
+      "fault": false,
+      "durationMs": 5200,
+      "computeMs": 36.91,
+      "viewBytes": 30973,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.6431977053172887,
+        "angle": -0.043611983155798444,
+        "power": 0.5553481039823964,
+        "spin": 0.2795527414418757
+      },
+      "fault": false,
+      "durationMs": 4850,
+      "computeMs": 21.37,
+      "viewBytes": 24679,
+      "down": 6
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.6494049144908786,
+        "angle": -0.056002866669524726,
+        "power": 0.6976339089451358,
+        "spin": -0.975098981987685
+      },
+      "fault": false,
+      "durationMs": 5867,
+      "computeMs": 56.67,
+      "viewBytes": 35117,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.10455711865797639,
+        "angle": 0.00293216472973914,
+        "power": 0.38898026349488646,
+        "spin": -0.19961385196074843
+      },
+      "fault": false,
+      "durationMs": 5817,
+      "computeMs": 30.59,
+      "viewBytes": 34191,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.1463806375861168,
+        "angle": -0.029921153820884817,
+        "power": 0.7197725450387225,
+        "spin": 0.5268841576762497
+      },
+      "fault": false,
+      "durationMs": 5767,
+      "computeMs": 32.13,
+      "viewBytes": 40295,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.21104980343952776,
+        "angle": -0.005349497876762015,
+        "power": 0.3529125723289326,
+        "spin": 0.9373514563776553
+      },
+      "fault": false,
+      "durationMs": 6200,
+      "computeMs": 45.84,
+      "viewBytes": 28325,
+      "down": 6
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.3867090744897723,
+        "angle": 0.04786076708713413,
+        "power": 0.735961549798958,
+        "spin": -0.7980530927889049
+      },
+      "fault": false,
+      "durationMs": 5283,
+      "computeMs": 58.21,
+      "viewBytes": 34977,
+      "down": 9
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.5538900290615857,
+        "angle": 0.05362657988660171,
+        "power": 0.6470232462743297,
+        "spin": -0.21051797783002257
+      },
+      "fault": false,
+      "durationMs": 4517,
+      "computeMs": 57.91,
+      "viewBytes": 28878,
+      "down": 10
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.022807477787137032,
+        "angle": -0.0008034594381959845,
+        "power": 0.9454611580586061,
+        "spin": 0.09644928248599172
+      },
+      "fault": false,
+      "durationMs": 5067,
+      "computeMs": 28.75,
+      "viewBytes": 30346,
+      "down": 6
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.4641428616829217,
+        "angle": -0.05379313782306522,
+        "power": 0.8360434063943103,
+        "spin": -0.12512141605839133
+      },
+      "fault": false,
+      "durationMs": 5700,
+      "computeMs": 33.7,
+      "viewBytes": 37165,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.48559637870639566,
+        "angle": -0.04786856465690237,
+        "power": 0.8926091192988679,
+        "spin": -0.009728192817419767
+      },
+      "fault": false,
+      "durationMs": 4367,
+      "computeMs": 12.51,
+      "viewBytes": 22129,
+      "down": 6
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.22620875546708705,
+        "angle": 0.0015568090358283378,
+        "power": 0.5248500477755442,
+        "spin": -0.4591344869695604
+      },
+      "fault": false,
+      "durationMs": 7400,
+      "computeMs": 92.03,
+      "viewBytes": 39864,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.23386159017682076,
+        "angle": 0.01474860556440295,
+        "power": 0.25930116639938205,
+        "spin": 0.8694717627950013
+      },
+      "fault": false,
+      "durationMs": 6450,
+      "computeMs": 35.65,
+      "viewBytes": 35138,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.027233508136123418,
+        "angle": 0.017583030407217197,
+        "power": 0.6431340082781389,
+        "spin": 0.4991470635868609
+      },
+      "fault": false,
+      "durationMs": 5583,
+      "computeMs": 30.92,
+      "viewBytes": 34373,
+      "down": 9
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.49520063754171134,
+        "angle": 0.05495285191323741,
+        "power": 0.2668464843882248,
+        "spin": 0.5239394386298954
+      },
+      "fault": false,
+      "durationMs": 6217,
+      "computeMs": 35.59,
+      "viewBytes": 34378,
+      "down": 6
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.4980438920669258,
+        "angle": -0.05577848841619146,
+        "power": 0.8394429372856393,
+        "spin": -0.5140363774262369
+      },
+      "fault": false,
+      "durationMs": 4833,
+      "computeMs": 20.89,
+      "viewBytes": 28073,
+      "down": 6
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.046150350198149684,
+        "angle": 0.011191882791962208,
+        "power": 0.43719817919190973,
+        "spin": 0.2700543818064034
+      },
+      "fault": false,
+      "durationMs": 5717,
+      "computeMs": 92.59,
+      "viewBytes": 34775,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.48230796204879883,
+        "angle": -0.025193804203632424,
+        "power": 0.4845992644550279,
+        "spin": -0.952752040233463
+      },
+      "fault": false,
+      "durationMs": 7483,
+      "computeMs": 34.07,
+      "viewBytes": 37660,
+      "down": 6
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.5735381213948131,
+        "angle": -0.05659921023578915,
+        "power": 0.4635587463853881,
+        "spin": -0.20165835274383426
+      },
+      "fault": false,
+      "durationMs": 11483,
+      "computeMs": 41.54,
+      "viewBytes": 60630,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.583352240268141,
+        "angle": 0.03194649537443184,
+        "power": 0.28449316846672446,
+        "spin": -0.551218522246927
+      },
+      "fault": false,
+      "durationMs": 6083,
+      "computeMs": 13.16,
+      "viewBytes": 28172,
+      "down": 5
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.3500946283340454,
+        "angle": 0.01274116585846059,
+        "power": 0.4403605399420485,
+        "spin": -0.8538719522766769
+      },
+      "fault": false,
+      "durationMs": 4800,
+      "computeMs": 37,
+      "viewBytes": 22327,
+      "down": 5
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.4804978034459055,
+        "angle": 0.034342302907025446,
+        "power": 0.7522505457745865,
+        "spin": -0.28864953806623816
+      },
+      "fault": false,
+      "durationMs": 4733,
+      "computeMs": 77.58,
+      "viewBytes": 36440,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.06486105639487505,
+        "angle": -0.02343656184268184,
+        "power": 0.9526212409837171,
+        "spin": -0.20480159623548388
+      },
+      "fault": false,
+      "durationMs": 4750,
+      "computeMs": 39.68,
+      "viewBytes": 30811,
+      "down": 9
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.5881446500308812,
+        "angle": 0.022393645260516293,
+        "power": 0.5397759793559089,
+        "spin": -0.22909766947850585
+      },
+      "fault": false,
+      "durationMs": 5500,
+      "computeMs": 21.02,
+      "viewBytes": 26887,
+      "down": 6
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.21199929676949977,
+        "angle": -0.006407585327480253,
+        "power": 0.7746743265306577,
+        "spin": 0.8944517937488854
+      },
+      "fault": false,
+      "durationMs": 6367,
+      "computeMs": 90.9,
+      "viewBytes": 40607,
+      "down": 9
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.10131822405382991,
+        "angle": 0.006890694739330294,
+        "power": 0.6286707074614242,
+        "spin": -0.23629811545833945
+      },
+      "fault": false,
+      "durationMs": 5150,
+      "computeMs": 36.2,
+      "viewBytes": 31854,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.22847672458738089,
+        "angle": -0.029235383065783285,
+        "power": 0.42827453825157136,
+        "spin": 0.6075578038580716
+      },
+      "fault": false,
+      "durationMs": 4900,
+      "computeMs": 39.97,
+      "viewBytes": 30613,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.2433581785298884,
+        "angle": 0.03935556596095142,
+        "power": 0.8805255923653021,
+        "spin": 0.43648755783215165
+      },
+      "fault": false,
+      "durationMs": 6967,
+      "computeMs": 51.21,
+      "viewBytes": 45760,
+      "down": 9
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.6008187301456929,
+        "angle": -0.04971117313402439,
+        "power": 0.35007835121359676,
+        "spin": 0.5856127780862153
+      },
+      "fault": false,
+      "durationMs": 8767,
+      "computeMs": 50.34,
+      "viewBytes": 43062,
+      "down": 9
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.2719730629585683,
+        "angle": 0.014035898445207359,
+        "power": 0.9465890891151503,
+        "spin": 0.6816276670433581
+      },
+      "fault": false,
+      "durationMs": 3750,
+      "computeMs": 29.15,
+      "viewBytes": 24908,
+      "down": 9
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.4970038393512368,
+        "angle": -0.04164158062593613,
+        "power": 0.4184994426323101,
+        "spin": -0.4352039317600429
+      },
+      "fault": false,
+      "durationMs": 6483,
+      "computeMs": 28.34,
+      "viewBytes": 31780,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.4209549891762436,
+        "angle": -0.04702120365358756,
+        "power": 0.2868102142820135,
+        "spin": 0.19727666163817048
+      },
+      "fault": false,
+      "durationMs": 4667,
+      "computeMs": 16.38,
+      "viewBytes": 21256,
+      "down": 5
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.2647769939154387,
+        "angle": -0.031627376491835876,
+        "power": 0.839939160621725,
+        "spin": 0.0890262839384377
+      },
+      "fault": false,
+      "durationMs": 6317,
+      "computeMs": 77.82,
+      "viewBytes": 39581,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.6158155729062855,
+        "angle": -0.05010058895734671,
+        "power": 0.2982565147103742,
+        "spin": -0.7274686261080205
+      },
+      "fault": false,
+      "durationMs": 5000,
+      "computeMs": 18.65,
+      "viewBytes": 25336,
+      "down": 6
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.4922212703153491,
+        "angle": -0.024190430663625848,
+        "power": 0.6443919929442927,
+        "spin": 0.3576175426132977
+      },
+      "fault": false,
+      "durationMs": 4217,
+      "computeMs": 30.07,
+      "viewBytes": 20502,
+      "down": 5
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.12203467572107912,
+        "angle": -0.01072726198921113,
+        "power": 0.3029070362681523,
+        "spin": -0.30241273110732436
+      },
+      "fault": false,
+      "durationMs": 8583,
+      "computeMs": 105.61,
+      "viewBytes": 53077,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.598578192293644,
+        "angle": -0.04024887946550734,
+        "power": 0.5404260357609019,
+        "spin": -0.8020642804913223
+      },
+      "fault": false,
+      "durationMs": 6050,
+      "computeMs": 23.37,
+      "viewBytes": 32674,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.2766732328571379,
+        "angle": -0.032922800584263834,
+        "power": 0.8948202925967053,
+        "spin": 0.7988946945406497
+      },
+      "fault": false,
+      "durationMs": 4550,
+      "computeMs": 45.1,
+      "viewBytes": 26661,
+      "down": 5
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.431318043358624,
+        "angle": -0.05251193588183793,
+        "power": 0.3795384623808786,
+        "spin": 0.16305469768121839
+      },
+      "fault": false,
+      "durationMs": 8267,
+      "computeMs": 85.88,
+      "viewBytes": 58068,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.5896840457804501,
+        "angle": 0.02033286955689878,
+        "power": 0.396677233860828,
+        "spin": 0.5993151315487921
+      },
+      "fault": false,
+      "durationMs": 4533,
+      "computeMs": 26.5,
+      "viewBytes": 22788,
+      "down": 6
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.330539820715785,
+        "angle": 0.013634228746439995,
+        "power": 0.9798859920119867,
+        "spin": 0.7544126180000603
+      },
+      "fault": false,
+      "durationMs": 4900,
+      "computeMs": 37.97,
+      "viewBytes": 29805,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.5621768775396049,
+        "angle": 0.031148628886024064,
+        "power": 0.9256992154987529,
+        "spin": 0.10327744344249368
+      },
+      "fault": false,
+      "durationMs": 6567,
+      "computeMs": 55.82,
+      "viewBytes": 43178,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.23314334060996772,
+        "angle": -0.02267903983177218,
+        "power": 0.5593903585104272,
+        "spin": 0.7694681291468441
+      },
+      "fault": false,
+      "durationMs": 5183,
+      "computeMs": 49,
+      "viewBytes": 31568,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.3836273373104632,
+        "angle": 0.041706818025060266,
+        "power": 0.8189409669721499,
+        "spin": 0.7069341265596449
+      },
+      "fault": false,
+      "durationMs": 4983,
+      "computeMs": 22.73,
+      "viewBytes": 25353,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.0005540348589420319,
+        "angle": -0.006813760474157918,
+        "power": 0.7782187791308388,
+        "spin": -0.2256433623842895
+      },
+      "fault": false,
+      "durationMs": 6717,
+      "computeMs": 52.17,
+      "viewBytes": 41292,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.3546638964675367,
+        "angle": 0.03518539178401365,
+        "power": 0.41795856051612645,
+        "spin": 0.7333175600506365
+      },
+      "fault": false,
+      "durationMs": 6233,
+      "computeMs": 53.58,
+      "viewBytes": 35075,
+      "down": 6
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.07554349955171347,
+        "angle": 0.0075870159443002195,
+        "power": 0.6406394232762977,
+        "spin": -0.2984534422867
+      },
+      "fault": false,
+      "durationMs": 6233,
+      "computeMs": 36.99,
+      "viewBytes": 39748,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.4835261103697121,
+        "angle": 0.014046144607377103,
+        "power": 0.9628523798892274,
+        "spin": -0.9075037441216409
+      },
+      "fault": false,
+      "durationMs": 4933,
+      "computeMs": 52.96,
+      "viewBytes": 26259,
+      "down": 6
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.12840628363192083,
+        "angle": 0.02432046769203485,
+        "power": 0.7562518812483177,
+        "spin": 0.5724955615587533
+      },
+      "fault": false,
+      "durationMs": 6067,
+      "computeMs": 43.46,
+      "viewBytes": 36937,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.2296193058602512,
+        "angle": 0.007117578877701558,
+        "power": 0.3456850891234353,
+        "spin": 0.06673110881820321
+      },
+      "fault": false,
+      "durationMs": 5417,
+      "computeMs": 73.67,
+      "viewBytes": 35451,
+      "down": 7
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.046177017502486706,
+        "angle": 0.017711334770179485,
+        "power": 0.7105926329968497,
+        "spin": -0.6546931709162891
+      },
+      "fault": false,
+      "durationMs": 7767,
+      "computeMs": 64.9,
+      "viewBytes": 43204,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": -0.4408192687667906,
+        "angle": 0.01118670179059596,
+        "power": 0.72327460127417,
+        "spin": -0.7793683535419405
+      },
+      "fault": false,
+      "durationMs": 4783,
+      "computeMs": 18.95,
+      "viewBytes": 22329,
+      "down": 5
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.23624675571918488,
+        "angle": 0.005208180073282814,
+        "power": 0.7951155168702826,
+        "spin": -0.11261470196768641
+      },
+      "fault": false,
+      "durationMs": 5800,
+      "computeMs": 35.8,
+      "viewBytes": 37900,
+      "down": 8
+    },
+    {
+      "group": "seeded-pocket",
+      "action": {
+        "offset": 0.31547306859865787,
+        "angle": -0.015043106341701269,
+        "power": 0.9893620471702889,
+        "spin": 0.4363122791983187
+      },
+      "fault": false,
+      "durationMs": 5150,
+      "computeMs": 48.78,
+      "viewBytes": 33024,
+      "down": 7
+    }
+  ]
+}

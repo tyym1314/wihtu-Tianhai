@@ -1,0 +1,12 @@
+import * as match from '../../arena/match/engine.mjs';
+import * as golf from '../../arena/golf/engine.mjs';
+import * as carrom from '../../arena/carrom/engine.mjs';
+import * as darts from '../../arena/darts/engine.mjs';
+import * as ludo from '../../arena/ludo/engine.mjs';
+import * as jackaroo from '../../arena/jackaroo/engine.mjs';
+import * as domino from '../../arena/domino/engine.mjs';
+import * as pool from '../../arena/pool/engine.mjs';
+import * as bowling from '../../arena/bowling/engine.mjs';
+import * as run from '../../arena/run/engine.mjs';
+import * as towerlink from '../../arena/towerlink/engine.mjs';
+export const engines=Object.freeze({match,golf,carrom,darts,ludo,jackaroo,domino,pool,bowling,run,towerlink});

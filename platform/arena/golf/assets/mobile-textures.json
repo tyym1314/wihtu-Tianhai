@@ -1,0 +1,196 @@
+[
+  {
+    "source": "platform/arena/golf/assets/textures/oasis-distant-palace.webp",
+    "target": "platform/arena/golf/assets/textures/oasis-distant-palace-mobile-e251f780d8.webp",
+    "source_sha256": "0aa25334017ecce51efc699d41c4743d5179444980a3efef8b4a61913e69a054",
+    "target_sha256": "e251f780d87604fb42393f04b4b153804c1251393ae6ac766ffe393c24f1a6c4",
+    "source_bytes": 688580,
+    "target_bytes": 169080,
+    "original_url": "./assets/textures/oasis-distant-palace.webp",
+    "optimized_url": "./assets/textures/oasis-distant-palace-mobile-e251f780d8.webp",
+    "encoding_input": "platform/arena/run/assets/atlases/oasis-environment.png",
+    "encoding_input_sha256": "95ea40e638121486f1559c08362d2dfc07ce5fae93c41dae056f48800402da76",
+    "codec": "WebP quality70, alpha100, ICC retained; mobile resolution, original PNG and prior runtime images retained",
+    "previous_runtime_target": "platform/arena/golf/assets/textures/oasis-distant-palace-mobile-82b0f228aa.webp",
+    "previous_runtime_sha256": "82b0f228aa1d7902c77cbff76df4c1993eed90997a9a26adb22866cf4cd0fbe2",
+    "previous_runtime_bytes": 337836,
+    "dimensions": {
+      "width": 768,
+      "height": 1152
+    },
+    "previous_dimensions": {
+      "width": 1024,
+      "height": 1536
+    },
+    "url_kind": "module-relative",
+    "encoder_yuv_psnr_db": 36.52,
+    "source_alpha_range": [
+      255,
+      255
+    ],
+    "target_alpha_range": [
+      255,
+      255
+    ],
+    "alpha_note": "Both source PNG and runtime image are fully opaque; dimensions of background/AO intentionally reduced."
+  },
+  {
+    "source": "platform/arena/golf/assets/textures/putting-grass-imagegen.webp",
+    "target": "platform/arena/golf/assets/textures/putting-grass-imagegen-mobile-6d969fa6fc.webp",
+    "source_sha256": "029d613ac931fbe8d416df3005731e4c0a97decd2cbda62be234c2bf63e98151",
+    "target_sha256": "6d969fa6fc20dbebb4ad3e236a6ddb6e137209468e9c6361f1103f349dfbd122",
+    "source_bytes": 295130,
+    "target_bytes": 240728,
+    "original_url": "./assets/textures/putting-grass-imagegen.webp",
+    "optimized_url": "./assets/textures/putting-grass-imagegen-mobile-6d969fa6fc.webp",
+    "encoding_input": "platform/arena/golf/assets/textures/putting-grass-imagegen.png",
+    "encoding_input_sha256": "d6d102838c1607a32971189e73472345620ffe1369b0f670e36a7744baf6ce49",
+    "codec": "WebP quality76, alpha100, same runtime dimensions, ICC retained; normals/geometry unchanged",
+    "dimensions": {
+      "width": 768,
+      "height": 768
+    },
+    "url_kind": "module-relative",
+    "source_alpha_range": [
+      255,
+      255
+    ],
+    "target_alpha_range": [
+      255,
+      255
+    ],
+    "alpha_note": "Both source PNG and runtime image are fully opaque; dimensions of background/AO intentionally reduced."
+  },
+  {
+    "source": "platform/arena/golf/assets/textures/aged-sandstone-imagegen.webp",
+    "target": "platform/arena/golf/assets/textures/aged-sandstone-imagegen-mobile-dcc28108d4.webp",
+    "source_sha256": "b2973addec99477ea64478d7c0072addafb7844f652efc3cc9f09c81a38b62b9",
+    "target_sha256": "dcc28108d4a5cde4a880a12dc6448e68e5d358a9a3f0678730003ec263719f5f",
+    "source_bytes": 196318,
+    "target_bytes": 142832,
+    "original_url": "./assets/textures/aged-sandstone-imagegen.webp",
+    "optimized_url": "./assets/textures/aged-sandstone-imagegen-mobile-dcc28108d4.webp",
+    "encoding_input": "platform/arena/golf/assets/textures/aged-sandstone-imagegen.png",
+    "encoding_input_sha256": "59db357d652723d4d0dec061ddb5f0fa201c81acbfb93538b826354a17cb05fd",
+    "codec": "WebP quality76, alpha100, same runtime dimensions, ICC retained; normals/geometry unchanged",
+    "dimensions": {
+      "width": 768,
+      "height": 768
+    },
+    "url_kind": "module-relative",
+    "source_alpha_range": [
+      255,
+      255
+    ],
+    "target_alpha_range": [
+      255,
+      255
+    ],
+    "alpha_note": "Both source PNG and runtime image are fully opaque; dimensions of background/AO intentionally reduced."
+  },
+  {
+    "source": "platform/arena/golf/assets/textures/course-1-contact-ao.webp",
+    "target": "platform/arena/golf/assets/textures/course-1-contact-ao-mobile-21f6644136.webp",
+    "source_sha256": "fbfb1294259128efc8160598c80b030e76062597eb48fac537454aa7a3cddf30",
+    "target_sha256": "21f6644136a62128c7bef125f8574e6fe46e55c8b9b07b26f537f5bf7f60fe5b",
+    "source_bytes": 78188,
+    "target_bytes": 6536,
+    "original_url": "./assets/textures/course-1-contact-ao.webp",
+    "optimized_url": "./assets/textures/course-1-contact-ao-mobile-21f6644136.webp",
+    "encoding_input": "platform/arena/golf/assets/textures/course-1-contact-ao.png",
+    "encoding_input_sha256": "5a7cfb50dcd13b5acb3793d91d59d4f08ece4dd9c8b9573192e2f286e99b7f68",
+    "codec": "WebP quality70, alpha100, ICC retained; mobile resolution, original PNG and prior runtime images retained",
+    "previous_runtime_target": "platform/arena/golf/assets/textures/course-1-contact-ao-mobile-56a5a7cf12.webp",
+    "previous_runtime_sha256": "56a5a7cf12dc1af237f21e870bc24daa48666b9d82d8bd021c03f0a0e9612bbc",
+    "previous_runtime_bytes": 45138,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "previous_dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "url_kind": "module-relative",
+    "encoder_yuv_psnr_db": 43.42,
+    "source_alpha_range": [
+      255,
+      255
+    ],
+    "target_alpha_range": [
+      255,
+      255
+    ],
+    "alpha_note": "Both source PNG and runtime image are fully opaque; dimensions of background/AO intentionally reduced."
+  },
+  {
+    "source": "platform/arena/golf/assets/textures/course-2-contact-ao.webp",
+    "target": "platform/arena/golf/assets/textures/course-2-contact-ao-mobile-dde247036b.webp",
+    "source_sha256": "cb33dbe602ba7a8dd1a1681607aedebcfc04b499564f964239f0c77aa34dcdab",
+    "target_sha256": "dde247036b15df40eb1a6d7c360c31f0dd98fa89f71e3b4c32b17adf03f4c54b",
+    "source_bytes": 81880,
+    "target_bytes": 6914,
+    "original_url": "./assets/textures/course-2-contact-ao.webp",
+    "optimized_url": "./assets/textures/course-2-contact-ao-mobile-dde247036b.webp",
+    "encoding_input": "platform/arena/golf/assets/textures/course-2-contact-ao.png",
+    "encoding_input_sha256": "f3e108208159ecb6a8979d128c64c5f444fc59831e15cc7bd4a968a1914498ba",
+    "codec": "WebP quality70, alpha100, ICC retained; mobile resolution, original PNG and prior runtime images retained",
+    "previous_runtime_target": "platform/arena/golf/assets/textures/course-2-contact-ao-mobile-54a8534f20.webp",
+    "previous_runtime_sha256": "54a8534f208ee8f3eb9e5cfcda1f9f04ed52774db383b32d435b001da3a06202",
+    "previous_runtime_bytes": 48454,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "previous_dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "url_kind": "module-relative",
+    "encoder_yuv_psnr_db": 43.15,
+    "source_alpha_range": [
+      255,
+      255
+    ],
+    "target_alpha_range": [
+      255,
+      255
+    ],
+    "alpha_note": "Both source PNG and runtime image are fully opaque; dimensions of background/AO intentionally reduced."
+  },
+  {
+    "source": "platform/arena/golf/assets/textures/course-3-contact-ao.webp",
+    "target": "platform/arena/golf/assets/textures/course-3-contact-ao-mobile-32988f4c70.webp",
+    "source_sha256": "b1b250a06d122c005d02e5524f33ee11feeebf3bd9486ac38d30993a887b228d",
+    "target_sha256": "32988f4c706085083c0cdb7e693b9451bcb2f89f111bbfe5a752b5b34e67d054",
+    "source_bytes": 81888,
+    "target_bytes": 6892,
+    "original_url": "./assets/textures/course-3-contact-ao.webp",
+    "optimized_url": "./assets/textures/course-3-contact-ao-mobile-32988f4c70.webp",
+    "encoding_input": "platform/arena/golf/assets/textures/course-3-contact-ao.png",
+    "encoding_input_sha256": "f82be42c5bdfe14d14f09bebe529a5cccc4e82e9b5737268fcc066370711b6df",
+    "codec": "WebP quality70, alpha100, ICC retained; mobile resolution, original PNG and prior runtime images retained",
+    "previous_runtime_target": "platform/arena/golf/assets/textures/course-3-contact-ao-mobile-ea24150482.webp",
+    "previous_runtime_sha256": "ea241504822bf413bceb28d61d71c482463fb0266252b9148ff8f4952da50653",
+    "previous_runtime_bytes": 48506,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "previous_dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "url_kind": "module-relative",
+    "encoder_yuv_psnr_db": 43.19,
+    "source_alpha_range": [
+      255,
+      255
+    ],
+    "target_alpha_range": [
+      255,
+      255
+    ],
+    "alpha_note": "Both source PNG and runtime image are fully opaque; dimensions of background/AO intentionally reduced."
+  }
+]

@@ -1,0 +1,63 @@
+{
+  "at": "2026-09-19T14:18:34.315Z",
+  "scope": "Chrome desktop mobile emulation; local zero-value engine harness, not physical-device or wallet acceptance.",
+  "reports": [
+    {
+      "name": "zh-390",
+      "width": 390,
+      "height": 844,
+      "locale": "zh",
+      "layout": {
+        "width": 390,
+        "scroll": 390,
+        "height": 844,
+        "buttonBottom": 803,
+        "canvasWidth": 354.4375
+      },
+      "shotDuration": 3733,
+      "trajectoryBytes": 17795,
+      "blackEightWin": true,
+      "calledPocket": 1,
+      "freePlacement": true,
+      "errors": []
+    },
+    {
+      "name": "en-360",
+      "width": 360,
+      "height": 800,
+      "locale": "en",
+      "layout": {
+        "width": 360,
+        "scroll": 360,
+        "height": 800,
+        "buttonBottom": 758.5,
+        "canvasWidth": 332.9375
+      },
+      "shotDuration": 3733,
+      "trajectoryBytes": 17795,
+      "blackEightWin": true,
+      "calledPocket": 1,
+      "freePlacement": true,
+      "errors": []
+    },
+    {
+      "name": "ar-390",
+      "width": 390,
+      "height": 844,
+      "locale": "ar",
+      "layout": {
+        "width": 390,
+        "scroll": 390,
+        "height": 844,
+        "buttonBottom": 803,
+        "canvasWidth": 354.4375
+      },
+      "shotDuration": 3733,
+      "trajectoryBytes": 17795,
+      "blackEightWin": true,
+      "calledPocket": 1,
+      "freePlacement": true,
+      "errors": []
+    }
+  ]
+}

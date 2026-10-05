@@ -1,0 +1,72 @@
+{
+  "at": "2026-09-19T15:38:57.843Z",
+  "scope": "Isolated actual-engine Chrome mobile emulation. No platform, wallet, or paid room requests. Shared portrait PNG only routed from its real local source. Not physical-device acceptance.",
+  "reports": [
+    {
+      "game": "darts",
+      "width": 390,
+      "height": 844,
+      "layout": {
+        "width": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      "evidence": {
+        "action": "actual recorded pointer gesture",
+        "hit": {
+          "score": 18,
+          "label": "18",
+          "number": 18,
+          "multiplier": 1,
+          "x": 0.3,
+          "y": -0.427799,
+          "durationMs": 473,
+          "distance": 0.216216
+        },
+        "remaining": 283,
+        "flightOrigin": {
+          "hit-x": 0.3,
+          "hit-y": -0.427799,
+          "tip-x": 0.37816449704142013,
+          "tip-y": 1.7977386649556217
+        },
+        "authoritativeFlightEndpoint": true,
+        "flightMs": 650
+      },
+      "errors": []
+    },
+    {
+      "game": "darts",
+      "width": 360,
+      "height": 800,
+      "layout": {
+        "width": 360,
+        "scrollWidth": 360,
+        "scrollHeight": 800
+      },
+      "evidence": {
+        "action": "actual recorded pointer gesture",
+        "hit": {
+          "score": 18,
+          "label": "18",
+          "number": 18,
+          "multiplier": 1,
+          "x": 0.3,
+          "y": -0.430532,
+          "durationMs": 483,
+          "distance": 0.235294
+        },
+        "remaining": 283,
+        "flightOrigin": {
+          "hit-x": 0.3,
+          "hit-y": -0.430532,
+          "tip-x": 0.37814014381656985,
+          "tip-y": 1.7969817307286209
+        },
+        "authoritativeFlightEndpoint": true,
+        "flightMs": 650
+      },
+      "errors": []
+    }
+  ]
+}

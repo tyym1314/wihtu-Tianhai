@@ -1,0 +1,36 @@
+{
+  "gameDice": 6,
+  "faces": [
+    {
+      "dots": 6,
+      "transform": "matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 30, 1)",
+      "backface": "hidden"
+    },
+    {
+      "dots": 1,
+      "transform": "matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, -30, 1)",
+      "backface": "hidden"
+    },
+    {
+      "dots": 2,
+      "transform": "matrix3d(0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 30, 0, 0, 1)",
+      "backface": "hidden"
+    },
+    {
+      "dots": 5,
+      "transform": "matrix3d(0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, 0, -30, 0, 0, 1)",
+      "backface": "hidden"
+    },
+    {
+      "dots": 3,
+      "transform": "matrix3d(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, -30, 0, 1)",
+      "backface": "hidden"
+    },
+    {
+      "dots": 4,
+      "transform": "matrix3d(1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 30, 0, 1)",
+      "backface": "hidden"
+    }
+  ],
+  "label": "六点 · 再来一次"
+}

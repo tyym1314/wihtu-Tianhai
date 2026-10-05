@@ -1,0 +1,190 @@
+[
+  {
+    "game": "carrom",
+    "width": 390,
+    "errors": [],
+    "viewport": [
+      390,
+      844
+    ],
+    "scroll": [
+      390,
+      844
+    ],
+    "stage": {
+      "top": 201.390625,
+      "bottom": 440.390625,
+      "width": 346,
+      "height": 239,
+      "text": ""
+    },
+    "title": {
+      "top": 187.390625,
+      "bottom": 201.390625,
+      "width": 370,
+      "height": 14,
+      "text": "◆\n搭档同心 · 胜队夺冠\n◆"
+    },
+    "trophy": {
+      "top": 191.390625,
+      "bottom": 449.390625,
+      "width": 258,
+      "height": 258,
+      "text": ""
+    },
+    "podium": null,
+    "team": {
+      "top": 448.390625,
+      "bottom": 534.390625,
+      "width": 306,
+      "height": 86,
+      "text": "本队获得\n★\n380\n个人金额以结算为准"
+    },
+    "reward": {
+      "top": 534.390625,
+      "bottom": 614.390625,
+      "width": 306,
+      "height": 80,
+      "text": "本局获得\n★\n190\n奖池 400\n服务费 20"
+    },
+    "rankingCount": 0
+  },
+  {
+    "game": "carrom",
+    "width": 360,
+    "errors": [],
+    "viewport": [
+      360,
+      800
+    ],
+    "scroll": [
+      360,
+      800
+    ],
+    "stage": {
+      "top": 185,
+      "bottom": 409,
+      "width": 322,
+      "height": 224,
+      "text": ""
+    },
+    "title": {
+      "top": 171,
+      "bottom": 185,
+      "width": 346,
+      "height": 14,
+      "text": "◆\n搭档同心 · 胜队夺冠\n◆"
+    },
+    "trophy": {
+      "top": 175,
+      "bottom": 415,
+      "width": 240,
+      "height": 240,
+      "text": ""
+    },
+    "podium": null,
+    "team": {
+      "top": 417,
+      "bottom": 503,
+      "width": 282,
+      "height": 86,
+      "text": "本队获得\n★\n380\n个人金额以结算为准"
+    },
+    "reward": {
+      "top": 503,
+      "bottom": 583,
+      "width": 282,
+      "height": 80,
+      "text": "本局获得\n★\n190\n奖池 400\n服务费 20"
+    },
+    "rankingCount": 0
+  },
+  {
+    "game": "run",
+    "width": 390,
+    "errors": [],
+    "viewport": [
+      390,
+      844
+    ],
+    "scroll": [
+      390,
+      844
+    ],
+    "stage": {
+      "top": 120.1875,
+      "bottom": 388.1875,
+      "width": 346,
+      "height": 268,
+      "text": ""
+    },
+    "title": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "text": "◆冠军 · 1st PLACE◆"
+    },
+    "trophy": null,
+    "podium": {
+      "top": 120.1875,
+      "bottom": 388.1875,
+      "width": 386,
+      "height": 268,
+      "text": ""
+    },
+    "team": null,
+    "reward": {
+      "top": 398.1875,
+      "bottom": 542.1875,
+      "width": 346,
+      "height": 144,
+      "text": "本局获得\n★\n380\n奖池 400\n服务费 20"
+    },
+    "rankingCount": 4
+  },
+  {
+    "game": "run",
+    "width": 360,
+    "errors": [],
+    "viewport": [
+      360,
+      800
+    ],
+    "scroll": [
+      360,
+      800
+    ],
+    "stage": {
+      "top": 106.59375,
+      "bottom": 347.59375,
+      "width": 322,
+      "height": 241,
+      "text": ""
+    },
+    "title": {
+      "top": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0,
+      "text": "◆冠军 · 1st PLACE◆"
+    },
+    "trophy": null,
+    "podium": {
+      "top": 106.59375,
+      "bottom": 347.59375,
+      "width": 362,
+      "height": 241,
+      "text": ""
+    },
+    "team": null,
+    "reward": {
+      "top": 357.59375,
+      "bottom": 494.59375,
+      "width": 322,
+      "height": 137,
+      "text": "本局获得\n★\n380\n奖池 400\n服务费 20"
+    },
+    "rankingCount": 4
+  }
+]

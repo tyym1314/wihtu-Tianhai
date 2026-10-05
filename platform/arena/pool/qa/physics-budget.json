@@ -1,0 +1,19 @@
+{
+  "at": "2026-09-19T14:15:50.905Z",
+  "environment": {
+    "node": "v22.22.3",
+    "platform": "darwin",
+    "architecture": "arm64"
+  },
+  "scope": "Local CPU timing over 8 deterministic complete bot games; not WebView or production throughput certification.",
+  "games": 8,
+  "shots": 246,
+  "maxPhysicsDurationMs": 4096,
+  "maxViewBytes": 22163,
+  "meanViewBytes": 6757,
+  "shotComputeMs": {
+    "median": 4.758416000000125,
+    "p95": 11.319124999999985,
+    "max": 33.994292
+  }
+}

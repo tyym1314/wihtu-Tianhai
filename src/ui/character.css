@@ -1,0 +1,61 @@
+/* The four clipped pieces share one transparent character texture. Percentages are
+   exposed for calibration to the source artwork; the background never moves. */
+.hero-character-ready{
+  --character-image:url('/assets/hero-character.png');
+  --character-left:45%;
+  --character-top:-8%;
+  --character-width:59%;
+  --character-ratio:1;
+  --character-head-origin:42% 51%;
+  --character-arm-origin:61% 62%;
+  --character-cape-origin:64% 67%;
+  --character-head-clip:polygon(19% 11%,55% 10%,64% 24%,65% 39%,59% 43%,51% 43%,47% 45%,45% 50%,40% 55%,32% 57%,31% 46%,26% 41%,21% 32%);
+  --character-torso-clip:polygon(0 49%,30% 48%,32% 54%,40% 54%,47% 45%,58% 38%,69% 36%,75% 43%,76% 58%,74% 61%,62% 61%,59% 65%,60% 74%,65% 82%,59% 100%,0 100%);
+  --character-cape-clip:polygon(75% 51%,100% 53%,100% 100%,97% 100%,94% 70%,82% 62%,76% 62%,73% 73%,79% 86%,79% 100%,54% 100%,62% 79%,63% 62%);
+  --character-arm-clip:polygon(64% 0,94% 0,100% 43%,100% 100%,78% 100%,72% 88%,71% 80%,65% 77%,58% 72%,52% 65%,52% 60%,67% 58%,72% 57%,73% 47%,74% 43%,71% 35%,66% 28%);
+  --character-staff-x:73%;
+  --character-staff-y:14%;
+}
+.hero.hero-character-ready .hero-art,.bonus-mode .hero.hero-character-ready .hero-art{background-image:url('/assets/hero-scene.png');background-size:100% auto;background-position:center top;animation:none;transform:none;filter:none;will-change:auto}
+.bonus-mode .hero.hero-character-ready .hero-art{filter:hue-rotate(23deg) saturate(1.13)}
+.hero.hero-character-ready .motion-character,.hero.hero-character-ready .motion-staff-halo,.hero.hero-character-ready .hero-aura,.hero.hero-character-ready .hero-atmosphere:before{display:none}
+.hero.hero-character-ready .hero-energy{opacity:.32}
+.hero.hero-character-ready .motion-character-aura{opacity:.2;animation:none}
+.hero.hero-character-ready .topbar,.hero.hero-character-ready .hero-bottom{z-index:5}
+.hero-character-stage{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;visibility:hidden;contain:paint;isolation:isolate}
+.hero-character-ready .hero-character-stage{visibility:visible}
+.character-rig{position:absolute;left:var(--character-left);top:var(--character-top);width:var(--character-width);aspect-ratio:var(--character-ratio);pointer-events:none;transform-origin:50% 88%;filter:drop-shadow(-3px 1px 5px #070e2599)}
+.character-body-pose,.character-breath,.character-head-pose,.character-head-idle,.character-arm-pose,.character-arm-idle,.character-cape-pose{position:absolute;inset:0;pointer-events:none}
+.character-body-pose{transform-origin:50% 84%}
+.character-breath{transform-origin:48% 77%;animation:character-chest-breathe 4.7s ease-in-out infinite}
+.character-piece{position:absolute;inset:0;background-image:var(--character-image);background-size:100% 100%;background-repeat:no-repeat;pointer-events:none;backface-visibility:hidden}
+.character-cape-pose{z-index:0;transform-origin:var(--character-cape-origin);animation:character-cape-wind 4.1s ease-in-out infinite alternate}
+.character-piece-cape{clip-path:var(--character-cape-clip);filter:brightness(.93)}
+.character-piece-torso{z-index:2;clip-path:var(--character-torso-clip)}
+.character-head-pose{z-index:3;transform-origin:var(--character-head-origin)}
+.character-head-idle{transform-origin:var(--character-head-origin);animation:character-head-look 7.2s ease-in-out infinite}
+.character-piece-head{clip-path:var(--character-head-clip)}
+.character-arm-pose{z-index:1;transform-origin:var(--character-arm-origin)}
+.character-arm-idle{transform-origin:var(--character-arm-origin);animation:character-staff-balance 6s ease-in-out infinite}
+.character-piece-arm{clip-path:var(--character-arm-clip)}
+.character-staff-light{position:absolute;left:var(--character-staff-x);top:var(--character-staff-y);width:31%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#f2ffffc9 0,#adf1ffad 4%,#5dd6ff44 13%,#3c78ff13 35%,transparent 62%);mix-blend-mode:screen;animation:character-staff-glow 3.2s ease-in-out infinite;pointer-events:none}
+.character-staff-light:before{content:"";position:absolute;inset:28%;border:1px solid #caf8ffab;border-radius:50%;box-shadow:0 0 9px #7acdff80;transform:rotateX(62deg);animation:character-charge-orbit 5s linear infinite}
+.character-energy{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;mix-blend-mode:screen;transform-origin:var(--character-staff-x) var(--character-staff-y)}
+.character-energy:before{content:"";position:absolute;left:var(--character-staff-x);top:var(--character-staff-y);width:56%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#ffffffbd 0,#c6f8ff85 6%,#82c8ff3b 17%,transparent 60%)}
+.character-energy:after{content:"";position:absolute;left:var(--character-staff-x);top:var(--character-staff-y);width:45%;aspect-ratio:1;transform:translate(-50%,-50%);border:1px solid #c6f6ff8a;border-radius:50%;box-shadow:0 0 12px #7bddff55,inset 0 0 16px #71caff33;background:conic-gradient(from 30deg,transparent 0 80deg,#b6ecff66 87deg,transparent 94deg 255deg,#abecff77 265deg,transparent 273deg)}
+.hero-character-reacting .character-staff-light{filter:brightness(1.7);animation-duration:.9s}
+.hero-character-reacting .character-piece-torso{filter:brightness(1.07)}
+.hero-character-bonus .character-energy:after{border-color:#eac8ff;box-shadow:0 0 18px #d88fff88,inset 0 0 21px #ad78ff66}
+.hero-character-bonus .character-staff-light{filter:hue-rotate(37deg) brightness(1.7)}
+.hero-character-paused .hero-character-stage *,.hero-character-paused .hero-character-stage *:before,.hero-character-paused .hero-character-stage *:after{animation-play-state:paused!important}
+.hero-character-reduced .hero-character-stage *{animation:none!important;transform:none!important}
+.hero-character-reduced .character-staff-light{transform:translate(-50%,-50%)!important;opacity:.48}
+.hero-character-reduced .character-staff-light:before{display:none}
+.hero-character-reduced .character-energy{display:none}
+@keyframes character-chest-breathe{0%,100%{transform:translateY(1px) scaleY(1)}48%{transform:translateY(-2px) scaleY(1.011)}}
+@keyframes character-head-look{0%,100%{transform:rotate(-1.4deg) translateY(0)}30%{transform:rotate(.7deg) translateY(-1px)}58%{transform:rotate(2deg) translateY(-2px)}82%{transform:rotate(-.3deg) translateY(-.5px)}}
+@keyframes character-cape-wind{0%{transform:rotate(-1deg) skewX(-.5deg) scaleX(.99)}55%{transform:rotate(1.3deg) skewX(1.8deg) scaleX(1.027)}100%{transform:rotate(-.2deg) skewX(-1.1deg) scaleX(1.006)}}
+@keyframes character-staff-balance{0%,100%{transform:rotate(-1.1deg) translateY(.6px)}50%{transform:rotate(1.15deg) translateY(-.6px)}}
+@keyframes character-staff-glow{0%,100%{opacity:.6;filter:brightness(.9)}48%{opacity:1;filter:brightness(1.28)}}
+@keyframes character-charge-orbit{to{transform:rotate(360deg) rotateX(62deg)}}
+@media(prefers-reduced-motion:reduce){.hero-character-stage *{animation:none!important}.character-energy{display:none}.character-staff-light{opacity:.48}}

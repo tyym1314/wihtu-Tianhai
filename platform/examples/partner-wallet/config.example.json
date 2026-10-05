@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "scope": {
+    "partner_id": "REPLACE_PARTNER_ID",
+    "app_id": "REPLACE_APP_ID",
+    "environment": "sandbox",
+    "wallet_scope_id": "REPLACE_WALLET_SCOPE_ID",
+    "currency_id": "COIN"
+  },
+  "currency_scale": 2,
+  "key_id": "REPLACE_PLATFORM_TO_WALLET_KEY_ID",
+  "secret_base64": "REPLACE_WITH_PRIVATE_BASE64_SECRET",
+  "treasury_minor": "1000000000000",
+  "users": [
+    {"external_user_id": "demo_player", "balance_minor": "1200000"},
+    {"external_user_id": "demo_player_2", "balance_minor": "1200000"},
+    {"external_user_id": "demo_player_3", "balance_minor": "1200000"},
+    {"external_user_id": "demo_player_4", "balance_minor": "1200000"}
+  ],
+  "math_profiles": [
+    {"game_id": "thunder", "math_version": "REPLACE_APPROVED_VERSION", "math_config_hash": "REPLACE_APPROVED_64_HEX_HASH", "max_payout_multiplier": "10000"},
+    {"game_id": "tiger", "math_version": "REPLACE_APPROVED_VERSION", "math_config_hash": "REPLACE_APPROVED_64_HEX_HASH", "max_payout_multiplier": "455"}
+  ]
+}

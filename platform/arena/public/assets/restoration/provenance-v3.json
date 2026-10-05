@@ -1,0 +1,35 @@
+{
+  "tool": "built-in image_gen",
+  "source_reference": "output/design/pvp-arena-concepts-v1/02-match.png and 05-ludo.png",
+  "production_requirements": "Original character identity and materials retained; engine sprite atlas with genuine transparent alpha, no UI labels or backgrounds; PNG source preserved; WebP encoding only, no resizing or manual artwork edits.",
+  "assets": [
+    {
+      "name": "fox-idle-v3",
+      "generated_source": "exec-9879bbfb-8e24-4a96-9d5c-b90f042daa33.png",
+      "frame_prompt": "8 frames, 4x2: neutral, inhale, ears/tilt, half blink, closed eyes, reopen, ear turn, neutral. Registered upper-body paws at ledge.",
+      "png": "fox-idle-v3.png",
+      "runtime": "fox-idle-v3.webp"
+    },
+    {
+      "name": "fox-cheer-v3",
+      "generated_source": "exec-33ca6825-2596-4482-93c4-4fb8dcc11116.png",
+      "frame_prompt": "8 frames, 4x2: idle, squash/anticipate, rise, arms up, opposite lean, arms lowering, wave, neutral.",
+      "png": "fox-cheer-v3.png",
+      "runtime": "fox-cheer-v3.webp"
+    },
+    {
+      "name": "fox-victory-v3",
+      "generated_source": "exec-ff1b0a82-391d-4461-8d94-c528e4cfd01a.png",
+      "frame_prompt": "8 frames, 4x2: trophy smile, inhale, wrist tilt, wink, closed eyes, reopen, settle, neutral.",
+      "png": "fox-victory-v3.png",
+      "runtime": "fox-victory-v3.webp"
+    },
+    {
+      "name": "ludo-awards-v3",
+      "generated_source": "exec-91ae5365-84bd-4fc5-9655-58eaff5518a0.png",
+      "frame_prompt": "4x1 color variants: ruby, sapphire, emerald, amber. Smiling original glossy pawn holds golden trophy. No background or UI.",
+      "png": "ludo-awards-v3.png",
+      "runtime": "ludo-awards-v3.webp"
+    }
+  ]
+}

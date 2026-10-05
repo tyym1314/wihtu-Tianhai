@@ -1,0 +1,8 @@
+{
+  "recorded_at": "2026-09-19T15:39:54.885187+00:00",
+  "note": "Current authoritative sources recorded after visual-only restoration; no authoritative source edits made in this task. This is an inventory, not an independent before/after hash comparison.",
+  "files": {
+    "level.mjs": "8e9730e80165f20a60f507e5476aaa1a6c559f9b1cb045c2c3bae8659a566fd6",
+    "engine.mjs": "ba76faf8b498288dddf9fb2d6c8848cca11e19b0517bceef0ad63b36dea0ad21"
+  }
+}

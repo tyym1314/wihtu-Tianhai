@@ -1,0 +1,25 @@
+{
+  "scope": "Isolated zero-value browser harness, Chrome desktop mobile-sized viewport. No wallet or physical device acceptance.",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "players": 4,
+  "seatIndex": 1,
+  "locale": "en",
+  "observed": {
+    "dragOffsetSlider": "0.5",
+    "submittedAction": {
+      "type": "shot",
+      "offset": 0.5037854533127423,
+      "angle": 0,
+      "power": 0.72,
+      "playerKey": "p1",
+      "seatIndex": 1
+    },
+    "helpDialogVisible": true,
+    "soundButtonAriaPressedAfterToggle": "false",
+    "exitCallbackDocumentTitle": "EXIT PRESSED"
+  },
+  "screenshot": "en-team-seat1-motion.png"
+}

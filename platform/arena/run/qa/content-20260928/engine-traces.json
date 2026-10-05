@@ -1,0 +1,2556 @@
+{
+  "scope": "Pure authoritative engine replay. Human skill, device performance and production acceptance remain separate.",
+  "generatedAt": "2026-09-28T11:14:57.193Z",
+  "cases": [
+    {
+      "seed": "0000000000000000000000000000000000000000000000000000000000000000",
+      "courseId": "palm-weave",
+      "difficulty": 1,
+      "segments": [
+        "weave",
+        "stepping",
+        "arches",
+        "weave",
+        "arches",
+        "stepping",
+        "weave",
+        "arches"
+      ],
+      "obstacleCount": 38,
+      "gapCount": 5,
+      "hazardEvents": 21,
+      "cases": [
+        {
+          "boost": false,
+          "trace": [
+            {
+              "at": 391,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 3264,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 3468,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 5729,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 11764,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 11968,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 16473,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 19771,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 25755,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 25976,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 28220,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 31467,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 34782,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 41752,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 41973,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 48263,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 48467,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 50728,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 53958,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 57273,
+              "action": {
+                "type": "slide"
+              }
+            }
+          ],
+          "finishTick": 3600,
+          "hits": 0,
+          "ranks": [
+            {
+              "playerKey": "a",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3600,
+              "winner": true
+            },
+            {
+              "playerKey": "b",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3600,
+              "winner": true
+            }
+          ]
+        },
+        {
+          "boost": true,
+          "trace": [
+            {
+              "at": 391,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 3264,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 3468,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 5729,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 7514,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 11764,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 11968,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 16473,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 19771,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 22508,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 25228,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 25449,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 27625,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 30872,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 34170,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 36907,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 41157,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 41378,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 47651,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 47872,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 50133,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 53363,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 56678,
+              "action": {
+                "type": "slide"
+              }
+            }
+          ],
+          "finishTick": 3564,
+          "hits": 0,
+          "ranks": [
+            {
+              "playerKey": "a",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3564,
+              "winner": true
+            },
+            {
+              "playerKey": "b",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3564,
+              "winner": true
+            }
+          ]
+        }
+      ],
+      "worker250ms": {
+        "finishTick": 3658,
+        "hits": 2
+      },
+      "idle": {
+        "finishTick": null,
+        "hits": 43,
+        "distance": 34.93333333333333
+      }
+    },
+    {
+      "seed": "0000000100000000000000000000000000000000000000000000000000000000",
+      "courseId": "sunrise-arches",
+      "difficulty": 1,
+      "segments": [
+        "arches",
+        "arches",
+        "stepping",
+        "arches",
+        "weave",
+        "arches",
+        "stepping",
+        "arches"
+      ],
+      "obstacleCount": 42,
+      "gapCount": 3,
+      "hazardEvents": 19,
+      "cases": [
+        {
+          "boost": false,
+          "trace": [
+            {
+              "at": 1479,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 4777,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 8976,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 12274,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 15385,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 19261,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 19482,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 23970,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 27268,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 33252,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 33473,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 35717,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 38964,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 42279,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 49266,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 49470,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 53958,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 57273,
+              "action": {
+                "type": "slide"
+              }
+            }
+          ],
+          "finishTick": 3600,
+          "hits": 0,
+          "ranks": [
+            {
+              "playerKey": "a",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3600,
+              "winner": true
+            },
+            {
+              "playerKey": "b",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3600,
+              "winner": true
+            }
+          ]
+        },
+        {
+          "boost": true,
+          "trace": [
+            {
+              "at": 1479,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 4777,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 7514,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 8976,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 12274,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 15385,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 19261,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 19482,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 22508,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 23732,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 26673,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 32657,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 32878,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 35122,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 36907,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 38352,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 41667,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 48654,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 48875,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 53363,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 56678,
+              "action": {
+                "type": "slide"
+              }
+            }
+          ],
+          "finishTick": 3564,
+          "hits": 0,
+          "ranks": [
+            {
+              "playerKey": "a",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3564,
+              "winner": true
+            },
+            {
+              "playerKey": "b",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3564,
+              "winner": true
+            }
+          ]
+        }
+      ],
+      "worker250ms": {
+        "finishTick": 3715,
+        "hits": 3
+      },
+      "idle": {
+        "finishTick": null,
+        "hits": 35,
+        "distance": 273.8666666666667
+      }
+    },
+    {
+      "seed": "0000000200000000000000000000000000000000000000000000000000000000",
+      "courseId": "canal-crossing",
+      "difficulty": 2,
+      "segments": [
+        "cross",
+        "water",
+        "weave",
+        "cross",
+        "rhythm",
+        "water",
+        "cross",
+        "arches"
+      ],
+      "obstacleCount": 43,
+      "gapCount": 6,
+      "hazardEvents": 23,
+      "cases": [
+        {
+          "boost": false,
+          "trace": [
+            {
+              "at": 391,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 3978,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 5508,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 5729,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 8976,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 11781,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 13481,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 15385,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 15606,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 18258,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 18479,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 20723,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 22899,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 23103,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 26469,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 28016,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 28220,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 31518,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 33201,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 35530,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 38981,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 41769,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 43452,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 45390,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 45611,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 48977,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 50507,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 50728,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 53958,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 57273,
+              "action": {
+                "type": "slide"
+              }
+            }
+          ],
+          "finishTick": 3600,
+          "hits": 0,
+          "ranks": [
+            {
+              "playerKey": "a",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3600,
+              "winner": true
+            },
+            {
+              "playerKey": "b",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3600,
+              "winner": true
+            }
+          ]
+        },
+        {
+          "boost": true,
+          "trace": [
+            {
+              "at": 391,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 3978,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 5508,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 5729,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 7514,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 8976,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 11781,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 13481,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 15385,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 15606,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 18258,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 18479,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 20723,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 22508,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 22831,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 23035,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 25874,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 27404,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 27625,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 30923,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 32606,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 34918,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 36907,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 38369,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 41174,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 42857,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 44795,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 45016,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 48382,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 49912,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 50133,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 53363,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 56678,
+              "action": {
+                "type": "slide"
+              }
+            }
+          ],
+          "finishTick": 3564,
+          "hits": 0,
+          "ranks": [
+            {
+              "playerKey": "a",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3564,
+              "winner": true
+            },
+            {
+              "playerKey": "b",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3564,
+              "winner": true
+            }
+          ]
+        }
+      ],
+      "worker250ms": {
+        "finishTick": 3658,
+        "hits": 2
+      },
+      "idle": {
+        "finishTick": null,
+        "hits": 49,
+        "distance": 32.13333333333333
+      }
+    },
+    {
+      "seed": "0000000300000000000000000000000000000000000000000000000000000000",
+      "courseId": "red-beam-rhythm",
+      "difficulty": 2,
+      "segments": [
+        "rhythm",
+        "cross",
+        "rhythm",
+        "water",
+        "rhythm",
+        "stepping",
+        "rhythm",
+        "cross"
+      ],
+      "obstacleCount": 54,
+      "gapCount": 4,
+      "hazardEvents": 24,
+      "cases": [
+        {
+          "boost": false,
+          "trace": [
+            {
+              "at": 1530,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 3213,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 5525,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 7888,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 11475,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 13005,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 13226,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 16524,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 18224,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 20519,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 23970,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 26775,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 28475,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 31518,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 33201,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 35530,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 41752,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 41973,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 46529,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 48212,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 50524,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 56474,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 58004,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 58225,
+              "action": {
+                "type": "right"
+              }
+            }
+          ],
+          "finishTick": 3600,
+          "hits": 0,
+          "ranks": [
+            {
+              "playerKey": "a",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3600,
+              "winner": true
+            },
+            {
+              "playerKey": "b",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3600,
+              "winner": true
+            }
+          ]
+        },
+        {
+          "boost": true,
+          "trace": [
+            {
+              "at": 1530,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 3213,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 5525,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 7514,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 7888,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 11475,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 13005,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 13226,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 16524,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 18224,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 20519,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 22508,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 23749,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 26180,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 27880,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 30923,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 32606,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 34918,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 36907,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 41157,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 41378,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 45917,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 47600,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 49929,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 55879,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 57409,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 57630,
+              "action": {
+                "type": "right"
+              }
+            }
+          ],
+          "finishTick": 3564,
+          "hits": 0,
+          "ranks": [
+            {
+              "playerKey": "a",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3564,
+              "winner": true
+            },
+            {
+              "playerKey": "b",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3564,
+              "winner": true
+            }
+          ]
+        }
+      ],
+      "worker250ms": {
+        "finishTick": 3940,
+        "hits": 8
+      },
+      "idle": {
+        "finishTick": null,
+        "hits": 47,
+        "distance": 92.66666666666667
+      }
+    },
+    {
+      "seed": "0000000400000000000000000000000000000000000000000000000000000000",
+      "courseId": "rapid-bridges",
+      "difficulty": 3,
+      "segments": [
+        "pulse",
+        "zigzag",
+        "water",
+        "pulse",
+        "rhythm",
+        "pulse",
+        "zigzag",
+        "pulse"
+      ],
+      "obstacleCount": 65,
+      "gapCount": 7,
+      "hazardEvents": 30,
+      "cases": [
+        {
+          "boost": false,
+          "trace": [
+            {
+              "at": 969,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 2533,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 4471,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 5950,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 7752,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 9503,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 9724,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 11254,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 11475,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 13532,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 16473,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 19278,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 20978,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 23477,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 25024,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 26979,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 28475,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 31518,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 33201,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 35530,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 38454,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 40018,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 41973,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 43452,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 47005,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 47226,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 48756,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 48977,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 51017,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 53465,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 55029,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 56967,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 58463,
+              "action": {
+                "type": "jump"
+              }
+            }
+          ],
+          "finishTick": 3600,
+          "hits": 0,
+          "ranks": [
+            {
+              "playerKey": "a",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3600,
+              "winner": true
+            },
+            {
+              "playerKey": "b",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3600,
+              "winner": true
+            }
+          ]
+        },
+        {
+          "boost": true,
+          "trace": [
+            {
+              "at": 969,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 2533,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 4471,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 5950,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 7514,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 7752,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 9503,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 9724,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 11254,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 11475,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 13532,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 16473,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 19278,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 20978,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 22508,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 23307,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 24616,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 26367,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 27880,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 30923,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 32606,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 34918,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 36907,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 37859,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 39423,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 41378,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 42857,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 46410,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 46631,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 48161,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 48382,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 50422,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 52853,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 54417,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 56372,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 57851,
+              "action": {
+                "type": "jump"
+              }
+            }
+          ],
+          "finishTick": 3564,
+          "hits": 0,
+          "ranks": [
+            {
+              "playerKey": "a",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3564,
+              "winner": true
+            },
+            {
+              "playerKey": "b",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3564,
+              "winner": true
+            }
+          ]
+        }
+      ],
+      "worker250ms": {
+        "finishTick": 3809,
+        "hits": 5
+      },
+      "idle": {
+        "finishTick": null,
+        "hits": 40,
+        "distance": 32.53333333333333
+      }
+    },
+    {
+      "seed": "0000000500000000000000000000000000000000000000000000000000000000",
+      "courseId": "oasis-switchbacks",
+      "difficulty": 3,
+      "segments": [
+        "zigzag",
+        "pulse",
+        "zigzag",
+        "cross",
+        "zigzag",
+        "rhythm",
+        "pulse",
+        "zigzag"
+      ],
+      "obstacleCount": 59,
+      "gapCount": 7,
+      "hazardEvents": 30,
+      "cases": [
+        {
+          "boost": false,
+          "trace": [
+            {
+              "at": 255,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 2006,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 2227,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 3757,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 3978,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 6018,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 8483,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 10030,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 11968,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 13481,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 17000,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 17221,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 18751,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 18972,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 21029,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 22899,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 23103,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 26469,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 28016,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 28220,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 32011,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 32232,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 33762,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 33983,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 36023,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 39032,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 40715,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 43027,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 45951,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 47532,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 49470,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 50966,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 54502,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 54723,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 56253,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 56474,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 58531,
+              "action": {
+                "type": "slide"
+              }
+            }
+          ],
+          "finishTick": 3600,
+          "hits": 0,
+          "ranks": [
+            {
+              "playerKey": "a",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3600,
+              "winner": true
+            },
+            {
+              "playerKey": "b",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3600,
+              "winner": true
+            }
+          ]
+        },
+        {
+          "boost": true,
+          "trace": [
+            {
+              "at": 255,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 2006,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 2227,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 3757,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 3978,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 6018,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 7514,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 8483,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 10030,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 11968,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 13481,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 17000,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 17221,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 18751,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 18972,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 21029,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 22508,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 22831,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 23035,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 25874,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 27404,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 27625,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 31416,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 31620,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 33150,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 33371,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 35428,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 36907,
+              "action": {
+                "type": "item"
+              }
+            },
+            {
+              "at": 38420,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 40103,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 42432,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 45356,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 46920,
+              "action": {
+                "type": "slide"
+              }
+            },
+            {
+              "at": 48875,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 50354,
+              "action": {
+                "type": "jump"
+              }
+            },
+            {
+              "at": 53907,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 54128,
+              "action": {
+                "type": "left"
+              }
+            },
+            {
+              "at": 55658,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 55879,
+              "action": {
+                "type": "right"
+              }
+            },
+            {
+              "at": 57919,
+              "action": {
+                "type": "slide"
+              }
+            }
+          ],
+          "finishTick": 3564,
+          "hits": 0,
+          "ranks": [
+            {
+              "playerKey": "a",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3564,
+              "winner": true
+            },
+            {
+              "playerKey": "b",
+              "rank": 1,
+              "score": 480,
+              "forfeited": false,
+              "completed": true,
+              "finishTick": 3564,
+              "winner": true
+            }
+          ]
+        }
+      ],
+      "worker250ms": {
+        "finishTick": 3658,
+        "hits": 2
+      },
+      "idle": {
+        "finishTick": null,
+        "hits": 40,
+        "distance": 32.53333333333333
+      }
+    }
+  ]
+}

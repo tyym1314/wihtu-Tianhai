@@ -1,0 +1,276 @@
+{
+  "checkedAt": "2026-09-28T11:41:38.219Z",
+  "scope": "Isolated current UI + actual HTTP game engine. Native Chrome touch and desktop WebKit pointer; not physical iPhone Safari acceptance. Actions count every attempted HTTP request before engine validation.",
+  "samples": [
+    {
+      "engine": "chromium",
+      "method": "Chrome CDP Input.dispatchTouchEvent: browser-trusted native touch",
+      "checks": [
+        "Primary drag changes the live Carrom aim",
+        "Second finger cancels aiming; subsequent moves from both fingers produce zero angle updates",
+        "Canceled drag does not leave sticky aiming",
+        "Transient non-aiming state cancels the old drag permanently",
+        "Fresh tap can aim after cancellation",
+        "Help modal disables shooting and restores input when closed",
+        "Aim-only gestures never submit a shot"
+      ],
+      "events": [
+        {
+          "type": "pointerdown",
+          "id": 2,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 3,
+          "primary": false,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 2,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 2,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 3,
+          "primary": false,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 3,
+          "primary": false,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 4,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointercancel",
+          "id": 4,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 4,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 5,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 5,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 5,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 6,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 6,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 6,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "method": "Desktop WebKit Playwright mouse: browser-trusted native pointer; not iPhone touch",
+      "checks": [
+        "Primary drag changes the live Carrom aim",
+        "Lost capture stops Carrom aim updates",
+        "Canceled drag does not leave sticky aiming",
+        "Transient non-aiming state cancels the old drag permanently",
+        "Fresh tap can aim after cancellation",
+        "Help modal disables shooting and restores input when closed",
+        "Aim-only gestures never submit a shot"
+      ],
+      "events": [
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

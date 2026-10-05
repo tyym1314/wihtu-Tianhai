@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: seeded unique rack contains 8 in third-row center and opposite groups in back corners
+ok 1 - seeded unique rack contains 8 in third-row center and opposite groups in back corners
+  ---
+  duration_ms: 1.353292
+  type: 'test'
+  ...
+# Subtest: full physical break is replayable, bounded and cannot be accelerated
+ok 2 - full physical break is replayable, bounded and cannot be accelerated
+  ---
+  duration_ms: 87.411333
+  type: 'test'
+  ...
+# Subtest: illegal client scores, unbounded power/spin/angles and wrong players are rejected without a shot
+ok 3 - illegal client scores, unbounded power/spin/angles and wrong players are rejected without a shot
+  ---
+  duration_ms: 0.297708
+  type: 'test'
+  ...
+# Subtest: break eight is respotted, never immediate victory; scratch grants full ball-in-hand
+ok 4 - break eight is respotted, never immediate victory; scratch grants full ball-in-hand
+  ---
+  duration_ms: 0.413709
+  type: 'test'
+  ...
+# Subtest: four DISTINCT object rails required on dry break; breaking never assigns groups
+ok 5 - four DISTINCT object rails required on dry break; breaking never assigns groups
+  ---
+  duration_ms: 0.158792
+  type: 'test'
+  ...
+# Subtest: first legal postbreak pocket assigns groups by time then ball number; foul cannot assign
+ok 6 - first legal postbreak pocket assigns groups by time then ball number; foul cannot assign
+  ---
+  duration_ms: 0.118417
+  type: 'test'
+  ...
+# Subtest: wrong first ball, no target, no rail and double hit are fouls
+ok 7 - wrong first ball, no target, no rail and double hit are fouls
+  ---
+  duration_ms: 0.349167
+  type: 'test'
+  ...
+# Subtest: opponent pocket remains down on a foul and does not grant shooter a continuation
+ok 8 - opponent pocket remains down on a foul and does not grant shooter a continuation
+  ---
+  duration_ms: 0.116625
+  type: 'test'
+  ...
+# Subtest: free cue placement is whole-table, authoritative, overlap-safe and does not reset clock
+ok 9 - free cue placement is whole-table, authoritative, overlap-safe and does not reset clock
+  ---
+  duration_ms: 0.351917
+  type: 'test'
+  ...
+# Subtest: cue frozen at a rail remains shootable; placement guard is not reused to reject settled physics
+ok 10 - cue frozen at a rail remains shootable; placement guard is not reused to reject settled physics
+  ---
+  duration_ms: 18.116292
+  type: 'test'
+  ...
+# Subtest: called black 8 wins only if group was clear BEFORE the shot
+ok 11 - called black 8 wins only if group was clear BEFORE the shot
+  ---
+  duration_ms: 0.335625
+  type: 'test'
+  ...
+# Subtest: a real called-eight shot reaches the shared corner pocket and finishes only when physics is at rest
+ok 12 - a real called-eight shot reaches the shared corner pocket and finishes only when physics is at rest
+  ---
+  duration_ms: 1.111375
+  type: 'test'
+  ...
+# Subtest: right black pocket with scratch loses, wrong black pocket loses, black ejection loses
+ok 13 - right black pocket with scratch loses, wrong black pocket loses, black ejection loses
+  ---
+  duration_ms: 0.094417
+  type: 'test'
+  ...
+# Subtest: black shot requires an accepted public pocket call; earlier group cannot call
+ok 14 - black shot requires an accepted public pocket call; earlier group cannot call
+  ---
+  duration_ms: 0.106583
+  type: 'test'
+  ...
+# Subtest: nonblack ejected object is safely respotted before scoring
+ok 15 - nonblack ejected object is safely respotted before scoring
+  ---
+  duration_ms: 0.367625
+  type: 'test'
+  ...
+# Subtest: timeouts grant ball-in-hand; same tick third timeout plus other quit is void
+ok 16 - timeouts grant ball-in-hand; same tick third timeout plus other quit is void
+  ---
+  duration_ms: 0.233167
+  type: 'test'
+  ...
+# Subtest: accepted physical black result is fixed before later batch quits
+ok 17 - accepted physical black result is fixed before later batch quits
+  ---
+  duration_ms: 0.092
+  type: 'test'
+  ...
+# Subtest: 100-shot limit: remaining groups decide; open or equal groups share first
+ok 18 - 100-shot limit: remaining groups decide; open or equal groups share first
+  ---
+  duration_ms: 0.181666
+  type: 'test'
+  ...
+# Subtest: time limit completes the in-flight shot first and shifted clocks preserve result data
+ok 19 - time limit completes the in-flight shot first and shifted clocks preserve result data
+  ---
+  duration_ms: 1.5045
+  type: 'test'
+  ...
+# Subtest: sparse trajectory retains starting frame; spin deterministically changes follow/draw
+ok 20 - sparse trajectory retains starting frame; spin deterministically changes follow/draw
+  ---
+  duration_ms: 5.255834
+  type: 'test'
+  ...
+# Subtest: a frozen rail ball must leave the rail before that rail can satisfy the legal-contact rule
+ok 21 - a frozen rail ball must leave the rail before that rail can satisfy the legal-contact rule
+  ---
+  duration_ms: 0.549458
+  type: 'test'
+  ...
+# Subtest: practice bots make only legal public-state actions and play to a real terminal result
+ok 22 - practice bots make only legal public-state actions and play to a real terminal result
+  ---
+  duration_ms: 546.526625
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 711.536875

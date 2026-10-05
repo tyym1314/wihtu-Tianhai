@@ -1,0 +1,21 @@
+import assert from'node:assert/strict';
+import{mkdir,writeFile}from'node:fs/promises';
+import{resolve}from'node:path';
+import{createServer}from'vite';
+import{webkit}from'playwright';
+const out=resolve('review/mobile-all-20260928/golf-lifecycle');await mkdir(out,{recursive:true});
+const server=await createServer({configFile:resolve('arena/vite.config.mjs'),server:{host:'127.0.0.1',port:0}});await server.listen();const base=server.resolvedUrls.local[0],browser=await webkit.launch({headless:true}),report={scope:'Local desktop WebKit, real Three.js resources, controlled asset delay; no phone or wallet.',checks:[],errors:[]};
+try{
+ const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true}),page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));
+ await context.addInitScript(()=>{const NativeWorker=window.Worker;window.__golfWorkers={created:0,terminated:0};window.Worker=class extends NativeWorker{constructor(...args){super(...args);window.__golfWorkers.created++;}terminate(){if(!this.__terminated){this.__terminated=true;window.__golfWorkers.terminated++;}return super.terminate();}};});
+ let failOnce=true;await page.route('**/oasis-course-2.glb',async route=>{if(failOnce){failOnce=false;return route.abort('failed');}return route.continue();});
+ await page.goto(base+'golf/qa/mobile-lifecycle.html',{waitUntil:'domcontentloaded'});await page.locator('.og-preparing').filter({hasText:'场景暂时无法启动'}).waitFor({timeout:45000});assert(await page.getByTestId('golf-shoot').isDisabled());assert.equal(await page.locator('canvas').count(),0);assert(await page.evaluate(()=>window.__golfWorkers.created===window.__golfWorkers.terminated));report.checks.push('failed model load disposes decoder workers and leaves no canvas');
+ await page.evaluate(()=>window.golfLifecycle.hide());await page.getByTestId('unmounted').waitFor();await page.evaluate(()=>window.golfLifecycle.show());await page.waitForFunction(()=>!document.querySelector('[data-testid="golf-shoot"]').disabled,null,{timeout:45000});assert(await page.evaluate(()=>window.__golfWorkers.created===window.__golfWorkers.terminated));report.checks.push('retry after partial load succeeds and terminates decoder workers');
+ let release,delayed=true;const held=new Promise(r=>release=r);await page.route('**/oasis-botanical-library.glb',async route=>{if(delayed)await held;await route.continue();});
+ await page.goto(base+'golf/qa/mobile-lifecycle.html',{waitUntil:'domcontentloaded'});await page.getByTestId('golf-shoot').waitFor();assert(await page.getByTestId('golf-shoot').isDisabled());await page.evaluate(()=>window.golfLifecycle.hide());await page.getByTestId('unmounted').waitFor();release();await page.waitForTimeout(1500);assert.equal(await page.locator('canvas').count(),0);report.checks.push('exit during art loading leaves no canvas');
+ delayed=false;await page.evaluate(()=>window.golfLifecycle.show());await page.waitForFunction(()=>!document.querySelector('[data-testid="golf-shoot"]').disabled,null,{timeout:45000});assert.equal(await page.locator('.og-preparing').count(),0);assert.equal(await page.locator('canvas').count(),1);report.checks.push('ready after real first render');
+ for(const hole of[1,2]){await page.evaluate(hole=>window.golfLifecycle.hole(hole),hole);await page.waitForFunction(()=>!document.querySelector('[data-testid="golf-shoot"]').disabled);assert.equal(await page.locator('canvas').count(),1);}report.checks.push('all three holes prepare and keep one canvas');
+ for(let i=0;i<3;i++){await page.evaluate(()=>window.golfLifecycle.hide());await page.getByTestId('unmounted').waitFor();assert.equal(await page.locator('canvas').count(),0);await page.evaluate(()=>window.golfLifecycle.show());await page.waitForFunction(()=>!document.querySelector('[data-testid="golf-shoot"]').disabled);assert.equal(await page.locator('canvas').count(),1);}report.checks.push('three remounts reuse source art without disposed textures or duplicate canvas');
+ await page.screenshot({path:resolve(out,'golf-remount.png')});assert.deepEqual(report.errors,[]);await context.close();
+}finally{await browser.close();await server.close();await writeFile(resolve(out,'report.json'),JSON.stringify(report,null,2));}
+console.log(JSON.stringify(report));

@@ -1,0 +1,14 @@
+{
+  "scope": "Isolated production Vite fixture bundle and desktop Chrome. Frame timings are local evidence, not physical-phone performance.",
+  "checks": [
+    {
+      "game": "bowling",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "productionAssetURLs": true,
+      "dracoDecode": true,
+      "medianFrameMs": 16.699999999999818,
+      "p95FrameMs": 16.700000000000273
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,10 @@
+{
+  "label": "a",
+  "scope": "same 390x844 scene, desktop Chrome Metal; 180 RAF samples, not physical-phone performance",
+  "medianFrameMs": 16.699999999999818,
+  "p95FrameMs": 16.700000000000728,
+  "drawCalls": 162,
+  "triangles": 259916,
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+  "errors": []
+}

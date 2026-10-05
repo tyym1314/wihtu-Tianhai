@@ -1,0 +1,4 @@
+export const PHYSICS_VERSION='bowling-rigid-v1.0.0';
+export const LANE=Object.freeze({halfWidth:1.35,startZ:1.2,deckZ:-12.6,backZ:-15.1,ballRadius:.215,pinHeight:.803,pinCOM:.32});
+export const PIN_LAYOUT=Object.freeze(Array.from({length:4},(_,row)=>Array.from({length:row+1},(_,col)=>Object.freeze({id:row*(row+1)/2+col+1,x:(col-row/2)*.37,z:LANE.deckZ-row*.325}))).flat());
+export const PHYSICS=Object.freeze({dt:1/60,maxMs:10000,sampleEvery:3,sleepSpeed:.085,sleepSeconds:.4,maxAngle:.20,minPower:.25,maxOffset:.85});

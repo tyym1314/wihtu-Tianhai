@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: four ready clients required before authoritative start
+ok 1 - four ready clients required before authoritative start
+  ---
+  duration_ms: 0.493333
+  type: 'test'
+  ...
+# Subtest: reject client teleport, arbitrary action, duplicate sequence and stale match
+ok 2 - reject client teleport, arbitrary action, duplicate sequence and stale match
+  ---
+  duration_ms: 0.176833
+  type: 'test'
+  ...
+# Subtest: disconnect keeps one character; token-gated reconnect retains position and sequence
+ok 3 - disconnect keeps one character; token-gated reconnect retains position and sequence
+  ---
+  duration_ms: 0.822417
+  type: 'test'
+  ...
+# Subtest: server-only collision and jump change race outcome without accepting client position
+ok 4 - server-only collision and jump change race outcome without accepting client position
+  ---
+  duration_ms: 1.130625
+  type: 'test'
+  ...
+# Subtest: fixed inputs reproduce the same authoritative final result
+ok 5 - fixed inputs reproduce the same authoritative final result
+  ---
+  duration_ms: 1.74025
+  type: 'test'
+  ...
+# Subtest: old input cannot enter new race and limits reject burst/gap
+ok 6 - old input cannot enter new race and limits reject burst/gap
+  ---
+  duration_ms: 0.131959
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 41.818875

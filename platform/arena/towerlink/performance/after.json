@@ -1,0 +1,48 @@
+{
+  "scope": "Mac Chromium headless, mobile viewport 390x844 DPR 3 (renderer caps 2), CDP CPU slowdown 6x, real production renderer/WebP textures, repeat 500ms snapshot fixture, no API or physical-device acceptance.",
+  "workload": {
+    "towers": 13,
+    "armies": 42,
+    "orders": 15
+  },
+  "projection": {
+    "thirtyFramesMs": {
+      "n": 1000,
+      "p50": 0,
+      "p95": 0.6000003814697266,
+      "p99": 1.4000000953674316,
+      "max": 1.9000000953674316,
+      "mean": 0.07170000076293945
+    },
+    "distinctArraysFirstSnapshot": 5,
+    "distinctArmyObjectsFirstSnapshot": 186,
+    "checksum": 1119000
+  },
+  "render": {
+    "frameCpuMs": {
+      "n": 572,
+      "p50": 1.200000286102295,
+      "p95": 2.0999999046325684,
+      "p99": 2.799999713897705,
+      "max": 24.799999713897705,
+      "mean": 1.2183566626968918
+    },
+    "rafIntervalsMs": {
+      "n": 571,
+      "p50": 16.699999999999818,
+      "p95": 16.80000000000109,
+      "p99": 33.40000000000009,
+      "max": 33.400000000001455,
+      "mean": 17.48336252189142
+    },
+    "over33ms": 6
+  },
+  "at": "2026-09-28T09:28:38.214Z",
+  "label": "after",
+  "errors": [],
+  "sources": {
+    "tower-scene.js": "e459f2484c8924e021768089dfc85b69b437373960058ac691e1b151e94ccd6d",
+    "TowerLinkGame.jsx": "e511242d547e61503409cc0224a9151ae9328f7a6e9ea2f380653c55be938494",
+    "troop-presentation.mjs": "af287095e3e9848554d509633d307a6f911c01a6a27a9b4ddfe9e48ee4ff240e"
+  }
+}

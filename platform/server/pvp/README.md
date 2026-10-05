@@ -1,0 +1,46 @@
+# Authoritative local multiplayer reference — Phase C
+
+This module implements paid invitation rooms and free practice for `match` and `golf`. It is a local sandbox implementation using PostgreSQL and the independently signed partner-wallet HTTP interface. It is not a production game release, security certification, real-mobile performance result, or cross-region network test. Existing Thunder/Tiger projects are untouched.
+
+## Integration
+
+Tower Link v2 has game-specific room modes, a 3-second start countdown and full-principal 1v1 draws. See [its current integration contract](TOWERLINK-V2.md); three- and four-player Tower Link rooms cannot carry a paid prize pool. Other games retain their existing fee and capacity policy.
+
+The platform entry imports `migratePvp(pool)`, calls `routePvp(session,method,path,body)` after its own bearer-session authentication and Origin check, and calls `tickPvp()` every 250 ms. It uses `readPvpMatch(app,id)` for the signed partner support API. This module only creates `pvp_*` tables. Runtime imports the current authoritative engines from `arena/match/engine.mjs` and `arena/golf/engine.mjs`.
+
+- `POST /api/pvp/rooms`: `{request_id,game_id,capacity:2|3|4,entry_minor:'1000'|'5000'|'10000'|'20000'|'50000',practice?:boolean,room_id?:string}`.
+- `GET /api/pvp/rooms/:idOrCode`: member-only private snapshot and own heartbeat.
+- `POST /api/pvp/rooms/:idOrCode/join`: `{request_id}`. Same App, same game, same scope, independent authenticated user.
+- `POST /api/pvp/rooms/:id/ready`: `{request_id}`. Ready waits for everyone, then starts persisted funding.
+- `POST /api/pvp/rooms/:id/action`: `{request_id,seq,action}`. `seq` starts at 1 and must increase by exactly one. A transport retry MUST retain both request ID and seq. Same request replays its original response. A different request with the same seq returns `INVALID_SEQUENCE`; GET the room for `me_last_seq` before accepting another action.
+- `POST /api/pvp/rooms/:id/leave`: `{request_id}`. Waiting/funding cancels the full lobby. Paid active means explicit surrender, not merely closing the WebView. The sole human can end free practice immediately, cancelling its bots without any wallet call.
+
+`routePvp` returns `{status,body}`; HTTP body is the room object directly, not `{room}`. The root UI may normalize it. Statuses are lowercase `waiting`, `funding`, `active`, `fault`, `settling`, `settled`, `cancelling`, `cancelled`, `voiding`, `voided`. Poll at 250–500 ms. Waiting invitation expires in 5 minutes; when full, everyone must be ready in 30 seconds. Only GET by a member refreshes that member's polling heartbeat; legal member commands also prove that member is present. Observers cannot update other users' presence.
+
+Snapshot: `{id,code,game_id,status,capacity,practice,players,me,me_last_seq,entry_minor,fee_bps,pool_minor,prize_minor,server_now,starts_at,end_at,ready_deadline_at,result,error,version,game}`. `game` is `engine.view(state,me)` and has the last accepted event for the player. Match returns only that player's board; neither seed nor refill streams leave the service. Shared rankings and Golf ball trajectories are public within the room. Before settlement `payout_minor` describes the fixed expected credit; only `settled`/`voided` confirms wallet receipt.
+
+## Funding and recovery boundaries
+
+An App/user can occupy one active room. Paid rooms require 2–4 real accounts and never fill with bots. Practice forces entry and fee to zero, labels every artificial participant `bot:true`/`BOT n`, and submits bots' legal actions through the same engine. It sends no wallet commands.
+
+Before the first reserve, the full roster's seat numbers are randomly shuffled once and persisted. Fee, entry, rules, seed and wallet scope are frozen. The App can choose 300/500/800/1000 bps; default 500 means 5% of the total pot. The engine determines tied ranks; seat index only distributes minor-unit remainder among tied winners. Completed total payout plus fee equals the captured pot; payouts include returned principal. A void refunds every original entry and charges zero fee.
+
+`funding`: persist and send one reserve per user, then one atomic capture for the whole roster. No gameplay starts before the capture receipt is verified. `cancelling`: release the whole match and create the wallet's cancellation tombstone even if no hold exists. If capture had already committed but its response was lost, release returns `ALREADY_CAPTURED`; the unplayed room then makes one full void settlement. Expired/rejected reservation or capture cancels and releases other holds.
+
+Every command is stored in `pvp_operations` before HTTP dispatch. Original request ID and exact serialized body are retained, including expiry. Recovery queries that same operation before resend, validates response schema, scope, body hash, resource ID, state, terms, participants and payout amounts. A query's 404 is not proof of nonexecution: any resend retains the original ID. Invalid/unknown replies remain pending with a retry delay. Wallet business rejection is durable. The wallet remains independently authoritative for balance, gift atomicity and all-participant settlement.
+
+Result, ranking, fee, payout roster and result hash are saved before settlement. The hash is SHA-256 of the result object before its self-referential `result_hash` property is attached. Wallet failure after that point stays `settling`/`voiding`; it cannot change the fixed outcome. A rejected settlement is retained for operator diagnosis and same-operation recovery; it is not silently replaced with another request. Terminal room membership is removed only after confirmed settlement, void or cancellation.
+
+Players have a 30-second disconnect grace window. The engine receives all users timing out in one tick as one batch. A fully finished Golf result survives later disconnection. All forfeited with no valid final result voids; one eligible survivor wins. Engine fault pauses the room; after 60 seconds without recovery it voids. A service-wide tick gap of 5–60 seconds shifts game clocks and presence timestamps together; a gap over 60 seconds voids. After an actual process restart all rooms, boards, seq, seat order, seed and outbox come from PostgreSQL. A missing pinned engine version enters fault recovery; the service does not reinterpret it under a new version.
+
+## Data and test boundaries
+
+`pvp_rooms`: frozen terms/scope, participants, private engine snapshot, encrypted seed, status, result/hash, timestamps, capture flag and monotonically increasing snapshot version. `pvp_active_users(app_id,external_user_id,room_id)` enforces one active seat. `pvp_requests` persists request response replay. `pvp_actions` is the accepted action/event journal. `pvp_operations` is the persistent wallet outbox. Per-room PostgreSQL advisory locks serialize ticks and user commands; mutations are transactional. The shared DB is local reference topology only: a real partner wallet should use its own deployment/database.
+
+Run from `platform`: `npx tsx --test tests/pvp.integration.test.mjs`. Before any backend module is imported, the suite creates a random temporary PostgreSQL database named `oasis_pvp_test_<pid>_<random>`, sets `OASIS_DATABASE_URL` and a temporary `OASIS_LOCAL_DIR`, then dynamically imports the modules that create connection pools. It verifies `current_database()` before migration. The admin connection defaults to the local PostgreSQL maintenance database; CI can set `OASIS_TEST_ADMIN_DATABASE_URL`. Every wallet HTTP server and every room query in this suite uses that temporary database. The live API's 250 ms tick cannot see the fixtures.
+
+The suite launches `pvp-recovery-child.mjs` twice as new OS processes with the explicit test database URL and local key directory. Each child rejects a missing/non-test database name and verifies its actual connection before recovery. The `after` hook closes the HTTP wallet and all pools, drops only the generated database, checks it is absent from `pg_database`, and removes its temporary key directory. The demo/root database is never a fixture target. Deadline injection also obtains the room advisory lock.
+
+After fixing the former shared-database test race, two complete `npm run test:backend` runs passed **81/81 each** while the main API on port 8797 remained running. Evidence: [run 1](../../review/phase-c/backend-isolated-run-1.tap), [run 2](../../review/phase-c/backend-report.txt), and [database cleanup evidence](../../review/phase-c/pvp-isolation-evidence.json).
+
+Tests accelerate deadlines by modifying only isolated fixture snapshots. They verify settlement/state correctness, not 90 seconds of human play. Frontend visual QA, real Android/iOS WebViews, mobile GPU/memory, production key custody, multi-region latency, anti-collusion/fraud and a production liveness/orchestration system remain separate release work. The local 5-second outage threshold is a reference policy, not a measured production availability guarantee.

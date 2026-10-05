@@ -1,0 +1,433 @@
+{
+  "input": "review/performance-20260928/towerlink-clocks-before/towerlink-cpu1-clocks.json",
+  "scope": "Model replay of actual captured public server_now/simulationAt and response receipt times, at four synthetic 60Hz frame phases. Excludes initial countdown. Captured receipt order approximates React commit order; these are inferred visual-clock stalls, not directly observed on the user phone.",
+  "samples": 49,
+  "before": [
+    {
+      "framePhase": 0,
+      "frames": 2000,
+      "heldFrames": 8,
+      "heldMs": 133.33333333333334,
+      "maxAdvanceMs": 25.98193359375,
+      "jumpsOverNominalPlus5Ms": 7,
+      "held": [
+        {
+          "local": 3133.333333333327,
+          "delta": 0.04345703125,
+          "visual": 1790587918640.6047,
+          "serverNow": 1790587918552,
+          "simulationAt": 1790587918535
+        },
+        {
+          "local": 16899.9999999998,
+          "delta": 0,
+          "visual": 1790587932370.2864,
+          "serverNow": 1790587932079,
+          "simulationAt": 1790587932035
+        },
+        {
+          "local": 16916.666666666468,
+          "delta": 0,
+          "visual": 1790587932370.2864,
+          "serverNow": 1790587932079,
+          "simulationAt": 1790587932035
+        },
+        {
+          "local": 17816.666666666533,
+          "delta": 0,
+          "visual": 1790587933240.0806,
+          "serverNow": 1790587933065,
+          "simulationAt": 1790587933035
+        },
+        {
+          "local": 25033.333333333725,
+          "delta": 0,
+          "visual": 1790587940420.4485,
+          "serverNow": 1790587940319,
+          "simulationAt": 1790587940285
+        },
+        {
+          "local": 33833.333333334136,
+          "delta": 0,
+          "visual": 1790587949229.8342,
+          "serverNow": 1790587948897,
+          "simulationAt": 1790587948785
+        },
+        {
+          "local": 33850.0000000008,
+          "delta": 0,
+          "visual": 1790587949229.8342,
+          "serverNow": 1790587948897,
+          "simulationAt": 1790587948785
+        },
+        {
+          "local": 33866.666666667465,
+          "delta": 0,
+          "visual": 1790587949229.8342,
+          "serverNow": 1790587948897,
+          "simulationAt": 1790587948785
+        }
+      ],
+      "jumps": [
+        {
+          "local": 10316.66666666665,
+          "delta": 23.835693359375
+        },
+        {
+          "local": 21066.66666666677,
+          "delta": 23.253662109375
+        },
+        {
+          "local": 23383.333333333605,
+          "delta": 23.219482421875
+        },
+        {
+          "local": 26600.000000000506,
+          "delta": 22.814697265625
+        },
+        {
+          "local": 31200.00000000084,
+          "delta": 23.38232421875
+        },
+        {
+          "local": 32733.333333334285,
+          "delta": 22.72998046875
+        },
+        {
+          "local": 34600.00000000069,
+          "delta": 25.98193359375
+        }
+      ]
+    },
+    {
+      "framePhase": 4,
+      "frames": 1999,
+      "heldFrames": 8,
+      "heldMs": 133.33333333333334,
+      "maxAdvanceMs": 25.98193359375,
+      "jumpsOverNominalPlus5Ms": 7,
+      "held": [
+        {
+          "local": 3137.333333333327,
+          "delta": 0.04345703125,
+          "visual": 1790587918644.6047,
+          "serverNow": 1790587918552,
+          "simulationAt": 1790587918535
+        },
+        {
+          "local": 16887.333333333132,
+          "delta": 0,
+          "visual": 1790587932357.6199,
+          "serverNow": 1790587932079,
+          "simulationAt": 1790587932035
+        },
+        {
+          "local": 16903.9999999998,
+          "delta": 0,
+          "visual": 1790587932357.6199,
+          "serverNow": 1790587932079,
+          "simulationAt": 1790587932035
+        },
+        {
+          "local": 17820.666666666533,
+          "delta": 0,
+          "visual": 1790587933244.0806,
+          "serverNow": 1790587933065,
+          "simulationAt": 1790587933035
+        },
+        {
+          "local": 25037.333333333725,
+          "delta": 0,
+          "visual": 1790587940424.4485,
+          "serverNow": 1790587940319,
+          "simulationAt": 1790587940285
+        },
+        {
+          "local": 33837.33333333413,
+          "delta": 0,
+          "visual": 1790587949233.8342,
+          "serverNow": 1790587948897,
+          "simulationAt": 1790587948785
+        },
+        {
+          "local": 33854.00000000079,
+          "delta": 0,
+          "visual": 1790587949233.8342,
+          "serverNow": 1790587948897,
+          "simulationAt": 1790587948785
+        },
+        {
+          "local": 33870.66666666746,
+          "delta": 0,
+          "visual": 1790587949233.8342,
+          "serverNow": 1790587948897,
+          "simulationAt": 1790587948785
+        }
+      ],
+      "jumps": [
+        {
+          "local": 10303.999999999984,
+          "delta": 23.835693359375
+        },
+        {
+          "local": 21070.66666666677,
+          "delta": 23.253662109375
+        },
+        {
+          "local": 23370.666666666937,
+          "delta": 23.2197265625
+        },
+        {
+          "local": 26604.000000000506,
+          "delta": 22.814697265625
+        },
+        {
+          "local": 31204.00000000084,
+          "delta": 23.38232421875
+        },
+        {
+          "local": 32720.666666667617,
+          "delta": 22.730224609375
+        },
+        {
+          "local": 34604.000000000684,
+          "delta": 25.98193359375
+        }
+      ]
+    },
+    {
+      "framePhase": 8,
+      "frames": 1999,
+      "heldFrames": 8,
+      "heldMs": 133.33333333333334,
+      "maxAdvanceMs": 25.98193359375,
+      "jumpsOverNominalPlus5Ms": 7,
+      "held": [
+        {
+          "local": 3141.333333333327,
+          "delta": 0.04345703125,
+          "visual": 1790587918648.6047,
+          "serverNow": 1790587918552,
+          "simulationAt": 1790587918535
+        },
+        {
+          "local": 16891.333333333132,
+          "delta": 0,
+          "visual": 1790587932361.6199,
+          "serverNow": 1790587932079,
+          "simulationAt": 1790587932035
+        },
+        {
+          "local": 16907.9999999998,
+          "delta": 0,
+          "visual": 1790587932361.6199,
+          "serverNow": 1790587932079,
+          "simulationAt": 1790587932035
+        },
+        {
+          "local": 17824.666666666533,
+          "delta": 0,
+          "visual": 1790587933248.0806,
+          "serverNow": 1790587933065,
+          "simulationAt": 1790587933035
+        },
+        {
+          "local": 25041.333333333725,
+          "delta": 0,
+          "visual": 1790587940428.4485,
+          "serverNow": 1790587940319,
+          "simulationAt": 1790587940285
+        },
+        {
+          "local": 33841.33333333413,
+          "delta": 0,
+          "visual": 1790587949237.8342,
+          "serverNow": 1790587948897,
+          "simulationAt": 1790587948785
+        },
+        {
+          "local": 33858.00000000079,
+          "delta": 0,
+          "visual": 1790587949237.8342,
+          "serverNow": 1790587948897,
+          "simulationAt": 1790587948785
+        },
+        {
+          "local": 33874.66666666746,
+          "delta": 0,
+          "visual": 1790587949237.8342,
+          "serverNow": 1790587948897,
+          "simulationAt": 1790587948785
+        }
+      ],
+      "jumps": [
+        {
+          "local": 10307.999999999984,
+          "delta": 23.835693359375
+        },
+        {
+          "local": 21058.000000000102,
+          "delta": 23.253662109375
+        },
+        {
+          "local": 23374.666666666937,
+          "delta": 23.2197265625
+        },
+        {
+          "local": 26608.000000000506,
+          "delta": 22.814697265625
+        },
+        {
+          "local": 31208.00000000084,
+          "delta": 23.38232421875
+        },
+        {
+          "local": 32724.666666667617,
+          "delta": 22.730224609375
+        },
+        {
+          "local": 34608.000000000684,
+          "delta": 25.98193359375
+        }
+      ]
+    },
+    {
+      "framePhase": 12,
+      "frames": 1999,
+      "heldFrames": 8,
+      "heldMs": 133.33333333333334,
+      "maxAdvanceMs": 25.98193359375,
+      "jumpsOverNominalPlus5Ms": 7,
+      "held": [
+        {
+          "local": 3145.333333333327,
+          "delta": 0.04345703125,
+          "visual": 1790587918652.6047,
+          "serverNow": 1790587918552,
+          "simulationAt": 1790587918535
+        },
+        {
+          "local": 16895.333333333132,
+          "delta": 0,
+          "visual": 1790587932365.6199,
+          "serverNow": 1790587932079,
+          "simulationAt": 1790587932035
+        },
+        {
+          "local": 16911.9999999998,
+          "delta": 0,
+          "visual": 1790587932365.6199,
+          "serverNow": 1790587932079,
+          "simulationAt": 1790587932035
+        },
+        {
+          "local": 17828.666666666533,
+          "delta": 0,
+          "visual": 1790587933252.0806,
+          "serverNow": 1790587933065,
+          "simulationAt": 1790587933035
+        },
+        {
+          "local": 25045.333333333725,
+          "delta": 0,
+          "visual": 1790587940432.4485,
+          "serverNow": 1790587940319,
+          "simulationAt": 1790587940285
+        },
+        {
+          "local": 33845.33333333413,
+          "delta": 0,
+          "visual": 1790587949241.8342,
+          "serverNow": 1790587948897,
+          "simulationAt": 1790587948785
+        },
+        {
+          "local": 33862.00000000079,
+          "delta": 0,
+          "visual": 1790587949241.8342,
+          "serverNow": 1790587948897,
+          "simulationAt": 1790587948785
+        },
+        {
+          "local": 33878.66666666746,
+          "delta": 0,
+          "visual": 1790587949241.8342,
+          "serverNow": 1790587948897,
+          "simulationAt": 1790587948785
+        }
+      ],
+      "jumps": [
+        {
+          "local": 10311.999999999982,
+          "delta": 23.835693359375
+        },
+        {
+          "local": 21062.000000000102,
+          "delta": 23.253662109375
+        },
+        {
+          "local": 23378.666666666937,
+          "delta": 23.2197265625
+        },
+        {
+          "local": 26612.000000000506,
+          "delta": 22.814697265625
+        },
+        {
+          "local": 31195.333333334172,
+          "delta": 23.382080078125
+        },
+        {
+          "local": 32728.666666667617,
+          "delta": 22.730224609375
+        },
+        {
+          "local": 34612.000000000684,
+          "delta": 25.98193359375
+        }
+      ]
+    }
+  ],
+  "after": [
+    {
+      "framePhase": 0,
+      "frames": 2000,
+      "heldFrames": 0,
+      "heldMs": 0,
+      "maxAdvanceMs": 21.13330078125,
+      "jumpsOverNominalPlus5Ms": 0,
+      "held": [],
+      "jumps": []
+    },
+    {
+      "framePhase": 4,
+      "frames": 1999,
+      "heldFrames": 0,
+      "heldMs": 0,
+      "maxAdvanceMs": 19.86669921875,
+      "jumpsOverNominalPlus5Ms": 0,
+      "held": [],
+      "jumps": []
+    },
+    {
+      "framePhase": 8,
+      "frames": 1999,
+      "heldFrames": 0,
+      "heldMs": 0,
+      "maxAdvanceMs": 20.266845703125,
+      "jumpsOverNominalPlus5Ms": 0,
+      "held": [],
+      "jumps": []
+    },
+    {
+      "framePhase": 12,
+      "frames": 1999,
+      "heldFrames": 0,
+      "heldMs": 0,
+      "maxAdvanceMs": 20.666748046875,
+      "jumpsOverNominalPlus5Ms": 0,
+      "held": [],
+      "jumps": []
+    }
+  ]
+}

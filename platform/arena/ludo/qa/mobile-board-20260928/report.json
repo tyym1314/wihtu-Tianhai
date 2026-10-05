@@ -1,0 +1,462 @@
+{
+  "checkedAt": "2026-09-28T11:43:26.821Z",
+  "scope": "Current UI and isolated real HTTP engines; legal deterministic positions are configured explicitly. Chrome trusted touch and desktop WebKit trusted pointer; not physical iPhone Safari acceptance. Every HTTP attempt counted before validation.",
+  "samples": [
+    {
+      "engine": "chromium",
+      "width": 390,
+      "height": 844,
+      "method": "Chrome trusted native touch: Playwright tap and CDP touchStart/move/end scrolling",
+      "checks": [
+        "Hidden server die renders a question mark, not a future result",
+        "Real roll response is 6 and the only visible face contains exactly 6 dots",
+        "Two stacked pawns remain independently selectable; only chosen pawn 2 moves via the real engine",
+        "All six authority values render matching dots in a single 2D face"
+      ],
+      "errors": [],
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "ludo-roll",
+            "diceValue": "6"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "ludo-roll",
+            "diceValue": "6"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "ludo-roll",
+            "diceValue": "6"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "pawnChoice": "0"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "pawnChoice": "0"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "pawnChoice": "0"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "pawnChoice": "1"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "pawnChoice": "1"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "pawnChoice": "1"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "ludo-move"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "ludo-move"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "ludo-move"
+          }
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "width": 360,
+      "height": 844,
+      "method": "Chrome trusted native touch: Playwright tap and CDP touchStart/move/end scrolling",
+      "checks": [
+        "Hidden server die renders a question mark, not a future result",
+        "Real roll response is 6 and the only visible face contains exactly 6 dots",
+        "Two stacked pawns remain independently selectable; only chosen pawn 2 moves via the real engine",
+        "All six authority values render matching dots in a single 2D face"
+      ],
+      "errors": [],
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "ludo-roll",
+            "diceValue": "6"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "ludo-roll",
+            "diceValue": "6"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "ludo-roll",
+            "diceValue": "6"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "pawnChoice": "0"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "pawnChoice": "0"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "pawnChoice": "0"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "pawnChoice": "1"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "pawnChoice": "1"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "pawnChoice": "1"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "ludo-move"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "ludo-move"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "action": "ludo-move"
+          }
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "width": 390,
+      "height": 844,
+      "method": "Desktop WebKit trusted native mouse pointer; native wheel for hand scrolling",
+      "checks": [
+        "Hidden server die renders a question mark, not a future result",
+        "Real roll response is 6 and the only visible face contains exactly 6 dots",
+        "Two stacked pawns remain independently selectable; only chosen pawn 2 moves via the real engine",
+        "All six authority values render matching dots in a single 2D face"
+      ],
+      "errors": [],
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "ludo-roll",
+            "diceValue": "6"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "ludo-roll",
+            "diceValue": "6"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "ludo-roll",
+            "diceValue": "6"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "pawnChoice": "0"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "pawnChoice": "0"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "pawnChoice": "0"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "pawnChoice": "1"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "pawnChoice": "1"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "pawnChoice": "1"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "ludo-move"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "ludo-move"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "ludo-move"
+          }
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "width": 360,
+      "height": 844,
+      "method": "Desktop WebKit trusted native mouse pointer; native wheel for hand scrolling",
+      "checks": [
+        "Hidden server die renders a question mark, not a future result",
+        "Real roll response is 6 and the only visible face contains exactly 6 dots",
+        "Two stacked pawns remain independently selectable; only chosen pawn 2 moves via the real engine",
+        "All six authority values render matching dots in a single 2D face"
+      ],
+      "errors": [],
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "ludo-roll",
+            "diceValue": "6"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "ludo-roll",
+            "diceValue": "6"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "ludo-roll",
+            "diceValue": "6"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "pawnChoice": "0"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "pawnChoice": "0"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "pawnChoice": "0"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "pawnChoice": "1"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "pawnChoice": "1"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "pawnChoice": "1"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "ludo-move"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "ludo-move"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "action": "ludo-move"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "generatedAt": "2026-09-19",
+  "tool": "image_gen.imagegen",
+  "originalArtwork": true,
+  "reference": "output/design/pvp-arena-concepts-v1/05-ludo.png",
+  "prompt": "Use case: stylized-concept. Production character portrait atlas for an original premium mobile board game. Exactly four separate square portrait headshots in an evenly divided 2x2 grid, no gaps, no frames, no text. Top-left: charming smiling Middle Eastern young adult woman in a crimson-red elegant hijab. Top-right: handsome smiling Middle Eastern adult man in white ghutra and black agal, neat short dark beard. Bottom-left: warm smiling young adult Middle Eastern woman with long dark wavy hair and emerald outfit. Bottom-right: handsome curly-haired Middle Eastern adult man with neat beard and dark green shirt. Each face centered, shoulders at bottom, identical camera distance, each on quiet dark charcoal background. Polished stylized realistic 3D mobile game portrait art, expressive friendly faces, rich skin shading, golden rim light, luxurious soft lighting, premium reference quality. No logos or lettering; heads fully inside their quadrant. 1024x1024 square.",
+  "source": "players-source.png",
+  "delivery": "players-atlas.webp",
+  "deliveryDimensions": "768×768",
+  "conversion": "cwebp resizing and lossy WebP encoding only; source preserved",
+  "scope": "Cosmetic preset portraits shared by these three games; never player identity or authenticated photo."
+}

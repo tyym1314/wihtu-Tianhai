@@ -1,0 +1,98 @@
+{
+  "operation": "WebP delivery encoding only; original generated PNGs preserved, no resizing or art edits",
+  "tool": "sharp",
+  "assets": [
+    {
+      "source": "fox-poses-v2.png",
+      "runtime": "fox-poses-v2.webp",
+      "sourceBytes": 2261441,
+      "runtimeBytes": 319472,
+      "dimensions": {
+        "format": "webp",
+        "mediaType": "image/webp",
+        "width": 1536,
+        "height": 1024,
+        "space": "srgb",
+        "channels": 4,
+        "depth": "uchar",
+        "isProgressive": false,
+        "isPalette": false,
+        "hasProfile": false,
+        "hasAlpha": true,
+        "autoOrient": {
+          "width": 1536,
+          "height": 1024
+        }
+      }
+    },
+    {
+      "source": "gems-v2.png",
+      "runtime": "gems-v2.webp",
+      "sourceBytes": 1937074,
+      "runtimeBytes": 232572,
+      "dimensions": {
+        "format": "webp",
+        "mediaType": "image/webp",
+        "width": 1536,
+        "height": 1024,
+        "space": "srgb",
+        "channels": 4,
+        "depth": "uchar",
+        "isProgressive": false,
+        "isPalette": false,
+        "hasProfile": false,
+        "hasAlpha": true,
+        "autoOrient": {
+          "width": 1536,
+          "height": 1024
+        }
+      }
+    },
+    {
+      "source": "player-portraits-v2.png",
+      "runtime": "player-portraits-v2.webp",
+      "sourceBytes": 2628536,
+      "runtimeBytes": 375036,
+      "dimensions": {
+        "format": "webp",
+        "mediaType": "image/webp",
+        "width": 1254,
+        "height": 1254,
+        "space": "srgb",
+        "channels": 3,
+        "depth": "uchar",
+        "isProgressive": false,
+        "isPalette": false,
+        "hasProfile": false,
+        "hasAlpha": false,
+        "autoOrient": {
+          "width": 1254,
+          "height": 1254
+        }
+      }
+    },
+    {
+      "source": "trophies-v2.png",
+      "runtime": "trophies-v2.webp",
+      "sourceBytes": 2279954,
+      "runtimeBytes": 641424,
+      "dimensions": {
+        "format": "webp",
+        "mediaType": "image/webp",
+        "width": 1983,
+        "height": 793,
+        "space": "srgb",
+        "channels": 4,
+        "depth": "uchar",
+        "isProgressive": false,
+        "isPalette": false,
+        "hasProfile": false,
+        "hasAlpha": true,
+        "autoOrient": {
+          "width": 1983,
+          "height": 793
+        }
+      }
+    }
+  ]
+}

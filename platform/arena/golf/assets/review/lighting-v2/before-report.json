@@ -1,0 +1,31 @@
+{
+  "scope": "Golf-only isolated zero-wallet real engine and pointer QA; desktop Chrome viewports, not physical phones",
+  "mode": "before",
+  "checks": [
+    {
+      "width": 360,
+      "height": 800,
+      "assets": true,
+      "layout": true,
+      "drawCalls": 306,
+      "triangles": 673114
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "assets": true,
+      "layout": true,
+      "drawCalls": 307,
+      "triangles": 675778
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "assets": true,
+      "layout": true,
+      "drawCalls": 307,
+      "triangles": 675778
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-09-19T16:43:51.559Z",
+  "url": "http://127.0.0.1:18112/arena/review-preview.html?game=run&mode=result",
+  "checks": [
+    "390 real root result loaded four illustrated animals, correct winner cup pose, no horizontal overflow",
+    "360 real root result loaded four illustrated animals, correct winner cup pose, no horizontal overflow"
+  ],
+  "errors": [],
+  "ranks": "p0:1:fox,p1:2:cat,p2:3:bear,p3:4:rabbit",
+  "characterRenderer": "illustrated-atlas",
+  "trophySource": "illustrated character pose",
+  "video": "video/root-podium-current.webm"
+}

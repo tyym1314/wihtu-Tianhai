@@ -1,0 +1,1773 @@
+{
+  "rows": [
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.12,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        6,
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.12,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.12,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.12,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        6,
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.12,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.14,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.14,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 6,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        6,
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.14,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.14,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.14,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.16,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.16,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 6,
+      "outcome": "settled",
+      "remaining": [
+        6,
+        7,
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.16,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.16,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 10,
+      "outcome": "settled",
+      "remaining": []
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.16,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.18,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.18,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        6,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.18,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.18,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.18,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.2,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.2,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.2,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.2,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.2,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 10,
+      "outcome": "settled",
+      "remaining": []
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.22,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "fault",
+      "remaining": [
+        5,
+        7,
+        9
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.22,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        5,
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.22,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        5,
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.22,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.22,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 10,
+      "outcome": "settled",
+      "remaining": []
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.24,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.24,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.24,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 6,
+      "outcome": "settled",
+      "remaining": [
+        3,
+        5,
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.24,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        6,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.24,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        9
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.26,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.26,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        6,
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.26,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 6,
+      "outcome": "settled",
+      "remaining": [
+        5,
+        6,
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.26,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        9
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.26,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        5,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.28,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.28,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 6,
+      "outcome": "settled",
+      "remaining": [
+        6,
+        7,
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.28,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        6,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.28,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "fault",
+      "remaining": [
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.28,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 6,
+      "outcome": "settled",
+      "remaining": [
+        3,
+        6,
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.3,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        6,
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.3,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.3,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        6,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.3,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        6,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.3,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        6,
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.12,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.12,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.12,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.12,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.12,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.14,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.14,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.14,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.14,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 6,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7,
+        9,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.14,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        6,
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.16,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.16,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.16,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 10,
+      "outcome": "settled",
+      "remaining": []
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.16,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "fault",
+      "remaining": [
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.16,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 6,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        6,
+        7,
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.18,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.18,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.18,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.18,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.18,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.2,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.2,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.2,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.2,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 10,
+      "outcome": "settled",
+      "remaining": []
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.2,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.22,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 6,
+      "outcome": "settled",
+      "remaining": [
+        2,
+        4,
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.22,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        5,
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.22,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 6,
+      "outcome": "settled",
+      "remaining": [
+        2,
+        5,
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.22,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.22,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.24,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.24,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        5,
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.24,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        5,
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.24,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "settled",
+      "remaining": [
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.24,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 10,
+      "outcome": "settled",
+      "remaining": []
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.26,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.26,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.26,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 6,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        5,
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.26,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        2,
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.26,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        5,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.28,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.28,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.28,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.28,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.28,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.3,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7,
+        8
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.3,
+        "angle": 0,
+        "power": 0.7,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.3,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.3,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.3,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "settled",
+      "remaining": [
+        4,
+        7
+      ]
+    }
+  ],
+  "strikes": [
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.16,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 10,
+      "outcome": "settled",
+      "remaining": []
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.2,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 10,
+      "outcome": "settled",
+      "remaining": []
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.22,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 10,
+      "outcome": "settled",
+      "remaining": []
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.16,
+        "angle": 0,
+        "power": 0.8,
+        "spin": 0
+      },
+      "pins": 10,
+      "outcome": "settled",
+      "remaining": []
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.2,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 10,
+      "outcome": "settled",
+      "remaining": []
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.24,
+        "angle": 0,
+        "power": 1,
+        "spin": 0
+      },
+      "pins": 10,
+      "outcome": "settled",
+      "remaining": []
+    }
+  ],
+  "faults": [
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.22,
+        "angle": 0,
+        "power": 0.6,
+        "spin": 0
+      },
+      "pins": 7,
+      "outcome": "fault",
+      "remaining": [
+        5,
+        7,
+        9
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": -0.28,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 9,
+      "outcome": "fault",
+      "remaining": [
+        10
+      ]
+    },
+    {
+      "action": {
+        "type": "roll",
+        "offset": 0.16,
+        "angle": 0,
+        "power": 0.9,
+        "spin": 0
+      },
+      "pins": 8,
+      "outcome": "fault",
+      "remaining": [
+        7,
+        8
+      ]
+    }
+  ],
+  "bot": {
+    "rolls": [
+      {
+        "action": {
+          "type": "roll",
+          "offset": 0,
+          "angle": 0,
+          "power": 0.78,
+          "spin": 0
+        },
+        "down": [
+          1,
+          2,
+          3,
+          5,
+          6,
+          8,
+          9,
+          10
+        ]
+      },
+      {
+        "action": {
+          "type": "roll",
+          "offset": 0,
+          "angle": -0.04977768643997037,
+          "power": 0.78,
+          "spin": 0
+        },
+        "down": [
+          4,
+          7
+        ]
+      },
+      {
+        "action": {
+          "type": "roll",
+          "offset": 0,
+          "angle": 0,
+          "power": 0.78,
+          "spin": 0
+        },
+        "down": [
+          1,
+          2,
+          3,
+          5,
+          6,
+          8,
+          9,
+          10
+        ]
+      },
+      {
+        "action": {
+          "type": "roll",
+          "offset": 0,
+          "angle": -0.04977768643997037,
+          "power": 0.78,
+          "spin": 0
+        },
+        "down": [
+          4,
+          7
+        ]
+      },
+      {
+        "action": {
+          "type": "roll",
+          "offset": 0,
+          "angle": 0,
+          "power": 0.78,
+          "spin": 0
+        },
+        "down": [
+          1,
+          2,
+          3,
+          5,
+          6,
+          8,
+          9,
+          10
+        ]
+      },
+      {
+        "action": {
+          "type": "roll",
+          "offset": 0,
+          "angle": -0.04977768643997037,
+          "power": 0.78,
+          "spin": 0
+        },
+        "down": [
+          4,
+          7
+        ]
+      },
+      {
+        "action": {
+          "type": "roll",
+          "offset": 0,
+          "angle": 0,
+          "power": 0.78,
+          "spin": 0
+        },
+        "down": [
+          1,
+          2,
+          3,
+          5,
+          6,
+          8,
+          9,
+          10
+        ]
+      }
+    ],
+    "score": 54,
+    "frames": [
+      [
+        8,
+        2
+      ],
+      [
+        8,
+        2
+      ],
+      [
+        8,
+        2,
+        8
+      ]
+    ]
+  }
+}

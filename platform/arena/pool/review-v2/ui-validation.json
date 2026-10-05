@@ -1,0 +1,60 @@
+{
+  "at": "2026-09-19T15:38:57.843Z",
+  "scope": "Isolated actual-engine Chrome mobile emulation. No platform, wallet, or paid room requests. Shared portrait PNG only routed from its real local source. Not physical-device acceptance.",
+  "reports": [
+    {
+      "game": "pool",
+      "width": 390,
+      "height": 844,
+      "layout": {
+        "width": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      "evidence": {
+        "action": "actual touch called-pocket and eight-ball shot",
+        "fixture": "explicit zero-value eight-ball setup",
+        "frames": 40,
+        "pocketEvents": [
+          {
+            "type": "pocket",
+            "n": 8,
+            "pocketId": 1,
+            "t": 975,
+            "x": 3.22,
+            "y": -6.47
+          }
+        ],
+        "result": "called-eight"
+      },
+      "errors": []
+    },
+    {
+      "game": "pool",
+      "width": 360,
+      "height": 800,
+      "layout": {
+        "width": 360,
+        "scrollWidth": 360,
+        "scrollHeight": 800
+      },
+      "evidence": {
+        "action": "actual touch called-pocket and eight-ball shot",
+        "fixture": "explicit zero-value eight-ball setup",
+        "frames": 40,
+        "pocketEvents": [
+          {
+            "type": "pocket",
+            "n": 8,
+            "pocketId": 1,
+            "t": 975,
+            "x": 3.22,
+            "y": -6.47
+          }
+        ],
+        "result": "called-eight"
+      },
+      "errors": []
+    }
+  ]
+}

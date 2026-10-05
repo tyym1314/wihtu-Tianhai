@@ -1,0 +1,13 @@
+{
+  "prefabs": [
+    "Palm",
+    "RockBank",
+    "BridgeSupport",
+    "Palace",
+    "FinishGate"
+  ],
+  "source": "Original Blender modular meshes; cosmetic only",
+  "glb": "oasis-kit.glb",
+  "blend": "oasis-modular-environment.blend",
+  "triangles": 28988
+}

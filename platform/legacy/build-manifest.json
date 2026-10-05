@@ -1,0 +1,106 @@
+{
+  "generatedAt": "2026-10-04T12:36:51.976Z",
+  "status": "PLATFORM_PRESENTATION_BUILD",
+  "sourceFilesVerifiedUnchanged": 23,
+  "outputDirectory": "platform/legacy/dist",
+  "htmlRoutes": [
+    "/play/thunder",
+    "/play/tiger"
+  ],
+  "assetBase": "/legacy/",
+  "authentication": "server-bound host-origin and nonce channel; one-time code; Bearer in game bridge memory only",
+  "originalSources": [
+    {
+      "path": "src/.DS_Store",
+      "sha256": "1505a02525b10ec67be1576288e821ae8fa32723c3961077218634de648d88a4"
+    },
+    {
+      "path": "src/game/engine.ts",
+      "sha256": "58fc823228724deb9e9c203898680834ee2c800b01c464a9a5af4935906f122d"
+    },
+    {
+      "path": "src/game/types.ts",
+      "sha256": "e447ab553a4a7da5dfddecc43de5bd057bbe34f8c1dcccf0e10627d7569407f8"
+    },
+    {
+      "path": "src/main.ts",
+      "sha256": "ac88110b5ec2fee84f65c339ee2e9f06d2308f43fbbd823b4d314b5e7f3c2c05"
+    },
+    {
+      "path": "src/style.css",
+      "sha256": "f79db89cd0e74ff1010aecd5f6edccd5bc58fc4e5003d6d5f0950060b517f776"
+    },
+    {
+      "path": "src/tiger/audio.ts",
+      "sha256": "7fe341551c3c5d8f5747aea0022e16cb6d6eb82d2e1df01584705f816e322158"
+    },
+    {
+      "path": "src/tiger/autoplay.ts",
+      "sha256": "1f12d2d98ac242e31b352c38a03d1f146eb62e7ff5dcd8659d937a2797dc3395"
+    },
+    {
+      "path": "src/tiger/character.css",
+      "sha256": "700579ed1d86aad4a9a84f571605956ce1097da991a5169de54fb0d46eb29d7a"
+    },
+    {
+      "path": "src/tiger/character.ts",
+      "sha256": "209fea5bf4fe361e9b091e07e4a7c053c533fd178dd752c7055d9775c2dc5b88"
+    },
+    {
+      "path": "src/tiger/copy.ts",
+      "sha256": "61b828201f48aeb31d0c77b4388a5750c4b225b0e0fa060b60c0698627cd7ab4"
+    },
+    {
+      "path": "src/tiger/effects.ts",
+      "sha256": "7435c46dc2559891a470da58897e029bda44e3747f78fd78af05c085e14f45de"
+    },
+    {
+      "path": "src/tiger/main.ts",
+      "sha256": "b4b7f2c34d547a401c0ee79c1cda5a3cd3c2ef075072569e657424bab75e50a4"
+    },
+    {
+      "path": "src/tiger/math.ts",
+      "sha256": "3debf31ccad0f3b3a66ecb7b11898cbf7bb1e6429d731783efd8f6f25154239d"
+    },
+    {
+      "path": "src/tiger/style.css",
+      "sha256": "3842137627747d5e0a685122cd2aaffdc0a5e601cbcf47b3d97b80288f57db1f"
+    },
+    {
+      "path": "src/tiger/types.ts",
+      "sha256": "f23316987a8ad1a9f69302d3a55cdaf79373a1a125d20bc8c062a5e910c9635c"
+    },
+    {
+      "path": "src/ui/audio-controls.css",
+      "sha256": "ff0288d29829812a6bbcd7eb9255ed4bc3b2563c676f81816c1772db176adee3"
+    },
+    {
+      "path": "src/ui/audio.ts",
+      "sha256": "9f126fdd6113f98d1d558e6a98ca7218e4ce0aab6738eece0481712834eb3924"
+    },
+    {
+      "path": "src/ui/autoplay.ts",
+      "sha256": "1f12d2d98ac242e31b352c38a03d1f146eb62e7ff5dcd8659d937a2797dc3395"
+    },
+    {
+      "path": "src/ui/character.css",
+      "sha256": "9e091c745ad09fc70842164a284e81149c5cb29c7cd6a48831b21aa82004008d"
+    },
+    {
+      "path": "src/ui/character.ts",
+      "sha256": "224e16f4b7a6fd4c210bec96faa83f4735503fdb166b7be39dda32c1fd885543"
+    },
+    {
+      "path": "src/ui/i18n.ts",
+      "sha256": "aca528e07a7e68cd25063e2f0e93329d5c98707bd80436de506441c697bef3ab"
+    },
+    {
+      "path": "src/ui/motion.css",
+      "sha256": "e2452307579897e86a078f2dc8634be493bf20f6647bf09416532d7a6cb2a8eb"
+    },
+    {
+      "path": "src/ui/motion.ts",
+      "sha256": "b3a4f34b8d2173204d34f27f9fc17466a3744160e3f7691ac6a3fb68dec710e2"
+    }
+  ]
+}

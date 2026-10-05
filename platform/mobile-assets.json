@@ -1,0 +1,489 @@
+[
+  {
+    "source": "platform/arena/public/assets/match-palace.png",
+    "target": "platform/arena/public/assets/match-palace-mobile-09ad602636.webp",
+    "source_sha256": "4d5bc30d7e90071736cdf7c2e675f2b103ae0cd68b84c21f20167aced4e99a2e",
+    "target_sha256": "09ad6026368c046ba3c9f51b3b3e37a781633e7366d93883d84d8448c96853eb",
+    "source_bytes": 2569557,
+    "target_bytes": 374098,
+    "original_url": "/assets/match-palace.png",
+    "optimized_url": "/assets/match-palace-mobile-09ad602636.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "platform/arena/public/assets/fox-mascot.png",
+    "target": "platform/arena/public/assets/fox-mascot-mobile-7d3781fba5.webp",
+    "source_sha256": "c37f3385f89395e3b36255cd21fad6be3101aebf25c363164f52afd00cdb131b",
+    "target_sha256": "7d3781fba58eeed445e392c22a61b37709bfccaba7b5829fe02518bc27f66416",
+    "source_bytes": 2253952,
+    "target_bytes": 260878,
+    "original_url": "/assets/fox-mascot.png",
+    "optimized_url": "/assets/fox-mascot-mobile-7d3781fba5.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "public/assets/throne-deck.png",
+    "target": "public/assets/throne-deck-mobile-a3d5b6d29f.webp",
+    "source_sha256": "1560b3e2c0e861fd4509a71babb0a6efbdd62b29305f5b362f8232766aebecea",
+    "target_sha256": "a3d5b6d29f8d21081a69fe9f805b0ed23c94c20a75eac76a654008bef4258b54",
+    "source_bytes": 2817241,
+    "target_bytes": 532932,
+    "original_url": "/assets/throne-deck.png",
+    "optimized_url": "/assets/throne-deck-mobile-a3d5b6d29f.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "public/assets/thunder-main.png",
+    "target": "public/assets/thunder-main-mobile-d6c646ceb2.webp",
+    "source_sha256": "5c5a75b808a20d1470badfde6caa775d89ef56df9b97ef1889264faca26f7118",
+    "target_sha256": "d6c646ceb249d4d47dc0a905da6d5eaa26f50475344c5fd138b7cbc5fb3c0074",
+    "source_bytes": 2781163,
+    "target_bytes": 499608,
+    "original_url": "/assets/thunder-main.png",
+    "optimized_url": "/assets/thunder-main-mobile-d6c646ceb2.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "public/assets/hero-scene.png",
+    "target": "public/assets/hero-scene-mobile-b14b40ee3c.webp",
+    "source_sha256": "fd9cd0901fbe4e91b26288ef692e458cfe9bb34a95833abbeb3ce58a051a5efc",
+    "target_sha256": "b14b40ee3c989ff46874934727010e9ea77905bca1734c68c82b4d4ef4efc86c",
+    "source_bytes": 2614001,
+    "target_bytes": 458916,
+    "original_url": "/assets/hero-scene.png",
+    "optimized_url": "/assets/hero-scene-mobile-b14b40ee3c.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "public/assets/hero-character.png",
+    "target": "public/assets/hero-character-mobile-d5cc5f4d2e.webp",
+    "source_sha256": "51262c4660b0e3b31bda24d7a21cdae058f73a889d561e5be553e6a31616638c",
+    "target_sha256": "d5cc5f4d2e014578d04461d0b8b4c71d0bb6c8ad4fa23225d2a38640c3d7de54",
+    "source_bytes": 2270296,
+    "target_bytes": 459812,
+    "original_url": "/assets/hero-character.png",
+    "optimized_url": "/assets/hero-character-mobile-d5cc5f4d2e.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "public/assets/tiger/scene.png",
+    "target": "public/assets/tiger/scene-mobile-e7cfec1c28.webp",
+    "source_sha256": "d6e12df05af51dc13d34a7d2aab4b721a7834040afdc12b6898d5cd957013e56",
+    "target_sha256": "e7cfec1c28d0a6bf69c1c8c4c0d78ec02e0c38e3449e5f31b4c1b0b23d298764",
+    "source_bytes": 2379737,
+    "target_bytes": 350710,
+    "original_url": "/assets/tiger/scene.png",
+    "optimized_url": "/assets/tiger/scene-mobile-e7cfec1c28.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "public/assets/tiger/character-idle.png",
+    "target": "public/assets/tiger/character-idle-mobile-f603443652.webp",
+    "source_sha256": "a42dea0816863515c6b8464daf5ac4024139312fd9a85a0e457a601c35e40bd5",
+    "target_sha256": "f60344365272df04af9aee2d75e720ecf014b9d1aa8e13ffb8b81100a864fd90",
+    "source_bytes": 2163783,
+    "target_bytes": 463182,
+    "original_url": "/assets/tiger/character-idle.png",
+    "optimized_url": "/assets/tiger/character-idle-mobile-f603443652.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "public/assets/tiger/character-win.png",
+    "target": "public/assets/tiger/character-win-mobile-1d1da61527.webp",
+    "source_sha256": "3ee61a679249883390a7da4bf3d07e4860ac6936f98f9d1a550b0ecb4b60c20f",
+    "target_sha256": "1d1da61527aa0b660b1f1627ded9328bcc7b90f38d201b6a29550a9ba3b27363",
+    "source_bytes": 2105780,
+    "target_bytes": 396802,
+    "original_url": "/assets/tiger/character-win.png",
+    "optimized_url": "/assets/tiger/character-win-mobile-1d1da61527.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "public/assets/tiger/character-blink.png",
+    "target": "public/assets/tiger/character-blink-mobile-1a08e4e887.webp",
+    "source_sha256": "9dfeaae827bb10ac5fcd0ba202af690188bb0e282b5e4517fd26acdba53e000b",
+    "target_sha256": "1a08e4e887c58fce270a65c43443f7ca304d1be65436837eb812f962384cdfc7",
+    "source_bytes": 1995548,
+    "target_bytes": 353524,
+    "original_url": "/assets/tiger/character-blink.png",
+    "optimized_url": "/assets/tiger/character-blink-mobile-1a08e4e887.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "public/assets/tiger/symbols.png",
+    "target": "public/assets/tiger/symbols-mobile-9df608fad1.webp",
+    "source_sha256": "810d3a6ce5c32acdb63c5053077a349dbadf2653fd7ed6b8f71d4fe03bae78ba",
+    "target_sha256": "9df608fad198cc319ca17ef10c9070bcccb153be80ce192dedb964afe780c725",
+    "source_bytes": 2077785,
+    "target_bytes": 514216,
+    "original_url": "/assets/tiger/symbols.png",
+    "optimized_url": "/assets/tiger/symbols-mobile-9df608fad1.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "platform/arena/pool/assets/midnight-club.png",
+    "target": "platform/arena/pool/assets/midnight-club-mobile-cb6f5ec471.webp",
+    "source_sha256": "15fe4ea85dff6311d0a8ff4a62559a2edf999cc1c41af7b61e63d8906c0a7ba0",
+    "target_sha256": "cb6f5ec471ebe48a0ec06b346f83d3e5c979a529283f0861e06e7ab6dcac4f70",
+    "source_bytes": 2322729,
+    "target_bytes": 371414,
+    "original_url": "./assets/midnight-club.png",
+    "optimized_url": "./assets/midnight-club-mobile-cb6f5ec471.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "platform/arena/darts/assets/night-room.png",
+    "target": "platform/arena/darts/assets/night-room-mobile-60782ace8b.webp",
+    "source_sha256": "0b3435c75239e261d5e46b6dc362af79b475d42ab33de26514ea76b91b769efb",
+    "target_sha256": "60782ace8b12aab8de3da46acd9990ca50c3fe4f27a9d819819d47e240c511d4",
+    "source_bytes": 2481523,
+    "target_bytes": 392654,
+    "original_url": "./assets/night-room.png",
+    "optimized_url": "./assets/night-room-mobile-60782ace8b.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "public/assets/thunder-free.png",
+    "target": "public/assets/thunder-free-mobile-945e9aec53.webp",
+    "source_sha256": "1f41f5663f81b131cfb5018edba41d51b7a5cd119c231020d613c00f8d06ac9c",
+    "target_sha256": "945e9aec53add53379265bf0dcd11669c6294eb8262d62d18c65eaf19d66e490",
+    "source_bytes": 2798377,
+    "target_bytes": 518116,
+    "original_url": "/assets/thunder-free.png",
+    "optimized_url": "/assets/thunder-free-mobile-945e9aec53.webp",
+    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+  },
+  {
+    "source": "platform/arena/public/assets/restoration/player-portraits-v2.png",
+    "target": "platform/arena/public/assets/restoration/player-portraits-v2-mobile-e193e8ea76.webp",
+    "source_sha256": "8c3c590741dcbb1314c6fc7d4dec151a5fab63cca9b48c3d087b84c87b875238",
+    "target_sha256": "e193e8ea76fdb2d4c792ee0e766892c9bfdacdb277dede533db2d57be741f997",
+    "source_bytes": 2628536,
+    "target_bytes": 223600,
+    "original_url": "/assets/restoration/player-portraits-v2.webp",
+    "optimized_url": "/assets/restoration/player-portraits-v2-mobile-e193e8ea76.webp",
+    "codec": "WebP quality82 m6 alpha100 from original PNG, original1254x1254, ICC retained",
+    "previous_optimized_bytes": 375036,
+    "psnr_db": 41.47
+  },
+  {
+    "source": "platform/arena/golf/assets/textures/oasis-distant-palace.webp",
+    "target": "platform/arena/golf/assets/textures/oasis-distant-palace-mobile-e251f780d8.webp",
+    "source_sha256": "0aa25334017ecce51efc699d41c4743d5179444980a3efef8b4a61913e69a054",
+    "target_sha256": "e251f780d87604fb42393f04b4b153804c1251393ae6ac766ffe393c24f1a6c4",
+    "source_bytes": 688580,
+    "target_bytes": 169080,
+    "original_url": "./assets/textures/oasis-distant-palace.webp",
+    "optimized_url": "./assets/textures/oasis-distant-palace-mobile-e251f780d8.webp",
+    "encoding_input": "platform/arena/run/assets/atlases/oasis-environment.png",
+    "encoding_input_sha256": "95ea40e638121486f1559c08362d2dfc07ce5fae93c41dae056f48800402da76",
+    "codec": "WebP quality70, alpha100, ICC retained; mobile resolution, original PNG and prior runtime images retained",
+    "previous_runtime_target": "platform/arena/golf/assets/textures/oasis-distant-palace-mobile-82b0f228aa.webp",
+    "previous_runtime_sha256": "82b0f228aa1d7902c77cbff76df4c1993eed90997a9a26adb22866cf4cd0fbe2",
+    "previous_runtime_bytes": 337836,
+    "dimensions": {
+      "width": 768,
+      "height": 1152
+    },
+    "previous_dimensions": {
+      "width": 1024,
+      "height": 1536
+    },
+    "url_kind": "module-relative; Vite fingerprints the final /arena/assets/ URL",
+    "encoder_yuv_psnr_db": 36.52,
+    "source_alpha_range": [
+      255,
+      255
+    ],
+    "target_alpha_range": [
+      255,
+      255
+    ],
+    "alpha_note": "Both source PNG and runtime image are fully opaque; dimensions of background/AO intentionally reduced."
+  },
+  {
+    "source": "platform/arena/golf/assets/textures/putting-grass-imagegen.webp",
+    "target": "platform/arena/golf/assets/textures/putting-grass-imagegen-mobile-6d969fa6fc.webp",
+    "source_sha256": "029d613ac931fbe8d416df3005731e4c0a97decd2cbda62be234c2bf63e98151",
+    "target_sha256": "6d969fa6fc20dbebb4ad3e236a6ddb6e137209468e9c6361f1103f349dfbd122",
+    "source_bytes": 295130,
+    "target_bytes": 240728,
+    "original_url": "./assets/textures/putting-grass-imagegen.webp",
+    "optimized_url": "./assets/textures/putting-grass-imagegen-mobile-6d969fa6fc.webp",
+    "encoding_input": "platform/arena/golf/assets/textures/putting-grass-imagegen.png",
+    "encoding_input_sha256": "d6d102838c1607a32971189e73472345620ffe1369b0f670e36a7744baf6ce49",
+    "codec": "WebP quality76, alpha100, same runtime dimensions, ICC retained; normals/geometry unchanged",
+    "dimensions": {
+      "width": 768,
+      "height": 768
+    },
+    "url_kind": "module-relative; Vite fingerprints the final /arena/assets/ URL",
+    "source_alpha_range": [
+      255,
+      255
+    ],
+    "target_alpha_range": [
+      255,
+      255
+    ],
+    "alpha_note": "Both source PNG and runtime image are fully opaque; dimensions of background/AO intentionally reduced."
+  },
+  {
+    "source": "platform/arena/golf/assets/textures/aged-sandstone-imagegen.webp",
+    "target": "platform/arena/golf/assets/textures/aged-sandstone-imagegen-mobile-dcc28108d4.webp",
+    "source_sha256": "b2973addec99477ea64478d7c0072addafb7844f652efc3cc9f09c81a38b62b9",
+    "target_sha256": "dcc28108d4a5cde4a880a12dc6448e68e5d358a9a3f0678730003ec263719f5f",
+    "source_bytes": 196318,
+    "target_bytes": 142832,
+    "original_url": "./assets/textures/aged-sandstone-imagegen.webp",
+    "optimized_url": "./assets/textures/aged-sandstone-imagegen-mobile-dcc28108d4.webp",
+    "encoding_input": "platform/arena/golf/assets/textures/aged-sandstone-imagegen.png",
+    "encoding_input_sha256": "59db357d652723d4d0dec061ddb5f0fa201c81acbfb93538b826354a17cb05fd",
+    "codec": "WebP quality76, alpha100, same runtime dimensions, ICC retained; normals/geometry unchanged",
+    "dimensions": {
+      "width": 768,
+      "height": 768
+    },
+    "url_kind": "module-relative; Vite fingerprints the final /arena/assets/ URL",
+    "source_alpha_range": [
+      255,
+      255
+    ],
+    "target_alpha_range": [
+      255,
+      255
+    ],
+    "alpha_note": "Both source PNG and runtime image are fully opaque; dimensions of background/AO intentionally reduced."
+  },
+  {
+    "source": "platform/arena/golf/assets/textures/course-1-contact-ao.webp",
+    "target": "platform/arena/golf/assets/textures/course-1-contact-ao-mobile-21f6644136.webp",
+    "source_sha256": "fbfb1294259128efc8160598c80b030e76062597eb48fac537454aa7a3cddf30",
+    "target_sha256": "21f6644136a62128c7bef125f8574e6fe46e55c8b9b07b26f537f5bf7f60fe5b",
+    "source_bytes": 78188,
+    "target_bytes": 6536,
+    "original_url": "./assets/textures/course-1-contact-ao.webp",
+    "optimized_url": "./assets/textures/course-1-contact-ao-mobile-21f6644136.webp",
+    "encoding_input": "platform/arena/golf/assets/textures/course-1-contact-ao.png",
+    "encoding_input_sha256": "5a7cfb50dcd13b5acb3793d91d59d4f08ece4dd9c8b9573192e2f286e99b7f68",
+    "codec": "WebP quality70, alpha100, ICC retained; mobile resolution, original PNG and prior runtime images retained",
+    "previous_runtime_target": "platform/arena/golf/assets/textures/course-1-contact-ao-mobile-56a5a7cf12.webp",
+    "previous_runtime_sha256": "56a5a7cf12dc1af237f21e870bc24daa48666b9d82d8bd021c03f0a0e9612bbc",
+    "previous_runtime_bytes": 45138,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "previous_dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "url_kind": "module-relative; Vite fingerprints the final /arena/assets/ URL",
+    "encoder_yuv_psnr_db": 43.42,
+    "source_alpha_range": [
+      255,
+      255
+    ],
+    "target_alpha_range": [
+      255,
+      255
+    ],
+    "alpha_note": "Both source PNG and runtime image are fully opaque; dimensions of background/AO intentionally reduced."
+  },
+  {
+    "source": "platform/arena/golf/assets/textures/course-2-contact-ao.webp",
+    "target": "platform/arena/golf/assets/textures/course-2-contact-ao-mobile-dde247036b.webp",
+    "source_sha256": "cb33dbe602ba7a8dd1a1681607aedebcfc04b499564f964239f0c77aa34dcdab",
+    "target_sha256": "dde247036b15df40eb1a6d7c360c31f0dd98fa89f71e3b4c32b17adf03f4c54b",
+    "source_bytes": 81880,
+    "target_bytes": 6914,
+    "original_url": "./assets/textures/course-2-contact-ao.webp",
+    "optimized_url": "./assets/textures/course-2-contact-ao-mobile-dde247036b.webp",
+    "encoding_input": "platform/arena/golf/assets/textures/course-2-contact-ao.png",
+    "encoding_input_sha256": "f3e108208159ecb6a8979d128c64c5f444fc59831e15cc7bd4a968a1914498ba",
+    "codec": "WebP quality70, alpha100, ICC retained; mobile resolution, original PNG and prior runtime images retained",
+    "previous_runtime_target": "platform/arena/golf/assets/textures/course-2-contact-ao-mobile-54a8534f20.webp",
+    "previous_runtime_sha256": "54a8534f208ee8f3eb9e5cfcda1f9f04ed52774db383b32d435b001da3a06202",
+    "previous_runtime_bytes": 48454,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "previous_dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "url_kind": "module-relative; Vite fingerprints the final /arena/assets/ URL",
+    "encoder_yuv_psnr_db": 43.15,
+    "source_alpha_range": [
+      255,
+      255
+    ],
+    "target_alpha_range": [
+      255,
+      255
+    ],
+    "alpha_note": "Both source PNG and runtime image are fully opaque; dimensions of background/AO intentionally reduced."
+  },
+  {
+    "source": "platform/arena/golf/assets/textures/course-3-contact-ao.webp",
+    "target": "platform/arena/golf/assets/textures/course-3-contact-ao-mobile-32988f4c70.webp",
+    "source_sha256": "b1b250a06d122c005d02e5524f33ee11feeebf3bd9486ac38d30993a887b228d",
+    "target_sha256": "32988f4c706085083c0cdb7e693b9451bcb2f89f111bbfe5a752b5b34e67d054",
+    "source_bytes": 81888,
+    "target_bytes": 6892,
+    "original_url": "./assets/textures/course-3-contact-ao.webp",
+    "optimized_url": "./assets/textures/course-3-contact-ao-mobile-32988f4c70.webp",
+    "encoding_input": "platform/arena/golf/assets/textures/course-3-contact-ao.png",
+    "encoding_input_sha256": "f82be42c5bdfe14d14f09bebe529a5cccc4e82e9b5737268fcc066370711b6df",
+    "codec": "WebP quality70, alpha100, ICC retained; mobile resolution, original PNG and prior runtime images retained",
+    "previous_runtime_target": "platform/arena/golf/assets/textures/course-3-contact-ao-mobile-ea24150482.webp",
+    "previous_runtime_sha256": "ea241504822bf413bceb28d61d71c482463fb0266252b9148ff8f4952da50653",
+    "previous_runtime_bytes": 48506,
+    "dimensions": {
+      "width": 512,
+      "height": 512
+    },
+    "previous_dimensions": {
+      "width": 1024,
+      "height": 1024
+    },
+    "url_kind": "module-relative; Vite fingerprints the final /arena/assets/ URL",
+    "encoder_yuv_psnr_db": 43.19,
+    "source_alpha_range": [
+      255,
+      255
+    ],
+    "target_alpha_range": [
+      255,
+      255
+    ],
+    "alpha_note": "Both source PNG and runtime image are fully opaque; dimensions of background/AO intentionally reduced."
+  },
+  {
+    "source": "platform/arena/run/assets/atlases/run-fox-v4.webp",
+    "target": "platform/arena/run/assets/atlases/run-fox-v4-mobile-bd3571fd7e.webp",
+    "source_sha256": "3ea0a7a54a6f9d87de562a9d5f2a35c3c82241f8760a6b1cc8c028e2de88b68d",
+    "target_sha256": "bd3571fd7e15ec4d237cb37d899913ce09acf036f72c64c27337525b49f42f31",
+    "source_bytes": 303776,
+    "target_bytes": 249470,
+    "original_url": "./assets/atlases/run-fox-v4.webp",
+    "optimized_url": "./assets/atlases/run-fox-v4-mobile-bd3571fd7e.webp",
+    "url_kind": "module-relative; Vite fingerprints the final /arena/assets/ URL",
+    "encoding_input": "platform/arena/run/assets/atlases/run-fox-v4.png",
+    "encoding_input_sha256": "919b2a6bb535ad9be07cbbe5d439be8c6d65f0b6b95dbaa7531e1881d6e63e1a",
+    "dimensions": {
+      "width": 1774,
+      "height": 887
+    },
+    "alpha_max_error": 0,
+    "encoder_yuv_psnr_db": 43.59,
+    "visible_alpha_weighted_rgb_psnr_db": 35.06950962732616,
+    "codec": "WebP quality82, alpha100, ICC retained; same dimensions/grid; alpha byte-identical to original PNG"
+  },
+  {
+    "source": "platform/arena/run/assets/atlases/run-cat-v4.webp",
+    "target": "platform/arena/run/assets/atlases/run-cat-v4-mobile-e8ac410768.webp",
+    "source_sha256": "84a3d4c7769dcdd6a6fe4cdc883dbf75329beeea03ce963701b7938f20072539",
+    "target_sha256": "e8ac4107684e9b5e2f39015e15b4351bddc5103e0a72a22983cd428c0f9ece76",
+    "source_bytes": 276608,
+    "target_bytes": 222070,
+    "original_url": "./assets/atlases/run-cat-v4.webp",
+    "optimized_url": "./assets/atlases/run-cat-v4-mobile-e8ac410768.webp",
+    "url_kind": "module-relative; Vite fingerprints the final /arena/assets/ URL",
+    "encoding_input": "platform/arena/run/assets/atlases/run-cat-v4.png",
+    "encoding_input_sha256": "13e48bcdcf8e1169789010011434edf8f402d22b83229a4a3c8386d08e740467",
+    "dimensions": {
+      "width": 1774,
+      "height": 887
+    },
+    "alpha_max_error": 0,
+    "encoder_yuv_psnr_db": 44.04,
+    "visible_alpha_weighted_rgb_psnr_db": 36.46805466625419,
+    "codec": "WebP quality82, alpha100, ICC retained; same dimensions/grid; alpha byte-identical to original PNG"
+  },
+  {
+    "source": "platform/arena/run/assets/atlases/run-bear-v4.webp",
+    "target": "platform/arena/run/assets/atlases/run-bear-v4-mobile-9b7c40a00c.webp",
+    "source_sha256": "193900e9a8b8d238970f8ff45b6e727aec180a1d539f0079da6de8c52aaee953",
+    "target_sha256": "9b7c40a00c8f53e32d6988eea19dea6ca8838f726048f340138bfa45435fecc6",
+    "source_bytes": 297774,
+    "target_bytes": 236620,
+    "original_url": "./assets/atlases/run-bear-v4.webp",
+    "optimized_url": "./assets/atlases/run-bear-v4-mobile-9b7c40a00c.webp",
+    "url_kind": "module-relative; Vite fingerprints the final /arena/assets/ URL",
+    "encoding_input": "platform/arena/run/assets/atlases/run-bear-v4.png",
+    "encoding_input_sha256": "9548cc6a56becac27d7907b2439abb328f708fdd6ca726ba567583b87e17bd1f",
+    "dimensions": {
+      "width": 1774,
+      "height": 887
+    },
+    "alpha_max_error": 0,
+    "encoder_yuv_psnr_db": 43.15,
+    "visible_alpha_weighted_rgb_psnr_db": 35.685600269770696,
+    "codec": "WebP quality82, alpha100, ICC retained; same dimensions/grid; alpha byte-identical to original PNG"
+  },
+  {
+    "source": "platform/arena/run/assets/atlases/run-rabbit-v4.webp",
+    "target": "platform/arena/run/assets/atlases/run-rabbit-v4-mobile-415ab8b203.webp",
+    "source_sha256": "9104dff935cc921985cb71daf91fae59e29a90c3e5f1f9d5b4bb351094a564e1",
+    "target_sha256": "415ab8b203d6da213598f8763a60abcb6cd7b03c1236a59c1ed4f5ff68fcc569",
+    "source_bytes": 251016,
+    "target_bytes": 204948,
+    "original_url": "./assets/atlases/run-rabbit-v4.webp",
+    "optimized_url": "./assets/atlases/run-rabbit-v4-mobile-415ab8b203.webp",
+    "url_kind": "module-relative; Vite fingerprints the final /arena/assets/ URL",
+    "encoding_input": "platform/arena/run/assets/atlases/run-rabbit-v4.png",
+    "encoding_input_sha256": "074e9e16c4652632da94a9e25a774b5a31e0683cc20b5dfb6fd02784664158cf",
+    "dimensions": {
+      "width": 1774,
+      "height": 887
+    },
+    "alpha_max_error": 0,
+    "encoder_yuv_psnr_db": 44.64,
+    "visible_alpha_weighted_rgb_psnr_db": 35.98927221079465,
+    "codec": "WebP quality82, alpha100, ICC retained; same dimensions/grid; alpha byte-identical to original PNG"
+  },
+  {
+    "source": "platform/arena/run/assets/atlases/action-back.webp",
+    "target": "platform/arena/run/assets/atlases/action-back-mobile-81e5c62e42.webp",
+    "source_sha256": "a1c9b94b4fb7372c835ee1d1f9883c8178f86fcd154263abcf2edc3662a12628",
+    "target_sha256": "81e5c62e4220be8c7cc63ae1c0310beea3be7c09c6b0e961a7bdc7aa578ed57d",
+    "source_bytes": 498472,
+    "target_bytes": 355872,
+    "original_url": "./assets/atlases/action-back.webp",
+    "optimized_url": "./assets/atlases/action-back-mobile-81e5c62e42.webp",
+    "url_kind": "module-relative; Vite fingerprints the final /arena/assets/ URL",
+    "encoding_input": "platform/arena/run/assets/atlases/action-back.png",
+    "encoding_input_sha256": "b86eb168eed6ecbc8cfb7e6e1ea220d439d7e20af49eab8cc12c16ddd8f0e3c4",
+    "dimensions": {
+      "width": 1254,
+      "height": 1254
+    },
+    "alpha_max_error": 0,
+    "encoder_yuv_psnr_db": 42.39,
+    "visible_alpha_weighted_rgb_psnr_db": 33.87434645623693,
+    "codec": "WebP quality82, alpha100, ICC retained; same dimensions/grid; alpha byte-identical to original PNG"
+  },
+  {
+    "source": "platform/arena/run/assets/atlases/front-win.webp",
+    "target": "platform/arena/run/assets/atlases/front-win-mobile-902055527a.webp",
+    "source_sha256": "a65dc7b45c04a9640eee07496486b7e2fc5d99c5ad760534716a65184d541485",
+    "target_sha256": "902055527a213b285a521ca893c5cf7a7b4a98aa0de69b5e61ff7db4c29b706f",
+    "source_bytes": 547882,
+    "target_bytes": 390330,
+    "original_url": "./assets/atlases/front-win.webp",
+    "optimized_url": "./assets/atlases/front-win-mobile-902055527a.webp",
+    "url_kind": "module-relative; Vite fingerprints the final /arena/assets/ URL",
+    "encoding_input": "platform/arena/run/assets/atlases/front-win.png",
+    "encoding_input_sha256": "2a66c6f137f440c040c80b81a8f845deefbf0ef73125e1027b3fe52a44e34bc5",
+    "dimensions": {
+      "width": 1254,
+      "height": 1254
+    },
+    "alpha_max_error": 0,
+    "encoder_yuv_psnr_db": 42.17,
+    "visible_alpha_weighted_rgb_psnr_db": 34.574505791395154,
+    "codec": "WebP quality82, alpha100, ICC retained; same dimensions/grid; alpha byte-identical to original PNG"
+  }
+]

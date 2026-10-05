@@ -1,0 +1,13 @@
+{
+  "coveredRingMarble": true,
+  "actualEngineMove": true,
+  "allFourBaseMarbles": true,
+  "adjacentLegalSwapTargets": true,
+  "ordinaryClicksOnly": true,
+  "viewports": [
+    390,
+    360
+  ],
+  "pageErrors": [],
+  "checkedAt": "2026-09-19T15:37:43.877Z"
+}

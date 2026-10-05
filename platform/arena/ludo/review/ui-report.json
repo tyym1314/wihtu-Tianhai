@@ -1,0 +1,17 @@
+{
+  "game": "ludo",
+  "realEngineRoll": true,
+  "realEngineMove": true,
+  "route": true,
+  "viewports": [
+    360,
+    390
+  ],
+  "locales": [
+    "en",
+    "zh",
+    "ar"
+  ],
+  "pageErrors": [],
+  "checkedAt": "2026-09-19T15:38:37.790Z"
+}

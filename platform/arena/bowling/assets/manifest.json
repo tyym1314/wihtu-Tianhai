@@ -1,0 +1,188 @@
+{
+  "date": "2026-09-20",
+  "game": "bowling",
+  "revision": "venue-v3-localized-glow-E",
+  "blender": "4.5.14 LTS",
+  "assets": [
+    {
+      "path": "models/neon-competition-pin.glb",
+      "bytes": 17856,
+      "sha256": "4f687c084aaba49b82c02c3a59bd9a5f9718a1674b809b30bebe8466ce640237",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "models/neon-pearl-ball.glb",
+      "bytes": 204732,
+      "sha256": "f4d0eb947bf7f102d0126e4bf4a5ce8c2f7eb563bd126ad08f506a0a29a39c27",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "models/neon-private-venue.glb",
+      "bytes": 211260,
+      "sha256": "5a6dc0339c107bc2d98f889a2210598b5af04bf79a48ef159fb0a8a5149a6d14",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/crown-wall-imagegen.png",
+      "bytes": 2435589,
+      "sha256": "d94c49773db5602b94a87c7dcc0db0723da1206bccf2fcadeec9a20bec562fed",
+      "role": "editable-source"
+    },
+    {
+      "path": "textures/crown-wall-imagegen.webp",
+      "bytes": 151324,
+      "sha256": "6d4f8cebe6601bae421036a82a6fba99fd8449b082f90e6e3093908a3d911e3a",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/neon-result-environment.png",
+      "bytes": 1136775,
+      "sha256": "d1fc2653be7c398a3384d107fbb868eb344a149ec19b467f6ed17cfd4b82b24c",
+      "role": "editable-source"
+    },
+    {
+      "path": "textures/neon-result-environment.webp",
+      "bytes": 44766,
+      "sha256": "21cfcee8f5fa74a824d4842667fd0fb7eeb356c61c4d05686920b9033f0e8220",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/pearl-resin-imagegen.png",
+      "bytes": 3162515,
+      "sha256": "fdfc0614c3b21d9cf838aefcca20e232789a51daa134e1d7ce0244826bd8419d",
+      "role": "editable-source"
+    },
+    {
+      "path": "textures/pearl-resin-imagegen.webp",
+      "bytes": 151752,
+      "sha256": "b4c7715b27c359e9dc598245e3b2d68ec177c6d1173e21d261c7ffe13a510818",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "textures/violet-pearl-albedo.png",
+      "bytes": 161036,
+      "sha256": "cf01cb769e55ef8d9622dea0b0b5cde224de8bbe0938d16eee6a3f902012876c",
+      "role": "editable-source"
+    },
+    {
+      "path": "draco/LICENSE",
+      "bytes": 13898,
+      "sha256": "d3709b0fb4b8a94bbb1d02b8a2e484f258b0d9c5c5a01f940391f3fe662cd1a4",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "draco/README.md",
+      "bytes": 1489,
+      "sha256": "8b9d277bf5743f4ce8d85d63c16690071b53f81796e877d4d395af943bde02a0",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "draco/draco_decoder.wasm",
+      "bytes": 192420,
+      "sha256": "a680d927bed9cb864ddbd63521868891af2bfbe755092761b4837487618df8ac",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "draco/draco_wasm_wrapper.js",
+      "bytes": 58456,
+      "sha256": "8bb2952d2ba7d67e1414f8df819410cb0434a666be53f671fff75f68843d76f6",
+      "role": "runtime-or-result-asset"
+    },
+    {
+      "path": "source/art-pass-1.png",
+      "bytes": 298354,
+      "sha256": "f2f074f91581648084f6058ac8cb0301b2186a803f79a42a5362dd841c91540a",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/art-pass-2.png",
+      "bytes": 308537,
+      "sha256": "762377e1e9994119793102ea90aef90040294b7557a17a2201237c0bae2cc6bc",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/art-pass-3.png",
+      "bytes": 308415,
+      "sha256": "83fc7f9b21650b2456e127dc7d6b7affef084393045382600a340218bc2a5273",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/art-pass-4.png",
+      "bytes": 298547,
+      "sha256": "46e99da3e629396cbd86a45b5df3c7e7635f6b33757fc2ba8ba25b28478bc7c4",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/art-roll.png",
+      "bytes": 244928,
+      "sha256": "3de5b954cb02616edeea778328b67b0efde920659064dec40863db798a4b4a27",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/art-strike.png",
+      "bytes": 312959,
+      "sha256": "9cfd942162284043528ba1b066ae47842657bd2241b36726e09d720788729cad",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/build-venue-v3.log",
+      "bytes": 3040,
+      "sha256": "f37e6ce52d2694483eaa55ed93a6d9220fc4f6e46f931162de415a2bb6687630",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/build.log",
+      "bytes": 3037,
+      "sha256": "f56813bfa0d9b572677bec06a756900a4d964da50747ad9b8f6a6cd54b719f29",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/build_neon.py",
+      "bytes": 7648,
+      "sha256": "80bf58276d1b23658120bfae265151d9ad93ba140af5723fe006c94747ab267a",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/neon-competition-pin.blend",
+      "bytes": 796065,
+      "sha256": "eb770e4eb8734409f5bab6eee74153b6246cc07999ce77dcbc5a10ef4f00cc5b",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/neon-pearl-ball.blend",
+      "bytes": 1026195,
+      "sha256": "ad484934ae6059956d4ceccfce8511ad91824da74befca1cc374295df9d77bab",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/neon-private-venue.blend",
+      "bytes": 2465998,
+      "sha256": "43750b92f8e819411a2d7b3683d7ab9cb09c4dd853bdd229e5da7861963c4551",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/neon-result-scene.blend",
+      "bytes": 3610259,
+      "sha256": "15328e63dc0e353658ca108388a59df4b780b22f7c9f0e3d876de979ee206cf8",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/optimize-textures.mjs",
+      "bytes": 468,
+      "sha256": "0d25bde9a4532abb10ceaba11c1d78ce7b42ea1543175db6ba3b52335d0b7cfb",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/render.log",
+      "bytes": 23834,
+      "sha256": "2b77ca5335634370589f516609e7f3e9fba04717e74cfcde651ad0140630178e",
+      "role": "editable-source"
+    },
+    {
+      "path": "source/render_result.py",
+      "bytes": 3888,
+      "sha256": "482a2609daf34056d575be60e04cbfcb724488dfd5b68b75c765f840cf07f667",
+      "role": "editable-source"
+    }
+  ]
+}

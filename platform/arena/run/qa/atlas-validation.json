@@ -1,0 +1,405 @@
+{
+  "checkedAt": "2026-09-19T16:46:18.579Z",
+  "scope": "Actual isolated HTTP engine, real pointer input, actual SpriteMaterial UV offsets, 390/360 depth-tested scene. Test positions are explicit fixtures. No wallet.",
+  "checks": [
+    {
+      "check": "Real-time run uses multiple actual texture UV offsets",
+      "uv": [
+        "[0.25,0.75]",
+        "[0,0.75]"
+      ]
+    },
+    {
+      "check": "Real touch jump selects action sheet from accepted engine timing",
+      "pass": true
+    },
+    {
+      "check": "Actual finish switches to front texture after camera orbit; finishing position remains server owned; non-winner stays in neutral front pose",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "samples": [
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "1",
+      "uv": "[0.25,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "1",
+      "uv": "[0.25,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "1",
+      "uv": "[0.25,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "jump",
+      "sheet": "action",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "jump",
+      "sheet": "action",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "jump",
+      "sheet": "action",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "jump",
+      "sheet": "action",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "land",
+      "sheet": "run",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "land",
+      "sheet": "run",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "1",
+      "uv": "[0.25,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "1",
+      "uv": "[0.25,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "2",
+      "uv": "[0.5,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "1",
+      "uv": "[0.25,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "1",
+      "uv": "[0.25,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "1",
+      "uv": "[0.25,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "2",
+      "uv": "[0.5,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "1",
+      "uv": "[0.25,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "1",
+      "uv": "[0.25,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "1",
+      "uv": "[0.25,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "1",
+      "uv": "[0.25,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "1",
+      "uv": "[0.25,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "2",
+      "uv": "[0.5,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "run",
+      "sheet": "run",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "finish",
+      "sheet": "front",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "finish",
+      "sheet": "front",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "finish",
+      "sheet": "front",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "finish",
+      "sheet": "front",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "finish",
+      "sheet": "front",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "finish",
+      "sheet": "front",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "finish",
+      "sheet": "front",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "finish",
+      "sheet": "front",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "finish",
+      "sheet": "front",
+      "frame": "0",
+      "uv": "[0,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    },
+    {
+      "clip": "idle",
+      "sheet": "front",
+      "frame": "3",
+      "uv": "[0.75,0.75]"
+    }
+  ],
+  "video": "video/atlas-race-actions-finish.webm",
+  "renderer": "Desktop Chrome SwiftShader; mobile device performance not certified",
+  "presentation": "Original high-detail fixed-angle 2.5D animal art; actual Blender GLB course and separate editable rigs retained"
+}

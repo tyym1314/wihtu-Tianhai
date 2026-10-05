@@ -1,0 +1,278 @@
+{
+  "checkedAt": "2026-09-28T11:43:26.821Z",
+  "scope": "Current UI and isolated real HTTP engines; legal deterministic positions are configured explicitly. Chrome trusted touch and desktop WebKit trusted pointer; not physical iPhone Safari acceptance. Every HTTP attempt counted before validation.",
+  "samples": [
+    {
+      "engine": "chromium",
+      "width": 390,
+      "height": 844,
+      "method": "Chrome trusted native touch: Playwright tap and CDP touchStart/move/end scrolling",
+      "checks": [
+        "Visible swipe instruction; native horizontal hand scrolling does not accidentally select or submit",
+        "Last hand tile and 48 px right-end button produce one real accepted play",
+        "Endpoint values are next to the hand and do not overlap the turn banner"
+      ],
+      "errors": [],
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {}
+        },
+        {
+          "type": "pointercancel",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {}
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "testid": "domino-tile-d_5_6"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "testid": "domino-tile-d_5_6"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "testid": "domino-tile-d_5_6"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "testid": "domino-right"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "testid": "domino-right"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "testid": "domino-right"
+          }
+        }
+      ]
+    },
+    {
+      "engine": "chromium",
+      "width": 360,
+      "height": 844,
+      "method": "Chrome trusted native touch: Playwright tap and CDP touchStart/move/end scrolling",
+      "checks": [
+        "Visible swipe instruction; native horizontal hand scrolling does not accidentally select or submit",
+        "Last hand tile and 48 px right-end button produce one real accepted play",
+        "Endpoint values are next to the hand and do not overlap the turn banner"
+      ],
+      "errors": [],
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {}
+        },
+        {
+          "type": "pointercancel",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {}
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "testid": "domino-tile-d_5_6"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "testid": "domino-tile-d_5_6"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "testid": "domino-tile-d_5_6"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "testid": "domino-right"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "testid": "domino-right"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "touch",
+          "target": {
+            "testid": "domino-right"
+          }
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "width": 390,
+      "height": 844,
+      "method": "Desktop WebKit trusted native mouse pointer; native wheel for hand scrolling",
+      "checks": [
+        "Visible swipe instruction; native horizontal hand scrolling does not accidentally select or submit",
+        "Last hand tile and 48 px right-end button produce one real accepted play",
+        "Endpoint values are next to the hand and do not overlap the turn banner"
+      ],
+      "errors": [],
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "testid": "domino-tile-d_5_6"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "testid": "domino-tile-d_5_6"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "testid": "domino-tile-d_5_6"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "testid": "domino-right"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "testid": "domino-right"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "testid": "domino-right"
+          }
+        }
+      ]
+    },
+    {
+      "engine": "webkit",
+      "width": 360,
+      "height": 844,
+      "method": "Desktop WebKit trusted native mouse pointer; native wheel for hand scrolling",
+      "checks": [
+        "Visible swipe instruction; native horizontal hand scrolling does not accidentally select or submit",
+        "Last hand tile and 48 px right-end button produce one real accepted play",
+        "Endpoint values are next to the hand and do not overlap the turn banner"
+      ],
+      "errors": [],
+      "events": [
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "testid": "domino-tile-d_5_6"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "testid": "domino-tile-d_5_6"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "testid": "domino-tile-d_5_6"
+          }
+        },
+        {
+          "type": "pointerdown",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "testid": "domino-right"
+          }
+        },
+        {
+          "type": "pointerup",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "testid": "domino-right"
+          }
+        },
+        {
+          "type": "click",
+          "trusted": true,
+          "pointer": "mouse",
+          "target": {
+            "testid": "domino-right"
+          }
+        }
+      ]
+    }
+  ]
+}

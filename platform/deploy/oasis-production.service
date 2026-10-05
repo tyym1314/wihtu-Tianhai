@@ -1,0 +1,26 @@
+[Unit]
+Description=OASIS isolated production API (admission requires partner acceptance)
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=oasis
+Group=oasis
+WorkingDirectory=/opt/oasis/current/platform
+EnvironmentFile=/opt/oasis/private/production/runtime.env
+ExecStart=/usr/bin/node --import tsx server/index.mjs
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=45
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/oasis/private/production
+MemoryMax=2G
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target

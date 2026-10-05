@@ -1,0 +1,13 @@
+{
+  "name": "oasis-run-graybox-spike",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/engine.test.mjs",
+    "test:browser": "node test/browser.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}

@@ -1,0 +1,11 @@
+Use case: ui-mockup. Create ONE full portrait mobile game upgrade-confirmation screen in the exact same premium art and UI system as the supplied TWO-PLAYER battle reference. Preserve beautiful sunlit floating sky kingdom, ivory-gold emerald 3D castles, sophisticated Chinese typography. This is a PRE-CONFIRMATION manual upgrade preview, NOT completed construction. Top HUD unchanged: “连线占塔”, YOU emerald diamond “占塔 4”“总兵力 108”; red triangle “占塔 4”“总兵力 92”; timer “02:18”; “时间到，占塔多者胜”. No points.
+Background battlefield same13-building board and ownership. Reframe the visible battlefield slightly upward so selected emerald tower “36”“Lv.1” stays visibly ABOVE the drawer, along with some marching troops and its route. Don't cover selected tower; the wider remaining battle continues behind the sheet. Top garrison36 and total108 stay unchanged because upgrade has not been confirmed. Team-green building crests diamonds, red triangles.
+Replace the BOTTOM roughly 38% with an exquisite legible ivory parchment / champagne-gold upgrade drawer, polished generous spacing, not a dark blocking modal. Header “兵营升级”, a small amber chip “战斗继续”, and close X at upper-right.
+Top row of drawer: small but detailed illustrated Lv.1 green barracks at left, rightward arrow, larger upgraded Lv.2 green barracks at right, meaningful extra architectural tier. Clear label “Lv.1 → Lv.2”.
+Below, a prominent cost/remaining row with exact text “消耗 20 兵” and “驻兵 36 → 16”.
+Two equal stat tiles: “产兵 1 → 2 /秒” and “自然产兵上限 40 → 60” (the second may wrap to two lines but stay readable). Do NOT write just 容量 because reinforcements may exceed this threshold.
+Three concise readable instruction lines with appropriate clock/shield icons:
+“耗时 3 秒 · 期间停止产兵与出兵”
+“可接收援兵 · 仍可被攻击”
+“扣费后至少保留 5 兵”
+Bottom two large buttons “取消” and emerald primary “确认升级 · 20兵”. The cancel button means cancel this preview before paying. Comfortable thumb targets, safe bottom padding. No 50%, no 本次派出, no 自动升级, no speed purchase, no +1分/秒, no 积分, no achievement overlay, no coin cost, no fake progress at this PREVIEW state. Exact Chinese text spelled correctly. Keep all numbers internally consistent. Deliver a polished actual product screen, no external notes or phone frame.

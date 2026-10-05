@@ -1,0 +1,148 @@
+{
+  "mode": "after",
+  "scope": "Synthetic receipt timing passed through the exact current 0.16 clock correction. Actual production Canvas drawImage transforms establish visual motion independently of RAF. A 240 ms RTT improvement is a controlled input, not a claim about the public run.",
+  "heldFrames": 0,
+  "heldMs": 0,
+  "frames": [
+    {
+      "local": 550,
+      "estimatedServerAt": 1550,
+      "snapshotSimulationAt": 1000,
+      "inferredVisualAt": 1549.9999688596142,
+      "soldierX": 117.41666412353516
+    },
+    {
+      "local": 566.6666666666666,
+      "estimatedServerAt": 1566.6666666666665,
+      "snapshotSimulationAt": 1000,
+      "inferredVisualAt": 1566.6666770467953,
+      "soldierX": 118.77777862548828
+    },
+    {
+      "local": 583.3333333333334,
+      "estimatedServerAt": 1583.3333333333335,
+      "snapshotSimulationAt": 1000,
+      "inferredVisualAt": 1583.333291812819,
+      "soldierX": 120.13888549804688
+    },
+    {
+      "local": 600,
+      "estimatedServerAt": 1750,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1750,
+      "soldierX": 133.75
+    },
+    {
+      "local": 616.6666666666666,
+      "estimatedServerAt": 1768.3333333333333,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1768.3333416374362,
+      "soldierX": 135.24722290039062
+    },
+    {
+      "local": 633.3333333333334,
+      "estimatedServerAt": 1786.6666666666667,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1786.6666832748724,
+      "soldierX": 136.74444580078125
+    },
+    {
+      "local": 650,
+      "estimatedServerAt": 1805,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1805.0000249123086,
+      "soldierX": 138.24166870117188
+    },
+    {
+      "local": 666.6666666666666,
+      "estimatedServerAt": 1823.3333333333333,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1823.3333665497448,
+      "soldierX": 139.7388916015625
+    },
+    {
+      "local": 683.3333333333334,
+      "estimatedServerAt": 1841.6666666666667,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1841.6667081871813,
+      "soldierX": 141.23611450195312
+    },
+    {
+      "local": 700,
+      "estimatedServerAt": 1860,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1860.0000498246172,
+      "soldierX": 142.73333740234375
+    },
+    {
+      "local": 716.6666666666667,
+      "estimatedServerAt": 1878.3333333333335,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1878.3333914620534,
+      "soldierX": 144.23056030273438
+    },
+    {
+      "local": 733.3333333333334,
+      "estimatedServerAt": 1896.6666666666667,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1896.6667330994899,
+      "soldierX": 145.727783203125
+    },
+    {
+      "local": 750,
+      "estimatedServerAt": 1915,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1915.0000747369259,
+      "soldierX": 147.22500610351562
+    },
+    {
+      "local": 766.6666666666667,
+      "estimatedServerAt": 1933.3333333333335,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1933.3334163743623,
+      "soldierX": 148.72222900390625
+    },
+    {
+      "local": 783.3333333333334,
+      "estimatedServerAt": 1951.6666666666667,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1951.6667580117985,
+      "soldierX": 150.21945190429688
+    },
+    {
+      "local": 800,
+      "estimatedServerAt": 1970,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1969.9999128069196,
+      "soldierX": 151.71665954589844
+    },
+    {
+      "local": 816.6666666666667,
+      "estimatedServerAt": 1988.3333333333335,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 1988.333254444356,
+      "soldierX": 153.21388244628906
+    },
+    {
+      "local": 833.3333333333334,
+      "estimatedServerAt": 2006.6666666666667,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 2006.666596081792,
+      "soldierX": 154.7111053466797
+    },
+    {
+      "local": 850,
+      "estimatedServerAt": 2025,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 2024.9999377192282,
+      "soldierX": 156.2083282470703
+    },
+    {
+      "local": 866.6666666666667,
+      "estimatedServerAt": 2043.3333333333335,
+      "snapshotSimulationAt": 1750,
+      "inferredVisualAt": 2043.3332793566647,
+      "soldierX": 157.70555114746094
+    }
+  ]
+}

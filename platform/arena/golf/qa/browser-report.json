@@ -1,0 +1,40 @@
+{
+  "status": "PASS",
+  "scope": "Desktop Chrome mobile viewports with software WebGL and isolated legal-action scene fixture. Not a physical phone or partner wallet acceptance.",
+  "checks": [
+    {
+      "width": 390,
+      "height": 844,
+      "hole": 0,
+      "lang": "en",
+      "render": "PASS",
+      "fourGhostPlayers": "PASS",
+      "aimControls": "PASS",
+      "assets": "PASS",
+      "shotAndHole": "PASS"
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "hole": 1,
+      "lang": "zh",
+      "render": "PASS",
+      "fourGhostPlayers": "PASS",
+      "aimControls": "PASS",
+      "assets": "PASS",
+      "shotAndHole": "not exercised"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "hole": 2,
+      "lang": "ar",
+      "render": "PASS",
+      "fourGhostPlayers": "PASS",
+      "aimControls": "PASS",
+      "assets": "PASS",
+      "shotAndHole": "not exercised"
+    }
+  ],
+  "pageErrors": []
+}

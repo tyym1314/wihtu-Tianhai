@@ -1,0 +1,101 @@
+{
+  "at": "2026-09-19T16:27:31.377Z",
+  "scope": "Desktop Chrome mobile viewports, independent HTTP authoritative engine, no wallet or platform service",
+  "engineBackedTap": true,
+  "engineBackedSwipe": true,
+  "bounceScoreZero": true,
+  "bouncePreservesBoard": true,
+  "pollingDuringAnimations": true,
+  "roomPollsDuringBusy": 9,
+  "acceptedActions": 4,
+  "boardCells": 36,
+  "gemElement": "span.match-gem",
+  "foxActorPoses": [
+    "idle",
+    "cheer"
+  ],
+  "portraits": 4,
+  "reducedMotion": {
+    "mascotAnimation": "none",
+    "orbitAnimation": "none",
+    "shardsDisplay": "none",
+    "authoritativeSwapAndScore": true
+  },
+  "mobileWidths": [
+    360,
+    390
+  ],
+  "locales": [
+    "en",
+    "zh",
+    "ar"
+  ],
+  "decodedAssets": [
+    {
+      "selector": ".match-gem-surface",
+      "url": "/arena/assets/restoration/gems-v2.webp",
+      "width": 1536,
+      "height": 1024
+    },
+    {
+      "selector": ".match-fox-actor",
+      "url": "/arena/assets/restoration/fox-idle-v3.webp",
+      "width": 1536,
+      "height": 1024
+    },
+    {
+      "selector": ".oasis-portrait",
+      "url": "/arena/assets/restoration/player-portraits-v2.webp",
+      "width": 1254,
+      "height": 1254
+    }
+  ],
+  "deliveredAssets": [
+    {
+      "path": "/arena/assets/match-palace.png",
+      "mime": "image/png"
+    },
+    {
+      "path": "/arena/assets/restoration/fox-idle-v3.png",
+      "mime": "image/png"
+    },
+    {
+      "path": "/arena/assets/restoration/fox-idle-v3.webp",
+      "mime": "image/webp"
+    },
+    {
+      "path": "/arena/assets/restoration/fox-cheer-v3.png",
+      "mime": "image/png"
+    },
+    {
+      "path": "/arena/assets/restoration/fox-cheer-v3.webp",
+      "mime": "image/webp"
+    },
+    {
+      "path": "/arena/assets/restoration/gems-v2.png",
+      "mime": "image/png"
+    },
+    {
+      "path": "/arena/assets/restoration/gems-v2.webp",
+      "mime": "image/webp"
+    },
+    {
+      "path": "/arena/assets/restoration/fox-poses-v2.png",
+      "mime": "image/png"
+    },
+    {
+      "path": "/arena/assets/restoration/fox-poses-v2.webp",
+      "mime": "image/webp"
+    },
+    {
+      "path": "/arena/assets/restoration/player-portraits-v2.png",
+      "mime": "image/png"
+    },
+    {
+      "path": "/arena/assets/restoration/player-portraits-v2.webp",
+      "mime": "image/webp"
+    }
+  ],
+  "pageErrors": [],
+  "failedResources": []
+}

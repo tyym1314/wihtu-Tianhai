@@ -1,0 +1,24 @@
+{
+  "reference": "output/design/pvp-arena-concepts-v1/08-jackaroo.png",
+  "board_original": "/Users/tyym/.codex/generated_images/01a0b06a-2b67-73d2-8819-3164d148773c/exec-4d327a72-0ee4-41b0-af45-6354a8132b13.png",
+  "guide": "geometry-guide.svg / geometry-guide.png",
+  "complete_prompt": "board-prompt.txt",
+  "runtime": "board-material.webp",
+  "encoding": "cwebp q92 alpha_q100, original PNG retained; no crop/resize/paint postprocessing",
+  "blender": "marbles produced by ../../ludo/assets/v3/render-pieces.py / jackaroo-marble-source.blend",
+  "runtime_geometry": "Empty oiled walnut board follows the existing silhouette.64 ring holes,16 home holes, bases and real marble positions remain code. Blender emerald/ivory sphere sprites preserve team_a/ team_b colors in idle/capture/swap. The final separate hit-target layer retains the prior overlap-interception fix.",
+  "files": [
+    {
+      "path": "board-material.webp",
+      "bytes": 536274
+    },
+    {
+      "path": "marble-emerald.webp",
+      "bytes": 6714
+    },
+    {
+      "path": "marble-ivory.webp",
+      "bytes": 7312
+    }
+  ]
+}

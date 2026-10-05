@@ -1,0 +1,7 @@
+[Unit]
+Description=Daily OASIS sandbox backup
+[Timer]
+OnCalendar=*-*-* 02:35:00
+Persistent=true
+[Install]
+WantedBy=timers.target

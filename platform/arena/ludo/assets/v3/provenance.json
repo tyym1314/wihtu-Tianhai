@@ -1,0 +1,32 @@
+{
+  "reference": "output/design/pvp-arena-concepts-v1/05-ludo.png",
+  "board_original": "/Users/tyym/.codex/generated_images/01a0b06a-2b67-73d2-8819-3164d148773c/exec-f3994461-477e-4b00-881f-0f6731c972b6.png",
+  "guide": "geometry-guide.svg / geometry-guide.png",
+  "complete_prompt": "board-prompt.txt",
+  "runtime": "board-material.webp",
+  "encoding": "cwebp q92 alpha_q100, original PNG retained; no crop/resize/paint postprocessing",
+  "blender": "render-pieces.py / ludo-pawn-source.blend",
+  "runtime_geometry": "Carved gold/jade board and jeweled bases sit beneath52 exact SVG path cells. Lower art is mirrored to preserve the existing engine color assignment (green southeast/gold southwest). Original Blender lacquer pawns keep legal selection/hit targets separate from alpha. Named LudoBoard export provides read-only final-state reuse. Dice is actual CSS3D geometry; captured sprites fly to actual player bases.",
+  "files": [
+    {
+      "path": "board-material.webp",
+      "bytes": 505788
+    },
+    {
+      "path": "pawn-0.webp",
+      "bytes": 7270
+    },
+    {
+      "path": "pawn-1.webp",
+      "bytes": 7798
+    },
+    {
+      "path": "pawn-2.webp",
+      "bytes": 7136
+    },
+    {
+      "path": "pawn-3.webp",
+      "bytes": 6938
+    }
+  ]
+}

@@ -1,0 +1,201 @@
+{
+  "at": "2026-09-28T12:10:01.684Z",
+  "scope": "Desktop WebKit against an isolated HTTP asset server. Native fetch request held before headers/body; production cache headers; not an iPhone or frame-performance pass.",
+  "cases": [
+    {
+      "kind": "cache-direct",
+      "frontRequests": [
+        {
+          "path": "/front-win-mobile-902055527a-TIQRACGI.webp",
+          "mode": "no-cors",
+          "bytes": 390330,
+          "held": false,
+          "aborted": false
+        },
+        {
+          "path": "/front-win-mobile-902055527a-TIQRACGI.webp",
+          "mode": "no-cors",
+          "bytes": 390330,
+          "held": false,
+          "aborted": false
+        }
+      ],
+      "resources": [
+        {
+          "initiatorType": "fetch",
+          "transferSize": 390630,
+          "encodedBodySize": 390330,
+          "decodedBodySize": 390330
+        },
+        {
+          "initiatorType": "img",
+          "transferSize": 390630,
+          "encodedBodySize": 390330,
+          "decodedBodySize": 390330
+        }
+      ]
+    },
+    {
+      "kind": "cache",
+      "frontRequests": [
+        {
+          "path": "/front-win-mobile-902055527a-TIQRACGI.webp",
+          "mode": "no-cors",
+          "bytes": 390330,
+          "held": false,
+          "aborted": false
+        }
+      ],
+      "resources": [
+        {
+          "initiatorType": "fetch",
+          "transferSize": 390630,
+          "encodedBodySize": 390330,
+          "decodedBodySize": 390330
+        }
+      ]
+    },
+    {
+      "kind": "handoff",
+      "previous": "AbortError",
+      "expanded": "ready",
+      "images": [
+        {
+          "path": "/run-fox-v4-mobile-bd3571fd7e-OUGX3BYP.webp",
+          "mode": "no-cors",
+          "bytes": 249470,
+          "held": false,
+          "aborted": false
+        },
+        {
+          "path": "/run-cat-v4-mobile-e8ac410768-KJIRQQZS.webp",
+          "mode": "no-cors",
+          "bytes": 222070,
+          "held": false,
+          "aborted": false
+        },
+        {
+          "path": "/action-back-mobile-81e5c62e42-FLXR6OEM.webp",
+          "mode": "no-cors",
+          "bytes": 355872,
+          "held": false,
+          "aborted": false
+        },
+        {
+          "path": "/front-win-mobile-902055527a-TIQRACGI.webp",
+          "mode": "no-cors",
+          "bytes": 390330,
+          "held": true,
+          "aborted": false
+        },
+        {
+          "path": "/run-bear-v4-mobile-9b7c40a00c-KS3CC6MP.webp",
+          "mode": "no-cors",
+          "bytes": 236620,
+          "held": false,
+          "aborted": false
+        },
+        {
+          "path": "/run-rabbit-v4-mobile-415ab8b203-E5A6TY2A.webp",
+          "mode": "no-cors",
+          "bytes": 204948,
+          "held": false,
+          "aborted": false
+        }
+      ]
+    },
+    {
+      "kind": "model",
+      "error": "Run artwork preparation timed out",
+      "affected": [
+        {
+          "path": "/oasis-kit-ZFWOFVN5.glb",
+          "mode": "cors",
+          "bytes": 0,
+          "held": true,
+          "aborted": true
+        },
+        {
+          "path": "/oasis-kit-ZFWOFVN5.glb",
+          "mode": "cors",
+          "bytes": 1344624,
+          "held": false,
+          "aborted": false
+        }
+      ],
+      "urlsAfterRetry": 0
+    },
+    {
+      "kind": "backdrop",
+      "error": "Run artwork preparation timed out",
+      "affected": [
+        {
+          "path": "/oasis-distant-palace-mobile-e251f780d8-SPLZZTHK.webp",
+          "mode": "no-cors",
+          "bytes": 0,
+          "held": true,
+          "aborted": true
+        },
+        {
+          "path": "/oasis-distant-palace-mobile-e251f780d8-SPLZZTHK.webp",
+          "mode": "no-cors",
+          "bytes": 169080,
+          "held": false,
+          "aborted": false
+        }
+      ],
+      "urlsAfterRetry": 0
+    },
+    {
+      "kind": "atlas",
+      "error": "Run artwork preparation timed out",
+      "affected": [
+        {
+          "path": "/front-win-mobile-902055527a-TIQRACGI.webp",
+          "mode": "no-cors",
+          "bytes": 0,
+          "held": true,
+          "aborted": true
+        },
+        {
+          "path": "/front-win-mobile-902055527a-TIQRACGI.webp",
+          "mode": "no-cors",
+          "bytes": 390330,
+          "held": false,
+          "aborted": false
+        }
+      ],
+      "urlsAfterRetry": 0
+    },
+    {
+      "kind": "image-decode",
+      "error": "Run artwork preparation timed out",
+      "affected": [],
+      "urlsAfterRetry": 0
+    },
+    {
+      "kind": "exit",
+      "error": "The operation was aborted.",
+      "affected": [
+        {
+          "path": "/oasis-kit-ZFWOFVN5.glb",
+          "mode": "cors",
+          "bytes": 0,
+          "held": true,
+          "aborted": true
+        },
+        {
+          "path": "/oasis-kit-ZFWOFVN5.glb",
+          "mode": "cors",
+          "bytes": 1344624,
+          "held": false,
+          "aborted": false
+        }
+      ],
+      "urlsAfterRetry": 0
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "serviceClosed": true
+}

@@ -1,0 +1,11 @@
+.audio-status-badge{display:flex;align-items:center;gap:5px;min-height:25px;max-width:58%;padding:3px 7px;border:1px solid #c9a56366;border-radius:12px;background:#07172ec9;color:#ead5a5;font-size:8px;letter-spacing:.3px;box-shadow:0 1px 7px #0004;pointer-events:auto}
+.audio-status-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.audio-equalizer{display:flex;align-items:center;gap:2px;height:12px;flex:none}.audio-equalizer i{display:block;width:2px;height:4px;background:currentColor;border-radius:2px;transform-origin:center}
+.audio-status-badge.playing{color:#b9edce;border-color:#9ed9ad55}.playing .audio-equalizer i{animation:music-meter 1s ease-in-out infinite alternate}.playing .audio-equalizer i:nth-child(2){animation-delay:-.65s;animation-duration:.7s}.playing .audio-equalizer i:nth-child(3){animation-delay:-.3s;animation-duration:.85s}
+.audio-settings{padding-bottom:3px}.audio-settings .settings-row{min-height:51px}.audio-volume{padding:11px 0 14px;border-bottom:1px solid #8495b219}.audio-volume label{display:flex;justify-content:space-between;align-items:center;color:#9eaec6;font-size:11px;gap:12px}.audio-volume output{font-variant-numeric:tabular-nums;color:#e7cd90}
+.audio-volume input{width:100%;height:22px;accent-color:#ddbd75;cursor:pointer;margin:6px 0 0;display:block}
+.audio-test-button{width:100%;display:flex;justify-content:center;align-items:center;gap:9px;background:linear-gradient(140deg,#1e3f66,#0f2037);border:1px solid #c4a46888;border-radius:7px;padding:11px 12px;margin-top:18px;min-height:44px;color:#f6d79b;font-size:12px}.audio-test-button svg{width:18px;height:18px}.audio-hint{margin:9px 0 0!important;font-size:10px!important}
+@keyframes music-meter{from{height:3px}to{height:12px}}
+.scene-paused .audio-equalizer i{animation-play-state:paused!important}
+@media(max-width:360px){.audio-status-badge{font-size:7px;padding:3px 5px;max-width:60%}}
+@media(prefers-reduced-motion:reduce){.audio-equalizer i{animation:none!important}.playing .audio-equalizer i:nth-child(2){height:10px}}

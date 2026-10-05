@@ -1,0 +1,172 @@
+TAP version 13
+# Subtest: fixed public 480 m course has three lanes and safe 30 m checkpoints
+ok 1 - fixed public 480 m course has three lanes and safe 30 m checkpoints
+  ---
+  duration_ms: 0.839833
+  type: 'test'
+  ...
+# Subtest: 2/3/4 players accepted and malformed rosters/seeds/durations rejected
+ok 2 - 2/3/4 players accepted and malformed rosters/seeds/durations rejected
+  ---
+  duration_ms: 0.437958
+  type: 'test'
+  ...
+# Subtest: distance depends on authoritative 60 Hz ticks, never polling frequency or cosmetic character
+ok 3 - distance depends on authoritative 60 Hz ticks, never polling frequency or cosmetic character
+  ---
+  duration_ms: 2.726125
+  type: 'test'
+  ...
+# Subtest: current view contains no entropy or hidden future sequence
+ok 4 - current view contains no entropy or hidden future sequence
+  ---
+  duration_ms: 0.279917
+  type: 'test'
+  ...
+# Subtest: client positions/scores/timestamps and invalid action fields are rejected
+ok 5 - client positions/scores/timestamps and invalid action fields are rejected
+  ---
+  duration_ms: 0.211167
+  type: 'test'
+  ...
+# Subtest: accepted input applies only on the next server tick; concurrent inputs/rate limit rejected
+ok 6 - accepted input applies only on the next server tick; concurrent inputs/rate limit rejected
+  ---
+  duration_ms: 0.154625
+  type: 'test'
+  ...
+# Subtest: observed tick may reject stale/future input but never rewinds execution
+ok 7 - observed tick may reject stale/future input but never rewinds execution
+  ---
+  duration_ms: 1.174958
+  type: 'test'
+  ...
+# Subtest: lane transition lasts exactly twelve ticks, stays in bounds and permits airborne lane input
+ok 8 - lane transition lasts exactly twelve ticks, stays in bounds and permits airborne lane input
+  ---
+  duration_ms: 0.310875
+  type: 'test'
+  ...
+# Subtest: jump is 800 ms, apex 1.2 m; no double jump or airborne slide
+ok 9 - jump is 800 ms, apex 1.2 m; no double jump or airborne slide
+  ---
+  duration_ms: 0.522625
+  type: 'test'
+  ...
+# Subtest: 600 ms slide is grounded and mutually exclusive with jumping
+ok 10 - 600 ms slide is grounded and mutually exclusive with jumping
+  ---
+  duration_ms: 0.540875
+  type: 'test'
+  ...
+# Subtest: low crate stops for 800 ms followed by one second collision immunity
+ok 11 - low crate stops for 800 ms followed by one second collision immunity
+  ---
+  duration_ms: 0.33925
+  type: 'test'
+  ...
+# Subtest: jump clears a crate and slide clears a beam using shared dimensions
+ok 12 - jump clears a crate and slide clears a beam using shared dimensions
+  ---
+  duration_ms: 0.065833
+  type: 'test'
+  ...
+# Subtest: active shield removes exactly one obstacle penalty but cannot prevent water
+ok 13 - active shield removes exactly one obstacle penalty but cannot prevent water
+  ---
+  duration_ms: 0.093542
+  type: 'test'
+  ...
+# Subtest: shield duration is eight seconds and expired shield does not protect
+ok 14 - shield duration is eight seconds and expired shield does not protect
+  ---
+  duration_ms: 0.107792
+  type: 'test'
+  ...
+# Subtest: boost is exactly 1.2 times speed for three seconds without changing jump duration
+ok 15 - boost is exactly 1.2 times speed for three seconds without changing jump duration
+  ---
+  duration_ms: 1.652
+  type: 'test'
+  ...
+# Subtest: single-slot pickup never replaces a held item, and all players collect independently
+ok 16 - single-slot pickup never replaces a held item, and all players collect independently
+  ---
+  duration_ms: 0.133916
+  type: 'test'
+  ...
+# Subtest: fall ranking uses recovery checkpoint, returns after 1.5 s, and cannot claim an item twice
+ok 17 - fall ranking uses recovery checkpoint, returns after 1.5 s, and cannot claim an item twice
+  ---
+  duration_ms: 0.618417
+  type: 'test'
+  ...
+# Subtest: same inputs give four different characters exactly identical trajectories, inventory and hits
+ok 18 - same inputs give four different characters exactly identical trajectories, inventory and hits
+  ---
+  duration_ms: 0.937
+  type: 'test'
+  ...
+# Subtest: all same-tick finishers are recorded before champion selection; later finishes cannot replace them
+ok 19 - all same-tick finishers are recorded before champion selection; later finishes cannot replace them
+  ---
+  duration_ms: 0.295416
+  type: 'test'
+  ...
+# Subtest: completed times survive batch forfeit, including finish and exit in the same server tick
+ok 20 - completed times survive batch forfeit, including finish and exit in the same server tick
+  ---
+  duration_ms: 0.131375
+  type: 'test'
+  ...
+# Subtest: post-finish display stops after at most fifteen seconds and keeps champion fixed
+ok 21 - post-finish display stops after at most fifteen seconds and keeps champion fixed
+  ---
+  duration_ms: 3.812792
+  type: 'test'
+  ...
+# Subtest: 100-second deadline ranks uncompleted recovery distances to centimeters with ties
+ok 22 - 100-second deadline ranks uncompleted recovery distances to centimeters with ties
+  ---
+  duration_ms: 18.983583
+  type: 'test'
+  ...
+# Subtest: pause shifts wall clock while keeping exact physics/input ticks and relative progress
+ok 23 - pause shifts wall clock while keeping exact physics/input ticks and relative progress
+  ---
+  duration_ms: 0.2955
+  type: 'test'
+  ...
+# Subtest: seed replay and JSON restoration match batched server advancement
+ok 24 - seed replay and JSON restoration match batched server advancement
+  ---
+  duration_ms: 9.150125
+  type: 'test'
+  ...
+# Subtest: normal bot inputs can complete the entire course and keep all same-tick results
+ok 25 - normal bot inputs can complete the entire course and keep all same-tick results
+  ---
+  duration_ms: 11.6235
+  type: 'test'
+  ...
+# Subtest: public score uses metres while ranking compares integer centimetres
+ok 26 - public score uses metres while ranking compares integer centimetres
+  ---
+  duration_ms: 0.086416
+  type: 'test'
+  ...
+# Subtest: paid or practice wrapper never changes allowed input payload or physics
+ok 27 - paid or practice wrapper never changes allowed input payload or physics
+  ---
+  duration_ms: 0.673167
+  type: 'test'
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 96.028875

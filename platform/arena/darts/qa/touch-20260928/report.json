@@ -1,0 +1,377 @@
+{
+  "checkedAt": "2026-09-28T11:41:38.218Z",
+  "scope": "Isolated current UI + actual HTTP game engine. Native Chrome touch and desktop WebKit pointer; not physical iPhone Safari acceptance. Actions count every attempted HTTP request before engine validation.",
+  "samples": [
+    {
+      "engine": "chromium",
+      "method": "Chrome CDP Input.dispatchTouchEvent: browser-trusted native touch",
+      "checks": [
+        "Legal 6-move drag sends one HTTP throw; real Darts engine accepts it",
+        "Actual flight SVG tip updates independently of the 50ms HUD timer: 38 distinct sampled positions",
+        "Native touchCancel never throws",
+        "Explicit capture release discards the drag before pointerup",
+        "Short tap is not a throw",
+        "Secondary touch cancels current throw; neither pointer can submit it",
+        "A new server turn invalidates an in-progress throw even for the same player",
+        "Window blur cancels the gesture",
+        "Fresh legal throw after all cancellations still works once"
+      ],
+      "events": [
+        {
+          "type": "pointerdown",
+          "id": 2,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 2,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 2,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 3,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointercancel",
+          "id": 3,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 3,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 4,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 4,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 4,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 5,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 5,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 5,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 6,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 7,
+          "primary": false,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 6,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 6,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 7,
+          "primary": false,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 7,
+          "primary": false,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 8,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 8,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 8,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 9,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 9,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 9,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerdown",
+          "id": 10,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "pointerup",
+          "id": 10,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 10,
+          "primary": true,
+          "trusted": true,
+          "pointer": "touch"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "method": "Desktop WebKit Playwright mouse: browser-trusted native pointer; not iPhone touch",
+      "checks": [
+        "Legal 6-move drag sends one HTTP throw; real Darts engine accepts it",
+        "Actual flight SVG tip updates independently of the 50ms HUD timer: 39 distinct sampled positions",
+        "Capture loss never throws",
+        "Explicit capture release discards the drag before pointerup",
+        "Short tap is not a throw",
+        "A new server turn invalidates an in-progress throw even for the same player",
+        "Window blur cancels the gesture",
+        "Fresh legal throw after all cancellations still works once"
+      ],
+      "events": [
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerdown",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "pointerup",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        },
+        {
+          "type": "lostpointercapture",
+          "id": 1,
+          "primary": true,
+          "trusted": true,
+          "pointer": "mouse"
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

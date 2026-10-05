@@ -1,0 +1,55 @@
+# Dependencies and generated builds
+**/node_modules/
+**/build/
+**/dist/
+/dist-tiger/
+**/.vite/
+**/.cache/
+**/coverage/
+**/test-results/
+**/playwright-report/
+**/__pycache__/
+**/.pytest_cache/
+**/.venv/
+*.tsbuildinfo
+*.log
+
+# Local tools, runtime state and generated review artifacts
+/.data/
+/.tools/
+/output/
+/tmp/
+/platform/review/
+**/.local/
+**/.gradle/
+*.sqlite
+*.sqlite3
+*.db
+*.heapsnapshot
+*.cpuprofile
+
+# Editors and operating system files
+**/.idea/
+**/.vscode/
+.DS_Store
+**/.DS_Store
+*.swp
+*.swo
+
+# Credentials, signing material and machine-specific configuration
+**/.env
+**/.env.*
+**/runtime.env
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.jks
+**/*.keystore
+**/.npmrc
+**/.netrc
+**/id_rsa
+**/id_ed25519
+**/password
+**/secrets/
+**/private/

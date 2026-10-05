@@ -1,0 +1,30 @@
+{
+  "at": "2026-09-28T10:28:54.427Z",
+  "runtime": "Desktop Playwright WebKit Apple GPU, 390x844 touch viewport, native taps / mouse drag, real local HTTP authoritative engine; not physical iPhone",
+  "ruleVersion": "pvp-bowling-v1.1.0",
+  "physicsVersion": "bowling-rigid-v1.1.0",
+  "results": [
+    {
+      "scenario": "straight-swipe",
+      "input": {
+        "type": "roll",
+        "offset": 0,
+        "angle": 0,
+        "power": 0.78,
+        "spin": 0
+      },
+      "pins": 8,
+      "gutter": false,
+      "preview": {
+        "angle": 0,
+        "offset": 0,
+        "power": 0.78
+      },
+      "gpu": "Apple GPU",
+      "actions": 1,
+      "duration": 6117,
+      "trajectoryBytes": 35282
+    }
+  ],
+  "errors": []
+}

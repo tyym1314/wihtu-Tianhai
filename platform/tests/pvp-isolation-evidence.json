@@ -1,0 +1,30 @@
+{
+  "verified_at": "2026-09-18T13:58:36.921Z",
+  "main_api": "http://127.0.0.1:8797",
+  "main_api_health": {
+    "status": "ok",
+    "environment": "sandbox"
+  },
+  "main_api_checks": "Health returned ok before, between and after the two complete backend runs; the running API was not stopped for testing.",
+  "runs": [
+    {
+      "path": "tests/pvp-backend-isolated-run-1.tap",
+      "tests": 81,
+      "passed": 81,
+      "failed": 0,
+      "duration_ms": 1744.572042,
+      "created_database": "oasis_pvp_test_51090_10ef8f2b0ef38228",
+      "dropped_database": "oasis_pvp_test_51090_10ef8f2b0ef38228"
+    },
+    {
+      "path": "tests/pvp-backend-isolated-run-2.tap",
+      "tests": 81,
+      "passed": 81,
+      "failed": 0,
+      "duration_ms": 1816.212666,
+      "created_database": "oasis_pvp_test_51230_7557b04ce76b398d",
+      "dropped_database": "oasis_pvp_test_51230_7557b04ce76b398d"
+    }
+  ],
+  "remaining_pvp_test_databases": []
+}

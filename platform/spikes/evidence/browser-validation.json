@@ -1,0 +1,862 @@
+{
+  "status": "PASS_LOCAL_DESKTOP_TECHNICAL_SPIKE",
+  "startedAt": "2026-09-18T13:00:54.286Z",
+  "finishedAt": "2026-09-18T13:01:11.672Z",
+  "environment": {
+    "os": "darwin",
+    "osRelease": "25.2.0",
+    "arch": "arm64",
+    "node": "v22.22.3",
+    "browser": "153.0.8010.52",
+    "viewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "network": "127.0.0.1 actual WebSockets; browser queues add controlled delays; not mobile/cross-region"
+  },
+  "addedRttMs": [
+    100,
+    150,
+    200,
+    250
+  ],
+  "beforeReconnect": {
+    "player": {
+      "id": "runner-0",
+      "lane": 0,
+      "connected": true,
+      "role": "manual",
+      "clientId": "qa-0",
+      "lastSeq": 1,
+      "z": 11.299999999999976,
+      "y": 0,
+      "vy": 0,
+      "lastJumpTick": 4,
+      "lastInputTick": 4,
+      "slowUntilTick": 0,
+      "hits": 0,
+      "resolvedObstacles": [],
+      "finishTick": null
+    },
+    "diagnostics": {
+      "playerId": "runner-0",
+      "connected": true,
+      "resumeCount": 0,
+      "inputCount": 0,
+      "errorCount": 2,
+      "seq": 1,
+      "frameP95Ms": 16.799999999999955,
+      "frameMeanMs": 18.043113770741904,
+      "rttMs": 103.2000002861023,
+      "addedRttMs": 100,
+      "renderInfo": {
+        "drawCalls": 176,
+        "triangles": 6224
+      }
+    }
+  },
+  "afterReconnect": {
+    "player": {
+      "id": "runner-0",
+      "lane": 0,
+      "connected": true,
+      "role": "manual",
+      "clientId": "qa-0",
+      "lastSeq": 1,
+      "z": 17.259999999999934,
+      "y": 0,
+      "vy": 0,
+      "lastJumpTick": 4,
+      "lastInputTick": 4,
+      "slowUntilTick": 216,
+      "hits": 1,
+      "resolvedObstacles": [
+        0
+      ],
+      "finishTick": null
+    },
+    "diagnostics": {
+      "playerId": "runner-0",
+      "connected": true,
+      "resumeCount": 1,
+      "inputCount": 0,
+      "errorCount": 2,
+      "seq": 1,
+      "frameP95Ms": 16.799999999999955,
+      "frameMeanMs": 17.61234567783497,
+      "rttMs": 103.2000002861023,
+      "addedRttMs": 100,
+      "renderInfo": {
+        "drawCalls": 172,
+        "triangles": 6176
+      }
+    }
+  },
+  "finals": [
+    {
+      "state": {
+        "matchId": "graybox-1",
+        "tick": 910,
+        "tickRate": 60,
+        "state": "finished",
+        "winner": "runner-1",
+        "trackLength": 78,
+        "obstacles": [
+          16,
+          31,
+          47,
+          63
+        ],
+        "players": [
+          {
+            "id": "runner-0",
+            "lane": 0,
+            "connected": true,
+            "role": "manual",
+            "clientId": "qa-0",
+            "lastSeq": 1,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 4,
+            "lastInputTick": 4,
+            "slowUntilTick": 783,
+            "hits": 4,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 910
+          },
+          {
+            "id": "runner-1",
+            "lane": 1,
+            "connected": true,
+            "role": "script",
+            "clientId": "qa-1",
+            "lastSeq": 4,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 614,
+            "lastInputTick": 614,
+            "slowUntilTick": 0,
+            "hits": 0,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 781
+          },
+          {
+            "id": "runner-2",
+            "lane": 2,
+            "connected": true,
+            "role": "script",
+            "clientId": "qa-2",
+            "lastSeq": 4,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 614,
+            "lastInputTick": 614,
+            "slowUntilTick": 0,
+            "hits": 0,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 781
+          },
+          {
+            "id": "runner-3",
+            "lane": 3,
+            "connected": true,
+            "role": "script",
+            "clientId": "qa-3",
+            "lastSeq": 4,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 612,
+            "lastInputTick": 612,
+            "slowUntilTick": 0,
+            "hits": 0,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 781
+          }
+        ],
+        "finishers": [
+          "runner-1",
+          "runner-2",
+          "runner-3",
+          "runner-0"
+        ],
+        "resultHash": "3bdbd24eda000162449cb00d110ff404402e72242215fe68fcaafcbabd688cfe",
+        "serverTime": 72511.331958,
+        "connections": 4
+      },
+      "diagnostics": {
+        "playerId": "runner-0",
+        "connected": true,
+        "resumeCount": 1,
+        "inputCount": 0,
+        "errorCount": 2,
+        "seq": 1,
+        "frameP95Ms": 16.799999999999272,
+        "frameMeanMs": 16.903512396398654,
+        "rttMs": 102.09999990463257,
+        "addedRttMs": 100,
+        "renderInfo": {
+          "drawCalls": 95,
+          "triangles": 5252
+        }
+      },
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36"
+    },
+    {
+      "state": {
+        "matchId": "graybox-1",
+        "tick": 910,
+        "tickRate": 60,
+        "state": "finished",
+        "winner": "runner-1",
+        "trackLength": 78,
+        "obstacles": [
+          16,
+          31,
+          47,
+          63
+        ],
+        "players": [
+          {
+            "id": "runner-0",
+            "lane": 0,
+            "connected": true,
+            "role": "manual",
+            "clientId": "qa-0",
+            "lastSeq": 1,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 4,
+            "lastInputTick": 4,
+            "slowUntilTick": 783,
+            "hits": 4,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 910
+          },
+          {
+            "id": "runner-1",
+            "lane": 1,
+            "connected": true,
+            "role": "script",
+            "clientId": "qa-1",
+            "lastSeq": 4,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 614,
+            "lastInputTick": 614,
+            "slowUntilTick": 0,
+            "hits": 0,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 781
+          },
+          {
+            "id": "runner-2",
+            "lane": 2,
+            "connected": true,
+            "role": "script",
+            "clientId": "qa-2",
+            "lastSeq": 4,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 614,
+            "lastInputTick": 614,
+            "slowUntilTick": 0,
+            "hits": 0,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 781
+          },
+          {
+            "id": "runner-3",
+            "lane": 3,
+            "connected": true,
+            "role": "script",
+            "clientId": "qa-3",
+            "lastSeq": 4,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 612,
+            "lastInputTick": 612,
+            "slowUntilTick": 0,
+            "hits": 0,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 781
+          }
+        ],
+        "finishers": [
+          "runner-1",
+          "runner-2",
+          "runner-3",
+          "runner-0"
+        ],
+        "resultHash": "3bdbd24eda000162449cb00d110ff404402e72242215fe68fcaafcbabd688cfe",
+        "serverTime": 72511.331958,
+        "connections": 4
+      },
+      "diagnostics": {
+        "playerId": "runner-1",
+        "connected": true,
+        "resumeCount": 0,
+        "inputCount": 4,
+        "errorCount": 0,
+        "seq": 4,
+        "frameP95Ms": 16.799999999999272,
+        "frameMeanMs": 16.683509433962264,
+        "rttMs": 152.10000038146973,
+        "addedRttMs": 150,
+        "renderInfo": {
+          "drawCalls": 94,
+          "triangles": 5240
+        }
+      },
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36"
+    },
+    {
+      "state": {
+        "matchId": "graybox-1",
+        "tick": 910,
+        "tickRate": 60,
+        "state": "finished",
+        "winner": "runner-1",
+        "trackLength": 78,
+        "obstacles": [
+          16,
+          31,
+          47,
+          63
+        ],
+        "players": [
+          {
+            "id": "runner-0",
+            "lane": 0,
+            "connected": true,
+            "role": "manual",
+            "clientId": "qa-0",
+            "lastSeq": 1,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 4,
+            "lastInputTick": 4,
+            "slowUntilTick": 783,
+            "hits": 4,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 910
+          },
+          {
+            "id": "runner-1",
+            "lane": 1,
+            "connected": true,
+            "role": "script",
+            "clientId": "qa-1",
+            "lastSeq": 4,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 614,
+            "lastInputTick": 614,
+            "slowUntilTick": 0,
+            "hits": 0,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 781
+          },
+          {
+            "id": "runner-2",
+            "lane": 2,
+            "connected": true,
+            "role": "script",
+            "clientId": "qa-2",
+            "lastSeq": 4,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 614,
+            "lastInputTick": 614,
+            "slowUntilTick": 0,
+            "hits": 0,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 781
+          },
+          {
+            "id": "runner-3",
+            "lane": 3,
+            "connected": true,
+            "role": "script",
+            "clientId": "qa-3",
+            "lastSeq": 4,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 612,
+            "lastInputTick": 612,
+            "slowUntilTick": 0,
+            "hits": 0,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 781
+          }
+        ],
+        "finishers": [
+          "runner-1",
+          "runner-2",
+          "runner-3",
+          "runner-0"
+        ],
+        "resultHash": "3bdbd24eda000162449cb00d110ff404402e72242215fe68fcaafcbabd688cfe",
+        "serverTime": 72460.751792,
+        "connections": 4
+      },
+      "diagnostics": {
+        "playerId": "runner-2",
+        "connected": true,
+        "resumeCount": 0,
+        "inputCount": 4,
+        "errorCount": 0,
+        "seq": 4,
+        "frameP95Ms": 16.700000000000728,
+        "frameMeanMs": 16.668259023455803,
+        "rttMs": 203.40000009536743,
+        "addedRttMs": 200,
+        "renderInfo": {
+          "drawCalls": 94,
+          "triangles": 5240
+        }
+      },
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36"
+    },
+    {
+      "state": {
+        "matchId": "graybox-1",
+        "tick": 910,
+        "tickRate": 60,
+        "state": "finished",
+        "winner": "runner-1",
+        "trackLength": 78,
+        "obstacles": [
+          16,
+          31,
+          47,
+          63
+        ],
+        "players": [
+          {
+            "id": "runner-0",
+            "lane": 0,
+            "connected": true,
+            "role": "manual",
+            "clientId": "qa-0",
+            "lastSeq": 1,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 4,
+            "lastInputTick": 4,
+            "slowUntilTick": 783,
+            "hits": 4,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 910
+          },
+          {
+            "id": "runner-1",
+            "lane": 1,
+            "connected": true,
+            "role": "script",
+            "clientId": "qa-1",
+            "lastSeq": 4,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 614,
+            "lastInputTick": 614,
+            "slowUntilTick": 0,
+            "hits": 0,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 781
+          },
+          {
+            "id": "runner-2",
+            "lane": 2,
+            "connected": true,
+            "role": "script",
+            "clientId": "qa-2",
+            "lastSeq": 4,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 614,
+            "lastInputTick": 614,
+            "slowUntilTick": 0,
+            "hits": 0,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 781
+          },
+          {
+            "id": "runner-3",
+            "lane": 3,
+            "connected": true,
+            "role": "script",
+            "clientId": "qa-3",
+            "lastSeq": 4,
+            "z": 78,
+            "y": 0,
+            "vy": 0,
+            "lastJumpTick": 612,
+            "lastInputTick": 612,
+            "slowUntilTick": 0,
+            "hits": 0,
+            "resolvedObstacles": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "finishTick": 781
+          }
+        ],
+        "finishers": [
+          "runner-1",
+          "runner-2",
+          "runner-3",
+          "runner-0"
+        ],
+        "resultHash": "3bdbd24eda000162449cb00d110ff404402e72242215fe68fcaafcbabd688cfe",
+        "serverTime": 72460.751792,
+        "connections": 4
+      },
+      "diagnostics": {
+        "playerId": "runner-3",
+        "connected": true,
+        "resumeCount": 0,
+        "inputCount": 4,
+        "errorCount": 0,
+        "seq": 4,
+        "frameP95Ms": 16.700000000000728,
+        "frameMeanMs": 16.672150537736954,
+        "rttMs": 253,
+        "addedRttMs": 250,
+        "renderInfo": {
+          "drawCalls": 94,
+          "triangles": 5240
+        }
+      },
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36"
+    }
+  ],
+  "evidence": {
+    "status": "LOCAL_TECHNICAL_GRAYBOX_ONLY",
+    "snapshot": {
+      "matchId": "graybox-1",
+      "tick": 910,
+      "tickRate": 60,
+      "state": "finished",
+      "winner": "runner-1",
+      "trackLength": 78,
+      "obstacles": [
+        16,
+        31,
+        47,
+        63
+      ],
+      "players": [
+        {
+          "id": "runner-0",
+          "lane": 0,
+          "connected": true,
+          "role": "manual",
+          "clientId": "qa-0",
+          "lastSeq": 1,
+          "z": 78,
+          "y": 0,
+          "vy": 0,
+          "lastJumpTick": 4,
+          "lastInputTick": 4,
+          "slowUntilTick": 783,
+          "hits": 4,
+          "resolvedObstacles": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "finishTick": 910
+        },
+        {
+          "id": "runner-1",
+          "lane": 1,
+          "connected": true,
+          "role": "script",
+          "clientId": "qa-1",
+          "lastSeq": 4,
+          "z": 78,
+          "y": 0,
+          "vy": 0,
+          "lastJumpTick": 614,
+          "lastInputTick": 614,
+          "slowUntilTick": 0,
+          "hits": 0,
+          "resolvedObstacles": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "finishTick": 781
+        },
+        {
+          "id": "runner-2",
+          "lane": 2,
+          "connected": true,
+          "role": "script",
+          "clientId": "qa-2",
+          "lastSeq": 4,
+          "z": 78,
+          "y": 0,
+          "vy": 0,
+          "lastJumpTick": 614,
+          "lastInputTick": 614,
+          "slowUntilTick": 0,
+          "hits": 0,
+          "resolvedObstacles": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "finishTick": 781
+        },
+        {
+          "id": "runner-3",
+          "lane": 3,
+          "connected": true,
+          "role": "script",
+          "clientId": "qa-3",
+          "lastSeq": 4,
+          "z": 78,
+          "y": 0,
+          "vy": 0,
+          "lastJumpTick": 612,
+          "lastInputTick": 612,
+          "slowUntilTick": 0,
+          "hits": 0,
+          "resolvedObstacles": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "finishTick": 781
+        }
+      ],
+      "finishers": [
+        "runner-1",
+        "runner-2",
+        "runner-3",
+        "runner-0"
+      ],
+      "resultHash": "3bdbd24eda000162449cb00d110ff404402e72242215fe68fcaafcbabd688cfe",
+      "serverTime": 73307.496458,
+      "connections": 4
+    },
+    "acks": {
+      "runner-0": {
+        "playerId": "runner-0",
+        "clientId": "qa-0",
+        "winner": "runner-1",
+        "resultHash": "3bdbd24eda000162449cb00d110ff404402e72242215fe68fcaafcbabd688cfe",
+        "matchId": "graybox-1",
+        "validWinner": true
+      },
+      "runner-1": {
+        "playerId": "runner-1",
+        "clientId": "qa-1",
+        "winner": "runner-1",
+        "resultHash": "3bdbd24eda000162449cb00d110ff404402e72242215fe68fcaafcbabd688cfe",
+        "matchId": "graybox-1",
+        "validWinner": true
+      },
+      "runner-2": {
+        "playerId": "runner-2",
+        "clientId": "qa-2",
+        "winner": "runner-1",
+        "resultHash": "3bdbd24eda000162449cb00d110ff404402e72242215fe68fcaafcbabd688cfe",
+        "matchId": "graybox-1",
+        "validWinner": true
+      },
+      "runner-3": {
+        "playerId": "runner-3",
+        "clientId": "qa-3",
+        "winner": "runner-1",
+        "resultHash": "3bdbd24eda000162449cb00d110ff404402e72242215fe68fcaafcbabd688cfe",
+        "matchId": "graybox-1",
+        "validWinner": true
+      }
+    },
+    "events": [
+      {
+        "type": "room-reset",
+        "at": "2026-09-18T13:00:53.369Z"
+      },
+      {
+        "type": "joined",
+        "at": "2026-09-18T13:00:54.820Z",
+        "playerId": "runner-0",
+        "clientId": "qa-0",
+        "role": "manual",
+        "z": 0,
+        "lastSeq": 0
+      },
+      {
+        "type": "joined",
+        "at": "2026-09-18T13:00:55.041Z",
+        "playerId": "runner-1",
+        "clientId": "qa-1",
+        "role": "script",
+        "z": 0,
+        "lastSeq": 0
+      },
+      {
+        "type": "joined",
+        "at": "2026-09-18T13:00:55.252Z",
+        "playerId": "runner-2",
+        "clientId": "qa-2",
+        "role": "script",
+        "z": 0,
+        "lastSeq": 0
+      },
+      {
+        "type": "joined",
+        "at": "2026-09-18T13:00:55.447Z",
+        "playerId": "runner-3",
+        "clientId": "qa-3",
+        "role": "script",
+        "z": 0,
+        "lastSeq": 0
+      },
+      {
+        "type": "started",
+        "at": "2026-09-18T13:00:55.593Z",
+        "matchId": "graybox-1"
+      },
+      {
+        "type": "disconnected",
+        "at": "2026-09-18T13:00:57.556Z",
+        "playerId": "runner-0"
+      },
+      {
+        "type": "resumed",
+        "at": "2026-09-18T13:00:58.757Z",
+        "playerId": "runner-0",
+        "clientId": "qa-0",
+        "role": "manual",
+        "z": 17.259999999999934,
+        "lastSeq": 1
+      },
+      {
+        "type": "finished",
+        "at": "2026-09-18T13:01:10.749Z",
+        "matchId": "graybox-1",
+        "winner": "runner-1",
+        "resultHash": "3bdbd24eda000162449cb00d110ff404402e72242215fe68fcaafcbabd688cfe"
+      }
+    ],
+    "rejections": {
+      "INVALID_INPUT": 1,
+      "DUPLICATE_SEQUENCE": 1
+    },
+    "stats": {
+      "maxStepMs": 1.1240000000034343,
+      "totalTicks": 4395,
+      "activeConnections": 4
+    },
+    "scope": "desktop loopback; no real coins, no mobile or cross-region performance claim"
+  },
+  "pageErrors": [],
+  "assertions": [
+    "4 independent browser contexts and WebSocket identities",
+    "server rejected client teleport and duplicate sequence",
+    "same role/ID/sequence preserved after disconnect; authoritative progress continued",
+    "all four clients reported identical winner and final result hash",
+    "all four result acknowledgements validated against server",
+    "no uncaught browser page errors"
+  ]
+}

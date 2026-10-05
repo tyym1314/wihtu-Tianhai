@@ -1,0 +1,14 @@
+{
+  "at": "2026-09-28T10:08:50.644Z",
+  "ruleVersion": "pvp-bowling-v1.1.0",
+  "physicsVersion": "bowling-rigid-v1.1.0",
+  "runtime": "Node v22.22.3 darwin/arm64; local sequential authority simulation, not mobile device",
+  "cases": 106,
+  "faults": 0,
+  "maxComputeMs": 143.71,
+  "p95ComputeMs": 92.59,
+  "medianComputeMs": 35.8,
+  "maxViewBytes": 60630,
+  "maxDurationMs": 11483,
+  "rows": []
+}

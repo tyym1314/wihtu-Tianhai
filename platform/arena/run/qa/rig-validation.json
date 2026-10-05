@@ -1,0 +1,66 @@
+{
+  "checkedAt": "2026-09-19T16:31:03.371Z",
+  "scope": "Separate actual GLTF AnimationMixer rig sampling; default atlas scene and podium with real engine/pointer input. Midcourse/finish positions are declared isolated fixtures; no wallet.",
+  "motion": [
+    {
+      "clip": "idle",
+      "allFourSkeletonsChanged": true
+    },
+    {
+      "clip": "run",
+      "allFourSkeletonsChanged": true
+    },
+    {
+      "clip": "jump",
+      "allFourSkeletonsChanged": true
+    },
+    {
+      "clip": "land",
+      "allFourSkeletonsChanged": true
+    },
+    {
+      "clip": "slide",
+      "allFourSkeletonsChanged": true
+    },
+    {
+      "clip": "hit",
+      "allFourSkeletonsChanged": true
+    },
+    {
+      "clip": "fall",
+      "allFourSkeletonsChanged": true
+    },
+    {
+      "clip": "recover",
+      "allFourSkeletonsChanged": true
+    },
+    {
+      "clip": "finish",
+      "allFourSkeletonsChanged": true
+    },
+    {
+      "clip": "celebrate",
+      "allFourSkeletonsChanged": true
+    }
+  ],
+  "checks": [
+    "Four GLBs each have 27 actual bones and trophy hand",
+    "Supplied cat winner and fox second; atlas cup pose follows actual winner identity",
+    "Reduced-motion podium pixel-identical after 500ms",
+    "Real touch jump visibly drives clip; slide response accepted with authoritative future slideUntilTick; independent sampler checks slide deformation",
+    "Authoritative finish enters front camera and local animation continues after engine tick fixed"
+  ],
+  "errors": [],
+  "renderer": "Desktop Chrome SwiftShader 390/360, not physical-device proof",
+  "limitations": [
+    "Optional Blender rig uses solid mesh tufts, no strand fur",
+    "Default high-detail art uses four-frame rear running and two-pose celebration, not free-angle 3D animals",
+    "Scene uses a noninteractive distant art plate and actual playable Three geometry",
+    "Physical GPU/thermal/WebView acceptance still required"
+  ],
+  "motion_sampling": "Actual AnimationMixer bone world matrices sampled at 0.11s and 0.26s; controlled presentation clock, not a real-time FPS benchmark.",
+  "video": [
+    "video/blender-clips-podium.webm",
+    "video/atlas-race-actions-finish.webm"
+  ]
+}

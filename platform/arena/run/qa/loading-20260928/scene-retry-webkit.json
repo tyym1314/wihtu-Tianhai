@@ -1,0 +1,53 @@
+{
+  "at": "2026-09-28T12:10:21.509Z",
+  "scope": "Desktop WebKit, real touch tap on actual RunGame and local engine. First renderer.render throws once. No public room, payment or physical phone acceptance.",
+  "errors": [],
+  "failed": {
+    "contexts": {
+      "total": 1,
+      "live": 0
+    },
+    "retryBounds": {
+      "x": 124.5,
+      "y": 442.75,
+      "width": 144,
+      "height": 44
+    }
+  },
+  "recovered": {
+    "actions": [
+      {
+        "action": {
+          "type": "jump",
+          "observed_tick": 27
+        },
+        "accepted": true,
+        "inputNo": 1
+      }
+    ],
+    "exits": 0,
+    "roomId": "unchanged-fixture-room",
+    "sceneCreates": 2,
+    "contexts": {
+      "total": 2,
+      "live": 1
+    },
+    "canvas": 1
+  },
+  "afterExit": {
+    "contexts": {
+      "total": 2,
+      "live": 0
+    },
+    "canvas": 0,
+    "blobURLs": 0
+  },
+  "frontTransfers": [
+    {
+      "path": "/front-win-mobile-902055527a-TIQRACGI.webp",
+      "bytes": 390330
+    }
+  ],
+  "passed": true,
+  "serviceClosed": true
+}

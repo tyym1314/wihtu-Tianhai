@@ -1,0 +1,53 @@
+{
+  "character": "rabbit",
+  "blend": "rabbit.blend",
+  "glb": "rabbit.glb",
+  "bones": 27,
+  "vertices": 20369,
+  "triangles": 36678,
+  "clips": {
+    "idle": {
+      "duration_s": 3.2,
+      "loop": true
+    },
+    "run": {
+      "duration_s": 0.8,
+      "loop": true
+    },
+    "jump": {
+      "duration_s": 0.8,
+      "loop": false
+    },
+    "land": {
+      "duration_s": 0.3333333333333333,
+      "loop": false
+    },
+    "slide": {
+      "duration_s": 0.6,
+      "loop": false
+    },
+    "hit": {
+      "duration_s": 0.8,
+      "loop": false
+    },
+    "fall": {
+      "duration_s": 1.0,
+      "loop": false
+    },
+    "recover": {
+      "duration_s": 0.6,
+      "loop": false
+    },
+    "finish": {
+      "duration_s": 1.2,
+      "loop": false
+    },
+    "celebrate": {
+      "duration_s": 2.0,
+      "loop": true
+    }
+  },
+  "materials": 12,
+  "source": "Original deterministic Blender authoring script; not downloaded characters",
+  "forward": "GLTF +Z, feet at origin; runtime rotates Y by pi to race toward -Z"
+}

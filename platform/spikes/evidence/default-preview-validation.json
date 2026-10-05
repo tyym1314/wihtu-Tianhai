@@ -1,0 +1,112 @@
+{
+  "status": "PASS",
+  "mode": "one human + three explicitly scripted local WebSocket clients",
+  "fourConnections": true,
+  "startJumpReset": true,
+  "result": {
+    "state": {
+      "matchId": "graybox-2",
+      "tick": 0,
+      "tickRate": 60,
+      "state": "waiting",
+      "winner": null,
+      "trackLength": 78,
+      "obstacles": [
+        16,
+        31,
+        47,
+        63
+      ],
+      "players": [
+        {
+          "id": "runner-0",
+          "lane": 0,
+          "connected": true,
+          "role": "manual",
+          "clientId": "demo-human",
+          "lastSeq": 1,
+          "z": 0,
+          "y": 0,
+          "vy": 0,
+          "lastJumpTick": -100,
+          "lastInputTick": -100,
+          "slowUntilTick": 0,
+          "hits": 0,
+          "resolvedObstacles": [],
+          "finishTick": null
+        },
+        {
+          "id": "runner-1",
+          "lane": 1,
+          "connected": true,
+          "role": "script",
+          "clientId": "demo-script-1",
+          "lastSeq": 0,
+          "z": 0,
+          "y": 0,
+          "vy": 0,
+          "lastJumpTick": -100,
+          "lastInputTick": -100,
+          "slowUntilTick": 0,
+          "hits": 0,
+          "resolvedObstacles": [],
+          "finishTick": null
+        },
+        {
+          "id": "runner-2",
+          "lane": 2,
+          "connected": true,
+          "role": "script",
+          "clientId": "demo-script-2",
+          "lastSeq": 0,
+          "z": 0,
+          "y": 0,
+          "vy": 0,
+          "lastJumpTick": -100,
+          "lastInputTick": -100,
+          "slowUntilTick": 0,
+          "hits": 0,
+          "resolvedObstacles": [],
+          "finishTick": null
+        },
+        {
+          "id": "runner-3",
+          "lane": 3,
+          "connected": true,
+          "role": "script",
+          "clientId": "demo-script-3",
+          "lastSeq": 0,
+          "z": 0,
+          "y": 0,
+          "vy": 0,
+          "lastJumpTick": -100,
+          "lastInputTick": -100,
+          "slowUntilTick": 0,
+          "hits": 0,
+          "resolvedObstacles": [],
+          "finishTick": null
+        }
+      ],
+      "finishers": [],
+      "resultHash": null,
+      "serverTime": 104295.370792,
+      "connections": 4
+    },
+    "diagnostics": {
+      "playerId": "runner-0",
+      "connected": true,
+      "resumeCount": 0,
+      "inputCount": 1,
+      "errorCount": 0,
+      "seq": 1,
+      "frameP95Ms": 16.799999999999955,
+      "frameMeanMs": 19.52179487057221,
+      "rttMs": 0.40000009536743164,
+      "addedRttMs": 0,
+      "renderInfo": {
+        "drawCalls": 178,
+        "triangles": 6248
+      }
+    }
+  }
+}

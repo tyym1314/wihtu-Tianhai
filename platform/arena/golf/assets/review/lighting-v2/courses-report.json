@@ -1,0 +1,9 @@
+{
+  "scope": "Visual-only fixture for courses 2 and 3 after rebaking; not gameplay completion",
+  "courses": [
+    2,
+    3
+  ],
+  "width": 390,
+  "errors": []
+}

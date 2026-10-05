@@ -1,0 +1,1182 @@
+[
+  {
+    "game": "carrom",
+    "width": 390,
+    "errors": [],
+    "viewport": [
+      390,
+      844
+    ],
+    "scroll": [
+      390,
+      844
+    ],
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      }
+    ],
+    "stage": [
+      {
+        "text": "",
+        "x": 22,
+        "y": 201.390625,
+        "width": 346,
+        "height": 221,
+        "bottom": 422.390625,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "trophy": [
+      {
+        "text": "",
+        "x": 66,
+        "y": 173.390625,
+        "width": 258,
+        "height": 258,
+        "bottom": 431.390625,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "podium": [],
+    "team": [
+      {
+        "text": "本队获得\n★\n380\n个人金额以结算为准",
+        "x": 42,
+        "y": 430.390625,
+        "width": 306,
+        "height": 86,
+        "bottom": 516.390625,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n190\n奖池 400\n服务费 20",
+        "x": 42,
+        "y": 516.390625,
+        "width": 306,
+        "height": 80,
+        "bottom": 596.390625,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "ranking": [],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 630.390625,
+        "width": 346,
+        "height": 50,
+        "bottom": 680.390625,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ]
+  },
+  {
+    "game": "carrom",
+    "width": 360,
+    "errors": [],
+    "viewport": [
+      360,
+      800
+    ],
+    "scroll": [
+      360,
+      800
+    ],
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "19000"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      }
+    ],
+    "stage": [
+      {
+        "text": "",
+        "x": 19,
+        "y": 185,
+        "width": 322,
+        "height": 206,
+        "bottom": 391,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "trophy": [
+      {
+        "text": "",
+        "x": 60,
+        "y": 157,
+        "width": 240,
+        "height": 240,
+        "bottom": 397,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "podium": [],
+    "team": [
+      {
+        "text": "本队获得\n★\n380\n个人金额以结算为准",
+        "x": 39,
+        "y": 399,
+        "width": 282,
+        "height": 86,
+        "bottom": 485,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "reward": [
+      {
+        "text": "本局获得\n★\n190\n奖池 400\n服务费 20",
+        "x": 39,
+        "y": 485,
+        "width": 282,
+        "height": 80,
+        "bottom": 565,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "ranking": [],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 595,
+        "width": 322,
+        "height": 50,
+        "bottom": 645,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ]
+  },
+  {
+    "game": "run",
+    "width": 390,
+    "errors": [],
+    "viewport": [
+      390,
+      844
+    ],
+    "scroll": [
+      390,
+      844
+    ],
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "stage": [
+      {
+        "text": "",
+        "x": 22,
+        "y": 120.1875,
+        "width": 346,
+        "height": 268,
+        "bottom": 388.1875,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "trophy": [],
+    "podium": [
+      {
+        "text": "",
+        "x": 2,
+        "y": 120.1875,
+        "width": 386,
+        "height": 270,
+        "bottom": 390.1875,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "team": [],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 22,
+        "y": 398.1875,
+        "width": 346,
+        "height": 144,
+        "bottom": 542.1875,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "ranking": [
+      {
+        "text": "1\n你\n0",
+        "x": 22,
+        "y": 557.1875,
+        "width": 346,
+        "height": 29,
+        "bottom": 586.1875,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "2\nOmar\n0",
+        "x": 22,
+        "y": 589.1875,
+        "width": 346,
+        "height": 29,
+        "bottom": 618.1875,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "3\nLina\n0",
+        "x": 22,
+        "y": 621.1875,
+        "width": 346,
+        "height": 29,
+        "bottom": 650.1875,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "4\nNoor\n0",
+        "x": 22,
+        "y": 653.1875,
+        "width": 346,
+        "height": 29,
+        "bottom": 682.1875,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 715.1875,
+        "width": 346,
+        "height": 50,
+        "bottom": 765.1875,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ]
+  },
+  {
+    "game": "run",
+    "width": 360,
+    "errors": [],
+    "viewport": [
+      360,
+      800
+    ],
+    "scroll": [
+      360,
+      800
+    ],
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "stage": [
+      {
+        "text": "",
+        "x": 19,
+        "y": 106.59375,
+        "width": 322,
+        "height": 241,
+        "bottom": 347.59375,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "trophy": [],
+    "podium": [
+      {
+        "text": "",
+        "x": -1,
+        "y": 106.59375,
+        "width": 362,
+        "height": 270,
+        "bottom": 376.59375,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "team": [],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 19,
+        "y": 357.59375,
+        "width": 322,
+        "height": 137,
+        "bottom": 494.59375,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "ranking": [
+      {
+        "text": "1\n你\n0",
+        "x": 19,
+        "y": 509.59375,
+        "width": 322,
+        "height": 29,
+        "bottom": 538.59375,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "2\nOmar\n0",
+        "x": 19,
+        "y": 541.59375,
+        "width": 322,
+        "height": 29,
+        "bottom": 570.59375,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "3\nLina\n0",
+        "x": 19,
+        "y": 573.59375,
+        "width": 322,
+        "height": 29,
+        "bottom": 602.59375,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "4\nNoor\n0",
+        "x": 19,
+        "y": 605.59375,
+        "width": 322,
+        "height": 29,
+        "bottom": 634.59375,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 663.59375,
+        "width": 322,
+        "height": 50,
+        "bottom": 713.59375,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ]
+  },
+  {
+    "game": "bowling",
+    "width": 390,
+    "errors": [],
+    "viewport": [
+      390,
+      844
+    ],
+    "scroll": [
+      390,
+      878
+    ],
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "stage": [
+      {
+        "text": "你",
+        "x": 22,
+        "y": 136,
+        "width": 346,
+        "height": 230,
+        "bottom": 366,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "trophy": [
+      {
+        "text": "",
+        "x": 50,
+        "y": 113,
+        "width": 290,
+        "height": 290,
+        "bottom": 403,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "podium": [],
+    "team": [],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 22,
+        "y": 382,
+        "width": 346,
+        "height": 138,
+        "bottom": 520,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "ranking": [
+      {
+        "text": "1\n你\n分\n0",
+        "x": 22,
+        "y": 535,
+        "width": 346,
+        "height": 39,
+        "bottom": 574,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "2\nOmar\nBOT · 分\n0",
+        "x": 22,
+        "y": 579,
+        "width": 346,
+        "height": 39,
+        "bottom": 618,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "3\nLina\nBOT · 分\n0",
+        "x": 22,
+        "y": 623,
+        "width": 346,
+        "height": 39,
+        "bottom": 662,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "4\nNoor\nBOT · 分\n0",
+        "x": 22,
+        "y": 667,
+        "width": 346,
+        "height": 39,
+        "bottom": 706,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 739,
+        "width": 346,
+        "height": 99,
+        "bottom": 838,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ]
+  },
+  {
+    "game": "bowling",
+    "width": 360,
+    "errors": [],
+    "viewport": [
+      360,
+      800
+    ],
+    "scroll": [
+      360,
+      857
+    ],
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "stage": [
+      {
+        "text": "你",
+        "x": 19,
+        "y": 125,
+        "width": 322,
+        "height": 230,
+        "bottom": 355,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "trophy": [
+      {
+        "text": "",
+        "x": 46.5,
+        "y": 102,
+        "width": 267,
+        "height": 267,
+        "bottom": 369,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "podium": [],
+    "team": [],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 19,
+        "y": 371,
+        "width": 322,
+        "height": 137,
+        "bottom": 508,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "ranking": [
+      {
+        "text": "1\n你\n分\n0",
+        "x": 19,
+        "y": 523,
+        "width": 322,
+        "height": 39,
+        "bottom": 562,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "2\nOmar\nBOT · 分\n0",
+        "x": 19,
+        "y": 567,
+        "width": 322,
+        "height": 39,
+        "bottom": 606,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "3\nLina\nBOT · 分\n0",
+        "x": 19,
+        "y": 611,
+        "width": 322,
+        "height": 39,
+        "bottom": 650,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "4\nNoor\nBOT · 分\n0",
+        "x": 19,
+        "y": 655,
+        "width": 322,
+        "height": 39,
+        "bottom": 694,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 723,
+        "width": 322,
+        "height": 99,
+        "bottom": 822,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ]
+  },
+  {
+    "game": "domino",
+    "width": 390,
+    "errors": [],
+    "viewport": [
+      390,
+      844
+    ],
+    "scroll": [
+      390,
+      844
+    ],
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "stage": [
+      {
+        "text": "",
+        "x": 22,
+        "y": 159.1875,
+        "width": 346,
+        "height": 211,
+        "bottom": 370.1875,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "trophy": [
+      {
+        "text": "",
+        "x": 45,
+        "y": 104.1875,
+        "width": 300,
+        "height": 300,
+        "bottom": 404.1875,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "podium": [],
+    "team": [],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 22,
+        "y": 380.1875,
+        "width": 346,
+        "height": 112,
+        "bottom": 492.1875,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "ranking": [
+      {
+        "text": "1\n你\n0",
+        "x": 22,
+        "y": 507.1875,
+        "width": 346,
+        "height": 39,
+        "bottom": 546.1875,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "2\nOmar\n0",
+        "x": 22,
+        "y": 551.1875,
+        "width": 346,
+        "height": 39,
+        "bottom": 590.1875,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "3\nLina\n0",
+        "x": 22,
+        "y": 595.1875,
+        "width": 346,
+        "height": 39,
+        "bottom": 634.1875,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "4\nNoor\n0",
+        "x": 22,
+        "y": 639.1875,
+        "width": 346,
+        "height": 39,
+        "bottom": 678.1875,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 22,
+        "y": 742,
+        "width": 346,
+        "height": 62,
+        "bottom": 804,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ]
+  },
+  {
+    "game": "domino",
+    "width": 360,
+    "errors": [],
+    "viewport": [
+      360,
+      800
+    ],
+    "scroll": [
+      360,
+      800
+    ],
+    "players": [
+      {
+        "external_user_id": "p0",
+        "name": "Maya",
+        "seat_index": 0,
+        "team_id": "team_a",
+        "bot": false,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 1,
+        "payout_minor": "38000"
+      },
+      {
+        "external_user_id": "p1",
+        "name": "Omar",
+        "seat_index": 1,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 2,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p2",
+        "name": "Lina",
+        "seat_index": 2,
+        "team_id": "team_a",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 3,
+        "payout_minor": "0"
+      },
+      {
+        "external_user_id": "p3",
+        "name": "Noor",
+        "seat_index": 3,
+        "team_id": "team_b",
+        "bot": true,
+        "ready": true,
+        "connected": true,
+        "score": 0,
+        "rank": 4,
+        "payout_minor": "0"
+      }
+    ],
+    "stage": [
+      {
+        "text": "",
+        "x": 19,
+        "y": 143.59375,
+        "width": 322,
+        "height": 193,
+        "bottom": 336.59375,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "trophy": [
+      {
+        "text": "",
+        "x": 46.5,
+        "y": 88.59375,
+        "width": 267,
+        "height": 267,
+        "bottom": 355.59375,
+        "display": "block",
+        "visibility": "visible"
+      }
+    ],
+    "podium": [],
+    "team": [],
+    "reward": [
+      {
+        "text": "本局获得\n★\n380\n奖池 400\n服务费 20",
+        "x": 19,
+        "y": 346.59375,
+        "width": 322,
+        "height": 112,
+        "bottom": 458.59375,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "ranking": [
+      {
+        "text": "1\n你\n0",
+        "x": 19,
+        "y": 473.59375,
+        "width": 322,
+        "height": 39,
+        "bottom": 512.59375,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "2\nOmar\n0",
+        "x": 19,
+        "y": 517.59375,
+        "width": 322,
+        "height": 39,
+        "bottom": 556.59375,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "3\nLina\n0",
+        "x": 19,
+        "y": 561.59375,
+        "width": 322,
+        "height": 39,
+        "bottom": 600.59375,
+        "display": "flex",
+        "visibility": "visible"
+      },
+      {
+        "text": "4\nNoor\n0",
+        "x": 19,
+        "y": 605.59375,
+        "width": 322,
+        "height": 39,
+        "bottom": 644.59375,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ],
+    "actions": [
+      {
+        "text": "再来一局\n返回大厅",
+        "x": 19,
+        "y": 703,
+        "width": 322,
+        "height": 62,
+        "bottom": 765,
+        "display": "flex",
+        "visibility": "visible"
+      }
+    ]
+  }
+]

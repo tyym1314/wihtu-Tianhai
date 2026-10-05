@@ -1,0 +1,74 @@
+{
+  "passed": true,
+  "at": "2026-09-19T14:51:42.521Z",
+  "scope": "Isolated HTTP fixture platform + actual Node SDK/BFF/H5 SDK/arena client/legacy bridge. No real wallet, no native WebView certification.",
+  "checks": [
+    "12 authorized cards; independent mobile host at 390px, no overflow",
+    "actual cross-origin H5 SDK + arena client handshake and game-only Bearer request",
+    "voice duck, host mute and restoration preserve player mute preference",
+    "wrong nonce and wrong source messages ignored; forged return/financial payload has no authority",
+    "safe areas clamped, nonpresentation fields discarded",
+    "reactive 401 obtains a fresh one-use code for the same session; failed write is not replayed",
+    "host messages, storage, URL and browser requests contain no Bearer/HMAC secret",
+    "host back invokes game callback then presentation-only return and iframe cleanup",
+    "real legacy bridge maps game routes, propagates host audio state, and confirms return without claiming a refund"
+  ],
+  "errors": [],
+  "exchanges": [
+    {
+      "game": "match",
+      "host": "http://127.0.0.1:58781",
+      "sid": "sess_e2bbf37dc9be4deb"
+    },
+    {
+      "game": "match",
+      "host": "http://127.0.0.1:58781",
+      "sid": "sess_e2bbf37dc9be4deb"
+    },
+    {
+      "game": "tiger",
+      "host": "http://127.0.0.1:58781",
+      "sid": "sess_0177dd82218bc157"
+    }
+  ],
+  "protectedCalls": [
+    {
+      "path": "/api/arena/session",
+      "method": "GET",
+      "authorized": true
+    },
+    {
+      "path": "/api/arena/protected",
+      "method": "POST",
+      "authorized": true,
+      "origin": "http://127.0.0.1:58780"
+    },
+    {
+      "path": "/api/arena/protected",
+      "method": "POST",
+      "authorized": true,
+      "origin": "http://127.0.0.1:58780"
+    },
+    {
+      "path": "/api/arena/session",
+      "method": "GET",
+      "authorized": true
+    },
+    {
+      "path": "/api/arena/protected",
+      "method": "POST",
+      "authorized": true,
+      "origin": "http://127.0.0.1:58780"
+    },
+    {
+      "path": "/api/play/tiger/config",
+      "method": "GET",
+      "authorized": true
+    },
+    {
+      "path": "/api/play/tiger/session",
+      "method": "GET",
+      "authorized": true
+    }
+  ]
+}

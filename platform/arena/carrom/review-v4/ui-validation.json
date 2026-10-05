@@ -1,0 +1,147 @@
+{
+  "at": "2026-09-19T18:03:37.069Z",
+  "scope": "Actual engines in isolated Chrome mobile emulation. Explicit local zero-value Carrom pocket arrangement; no platform/wallet requests or physical-device claims.",
+  "reports": [
+    {
+      "game": "carrom",
+      "width": 390,
+      "height": 844,
+      "layout": {
+        "width": 390,
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      "evidence": {
+        "input": "CDP touch drag, native keyboard/slider and actual shoot button",
+        "fixture": "explicit zero-value legal pocket setup, all original coins retained",
+        "shot": {
+          "type": "shot",
+          "offset": 1,
+          "angle": 0.19285470429359536,
+          "power": 0.4,
+          "playerKey": "p0",
+          "seatIndex": 0
+        },
+        "frames": 46,
+        "pocket": {
+          "type": "pocket",
+          "id": "w0",
+          "kind": "white",
+          "pocket": 1,
+          "t": 1167,
+          "x": 4.27,
+          "y": -4.27
+        },
+        "event": {
+          "type": "score",
+          "at": 1789840989273,
+          "playerKey": "p0",
+          "teamId": "team_a",
+          "captured": 1,
+          "opponentCaptured": 0,
+          "returned": [],
+          "foul": false,
+          "debt": 0
+        },
+        "retainedTurn": true,
+        "controlsLockedDuringPhysics": true
+      },
+      "errors": [],
+      "badAssets": []
+    },
+    {
+      "game": "carrom",
+      "width": 360,
+      "height": 800,
+      "layout": {
+        "width": 360,
+        "scrollWidth": 360,
+        "scrollHeight": 800
+      },
+      "evidence": {
+        "input": "CDP touch drag, native keyboard/slider and actual shoot button",
+        "fixture": "explicit zero-value legal pocket setup, all original coins retained",
+        "shot": {
+          "type": "shot",
+          "offset": 1,
+          "angle": 0.19285472795214387,
+          "power": 0.4,
+          "playerKey": "p0",
+          "seatIndex": 0
+        },
+        "frames": 46,
+        "pocket": {
+          "type": "pocket",
+          "id": "w0",
+          "kind": "white",
+          "pocket": 1,
+          "t": 1167,
+          "x": 4.27,
+          "y": -4.27
+        },
+        "event": {
+          "type": "score",
+          "at": 1789840994773,
+          "playerKey": "p0",
+          "teamId": "team_a",
+          "captured": 1,
+          "opponentCaptured": 0,
+          "returned": [],
+          "foul": false,
+          "debt": 0
+        },
+        "retainedTurn": true,
+        "controlsLockedDuringPhysics": true
+      },
+      "errors": [],
+      "badAssets": []
+    },
+    {
+      "game": "carrom",
+      "width": 430,
+      "height": 932,
+      "layout": {
+        "width": 430,
+        "scrollWidth": 430,
+        "scrollHeight": 932
+      },
+      "evidence": {
+        "input": "CDP touch drag, native keyboard/slider and actual shoot button",
+        "fixture": "explicit zero-value legal pocket setup, all original coins retained",
+        "shot": {
+          "type": "shot",
+          "offset": 1,
+          "angle": 0.19285470389010576,
+          "power": 0.4,
+          "playerKey": "p0",
+          "seatIndex": 0
+        },
+        "frames": 46,
+        "pocket": {
+          "type": "pocket",
+          "id": "w0",
+          "kind": "white",
+          "pocket": 1,
+          "t": 1167,
+          "x": 4.27,
+          "y": -4.27
+        },
+        "event": {
+          "type": "score",
+          "at": 1789840998439,
+          "playerKey": "p0",
+          "teamId": "team_a",
+          "captured": 1,
+          "opponentCaptured": 0,
+          "returned": [],
+          "foul": false,
+          "debt": 0
+        },
+        "retainedTurn": true,
+        "controlsLockedDuringPhysics": true
+      },
+      "errors": [],
+      "badAssets": []
+    }
+  ]
+}

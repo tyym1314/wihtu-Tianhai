@@ -1,0 +1,85 @@
+{
+  "scope": "Bowling isolated zero-wallet engine, actual pointer actions, desktop Chrome viewports; not physical phones",
+  "mode": "after",
+  "checks": [
+    {
+      "width": 360,
+      "height": 800,
+      "assets": true,
+      "layout": true,
+      "realRoll": true,
+      "pinsDown": 10,
+      "actions": 1,
+      "drawCalls": 166,
+      "triangles": 259948,
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "sounds": [
+        "shot",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "win"
+      ]
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "assets": true,
+      "layout": true,
+      "realRoll": true,
+      "pinsDown": 10,
+      "actions": 1,
+      "drawCalls": 166,
+      "triangles": 259948,
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "sounds": [
+        "shot",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "win"
+      ]
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "assets": true,
+      "layout": true,
+      "realRoll": true,
+      "pinsDown": 10,
+      "actions": 1,
+      "drawCalls": 166,
+      "triangles": 259948,
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "sounds": [
+        "shot",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "hit",
+        "win"
+      ]
+    }
+  ],
+  "errors": []
+}
