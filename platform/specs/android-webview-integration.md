@@ -8,7 +8,7 @@
 
 `OASIS 接入测试 1.2.0` 使用原生 Android 卡片展示 13 款游戏。原生大厅的固定用户、资料、展示余额和游戏选择由 APK 内的 `MockPartnerApi` 返回。点击卡片后打开对应的 `https://game.tianyahuyu.com/demo/native/<game_id>`，游戏期间没有网页大厅和宿主工具栏。游戏内账号、操作、余额、对局和结算仍使用平台的真实沙箱接口与测试钱包；原生大厅展示余额不会同步到游戏。
 
-历史包的包名为 `com.tianyahuyu.oasis.smoke`。独立 Mock 候选 `1.3.0 (6)` 的包名为 `com.tianyahuyu.oasis.mock`，固定访问 `https://oasis-mock.43.98.202.236.sslip.io`，可与历史包共存。候选已安装实体 Android，13 款完整验收尚未闭合；目前仅限内部 QA，不提供默认公开下载。它与 1.2 的身份、测试钱包和验收报告必须分开，详见 [Android 测试说明](../android-smoke/README.md)。
+历史包的包名为 `com.tianyahuyu.oasis.smoke`。独立 Mock 候选 `1.3.0 (6)` 的包名为 `com.tianyahuyu.oasis.mock`，固定访问 `https://oasis-mock.43.98.202.236.sslip.io`，可与历史包共存。候选已安装实体 Android，13 款完整验收尚未闭合；目前仅限内部 QA，不提供默认公开下载。它与 1.2 的身份、测试钱包和验收报告必须分开，具体核验步骤见下文[显式选择验收目标](#显式选择验收目标)。
 
 `build:release` 只校验并原样保留已经审核的公开 APK，不运行 Android 重打包，不复制本地候选，也不改写公开元数据。`/downloads/android-smoke-build.json` 保留 `version`、`version_code`、`apk`、`sha256`、`game_count` 等旧字段，并明确版别、包名、Origin 与源码指纹。原生源码或构建输入变化时，发布构建以 `ANDROID_REVIEWED_APK_STALE` 阻断；需要显式构建、审核并登记新产物，不能只改摘要绕过审核。后续分发必须使用验收过的同一 APK 字节，不能在验收后重新打包同一版本覆盖原 URL。
 

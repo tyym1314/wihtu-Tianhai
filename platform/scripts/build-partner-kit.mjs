@@ -1,9 +1,31 @@
 /** Explicit allowlist, fixed ZIP metadata, no credentials or runtime data. */
-import {readFile,writeFile,mkdir} from 'node:fs/promises';
-import {resolve,posix} from 'node:path';
+import {readFile,writeFile,mkdir,readdir,lstat} from 'node:fs/promises';
+import {resolve,relative,dirname,posix} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-const root=resolve(import.meta.dirname,'..'),output=resolve(root,'public/downloads/oasis-partner-sandbox-kit.zip');
+const root=resolve(import.meta.dirname,'..');
+const kitDownload='/downloads/oasis-partner-sandbox-kit.zip';
+const publicOrigin='https://game.tianyahuyu.com';
+
+export function rewriteKitLinks(name,text,files,downloads){
+ return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g,(match,label,target)=>{
+  if(/^(https?:|#)/.test(target))return match;
+  const clean=target.split('#')[0],fragment=target.slice(clean.length);
+  if(clean==='/sdk/oasis-h5.mjs'&&files.has('public/sdk/oasis-h5.mjs'))return '['+label+']('+posix.relative(posix.dirname(name),'public/sdk/oasis-h5.mjs')+fragment+')';
+  if(clean.startsWith('/downloads/')){
+   if(clean===kitDownload&&files.has('README.md'))return '['+label+']('+posix.relative(posix.dirname(name),'README.md')+fragment+')（本接入包）';
+   const member='public'+clean;
+   if(files.has(member))return '['+label+']('+posix.relative(posix.dirname(name),member)+fragment+')';
+   if(/^\/downloads\/[A-Za-z0-9][A-Za-z0-9._-]*$/.test(clean)&&downloads.has(clean))return '['+label+']('+publicOrigin+clean+fragment+')（外部下载，不随包提供）';
+   return label+'（未随包提供；请向平台部署方确认下载地址）';
+  }
+  const path=posix.normalize(posix.join(posix.dirname(name),clean));
+  return files.has(path)?match:label+'（平台在线历史文档，不随包提供）';
+ });
+}
+
+export async function buildPartnerKit({output=resolve(root,'public'+kitDownload)}={}){
 const files=new Map();
 const put=(name,value)=>files.set(name,Buffer.from(value));
 const json=value=>JSON.stringify(value,null,2)+'\n';
@@ -127,14 +149,13 @@ let phaseF=files.get('specs/phase-f-self-integration.md').toString();
 phaseF=phaseF.replace(/```sh\nnpx tsx -e [\s\S]*?\n```/,'公开沙箱数学元数据已随包提供：[math-profiles.json](math-profiles.json)。使用前请平台部署方确认其与当前启用版本一致；本包不含平台数学计算源码。');
 phaseF='> 离线示例包：命令路径从包根开始。平台 API/游戏由部署方提供；第 1 节平台开服命令只供部署方参考，本包只能启动钱包与 BFF。见 [包 README](../README.md)。\n\n'+phaseF;
 put('specs/phase-f-self-integration.md',phaseF);
+const downloads=new Set();
+for(const entry of await readdir(resolve(root,'public/downloads'),{withFileTypes:true})){
+ if(entry.isFile()&&!(await lstat(resolve(root,'public/downloads',entry.name))).isSymbolicLink())downloads.add('/downloads/'+entry.name);
+}
 for(const [name,bytes]of files)if(name.endsWith('.md')){
  let text=bytes.toString().replaceAll('platform/specs/examples/signature-vector.json','specs/examples/signature-vector.json');
- text=text.replace(/\[([^\]]+)\]\(([^)]+)\)/g,(match,label,target)=>{
-  if(/^(https?:|#)/.test(target))return match;let clean=target.split('#')[0];
-  if(clean==='/sdk/oasis-h5.mjs')return '['+label+']('+posix.relative(posix.dirname(name),'public/sdk/oasis-h5.mjs')+')';
-  if(clean.startsWith('/downloads/'))return label+'（当前文件已在下载包内）';
-  const path=posix.normalize(posix.join(posix.dirname(name),clean));return files.has(path)?match:label+'（平台在线历史文档，不随包提供）';
- });put(name,text);
+ put(name,rewriteKitLinks(name,text,files,downloads));
 }
 for(const name of ['specs/phase-f-self-integration.md','specs/production-handoff.md']){const content=files.get(name)?.toString()||'';if(content.length<1000||!/^# /m.test(content))throw Error('Integration tutorial missing: '+name);}
 // No runtime paths are discovered recursively: only the explicit source allowlist above.
@@ -150,5 +171,8 @@ for(const [path,body]of [...files].sort(([a],[b])=>a<b?-1:a>b?1:0)){
  locals.push(header,name,body);const c=Buffer.alloc(46);c.writeUInt32LE(0x02014b50,0);c.writeUInt16LE(0x314,4);c.writeUInt16LE(20,6);c.writeUInt16LE(0x800,8);c.writeUInt16LE(33,14);c.writeUInt32LE(crc,16);c.writeUInt32LE(body.length,20);c.writeUInt32LE(body.length,24);c.writeUInt16LE(name.length,28);c.writeUInt32LE((0o100644<<16)>>>0,38);c.writeUInt32LE(offset,42);central.push(c,name);offset+=header.length+name.length+body.length;
 }
 const directory=Buffer.concat(central),end=Buffer.alloc(22);end.writeUInt32LE(0x06054b50,0);end.writeUInt16LE(files.size,8);end.writeUInt16LE(files.size,10);end.writeUInt32LE(directory.length,12);end.writeUInt32LE(offset,16);
-const zip=Buffer.concat([...locals,directory,end]);await mkdir(resolve(root,'public/downloads'),{recursive:true});await writeFile(output,zip);
-console.log(JSON.stringify({output:'public/downloads/oasis-partner-sandbox-kit.zip',files:files.size,bytes:zip.length,sha256:createHash('sha256').update(zip).digest('hex'),fixed_zip_date:'1980-01-01',dependencies:Object.keys(dependencies),package_lock_entries:Object.keys(packages).length-1}));
+const zip=Buffer.concat([...locals,directory,end]);await mkdir(dirname(resolve(output)),{recursive:true});await writeFile(output,zip);
+return {output:relative(root,resolve(output)),files:files.size,bytes:zip.length,sha256:createHash('sha256').update(zip).digest('hex'),fixed_zip_date:'1980-01-01',dependencies:Object.keys(dependencies),package_lock_entries:Object.keys(packages).length-1};
+}
+
+if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))console.log(JSON.stringify(await buildPartnerKit()));
