@@ -110,6 +110,8 @@ journalctl -u oasis-backup.service -n 30 --no-pager
 
 `activate-release.py` 已实现清单校验、未决义务检查、备份、原子切换、健康检查及失败回切。仅在已确认数据库增量迁移兼容时使用 `--compatible-schema`。它会在停止服务后再次检查未决对局，避免检查和停服之间进入的新局被忽略。`package-delta.py` 只生成传输增量；目标必须先独立复制上一版本，再应用增量并验证完整新清单，不能使用会共同修改旧版本文件的硬链接。
 
+服务器可用 `stage_delta.py <新版本目录名> <增量包路径> <SHA256>` 完成上述独立复制、逐文件校验和暂存；新目录名格式为 `YYYYMMDD-NN`。它不切换流量。随后用新版本中的 `activate-release.py /opt/oasis/releases/<新版本> --check-only` 检查未决局和依赖，确认可回滚的增量迁移后才执行带 `--compatible-schema` 的激活。若前置条件不满足，保留当前链接和服务，不得以删除未决局绕过检查。
+
 ## 对外接入与运行状态
 
 管理员可创建独立合作方账号；合作方自助创建 App、改密、管理签名密钥、配置接入并运行自检。完整步骤见平台 [接入交接](../specs/production-handoff.md)。正式环境使用独立数据库和 master key，默认关闭生产准入，禁止将现有沙箱数据库切换为生产。

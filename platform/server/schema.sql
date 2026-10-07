@@ -20,6 +20,24 @@ ALTER TABLE gp_apps ADD COLUMN IF NOT EXISTS allowed_origins jsonb NOT NULL DEFA
 ALTER TABLE gp_sessions ADD COLUMN IF NOT EXISTS host_origin text;
 ALTER TABLE gp_launch_codes ADD COLUMN IF NOT EXISTS host_origin text;
 
+-- Platform-owned production identities. App-facing IDs are random, stable per
+-- App, and never supplied as an authority by the partner or browser.
+CREATE TABLE IF NOT EXISTS gp_players (
+ id text PRIMARY KEY,username text UNIQUE NOT NULL,salt text NOT NULL,password_hash text NOT NULL,
+ active boolean NOT NULL DEFAULT true,created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS gp_player_sessions (
+ token_hash text PRIMARY KEY,player_id text NOT NULL REFERENCES gp_players(id) ON DELETE CASCADE,
+ expires_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS gp_player_sessions_expiry ON gp_player_sessions(expires_at);
+CREATE TABLE IF NOT EXISTS gp_player_app_ids (
+ app_id text NOT NULL REFERENCES gp_apps(id),player_id text NOT NULL REFERENCES gp_players(id),
+ external_user_id text NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),
+ PRIMARY KEY(app_id,player_id),UNIQUE(app_id,external_user_id)
+);
+ALTER TABLE gp_sessions ADD COLUMN IF NOT EXISTS player_id text REFERENCES gp_players(id);
+
 -- Additive environment support. A runtime identity still forbids mixed-environment databases.
 ALTER TABLE gp_apps DROP CONSTRAINT IF EXISTS gp_apps_environment_check;
 ALTER TABLE gp_apps ADD CONSTRAINT gp_apps_environment_check CHECK(environment IN ('sandbox','production'));

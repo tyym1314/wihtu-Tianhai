@@ -1,4 +1,5 @@
 import * as legacy from './level.mjs';
+import {runRequiresSceneReady} from './start-policy.mjs';
 
 export const CONTENT_VERSION='dune-courses-v2.0.0';
 export const SAFE_INTRO_CONTENT_VERSION='dune-courses-v2.1.0';
@@ -44,11 +45,11 @@ export const RUN_COURSES_V21=deepFreeze(RUN_COURSES.map(course=>({
  gaps:course.gaps.filter(gap=>gap.start>=SAFE_INTRO_METERS),
 })));
 const original=deepFreeze({id:'golden-causeway-v1',contentVersion:legacy.LEVEL_VERSION,levelVersion:legacy.LEVEL_VERSION,physicsVersion:legacy.PHYSICS_VERSION,trackLength:legacy.TRACK_LENGTH,difficulty:1,title:{zh:'金色绿洲长桥',en:'Oasis Crossing',ar:'جسر الواحة'},obstacles:legacy.OBSTACLES,gaps:legacy.GAPS,items:legacy.ITEMS,checkpoints:legacy.CHECKPOINTS,guide:[]});
-export function selectRunCourse(seed,ruleVersion='pvp-run-v2.0.0'){const courses=ruleVersion==='pvp-run-v2.1.0'?RUN_COURSES_V21:RUN_COURSES;return courses[Number.parseInt(seed.slice(0,8),16)%courses.length];}
+export function selectRunCourse(seed,ruleVersion='pvp-run-v2.0.0'){const courses=runRequiresSceneReady(ruleVersion)?RUN_COURSES_V21:RUN_COURSES;return courses[Number.parseInt(seed.slice(0,8),16)%courses.length];}
 export function resolveRunCourse(state){
- if(['pvp-run-v2.0.0','pvp-run-v2.1.0'].includes(state?.ruleVersion)&&!state.courseId)throw new Error('Missing pinned Dune Dash course');
+ if((state?.ruleVersion==='pvp-run-v2.0.0'||runRequiresSceneReady(state?.ruleVersion))&&!state.courseId)throw new Error('Missing pinned Dune Dash course');
  if(!state?.courseId&&(!state?.levelVersion||state.levelVersion===legacy.LEVEL_VERSION))return original;
- const courses=state?.ruleVersion==='pvp-run-v2.1.0'?RUN_COURSES_V21:RUN_COURSES;
+ const courses=runRequiresSceneReady(state?.ruleVersion)?RUN_COURSES_V21:RUN_COURSES;
  const course=courses.find(c=>c.id===state.courseId);
  if(!course||state.contentVersion!==course.contentVersion||state.levelVersion!==course.levelVersion)throw new Error('Unsupported pinned Dune Dash course');
  return course;

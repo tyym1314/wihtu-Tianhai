@@ -8,13 +8,13 @@
   "servers": [
     {
       "url": "https://api.game-platform.invalid",
-      "description": "DESIGN PLACEHOLDER ONLY. Platform-hosted API. No deployed service in phase A."
+      "description": "Documentation placeholder. Use the environment-specific deployment origin; this is not a live URL."
     }
   ],
   "tags": [
     {
       "name": "PlatformAPI",
-      "description": "Platform implements; partner backend calls. Exchange is a one-time-code browser exception."
+      "description": "Platform implements. Partner HMAC launch is sandbox-only; production player launch is restricted to the same-origin platform player BFF. Exchange is a one-time-code browser exception."
     },
     {
       "name": "PartnerWallet",
@@ -29,15 +29,16 @@
     "/v1/sessions": {
       "post": {
         "operationId": "createSession",
-        "summary": "Create a 60-second one-time launch code",
-        "description": "PHASE A DESIGN CONTRACT; NOT IMPLEMENTED OR DEPLOYED. Partner backend verifies user, signs intent; no secret in App/H5. Persistent launch intent idempotency returns original code/expiry.",
+        "summary": "Create a sandbox one-time launch code",
+        "description": "Implemented for sandbox partner HMAC integration. In production this signed endpoint always rejects with 403 PLAYER_BFF_REQUIRED, including resume attempts: an App signature does not authenticate a player. Production launch and recovery use only the platform-owned same-origin /api/player/launch BFF after platform login. Production admission is currently disabled; no hosted login/return page is available for third-party sites. Persistent launch intents return their original code/expiry on an authorized replay.",
+        "x-production-policy": "platform-player-bff-only",
         "tags": [
           "PlatformAPI"
         ],
         "servers": [
           {
             "url": "https://api.game-platform.invalid",
-            "description": "DESIGN PLACEHOLDER ONLY. Platform-hosted API. No deployed service in phase A."
+            "description": "Documentation placeholder. This endpoint is available for sandbox integration only."
           }
         ],
         "security": [
@@ -127,7 +128,7 @@
       "post": {
         "operationId": "exchangeLaunchCode",
         "summary": "Atomically consume launch code once",
-        "description": "PHASE A DESIGN CONTRACT; NOT IMPLEMENTED OR DEPLOYED. Public bootstrap restricted to configured HTTPS origins, rate limits and one-time 60-second code. Never HMAC from the browser.",
+        "description": "One-time browser exchange is implemented. It requires the configured exact Origin and a valid 60-second code. Production codes can only originate from the platform player BFF while production admission is enabled. Never HMAC from the browser.",
         "tags": [
           "PlatformAPI"
         ],
@@ -3068,7 +3069,7 @@
           },
           "resume_session_id": {
             "$ref": "#/components/schemas/Identifier",
-            "description": "Optional reauthorization/reattachment target. Partner backend must freshly authenticate the same App user; platform verifies same scope/user and game binding. Exchange rotates token generation for this session, invalidates the previous generation and preserves its active match/seat/cycle. Never lets another identity take over."
+            "description": "Optional reauthorization/reattachment target. In sandbox the partner backend authenticates the App user; in production only the platform player BFF reauthenticates the same platform player. Scope, player and game binding are checked before token rotation. Existing accepted obligations can resume after new-session admission closes."
           },
           "host_origin": {
             "type": "string",
@@ -3089,7 +3090,7 @@
           "host_platform"
         ],
         "additionalProperties": false,
-        "description": "Partner backend only. Omit game_id to launch authorized lobby. Partner derives external_user_id from authenticated App user, not untrusted client body."
+        "description": "Sandbox partner HMAC request only. The partner derives external_user_id from its authenticated App user. In production this endpoint returns 403 PLAYER_BFF_REQUIRED; /api/player/launch derives a stable App-scoped external_user_id from the platform player record, and never accepts a browser-supplied ID. The lobby is not currently released; specify a released game_id."
       },
       "CreateSessionResponse": {
         "type": "object",
@@ -3201,7 +3202,7 @@
           "external_user_id"
         ],
         "additionalProperties": false,
-        "description": "Token only for game session. Does not grant wallet API permission. Before token expiry or on recovery, partner backend freshly authenticates user, calls CreateSession with resume_session_id, and exchanges the new one-time code. Rotate token generation, preserve existing bound match/seat/cycle; other identities cannot attach. Realtime message transport is outside this phase-A HTTP contract."
+        "description": "Token only for the game session; it grants no wallet API permission. In sandbox the partner backend may reauthenticate and request a resume code. In production the platform player BFF verifies the HttpOnly login session and original player/App/game binding before issuing a resume code. Exchange rotates the token generation and preserves the accepted match, seat and cycle."
       },
       "GameMode": {
         "type": "object",

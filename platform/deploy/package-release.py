@@ -15,7 +15,7 @@ for relative in ['src', 'platform/server', 'platform/shared', 'platform/specs',
                  'platform/deploy', 'platform/public/sdk',
                  'platform/specs/examples/partner-host/public']:
     files.update(p for p in (repo / relative).rglob('*') if p.is_file())
-for name in ['package.json', 'package-lock.json', 'release-build-manifest.json', 'legacy/build-manifest.json', 'scripts/benchmark-release.mjs', 'scripts/benchmark-observer.mjs', 'scripts/benchmark-evaluation.mjs', 'scripts/android-game-actions.mjs']:
+for name in ['package.json', 'package-lock.json', 'release-build-manifest.json', 'legacy/build-manifest.json', 'scripts/benchmark-release.mjs', 'scripts/benchmark-workload.mjs', 'scripts/benchmark-observer.mjs', 'scripts/benchmark-evaluation.mjs', 'scripts/android-game-actions.mjs']:
     files.add(repo / 'platform' / name)
 # Engine code is loaded by Node. Media is already inside the prebuilt dist.
 for directory in (repo / 'platform/arena').iterdir():

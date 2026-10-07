@@ -10,6 +10,8 @@ import {ARENA_IDS,RELEASED_IDS} from '../shared/games.mjs';
 import {runtime,assertProductionAppReady} from './runtime-mode.mjs';
 import {resolveHostOrigin,assertExchangeOrigin} from './launch-policy.mjs';
 import {loginCredential} from './credentials.mjs';
+import {appPlayerId} from './player-records.mjs';
+import {validatedWalletBalance} from './wallet-binding.mjs';
 const spec=JSON.parse(readFileSync(new URL('../specs/openapi.json',import.meta.url),'utf8'));
 const catalog=JSON.parse(readFileSync(new URL('../specs/game-catalog.json',import.meta.url),'utf8')).games;
 const ajv=new Ajv({strict:false,allErrors:true});addFormats(ajv);ajv.addSchema(spec,'contract');
@@ -58,24 +60,59 @@ export async function login(username,password){
   return {token,user:{id:account.id,name:'平台管理员',role:'platform_admin'}};
 }
 export async function adminUser(req){const token=req.headers.cookie?.split(';').map(x=>x.trim()).find(x=>x.startsWith('oasis_admin='))?.split('=')[1];if(!token)return null;const r=await pool.query('SELECT a.id FROM gp_admin_sessions s JOIN gp_admins a ON a.id=s.admin_id WHERE token_hash=$1 AND expires_at>now()',[hash(token)]);return r.rowCount?{id:r.rows[0].id,name:'平台管理员',role:'platform_admin'}:null;}
-export async function createSession(app,b,raw){
-  validate('CreateSessionRequest',b);
-  for(const[k,v]of Object.entries(scope(app)))if(b[k]!==v)fail(403,'SCOPE_FORBIDDEN');
+export async function createSession(app,b,raw,{playerId=null}={}){
+  // A partner signature authenticates the App, never a production player.
+  // Only the platform BFF can supply a player ID from its HttpOnly session.
+  if(runtime.production&&!playerId)fail(403,'PLAYER_BFF_REQUIRED');
+  if(!runtime.production){validate('CreateSessionRequest',b);for(const[k,v]of Object.entries(scope(app)))if(b[k]!==v)fail(403,'SCOPE_FORBIDDEN');}
+  if(runtime.production&&!b.resume_session_id){
+    // A replay returns the original intent, and an accepted-session resume
+    // remains available while the wallet or new-player admission is paused.
+    const prior=(await pool.query('SELECT 1 FROM gp_launch_intents WHERE app_id=$1 AND request_id=$2',[app.id,b.request_id])).rowCount;
+    if(!prior){
+      const current=await appById(app.id);
+      await assertProductionAppReady(pool,current);
+      if(current.status!=='active')fail(403,'APP_PAUSED');
+      const externalUserId=await appPlayerId(pool,current.id,playerId);
+      try{await validatedWalletBalance(current,externalUserId);}
+      catch(error){if(error.status===404)fail(409,'PLAYER_WALLET_NOT_READY','The external wallet has no readable player balance');throw error;}
+    }
+  }
   return tx(async c=>{
+    // Login takes the player row before the App row. Keep the same order here:
+    // taking App FOR UPDATE first would deadlock with a concurrent login that
+    // holds player FOR UPDATE and then checks App FOR SHARE.
+    if(runtime.production){
+      const player=(await c.query('SELECT id FROM gp_players WHERE id=$1 AND active FOR SHARE',[playerId])).rows[0];
+      if(!player)fail(401,'LOGIN_REQUIRED');
+    }
     // Configuration binding and session admission share this lock. A stale
     // authenticated App object cannot route a new session to an old wallet.
     app=(await c.query('SELECT * FROM gp_apps WHERE id=$1 FOR UPDATE',[app.id])).rows[0];if(!app)fail(404,'NOT_FOUND');
-    await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',['launch:'+app.id+':'+b.request_id]);
-    const prior=(await c.query('SELECT * FROM gp_launch_intents WHERE app_id=$1 AND request_id=$2',[app.id,b.request_id])).rows[0];
-    if(prior){if(prior.digest!==hash(raw))fail(409,'IDEMPOTENCY_CONFLICT');return unseal(prior.response_enc);}
+    const externalUserId=runtime.production?await appPlayerId(c,app.id,playerId):b.external_user_id;
+    if(runtime.production&&b.external_user_id!==undefined&&b.external_user_id!==externalUserId)fail(403,'SCOPE_FORBIDDEN');
+    const request=runtime.production?{...b,external_user_id:externalUserId}:b;
+    validate('CreateSessionRequest',request);
+    for(const[k,v]of Object.entries(scope(app)))if(request[k]!==v)fail(403,'SCOPE_FORBIDDEN');
+    await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',['launch:'+app.id+':'+request.request_id]);
+    const prior=(await c.query('SELECT * FROM gp_launch_intents WHERE app_id=$1 AND request_id=$2',[app.id,request.request_id])).rows[0];
+    if(prior){
+      if(prior.digest!==hash(raw))fail(409,'IDEMPOTENCY_CONFLICT');
+      const response=unseal(prior.response_enc);
+      if(runtime.production){
+        const owner=(await c.query('SELECT app_id,player_id,external_user_id FROM gp_sessions WHERE id=$1',[response.session_id])).rows[0];
+        if(!owner||owner.app_id!==app.id||owner.player_id!==playerId||owner.external_user_id!==externalUserId)fail(403,'SCOPE_FORBIDDEN');
+      }
+      return response;
+    }
     // Reauthorization for an existing accepted obligation remains possible after App pause.
-    const hostOrigin=resolveHostOrigin(b.host_origin,app.allowed_origins,origin);
-    const game=b.game_id||'lobby';let sid=b.resume_session_id;
+    const hostOrigin=resolveHostOrigin(request.host_origin,app.allowed_origins,origin);
+    const game=request.game_id||'lobby';let sid=request.resume_session_id;
     if(game==='lobby')fail(409,'GAME_NOT_RELEASED','大厅尚未开放，请指定已开放的 game_id');
-    if(sid){const old=(await c.query('SELECT * FROM gp_sessions WHERE id=$1 FOR UPDATE',[sid])).rows[0];if(!old||old.app_id!==app.id||old.external_user_id!==b.external_user_id||old.game_id!==game)fail(403,'SCOPE_FORBIDDEN');}
-    else {await assertProductionAppReady(c,app);if(app.status!=='active')fail(403,'APP_PAUSED');if(game!=='lobby'&&!app.game_ids.includes(game))fail(403,'GAME_DISABLED');if(!RELEASED_IDS.includes(game))fail(409,'GAME_NOT_RELEASED','此竞技游戏尚未发布');sid=id('ses');await c.query('INSERT INTO gp_sessions(id,app_id,external_user_id,game_id,host_origin) VALUES($1,$2,$3,$4,$5)',[sid,app.id,b.external_user_id,game,hostOrigin]);}
+    if(sid){const old=(await c.query('SELECT * FROM gp_sessions WHERE id=$1 FOR UPDATE',[sid])).rows[0];if(!old||old.app_id!==app.id||old.external_user_id!==externalUserId||old.game_id!==game||(runtime.production&&old.player_id!==playerId))fail(403,'SCOPE_FORBIDDEN');}
+    else {await assertProductionAppReady(c,app);if(app.status!=='active')fail(403,'APP_PAUSED');if(game!=='lobby'&&!app.game_ids.includes(game))fail(403,'GAME_DISABLED');if(!RELEASED_IDS.includes(game))fail(409,'GAME_NOT_RELEASED','此竞技游戏尚未发布');sid=id('ses');await c.query('INSERT INTO gp_sessions(id,app_id,external_user_id,game_id,host_origin,player_id) VALUES($1,$2,$3,$4,$5,$6)',[sid,app.id,externalUserId,game,hostOrigin,playerId]);}
     const code=randomBytes(32).toString('base64url'),expires=new Date(Date.now()+60000).toISOString();const response={session_id:sid,launch_code:code,expires_in:60,expires_at:expires,entry_url:origin+'/play/'+game};
-    await c.query('INSERT INTO gp_launch_codes(code_hash,session_id,expires_at,consumed_at,host_origin) VALUES($1,$2,$3,NULL,$4)',[hash(code),sid,expires,hostOrigin]);await c.query('INSERT INTO gp_launch_intents VALUES($1,$2,$3,$4)',[app.id,b.request_id,hash(raw),seal(response)]);await audit('partner','session.created',app.id,{session_id:sid,game_id:game,host_origin:hostOrigin},c);return response;
+    await c.query('INSERT INTO gp_launch_codes(code_hash,session_id,expires_at,consumed_at,host_origin) VALUES($1,$2,$3,NULL,$4)',[hash(code),sid,expires,hostOrigin]);await c.query('INSERT INTO gp_launch_intents VALUES($1,$2,$3,$4)',[app.id,request.request_id,hash(raw),seal(response)]);await audit(playerId?'player':'partner','session.created',app.id,{session_id:sid,game_id:game,host_origin:hostOrigin},c);return response;
   });
 }
 export async function exchange(b){validate('ExchangeLaunchRequest',b);return tx(async c=>{

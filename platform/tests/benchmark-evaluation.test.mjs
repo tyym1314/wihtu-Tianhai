@@ -1,14 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {workloadCompleted,evaluateMobileCapacity} from '../scripts/benchmark-evaluation.mjs';
+import {RELEASED_IDS,ARENA_IDS,LEGACY_IDS} from '../shared/games.mjs';
 
-const fixture=()=>({completed:true,durationSeconds:900,actualDurationMs:900000,unexpectedErrors:0,httpRequests:100000,
+const fixture=()=>{const f={completed:true,durationSeconds:900,actualDurationMs:900000,unexpectedErrors:0,httpRequests:100000,
  internal:{duration_ms:900020,routes:[{route:'POST /api/pvp/rooms/:id/action',count:10000,p50_ms:10,p95_ms:90,p99_ms:200,max_ms:400}],
- event_loop:{count:89000,p95_ms:10,p99_ms:20,max_ms:80},cpu:{logical_cpus:8,average_percent_of_one_core:20,average_percent_of_machine:2.5,peak_1s_percent_of_one_core:80,peak_1s_percent_of_machine:10}}});
+ event_loop:{count:89000,p95_ms:10,p99_ms:20,max_ms:80},cpu:{logical_cpus:8,average_percent_of_one_core:20,average_percent_of_machine:2.5,peak_1s_percent_of_one_core:80,peak_1s_percent_of_machine:10}}};
+ f.requiredGames=[...RELEASED_IDS];
+ f.internal.game_routes=f.requiredGames.map(game=>({...f.internal.routes[0],game,route:LEGACY_IDS.includes(game)?`POST /api/play/${game}/spin`:'POST /api/pvp/rooms/:id/action'}));
+ f.databaseEvidence={actions:ARENA_IDS.map(game_id=>({game_id,n:10})),cycles:LEGACY_IDS.map(game_id=>({game_id,status:'SETTLED',n:10}))};
+ return f;};
 const verdict=modify=>{const data=fixture();modify?.(data);return evaluateMobileCapacity(data);};
 
 test('full measured workload with complete finite evidence passes',()=>{assert(workloadCompleted(fixture()));assert.equal(verdict().status,'pass');assert.deepEqual(verdict().reasons,[]);});
-test('evaluation retains the existing v1 scope and threshold fields',()=>{const v=verdict();assert.equal(v.duration_minimum_seconds,900);assert.equal(v.internal_p95_limit_ms,100);assert.equal(v.internal_p99_limit_ms,250);assert.equal(v.event_loop_p99_limit_ms,50);assert.equal(v.cpu_limit_percent_of_machine,70);assert.match(v.scope,/not public server or physical-phone acceptance/);});
+test('evaluation retains the v1 thresholds and states the 13-game local scope',()=>{const v=verdict();assert.equal(v.duration_minimum_seconds,900);assert.equal(v.internal_p95_limit_ms,100);assert.equal(v.internal_p99_limit_ms,250);assert.equal(v.event_loop_p99_limit_ms,50);assert.equal(v.cpu_limit_percent_of_machine,70);assert.match(v.scope,/thirteen-game/);assert.match(v.scope,/not public server or physical-phone acceptance/);});
 test('a normally finished short smoke is insufficient',()=>{const f=fixture();Object.assign(f,{durationSeconds:5,actualDurationMs:5001});f.internal.duration_ms=5020;assert(workloadCompleted(f));assert.equal(evaluateMobileCapacity(f).status,'insufficient');});
 test('configured 900 seconds never substitutes for actual duration',()=>{const f=fixture();f.actualDurationMs=899999.99;assert.equal(workloadCompleted(f),false);assert.equal(evaluateMobileCapacity(f).status,'fail');});
 test('configured longer workload cannot pass by reaching only the 900 second standard',()=>{assert.equal(verdict(f=>f.durationSeconds=1800).status,'fail');});
@@ -57,9 +62,16 @@ test('failure takes precedence over simultaneous missing evidence',()=>{const v=
 test('normally completed short sample with a measured violation still fails',()=>{assert.equal(verdict(f=>{f.durationSeconds=5;f.actualDurationMs=5000;f.internal.duration_ms=5000;f.internal.event_loop.p99_ms=51;}).status,'fail');});
 test('evaluation is deterministic and does not mutate input evidence',()=>{const f=fixture(),before=structuredClone(f);const a=evaluateMobileCapacity(f),b=evaluateMobileCapacity(f);assert.deepEqual(a,b);assert.deepEqual(f,before);});
 
-test('required individual games cannot use a passing aggregate as evidence',()=>{const f=fixture();f.requiredGames=['bowling'];assert.equal(evaluateMobileCapacity(f).status,'insufficient');});
-const taggedFixture=()=>{const f=fixture();f.requiredGames=['run','bowling','towerlink','thunder','tiger'];f.internal.game_routes=f.requiredGames.map(game=>({...f.internal.routes[0],game,route:['thunder','tiger'].includes(game)?`POST /api/play/${game}/spin`:'POST /api/pvp/rooms/:id/action'}));return f;};
+test('partial required games cannot claim thirteen-game capacity',()=>{const f=fixture();f.requiredGames=['bowling'];assert.equal(evaluateMobileCapacity(f).status,'insufficient');});
+test('omitting required games cannot claim thirteen-game capacity',()=>{const f=fixture();delete f.requiredGames;assert.equal(evaluateMobileCapacity(f).status,'insufficient');});
+const taggedFixture=()=>fixture();
 test('all required game actions with complete histograms pass',()=>{assert.equal(evaluateMobileCapacity(taggedFixture()).status,'pass');});
+test('all 13 released games pass only with both tagged measurements and accepted database actions',()=>{const f=taggedFixture(RELEASED_IDS);assert.equal(evaluateMobileCapacity(f).status,'pass');});
+test('a tagged action without a matching accepted database action is insufficient',()=>{const f=taggedFixture(RELEASED_IDS);f.databaseEvidence.actions=f.databaseEvidence.actions.filter(row=>row.game_id!=='darts');const v=evaluateMobileCapacity(f);assert.equal(v.status,'insufficient');assert(v.reasons.includes('database_evidence.darts:missing-accepted-action'));});
+test('a settled probability tag needs a settled database cycle',()=>{const f=taggedFixture(RELEASED_IDS);f.databaseEvidence.cycles.find(row=>row.game_id==='tiger').status='REJECTED';assert.equal(evaluateMobileCapacity(f).status,'insufficient');});
+test('zero accepted actions cannot satisfy database coverage',()=>{const f=taggedFixture(RELEASED_IDS);f.databaseEvidence.actions.find(row=>row.game_id==='bowling').n=0;assert.equal(evaluateMobileCapacity(f).status,'insufficient');});
+test('duplicate or malformed database game counts fail the gate',()=>{const f=taggedFixture(RELEASED_IDS);f.databaseEvidence.actions.push({...f.databaseEvidence.actions[0]});assert.equal(evaluateMobileCapacity(f).status,'fail');const g=taggedFixture(RELEASED_IDS);g.databaseEvidence.actions[0].n='10';assert.equal(evaluateMobileCapacity(g).status,'fail');});
+test('missing database evidence cannot be replaced by tagged HTTP histograms',()=>{const f=taggedFixture(RELEASED_IDS);delete f.databaseEvidence;assert.equal(evaluateMobileCapacity(f).status,'insufficient');});
 test('Bowling over 100 ms fails even if the combined route is fast',()=>{const f=taggedFixture();f.internal.game_routes.find(r=>r.game==='bowling').p95_ms=167;assert.equal(evaluateMobileCapacity(f).status,'fail');});
 test('a missing game action is insufficient even with game GET observations',()=>{const f=taggedFixture();f.internal.game_routes.find(r=>r.game==='bowling').route='GET /api/pvp/rooms/:id';assert.equal(evaluateMobileCapacity(f).status,'insufficient');});
 test('tagged zero-count action cannot prove a game passed',()=>{const f=taggedFixture();f.internal.game_routes[0].count=0;assert.equal(evaluateMobileCapacity(f).status,'insufficient');});

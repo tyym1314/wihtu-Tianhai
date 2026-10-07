@@ -80,6 +80,60 @@ for(const game of['run','match','golf','towerlink'])test(`${game} historical wai
  await tickPvp({roomIds:[r.id]});db=await read(r.id);assert.equal(db.game_state.ruleVersion,legacyVersion);assert.equal(db.status,'active');
  await call(f.sessions[0],'POST',`/api/pvp/rooms/${r.id}/leave`);assert.equal((await read(r.id)).status,'cancelled');assert.equal((await snapshot(f)).operations.length,0);
 });
+test('new Run BOT practice arms on ready and starts only after rendered-scene ACK',async()=>{
+ const f=await fixture('run'),created=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'0',practice:true})).body;
+ assert.equal(created.status,'waiting');assert.equal(created.players.filter(player=>player.bot).length,1);
+ assert.equal((await read(created.id)).rule_version,engines.run.PRACTICE_RULE_VERSION);
+ const ready=(await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/ready`)).body;
+ assert.equal(ready.status,'active');assert.equal(ready.game.phase,'arming');assert.equal(ready.starts_at,null);
+ assert.equal(ready.start_protocol.ready_count,0);assert.equal(ready.start_protocol.human_count,1);
+ const armed=await read(created.id);assert.equal(armed.status,'active');assert.equal(armed.game_state.phase,'arming');
+ await assert.rejects(call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/action`,{seq:1,action:{type:'jump'}},{now:Number(armed.last_tick_at)+100,skipGap:true}),{code:'NOT_STARTED'});
+ const beforeAck=await read(created.id);assert.equal(beforeAck.game_state.tick,0);assert.ok(beforeAck.game_state.players.every(player=>player.distanceU===0));
+ const ackAt=Number(armed.last_tick_at)+250;
+ const ack=(await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/scene-ready`,{}, {now:ackAt,skipGap:true})).body;
+ assert.equal(ack.game.phase,'racing');assert.equal(ack.starts_at,ackAt);
+ const action=(await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/action`,{seq:1,action:{type:'jump'}},{now:ackAt+1,skipGap:true})).body;
+ assert.equal(action.me_last_seq,1);
+ assert.equal((await snapshot(f)).operations.length,0);
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/leave`);
+ assert.equal((await read(created.id)).status,'cancelled');
+});
+test('existing Run v2.1 BOT practice retains its pinned 1.5-second countdown',async()=>{
+ const f=await fixture('run'),created=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'0',practice:true})).body;
+ await pool.query("UPDATE pvp_rooms SET rule_version=$2,terms=jsonb_set(terms,'{rule_version}',to_jsonb($2::text)) WHERE id=$1",[created.id,engines.run.RULE_VERSION]);
+ const ready=(await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/ready`)).body;
+ assert.equal(ready.status,'active');assert.equal(ready.game.phase,'arming');
+ const ackAt=Number((await read(created.id)).last_tick_at)+250;
+ const ack=(await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/scene-ready`,{}, {now:ackAt,skipGap:true})).body;
+ assert.equal(ack.game.phase,'countdown');assert.equal(ack.starts_at,ackAt+engines.run.RUN_START_COUNTDOWN_MS);
+ await assert.rejects(call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/action`,{seq:1,action:{type:'jump'}},{now:ack.starts_at-1,skipGap:true}),{code:'NOT_STARTED'});
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/leave`);
+});
+test('v2.2 practice scene timeout voids without a wallet operation or BOT movement',async()=>{
+ const f=await fixture('run'),created=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'0',practice:true})).body;
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/ready`);
+ const armed=await read(created.id);assert.equal(armed.game_state.phase,'arming');
+ await tickPvp({roomIds:[created.id],now:Number(armed.game_state.armingDeadlineAt)+1,skipGap:true});
+ const ended=await read(created.id);assert.equal(ended.status,'voided');assert.equal(ended.result.resolution,'void');
+ assert.equal(ended.result.reason,'scene_ready_timeout');assert.equal(ended.result.fee_minor,'0');
+ assert.equal(ended.game_state.tick,0);assert.ok(ended.game_state.players.every(player=>player.distanceU===0));
+ const walletState=await snapshot(f);assert.equal(walletState.operations.length,0);assert.ok(walletState.users.every(user=>user.available==='100000'));
+});
+test('v2.2 practice restores its pinned arming and start state in a fresh process',async()=>{
+ const {spawn}=await import('node:child_process'),{fileURLToPath}=await import('node:url');
+ const f=await fixture('run'),created=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'0',practice:true})).body;
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/ready`);
+ const restored=()=>new Promise((resolve,reject)=>{const child=spawn(process.execPath,['--import','tsx',fileURLToPath(new URL('./pvp-recovery-child.mjs',import.meta.url)),JSON.stringify({session:f.sessions[0],room_id:created.id,advance:false})],{cwd:fileURLToPath(new URL('../',import.meta.url)),env:{...process.env,OASIS_DATABASE_URL:databaseUrl.toString(),OASIS_LOCAL_DIR:localDir,OASIS_EXPECT_TEST_DATABASE:databaseName},stdio:['ignore','pipe','pipe']});let output='',error='';child.stdout.on('data',chunk=>output+=chunk);child.stderr.on('data',chunk=>error+=chunk);child.on('error',reject);child.on('exit',code=>code===0?resolve(JSON.parse(output)):reject(new Error(error)));});
+ const beforeAck=await restored();assert.equal(beforeAck.game.ruleVersion,engines.run.PRACTICE_RULE_VERSION);assert.equal(beforeAck.game.phase,'arming');assert.equal(beforeAck.game.snapshotTick,0);
+ const ackAt=Number((await read(created.id)).last_tick_at)+250;
+ const ack=(await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/scene-ready`,{}, {now:ackAt,skipGap:true})).body;
+ await tickPvp({roomIds:[created.id],now:ackAt+1000,skipGap:true});
+ const afterAck=await restored();assert.equal(afterAck.game.ruleVersion,engines.run.PRACTICE_RULE_VERSION);assert.equal(afterAck.game.phase,'racing');
+ assert.equal(afterAck.starts_at,ack.starts_at);assert.equal(afterAck.game.courseId,beforeAck.game.courseId);assert.ok(afterAck.game.snapshotTick>=60);
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/leave`);
+ assert.equal((await snapshot(f)).operations.length,0);
+});
 test('new paid Run waits for both rendered humans, then uses one immutable countdown and supports reconnect',async()=>{
  const f=await fixture('run');const created=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'10000'})).body;
  await call(f.sessions[1],'POST',`/api/pvp/rooms/${created.id}/join`);

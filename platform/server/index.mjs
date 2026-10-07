@@ -17,6 +17,7 @@ import {operationsStatus} from './operations-status.mjs';
 import {enginePoolStats,closeEnginePool} from './pvp/engine-pool.mjs';
 import {runtime,preflightRuntime,migrateRuntime,assertProductionAppReady} from './runtime-mode.mjs';
 import {migrateCredentials,routeCredentials} from './credentials.mjs';
+import {routePlayer} from './player-routes.mjs';
 import {ApiRateLimits} from './rate-limit.mjs';
 import {activityTimeZone,migrateOverviewActivity,overviewActivity} from './overview-activity.mjs';
 import {clientAddress,adminSessionCookie} from './proxy-context.mjs';
@@ -72,6 +73,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{try{
   if(path==='/health'&&req.method==='GET')return send(res,200,{status:'ok',environment:runtime.environment});
   if(path.startsWith('/legacy/')||path.startsWith('/arena/')||path.startsWith('/play/'))return await serveLegacy(req,res,path);
   const {raw,body}=await readBody(req);
+  if(await routePlayer(req,res,path,body,raw))return;
   if(path.startsWith('/api/admin/')||path.startsWith('/api/partner/')){
     if(path.endsWith('/login'))rate(req,'portal-login',12);
     if(path.includes('/integration/')&&req.method==='POST')rate(req,'integration-write',30);

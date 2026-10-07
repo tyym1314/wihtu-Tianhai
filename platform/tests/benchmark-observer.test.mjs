@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {benchmarkGameTag} from '../scripts/benchmark-observer.mjs';
+import {RELEASED_IDS} from '../shared/games.mjs';
 test('benchmark game tags are bounded and probability paths must match',()=>{
  const tag=(value,path='/api/pvp/rooms/example/action')=>benchmarkGameTag({'x-oasis-benchmark-game':value},path);
- assert.equal(tag('bowling'),'bowling');assert.equal(tag('thunder','/api/play/thunder/spin'),'thunder');
+ for(const game of RELEASED_IDS)assert.equal(tag(game,game==='thunder'||game==='tiger'?`/api/play/${game}/spin`:'/api/pvp/rooms/example/action'),game);
  for(const value of [undefined,null,['bowling'],'other','bowling\nrun','platform'])assert.equal(tag(value),null);
  assert.equal(tag('tiger','/api/play/thunder/spin'),null);
  assert.equal(benchmarkGameTag({},'/v1/sessions'),null);

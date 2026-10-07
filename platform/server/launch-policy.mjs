@@ -1,10 +1,11 @@
 /** Exact browser-origin policy. No database access and no secret-bearing state. */
+import {runtime} from './runtime-mode.mjs';
 function fail(code,message,status=400){const error=new Error(message);error.code=code;error.status=status;throw error;}
 export function normalizeOrigin(value,{allowLoopback=true}={}){
  if(typeof value!=='string'||value.length>256||value!==value.trim())fail('INVALID_ORIGIN','Expected an exact HTTPS origin');
  let url;try{url=new URL(value);}catch{fail('INVALID_ORIGIN','Malformed origin');}
  const loopback=['127.0.0.1','localhost','[::1]'].includes(url.hostname);
- if(url.username||url.password||url.search||url.hash||!['','/'].includes(url.pathname)||value.includes('*')||value==='null'||url.protocol!=='https:'&&!(allowLoopback&&loopback&&url.protocol==='http:'))fail('INVALID_ORIGIN','Use an exact HTTPS origin, or HTTP loopback for local testing');
+ if(url.username||url.password||url.search||url.hash||!['','/'].includes(url.pathname)||value.includes('*')||value==='null'||url.protocol!=='https:'&&!(allowLoopback&&!runtime.production&&loopback&&url.protocol==='http:'))fail('INVALID_ORIGIN',runtime.production?'Use an exact HTTPS origin':'Use an exact HTTPS origin, or HTTP loopback for local testing');
  return url.origin;
 }
 export function normalizeAllowedOrigins(value,platformOrigin){

@@ -1,0 +1,822 @@
+{
+  "schema": "run-release-load-summary-v1",
+  "standard": {
+    "cold_p95_ms": 5000,
+    "warm_p95_ms": 2500
+  },
+  "scope": "actual split/minified Vite arena/dist over isolated loopback gateway, CDP 20 Mbps down/5 Mbps up/50 ms RTT and CPU x4, Chrome mobile emulation; one human vs BOT practice; not iPhone Safari/public host/paid PvP",
+  "cases": [
+    {
+      "id": "before",
+      "arena_tree_sha256": "45d1551e95c272996a5b639d54dc4c623d529c3b54a336eb8b73e2fba3ab43f9",
+      "build_id": "71879b23701c08bf5620ee43447c32e1e14e9f8596a6a16ebf12513146091f46",
+      "cleanup_complete": true,
+      "source_changes_during_run": [],
+      "cold_ms": [
+        5275,
+        4980,
+        4914,
+        5095,
+        4947
+      ],
+      "warm_ms": [
+        3820,
+        3912,
+        3830,
+        3922,
+        3676
+      ],
+      "cold_scene_ready_ms": [
+        3406,
+        3108,
+        3043,
+        3227,
+        3082
+      ],
+      "warm_scene_ready_ms": [
+        1796,
+        1881,
+        1799,
+        1900,
+        1800
+      ],
+      "cold_active_room_ms": [
+        2940,
+        2627,
+        2581,
+        2741,
+        2597
+      ],
+      "warm_active_room_ms": [
+        1337,
+        1434,
+        1348,
+        1435,
+        1332
+      ],
+      "cold_countdown_ms": [
+        1635,
+        1632,
+        1630,
+        1630,
+        1636
+      ],
+      "warm_countdown_ms": [
+        1782,
+        1631,
+        1788,
+        1786,
+        1633
+      ],
+      "accepted_actions": 10,
+      "errors": 0,
+      "resource_errors": 0,
+      "network_applied": 10,
+      "entries": [
+        {
+          "cache_mode": "cold",
+          "iteration": 1,
+          "entry_ms": 5275,
+          "lobby_ready_ms": 757,
+          "active_room_ms": 2940,
+          "scene_ready_ms": 3406,
+          "rules_countdown_ms": 1635,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 2,
+          "entry_ms": 4980,
+          "lobby_ready_ms": 679,
+          "active_room_ms": 2627,
+          "scene_ready_ms": 3108,
+          "rules_countdown_ms": 1632,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 3,
+          "entry_ms": 4914,
+          "lobby_ready_ms": 675,
+          "active_room_ms": 2581,
+          "scene_ready_ms": 3043,
+          "rules_countdown_ms": 1630,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 4,
+          "entry_ms": 5095,
+          "lobby_ready_ms": 673,
+          "active_room_ms": 2741,
+          "scene_ready_ms": 3227,
+          "rules_countdown_ms": 1630,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 5,
+          "entry_ms": 4947,
+          "lobby_ready_ms": 674,
+          "active_room_ms": 2597,
+          "scene_ready_ms": 3082,
+          "rules_countdown_ms": 1636,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 1,
+          "entry_ms": 3820,
+          "lobby_ready_ms": 399,
+          "active_room_ms": 1337,
+          "scene_ready_ms": 1796,
+          "rules_countdown_ms": 1782,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 2,
+          "entry_ms": 3912,
+          "lobby_ready_ms": 392,
+          "active_room_ms": 1434,
+          "scene_ready_ms": 1881,
+          "rules_countdown_ms": 1631,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 3,
+          "entry_ms": 3830,
+          "lobby_ready_ms": 403,
+          "active_room_ms": 1348,
+          "scene_ready_ms": 1799,
+          "rules_countdown_ms": 1788,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 4,
+          "entry_ms": 3922,
+          "lobby_ready_ms": 362,
+          "active_room_ms": 1435,
+          "scene_ready_ms": 1900,
+          "rules_countdown_ms": 1786,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 5,
+          "entry_ms": 3676,
+          "lobby_ready_ms": 401,
+          "active_room_ms": 1332,
+          "scene_ready_ms": 1800,
+          "rules_countdown_ms": 1633,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        }
+      ],
+      "cold_p95_ms": 5275,
+      "warm_p95_ms": 3922,
+      "cold_pass": false,
+      "warm_pass": false
+    },
+    {
+      "id": "after-fast-ready",
+      "arena_tree_sha256": "45d1551e95c272996a5b639d54dc4c623d529c3b54a336eb8b73e2fba3ab43f9",
+      "build_id": "ea2e0e3cf9d74b2b95c573606d383958927a62e3aa841594e50e55f8e4e775ba",
+      "cleanup_complete": true,
+      "source_changes_during_run": [],
+      "cold_ms": [
+        5106,
+        4790,
+        4978,
+        4957,
+        4956
+      ],
+      "warm_ms": [
+        3680,
+        3505,
+        3546,
+        3733,
+        3704
+      ],
+      "cold_scene_ready_ms": [
+        3064,
+        2905,
+        2931,
+        2919,
+        2905
+      ],
+      "warm_scene_ready_ms": [
+        1641,
+        1630,
+        1665,
+        1680,
+        1678
+      ],
+      "cold_active_room_ms": [
+        2603,
+        2438,
+        2463,
+        2446,
+        2442
+      ],
+      "warm_active_room_ms": [
+        1180,
+        1175,
+        1131,
+        1196,
+        1205
+      ],
+      "cold_countdown_ms": [
+        1801,
+        1646,
+        1801,
+        1491,
+        1809
+      ],
+      "warm_countdown_ms": [
+        1531,
+        1642,
+        1649,
+        1803,
+        1794
+      ],
+      "accepted_actions": 10,
+      "errors": 0,
+      "resource_errors": 0,
+      "network_applied": 10,
+      "entries": [
+        {
+          "cache_mode": "cold",
+          "iteration": 1,
+          "entry_ms": 5106,
+          "lobby_ready_ms": 692,
+          "active_room_ms": 2603,
+          "scene_ready_ms": 3064,
+          "rules_countdown_ms": 1801,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 2,
+          "entry_ms": 4790,
+          "lobby_ready_ms": 696,
+          "active_room_ms": 2438,
+          "scene_ready_ms": 2905,
+          "rules_countdown_ms": 1646,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 3,
+          "entry_ms": 4978,
+          "lobby_ready_ms": 688,
+          "active_room_ms": 2463,
+          "scene_ready_ms": 2931,
+          "rules_countdown_ms": 1801,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 4,
+          "entry_ms": 4957,
+          "lobby_ready_ms": 671,
+          "active_room_ms": 2446,
+          "scene_ready_ms": 2919,
+          "rules_countdown_ms": 1491,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 5,
+          "entry_ms": 4956,
+          "lobby_ready_ms": 682,
+          "active_room_ms": 2442,
+          "scene_ready_ms": 2905,
+          "rules_countdown_ms": 1809,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 1,
+          "entry_ms": 3680,
+          "lobby_ready_ms": 400,
+          "active_room_ms": 1180,
+          "scene_ready_ms": 1641,
+          "rules_countdown_ms": 1531,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 2,
+          "entry_ms": 3505,
+          "lobby_ready_ms": 401,
+          "active_room_ms": 1175,
+          "scene_ready_ms": 1630,
+          "rules_countdown_ms": 1642,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 3,
+          "entry_ms": 3546,
+          "lobby_ready_ms": 401,
+          "active_room_ms": 1131,
+          "scene_ready_ms": 1665,
+          "rules_countdown_ms": 1649,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 4,
+          "entry_ms": 3733,
+          "lobby_ready_ms": 404,
+          "active_room_ms": 1196,
+          "scene_ready_ms": 1680,
+          "rules_countdown_ms": 1803,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 5,
+          "entry_ms": 3704,
+          "lobby_ready_ms": 407,
+          "active_room_ms": 1205,
+          "scene_ready_ms": 1678,
+          "rules_countdown_ms": 1794,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        }
+      ],
+      "cold_p95_ms": 5106,
+      "warm_p95_ms": 3733,
+      "cold_pass": false,
+      "warm_pass": false
+    },
+    {
+      "id": "after-practice-go",
+      "arena_tree_sha256": "3c1d84ed6f228e76fc7003466ee23e67936432fb2f9a4fba14558c37371f9cca",
+      "build_id": "2e9adbb3e364c5fa830cf3969bc4e1ea82243210a49365351b1ee5ee5dc54c68",
+      "cleanup_complete": true,
+      "source_changes_during_run": [],
+      "cold_ms": [
+        3795,
+        3555,
+        3642,
+        3493,
+        3665
+      ],
+      "warm_ms": [
+        2349,
+        2212,
+        2360,
+        2306,
+        2233
+      ],
+      "cold_scene_ready_ms": [
+        3081,
+        2993,
+        2927,
+        2946,
+        2945
+      ],
+      "warm_scene_ready_ms": [
+        1641,
+        1642,
+        1696,
+        1641,
+        1669
+      ],
+      "cold_active_room_ms": [
+        2644,
+        2513,
+        2452,
+        2466,
+        2472
+      ],
+      "warm_active_room_ms": [
+        1166,
+        1181,
+        1217,
+        1166,
+        1195
+      ],
+      "cold_countdown_ms": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "warm_countdown_ms": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "accepted_actions": 10,
+      "errors": 0,
+      "resource_errors": 0,
+      "network_applied": 10,
+      "entries": [
+        {
+          "cache_mode": "cold",
+          "iteration": 1,
+          "entry_ms": 3795,
+          "lobby_ready_ms": 692,
+          "active_room_ms": 2644,
+          "scene_ready_ms": 3081,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 2,
+          "entry_ms": 3555,
+          "lobby_ready_ms": 698,
+          "active_room_ms": 2513,
+          "scene_ready_ms": 2993,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 3,
+          "entry_ms": 3642,
+          "lobby_ready_ms": 673,
+          "active_room_ms": 2452,
+          "scene_ready_ms": 2927,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 4,
+          "entry_ms": 3493,
+          "lobby_ready_ms": 670,
+          "active_room_ms": 2466,
+          "scene_ready_ms": 2946,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 5,
+          "entry_ms": 3665,
+          "lobby_ready_ms": 678,
+          "active_room_ms": 2472,
+          "scene_ready_ms": 2945,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 1,
+          "entry_ms": 2349,
+          "lobby_ready_ms": 396,
+          "active_room_ms": 1166,
+          "scene_ready_ms": 1641,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 2,
+          "entry_ms": 2212,
+          "lobby_ready_ms": 392,
+          "active_room_ms": 1181,
+          "scene_ready_ms": 1642,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 3,
+          "entry_ms": 2360,
+          "lobby_ready_ms": 398,
+          "active_room_ms": 1217,
+          "scene_ready_ms": 1696,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 4,
+          "entry_ms": 2306,
+          "lobby_ready_ms": 399,
+          "active_room_ms": 1166,
+          "scene_ready_ms": 1641,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 5,
+          "entry_ms": 2233,
+          "lobby_ready_ms": 398,
+          "active_room_ms": 1195,
+          "scene_ready_ms": 1669,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        }
+      ],
+      "cold_p95_ms": 3795,
+      "warm_p95_ms": 2360,
+      "cold_pass": true,
+      "warm_pass": true
+    },
+    {
+      "id": "after-practice-go-final",
+      "arena_tree_sha256": "8a0d64e8103c42c417e128f26d27445174940b39dfee1c81f5ae35a164be3077",
+      "build_id": "f8356606ee360f48a559b6de88c5fd58aae406cbca65f31c52f02bfcfe1a57bd",
+      "cleanup_complete": true,
+      "source_changes_during_run": [],
+      "cold_ms": [
+        3655,
+        3644,
+        3646,
+        3467,
+        3512
+      ],
+      "warm_ms": [
+        2296,
+        2197,
+        2180,
+        2186,
+        2334
+      ],
+      "cold_scene_ready_ms": [
+        3130,
+        2957,
+        2959,
+        2937,
+        2984
+      ],
+      "warm_scene_ready_ms": [
+        1655,
+        1675,
+        1654,
+        1663,
+        1651
+      ],
+      "cold_active_room_ms": [
+        2629,
+        2455,
+        2459,
+        2452,
+        2471
+      ],
+      "warm_active_room_ms": [
+        1163,
+        1191,
+        1169,
+        1160,
+        1156
+      ],
+      "cold_countdown_ms": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "warm_countdown_ms": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "accepted_actions": 10,
+      "errors": 0,
+      "resource_errors": 0,
+      "network_applied": 10,
+      "entries": [
+        {
+          "cache_mode": "cold",
+          "iteration": 1,
+          "entry_ms": 3655,
+          "lobby_ready_ms": 700,
+          "active_room_ms": 2629,
+          "scene_ready_ms": 3130,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 2,
+          "entry_ms": 3644,
+          "lobby_ready_ms": 674,
+          "active_room_ms": 2455,
+          "scene_ready_ms": 2957,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 3,
+          "entry_ms": 3646,
+          "lobby_ready_ms": 674,
+          "active_room_ms": 2459,
+          "scene_ready_ms": 2959,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 4,
+          "entry_ms": 3467,
+          "lobby_ready_ms": 692,
+          "active_room_ms": 2452,
+          "scene_ready_ms": 2937,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "cold",
+          "iteration": 5,
+          "entry_ms": 3512,
+          "lobby_ready_ms": 674,
+          "active_room_ms": 2471,
+          "scene_ready_ms": 2984,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 1,
+          "entry_ms": 2296,
+          "lobby_ready_ms": 396,
+          "active_room_ms": 1163,
+          "scene_ready_ms": 1655,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 2,
+          "entry_ms": 2197,
+          "lobby_ready_ms": 406,
+          "active_room_ms": 1191,
+          "scene_ready_ms": 1675,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 3,
+          "entry_ms": 2180,
+          "lobby_ready_ms": 399,
+          "active_room_ms": 1169,
+          "scene_ready_ms": 1654,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 4,
+          "entry_ms": 2186,
+          "lobby_ready_ms": 378,
+          "active_room_ms": 1160,
+          "scene_ready_ms": 1663,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        },
+        {
+          "cache_mode": "warm",
+          "iteration": 5,
+          "entry_ms": 2334,
+          "lobby_ready_ms": 396,
+          "active_room_ms": 1156,
+          "scene_ready_ms": 1651,
+          "rules_countdown_ms": 0,
+          "excluded_other_player_wait_ms": 0,
+          "accepted_action": true,
+          "errors": 0,
+          "resource_errors": 0
+        }
+      ],
+      "cold_p95_ms": 3655,
+      "warm_p95_ms": 2334,
+      "cold_pass": true,
+      "warm_pass": true
+    }
+  ]
+}

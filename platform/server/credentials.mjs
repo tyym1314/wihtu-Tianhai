@@ -6,7 +6,7 @@ import {clientAddress,adminSessionCookie} from './proxy-context.mjs';
 
 const derive=promisify(scrypt),attempts=new Map();
 const accountFields='id,partner_id,name,username,active,created_at';
-const stores={admin:{table:'gp_admins',sessions:'gp_admin_sessions',foreign:'admin_id',cookie:'oasis_admin'},partner:{table:'gp_partner_accounts',sessions:'gp_partner_sessions',foreign:'account_id',cookie:'oasis_partner'}};
+const stores={admin:{table:'gp_admins',sessions:'gp_admin_sessions',foreign:'admin_id',cookie:'oasis_admin'},partner:{table:'gp_partner_accounts',sessions:'gp_partner_sessions',foreign:'account_id',cookie:'oasis_partner'},player:{table:'gp_players',sessions:'gp_player_sessions',foreign:'player_id',cookie:'__Host-oasis_player'}};
 const exact=(b,keys)=>{if(!b||typeof b!=='object'||Array.isArray(b)||Object.keys(b).some(k=>!keys.includes(k)))fail(400,'INVALID_REQUEST');};
 const cookie=(req,name)=>req.headers.cookie?.split(';').map(v=>v.trim()).find(v=>v.startsWith(name+'='))?.slice(name.length+1);
 const record=(db,actor,action,appId,detail={})=>db.query('INSERT INTO gp_audit(actor,action,app_id,detail) VALUES($1,$2,$3,$4)',[actor,action,appId,detail]);
@@ -25,7 +25,7 @@ export async function passwordMatches(password,account){
 }
 
 /** Reset/disable and login take the same row lock before session admission. */
-export async function loginCredential(kind,username,password){
+export async function loginCredential(kind,username,password,authorize=null){
  const store=stores[kind];if(!store)throw Error('Unknown credential kind');
  if(typeof username!=='string'||username.length>64||typeof password!=='string'||password.length>256)fail(401,'LOGIN_FAILED','用户名或密码不正确');
  const snapshot=(await pool.query(`SELECT * FROM ${store.table} WHERE username=$1`,[username])).rows[0];
@@ -33,6 +33,7 @@ export async function loginCredential(kind,username,password){
  return tx(async db=>{
   const account=(await db.query(`SELECT * FROM ${store.table} WHERE id=$1 FOR UPDATE`,[snapshot.id])).rows[0];
   if(!account||account.active===false||account.password_hash!==snapshot.password_hash||account.salt!==snapshot.salt)fail(401,'LOGIN_FAILED','凭证已变更，请重新登录');
+  if(authorize)await authorize(db,account);
   const token=randomBytes(32).toString('base64url');
   await db.query(`DELETE FROM ${store.sessions} WHERE expires_at<=now()`);
   await db.query(`INSERT INTO ${store.sessions}(token_hash,${store.foreign},expires_at) VALUES($1,$2,now()+interval '8 hours')`,[hash(token),account.id]);

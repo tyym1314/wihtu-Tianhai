@@ -22,6 +22,7 @@ import PlayerPortrait from './shared/PlayerPortrait.jsx';
 import ThemeResult from './shared/ThemeResult.jsx';
 import useResultPresentation from './shared/useResultPresentation.jsx';
 import {startRoomPolling,createRoomPollCadence} from './shared/room-poller.mjs';
+import {runRequiresSceneReady} from './run/start-policy.mjs';
 import './shell.css';
 const GAME_LOADERS={match:loadMatchGame,golf:loadGolfGame,towerlink:loadTowerGame,carrom:()=>import('./carrom/CarromGame.jsx'),darts:()=>import('./darts/DartsGame.jsx'),ludo:()=>import('./ludo/LudoGame.jsx'),jackaroo:()=>import('./jackaroo/JackarooGame.jsx'),domino:()=>import('./domino/DominoGame.jsx'),pool:()=>import('./pool/PoolGame.jsx'),bowling:loadBowlingGame,run:loadRunGame};
 const GAME_COMPONENTS=Object.fromEntries(Object.entries(GAME_LOADERS).map(([game,load])=>[game,lazy(load)]));
@@ -85,7 +86,7 @@ function Arena(){
  async function onAction(action){if(assetsLoading)throw new Error('游戏资源尚未准备好，请稍候。');if(pending.current||inFlight.current)throw new Error('上一动作仍待确认，请稍候');const r=roomRef.current;if(r?.status!=='active')throw new Error('本局已结束');return command(`/api/pvp/rooms/${r.id}/action`,{seq:Number(r.me_last_seq)+1,action});}
  async function onRunSceneReady(roomId,refreshGeneration=0){
   const r=roomRef.current,owner=sessionOwner(contextRef.current);
-  if(!IS_RUN||r?.id!==roomId||r?.game?.ruleVersion!=='pvp-run-v2.1.0'||r.game.phase!=='arming'||!owner) return null;
+  if(!IS_RUN||r?.id!==roomId||!runRequiresSceneReady(r?.game?.ruleVersion)||r.game.phase!=='arming'||!owner) return null;
   // One ID per rendered-frame generation: an uncertain retry replays safely,
   // while a later foreground frame can refresh the server's readiness proof.
   if(runSceneReadyRequest.current?.roomId!==roomId||runSceneReadyRequest.current.owner!==owner||runSceneReadyRequest.current.generation!==refreshGeneration)runSceneReadyRequest.current={roomId,owner,generation:refreshGeneration,requestId:requestId()};

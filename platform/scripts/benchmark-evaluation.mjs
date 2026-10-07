@@ -1,5 +1,7 @@
 /** Pure validation of the isolated capacity probe; no I/O or inferred samples. */
+import {RELEASED_IDS,LEGACY_IDS} from '../shared/games.mjs';
 const MINIMUM_MS=900000;
+const supportedGames=new Set(RELEASED_IDS),probabilityGames=new Set(LEGACY_IDS);
 const finite=value=>typeof value==='number'&&Number.isFinite(value);
 const missing=value=>value===undefined||value===null;
 const fatal=({clientError,roomRestartError,failure})=>Boolean(clientError||roomRestartError||failure);
@@ -10,7 +12,7 @@ export function workloadCompleted({completed,durationSeconds,actualDurationMs,..
 }
 
 export function evaluateMobileCapacity(input={}){
- const {completed,durationSeconds,actualDurationMs,internal,unexpectedErrors,httpRequests,requiredGames}=input;
+ const {completed,durationSeconds,actualDurationMs,internal,unexpectedErrors,httpRequests,requiredGames,databaseEvidence}=input;
  const failures=[],insufficient=[];
  const fail=reason=>failures.push(reason),lack=reason=>insufficient.push(reason);
  const sample=(value,path,{integer=false,positive=false}={})=>{
@@ -68,23 +70,40 @@ export function evaluateMobileCapacity(input={}){
    if(finite(cpu.peak_1s_percent_of_machine)&&cpu.peak_1s_percent_of_machine>=70)fail('internal.cpu.peak_1s_percent_of_machine:over-limit');
   }
  }
- if(requiredGames!==undefined){
-  const supported=new Set(['run','bowling','towerlink','thunder','tiger']);
-  if(!Array.isArray(requiredGames)||!requiredGames.length||new Set(requiredGames).size!==requiredGames.length||requiredGames.some(game=>!supported.has(game)))fail('required_games:invalid');
+ if(requiredGames===undefined)lack('required_games:missing');
+ else{
+  if(!Array.isArray(requiredGames)||!requiredGames.length||new Set(requiredGames).size!==requiredGames.length||requiredGames.some(game=>!supportedGames.has(game)))fail('required_games:invalid');
+  else if(requiredGames.length!==supportedGames.size)lack('required_games:incomplete-thirteen-game-set');
   else if(!Array.isArray(internal?.game_routes)||!internal.game_routes.length)lack('internal.game_routes:missing');
   else{
    const keys=new Set();
    for(const [index,row]of internal.game_routes.entries()){
     const path='internal.game_routes['+index+']';histogram(row,path);
     if(!row||typeof row!=='object')continue;
-    if(!supported.has(row.game)||typeof row.route!=='string'||!row.route){fail(path+':invalid-game-or-route');continue;}
+    if(!supportedGames.has(row.game)||typeof row.route!=='string'||!row.route){fail(path+':invalid-game-or-route');continue;}
     const key=row.game+' '+row.route;if(keys.has(key))fail(path+':duplicate');keys.add(key);
     if(finite(row.p95_ms)&&row.p95_ms>100)fail(path+'.p95_ms:over-limit');
     if(finite(row.p99_ms)&&row.p99_ms>250)fail(path+'.p99_ms:over-limit');
    }
    for(const game of requiredGames){
-    const action=['thunder','tiger'].includes(game)?'POST /api/play/'+game+'/spin':'POST /api/pvp/rooms/:id/action';
+    const action=probabilityGames.has(game)?'POST /api/play/'+game+'/spin':'POST /api/pvp/rooms/:id/action';
     if(!keys.has(game+' '+action))lack('internal.game_routes.'+game+':missing-action');
+   }
+  }
+  if(Array.isArray(requiredGames)&&requiredGames.length&&requiredGames.every(game=>supportedGames.has(game))){
+   if(missing(databaseEvidence))lack('database_evidence:missing');
+   else if(typeof databaseEvidence!=='object'||Array.isArray(databaseEvidence))fail('database_evidence:invalid');
+   else{
+    const rows=[['actions',databaseEvidence.actions],['cycles',databaseEvidence.cycles]];
+    for(const [name,value]of rows){if(missing(value))lack('database_evidence.'+name+':missing');else if(!Array.isArray(value))fail('database_evidence.'+name+':invalid');}
+    if(Array.isArray(databaseEvidence.actions)&&Array.isArray(databaseEvidence.cycles)){
+     for(const game of requiredGames){
+      const source=probabilityGames.has(game)?databaseEvidence.cycles.filter(row=>row?.game_id===game&&row?.status==='SETTLED'):databaseEvidence.actions.filter(row=>row?.game_id===game);
+      if(source.length===0){lack('database_evidence.'+game+':missing-accepted-action');continue;}
+      if(source.length>1){fail('database_evidence.'+game+':duplicate');continue;}
+      sample(source[0].n,'database_evidence.'+game+'.count',{integer:true,positive:true});
+     }
+    }
    }
   }
  }
@@ -94,7 +113,7 @@ export function evaluateMobileCapacity(input={}){
  if(errorsValid&&requestsValid&&unexpectedErrors/httpRequests>=.001)fail('unexpected_errors:over-limit');
  return{
   status:failures.length?'fail':insufficient.length?'insufficient':'pass',
-  scope:'Local isolated five-game synthetic workload only; not public server or physical-phone acceptance',
+  scope:'Local isolated thirteen-game synthetic protocol workload only; not public server or physical-phone acceptance',
   duration_minimum_seconds:900,internal_p95_limit_ms:100,internal_p99_limit_ms:250,
   event_loop_p99_limit_ms:50,cpu_limit_percent_of_machine:70,
   reasons:[...failures,...insufficient],

@@ -1,0 +1,20 @@
+# Run practice LOAD-01 — release-build evidence (2026-10-07)
+
+The **solo human + BOT practice** entry now meets the existing LOAD-01 limits in this controlled local release test: five cold starts P95 **3,655 ms** (limit 5,000 ms) and five warm starts P95 **2,334 ms** (limit 2,500 ms). The stopwatch starts at the user's Run selection and ends at the first **server-accepted legal touch action**. It includes session/room setup, rendered scene acknowledgement, the authoritative first tick and any rule-mandated countdown. No wait was removed from the measured interval.
+
+| Actual split/minified Vite release build | Five cold starts (ms), P95 | Five warm starts (ms), P95 | LOAD-01 |
+| --- | ---: | ---: | --- |
+| Before room fast path, Run v2.1 | 5,275 | 3,922 | Fail / fail |
+| Same rules, practice ready fast path | 5,106 | 3,733 | Fail / fail |
+| Run v2.2 solo practice immediate GO | 3,795 | 2,360 | Pass / pass |
+| Final candidate, including UI copy | **3,655** | **2,334** | **Pass / pass** |
+
+The test ran through an isolated local HTTP gateway serving the **production Vite build**, not a minified single-file surrogate or HMR. CDP applied 20 Mbps down, 5 Mbps up, 50 ms latency and CPU x4 to Chromium 154 with a 390×844, DPR 2 mobile viewport. Each cold entry used a fresh browser context; one separate prime populated the retained warm context, followed by five warm entries. All 10 actions in each case returned accepted, and every case recorded zero browser/resource errors, applied shaping on all 10 measured entries, no source changes during the run, and complete isolated-server/database cleanup. `summary.json` contains every entry, phase and build identity. P95 over five samples is the slowest sample.
+
+The final candidate's cold scene acknowledgement occurred at **2,937–3,130 ms** from game selection; warm acknowledgement at **1,651–1,675 ms**. Run v2.2 removes the 1.5-second shared-human countdown **only for a newly created, one-human-plus-BOT, zero-stake practice room**. It still waits for the rendered scene ACK, sends no pre-ACK simulation or input, and preserves the first-hazard learning interval. Existing Run v2.1 rooms and paid/human matches retain their pinned 1.5-second countdown and refund protocol. This change was needed because the prior room fast path alone remained above both limits. It does not change the LOAD-01 standard.
+
+The cold waterfall's representative first entry, measured from `/play/run` navigation, requested the Vite entry JS at 64–174 ms, Run chunk at 246–331 ms, runner WebP at 413–987 ms, and oasis GLB and foreground atlas at 414–1,267 ms. The room create request ran at 1,715–1,770 ms, ready at 1,852–1,907 ms, and scene-ready ACK at 2,935–2,995 ms. Browser UI and the authoritative tick then enabled the first legal action at 3,655 ms from game selection. Warm static assets were cache hits; scene-ready ACK ran at 1,468–1,525 ms from `/play/run` navigation. These timings show remaining load time is scene/room setup and ACK rather than a hidden network wait.
+
+Regression: Run content/readiness/presentation tests **20/20** and PvP integration tests **75/75** passed. They cover all six Run routes, zero-hit/idle-failure traces, v2.2 first collision and JSON recovery, scene ACK gating, old-version restoration, paid-human countdown/reconnect, timeout voids and refunds. The isolated WebGL scene-ACK browser test also passed all **11 checks**, with zero page errors; this test exercises the pinned v2.1 countdown path. The separate 62-second WebGL study is in `../sustained-20261007/README.md`; loading-phase long frames are not described as active-race stutter.
+
+**Scope:** This establishes only the local, controlled Chromium practice gate. It is not a measurement of public CDN/host latency, paid multiplayer, physical Android after v2.2, or the reported iPhone 15 Pro Safari experience. The full raw JSON waterfalls, screenshots and isolated-host manifests remain locally under ignored `platform/review/run-load-20261007/` and are deliberately excluded from Git and the release package.

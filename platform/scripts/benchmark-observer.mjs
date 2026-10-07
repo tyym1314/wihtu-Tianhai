@@ -2,8 +2,9 @@
 import {Server} from 'node:http';
 import {monitorEventLoopDelay,createHistogram,performance} from 'node:perf_hooks';
 import {cpus} from 'node:os';
+import {RELEASED_IDS} from '../shared/games.mjs';
 
-const benchmarkGames=new Set(['run','bowling','towerlink','thunder','tiger']);
+const benchmarkGames=new Set(RELEASED_IDS);
 export function benchmarkGameTag(headers,path){
  const tag=headers?.['x-oasis-benchmark-game'];
  if(typeof tag!=='string'||!benchmarkGames.has(tag))return null;

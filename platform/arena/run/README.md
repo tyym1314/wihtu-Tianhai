@@ -5,7 +5,7 @@ A Three.js desert race for 2, 3 or 4 players. Current rendering uses illustrated
 ## Entry points
 
 - `RunGame.jsx` — default `RunGame({room, me, onAction, audio, onExit, locale='zh'})`.
-- `engine.mjs` — authoritative JSON-persistable rules, new-room version `pvp-run-v2.1.0` with server-armed scene readiness; pinned `pvp-run-v2.0.0` and complete `engine-v1.mjs` dispatch preserve old rooms.
+- `engine.mjs` — authoritative JSON-persistable rules. Paid rooms use `pvp-run-v2.1.0` with a 1.5 s shared countdown; new solo-human BOT practice uses `pvp-run-v2.2.0` and starts only after its rendered-scene ACK, with no multiplayer countdown. Pinned v2.1/v2.0 and complete `engine-v1.mjs` dispatch preserve old rooms.
 - `courses.mjs` — immutable six-course catalogue, seed selection and pinned shared geometry resolver.
 - `level.mjs` — preserved legacy public course `dune-oasis-480-v1.0.0`; physics `run-60hz-v1.0.0`.
 - `scene.mjs` — Three scene, bounded snapshot extrapolation and effects.
@@ -26,7 +26,7 @@ V2 selects one of six authored 480 m courses from the server seed, then persists
 
 `boost` and `shield` are optional strict aliases that require that exact held item. No client position, score, speed, execution time, item award, or result field is accepted. `observed_tick` can reject an observation older than two seconds or a future tick; it cannot rewind or choose execution time. At most one pending input and one input per 100 ms. All elapsed time comes from the caller's authoritative `now`.
 
-Exports: `RULE_VERSION`, `supportsRuleVersion`, `createState(seedHex, now, {players, durationMs?, ruleVersion?})`, `act`, `tick`, `forfeit`, `shiftTime`, `rank`, `view`, `botAction`. Mutating methods return `{state,event?}`, except `shiftTime` returns state. Players have `{key,seatIndex,name,isBot,character?}`; 2–4 unique contiguous seats. Cosmetic selection never changes collision. The only accepted duration override is the unchanged 100000 ms cap. Explicit v1 construction and persisted v1 state always dispatch to the original engine; unknown versions fail.
+Exports: `RULE_VERSION`, `PRACTICE_RULE_VERSION`, `supportsRuleVersion`, `createState(seedHex, now, {players, durationMs?, ruleVersion?})`, `act`, `tick`, `forfeit`, `shiftTime`, `rank`, `view`, `botAction`. Mutating methods return `{state,event?}`, except `shiftTime` returns state. Players have `{key,seatIndex,name,isBot,character?}`; 2–4 unique contiguous seats. Cosmetic selection never changes collision. The only accepted duration override is the unchanged 100000 ms cap. Explicit v1 construction and persisted v1 state always dispatch to the original engine; unknown versions fail.
 
 `view` provides public player poses and current action timing, `snapshotTick`, `serverNow`, `startedAt`, `deadlineAt`, `ranks`, `events`, `visible` course section and physics/version identifiers. It excludes internal pending inputs. `rank.score` is **metres**; comparison uses integer centimetres. A falling player's ranked distance is the checkpoint to which they will recover.
 

@@ -1,4 +1,5 @@
 import {LANES,TRACK_LENGTH} from './level.mjs';
+import {runRequiresSceneReady} from './start-policy.mjs';
 
 // Presentation only: input ticks, collisions, ranks and settlement remain server owned.
 // A 250 ms horizon freezes every ordinary 150 ms poll + 200 ms HTTP round trip.
@@ -7,7 +8,7 @@ export const RUN_PROJECTION_LIMIT_MS=650;
 const mix=(a,b,t)=>a+(b-a)*t,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 // Both pinned rule versions declare this same 60 Hz movement profile. Keep
 // unknown profiles still rather than guessing how a zero speed may recover.
-const knownProfile=g=>['pvp-run-v1.0.0','pvp-run-v2.0.0','pvp-run-v2.1.0'].includes(g.ruleVersion)&&g.physicsVersion==='run-60hz-v1.0.0';
+const knownProfile=g=>(['pvp-run-v1.0.0','pvp-run-v2.0.0'].includes(g.ruleVersion)||runRequiresSceneReady(g.ruleVersion))&&g.physicsVersion==='run-60hz-v1.0.0';
 function travel(p,g,tick){
  const start=g.snapshotTick,stun=p.stunUntilTick,boost=p.boostUntilTick;
  if(!Number.isSafeInteger(start)||!Number.isSafeInteger(stun)||!Number.isSafeInteger(boost)||stun<0||boost<0)return 0;

@@ -80,6 +80,32 @@ test('v2.1 scene-ready gate keeps human and BOT motion at tick zero until the on
  assert.throws(()=>E.armStart(state,start+100),{code:'NOT_ARMING'});
  assert.equal(before.phase,'arming');
 });
+test('v2.2 solo BOT practice starts at scene ACK and keeps the same 30 m safe intro',()=>{
+ const players=[{key:'human',seatIndex:0,isBot:false},{key:'bot',seatIndex:1,isBot:true}];
+ const state=E.createState(seed(0),1000,{players,ruleVersion:E.PRACTICE_RULE_VERSION,startPolicy:E.RUN_SCENE_READY_POLICY});
+ assert.equal(state.phase,'arming');assert.equal(state.tick,0);assert.equal(state.startedAt,1000);
+ assert.equal(resolveRunCourse(state),RUN_COURSES_V21[0]);
+ assert.throws(()=>E.createState(seed(0),1000,{players:roster(2),ruleVersion:E.PRACTICE_RULE_VERSION,startPolicy:E.RUN_SCENE_READY_POLICY}),{code:'INVALID_PRACTICE_ROSTER'});
+ assert.throws(()=>E.act(state,'human',{type:'jump'},1500),{code:'NOT_STARTED'});
+ const before=clone(state);E.tick(state,1750);E.shiftTime(state,5000);
+ assert.equal(state.tick,0);assert.ok(state.players.every(player=>player.distanceU===0));assert.equal(E.botAction(state,'bot',1750),null);assert.equal(state.startedAt,before.startedAt);
+ E.armStart(state,2000);assert.equal(state.phase,'racing');assert.equal(state.startedAt,2000);assert.equal(state.deadlineAt,102000);
+ const action=E.act(state,'human',{type:'jump'},2000);assert.equal(action.event.acceptedTick,1);
+ E.tick(state,2017);assert.equal(state.tick,1);assert.ok(state.players.every(player=>player.distanceU===40));
+ assert.throws(()=>E.armStart(state,2017),{code:'NOT_ARMING'});
+});
+test('v2.2 first collision and recovery replay identically from saved state',()=>{
+ const players=[{key:'human',seatIndex:0,isBot:false},{key:'bot',seatIndex:1,isBot:true}];
+ const state=E.createState(seed(0),1000,{players,ruleVersion:E.PRACTICE_RULE_VERSION,startPolicy:E.RUN_SCENE_READY_POLICY});
+ E.armStart(state,2000);E.tick(state,7000);
+ const human=state.players[0];assert.ok(human.hits>0,'idle centre lane meets the first post-intro beam');
+ assert.ok(state.events.some(event=>event.playerKey==='human'&&event.type==='hit'));
+ assert.ok(human.stunUntilTick>state.tick,'first hit is still recovering');
+ assert.throws(()=>E.act(state,'human',{type:'jump'},7000),{code:'BUSY'});
+ const hitDistance=human.distanceU,restored=clone(state);E.tick(state,8000);E.tick(restored,8000);
+ assert.deepEqual(restored,state);assert.ok(state.players[0].distanceU>hitDistance);
+ assert.ok(state.players[0].stunUntilTick<=state.tick);
+});
 test('v2.1 arming deadline remains absolute when a shared pause is requested',()=>{
  const state=E.createState(seed(0),1000,{players:roster(2),ruleVersion:E.RULE_VERSION,startPolicy:E.RUN_SCENE_READY_POLICY}),saved=clone(state);
  E.shiftTime(state,60000);assert.deepEqual(state,saved);

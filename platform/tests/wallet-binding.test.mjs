@@ -85,6 +85,7 @@ test('concurrent binding has one winner and App row lock observes a session comm
 test('signed balance probe reaches separate wallet DB and changes no money or operation records',async()=>{
   const f=await bound(),before=await walletApi.readWalletSnapshot(partnerPool,{scope:f.scope}),result=await binding.probeWallet(f.app.id,{external_user_id:'alice'});
   assert.equal(result.read_only,true);assert.equal(result.balance.balance.available_minor,'100000');assert.equal(result.balance.app_id,f.app.id);
+  await assert.rejects(binding.probeWallet(f.app.id,{external_user_id:'unprovisioned_player'}),error=>error.status===404);
   assert.deepEqual(await walletApi.readWalletSnapshot(partnerPool,{scope:f.scope}),before);
   assert.equal((await walletApi.readWalletSnapshot(pool,{scope:f.scope})).users[0].available,'77777');
   assert.ok((await partnerPool.query('SELECT count(*)::int n FROM wallet_nonces')).rows[0].n>0);
