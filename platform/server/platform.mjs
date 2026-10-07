@@ -12,6 +12,7 @@ import {resolveHostOrigin,assertExchangeOrigin} from './launch-policy.mjs';
 import {loginCredential} from './credentials.mjs';
 import {appPlayerId} from './player-records.mjs';
 import {validatedWalletBalance} from './wallet-binding.mjs';
+import {createPlatformWallet} from './platform-wallet.mjs';
 const spec=JSON.parse(readFileSync(new URL('../specs/openapi.json',import.meta.url),'utf8'));
 const catalog=JSON.parse(readFileSync(new URL('../specs/game-catalog.json',import.meta.url),'utf8')).games;
 const ajv=new Ajv({strict:false,allErrors:true});addFormats(ajv);ajv.addSchema(spec,'contract');
@@ -23,6 +24,8 @@ export async function audit(actor,action,app_id,detail={},db=pool){await db.quer
 export async function appById(appId){const r=await pool.query('SELECT * FROM gp_apps WHERE id=$1',[appId]);if(!r.rowCount)fail(404,'NOT_FOUND');return r.rows[0];}
 export async function createApp(name,options='partner_oasis_demo') {
   const partner=typeof options==='string'?options:options.partnerId||'partner_oasis_demo',actor=typeof options==='object'?options.actor||'admin':'admin';
+  const walletProvider=typeof options==='object'?options.walletProvider:undefined;
+  if(walletProvider!==undefined&&(!runtime.production||!['platform','external'].includes(walletProvider)))fail(400,'INVALID_WALLET_PROVIDER');
   if(typeof partner!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(partner))fail(400,'INVALID_PARTNER');
   if(typeof name!=='string'||name.trim().length<2||name.length>60)fail(400,'INVALID_NAME','应用名称需要 2–60 个字符');
   if(runtime.production&&partner==='partner_oasis_demo')fail(400,'PRODUCTION_PARTNER_REQUIRED');
@@ -34,6 +37,7 @@ export async function createApp(name,options='partner_oasis_demo') {
   if(!runtime.production)await provisionWallet(pool,{scope:scope(app),...walletKey,users:[{external_user_id:'demo_player',balance_minor:'1200000'},{external_user_id:'demo_player_2',balance_minor:'1200000'},{external_user_id:'demo_player_3',balance_minor:'1200000'},{external_user_id:'demo_player_4',balance_minor:'1200000'}],treasury_minor:'1000000000000',math_profiles:['thunder','tiger'].flatMap(game=>['98','99'].map(p=>{const m=getProfile(game,p);return {game_id:game,math_version:m.version,math_config_hash:m.hash,max_payout_multiplier:String(m.maxMultiplier)};}))});
   await tx(async c=>{
     await c.query('INSERT INTO gp_apps(id,name,partner_id,environment,wallet_scope_id,wallet_url,game_ids,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',[app.id,app.name,partner,app.environment,app.wallet_scope_id,app.wallet_url,JSON.stringify(app.game_ids),app.status]);
+    if(runtime.production&&walletProvider!=='external')await createPlatformWallet(c,app,actor);
     for(const [direction,key]of (runtime.production?[['partner-to-platform',credentials]]:[['partner-to-platform',credentials],['platform-to-wallet',walletKey]]))await c.query('INSERT INTO gp_keys(id,app_id,direction,secret_enc) VALUES($1,$2,$3,$4)',[key.key_id,app.id,direction,seal(key.secret_base64)]);
     await audit(actor,'app.created',app.id,{name:app.name},c);
   });
@@ -75,7 +79,7 @@ export async function createSession(app,b,raw,{playerId=null}={}){
       if(current.status!=='active')fail(403,'APP_PAUSED');
       const externalUserId=await appPlayerId(pool,current.id,playerId);
       try{await validatedWalletBalance(current,externalUserId);}
-      catch(error){if(error.status===404)fail(409,'PLAYER_WALLET_NOT_READY','The external wallet has no readable player balance');throw error;}
+      catch(error){if(error.status===404)fail(409,'PLAYER_WALLET_NOT_READY','The configured wallet has no readable player balance');throw error;}
     }
   }
   return tx(async c=>{

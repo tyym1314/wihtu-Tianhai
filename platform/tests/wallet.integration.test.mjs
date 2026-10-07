@@ -71,7 +71,11 @@ test('A07 tenant/App/environment and wallet/currency scope isolation',async()=>{
  assert.equal((await call(other,'/wallet/v1/matches/'+p.match_id)).status,404);
  const wrong=await call(other,'/wallet/v1/reservations',rq(uid('wrong'),'a',0),{raw:JSON.stringify({...f.scope,...rq(uid('wrong'),'a',0)}),request_id:uid('wrong')});assert.equal(wrong.status,403);
  assert.equal((await call(f,'/wallet/v1/scopes/main/currencies/OTHER/users/a/balance')).status,403);
- const prod=await fixture({scope:{...f.scope,environment:'production'}});assert.equal((await call(prod,'/wallet/v1/matches/'+p.match_id)).status,404);assert.equal(amounts(await state(prod)).a.available,'100000');
+ const prod={scope:{...f.scope,environment:'production'},key_id:uid('key'),secret_base64:randomBytes(32).toString('base64')},productionScopeId=Object.values(prod.scope).join(':');
+ await assert.rejects(provisionWallet(pool,{...prod,users:[{external_user_id:'a',balance_minor:'100000'}],treasury_minor:'1000000'}),{code:'REFERENCE_PROVISION_SANDBOX_ONLY'});
+ await pool.query('INSERT INTO wallet_scopes(scope_id,partner_id,app_id,environment,wallet_scope_id,currency_id,treasury_available) VALUES($1,$2,$3,$4,$5,$6,0)',[productionScopeId,...Object.values(prod.scope)]);
+ await pool.query('INSERT INTO wallet_keys(key_id,scope_id,secret_base64) VALUES($1,$2,$3)',[prod.key_id,productionScopeId,prod.secret_base64]);
+ assert.equal((await call(prod,'/wallet/v1/matches/'+p.match_id)).status,404);assert.deepEqual((await state(prod)).users,[]);assert.deepEqual((await state(prod)).ledger,[]);
 });
 
 test('A08 approved full-cycle liability, accept fence and settlement while available budget is zero',async()=>{

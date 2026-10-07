@@ -31,7 +31,7 @@ export async function routeIntegration(req,res,path,body){
  }
  if(route==='wallet'&&req.method==='POST'){send(res,200,await configureWallet(app.id,body,user.id));return true;}
  if(route==='probe'&&req.method==='POST'){
-  if(Object.keys(body).some(k=>k!=='external_user_id'))fail(400,'INVALID_REQUEST');send(res,200,await probeWallet(app.id,{external_user_id:body.external_user_id||'demo_player'}));return true;
+  if(Object.keys(body).some(k=>k!=='external_user_id'))fail(400,'INVALID_REQUEST');send(res,200,await probeWallet(app.id,{external_user_id:app.environment==='sandbox'?(body.external_user_id||'demo_player'):body.external_user_id}));return true;
  }
  if(route==='checks'&&req.method==='GET'){send(res,200,{checks:await listIntegrationChecks(app.id)});return true;}
  if(route==='checks'&&req.method==='POST'){send(res,202,{check:await startIntegrationCheck(app.id,body,user.id)});return true;}

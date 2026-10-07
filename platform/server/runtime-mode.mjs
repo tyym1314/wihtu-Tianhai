@@ -33,5 +33,11 @@ export async function assertProductionAppReady(db,app){
  if(!runtime.production||!runtime.admissionEnabled)reject('PRODUCTION_ACCEPTANCE_REQUIRED');
  if(!Array.isArray(app.allowed_origins)||!app.allowed_origins.length)reject('PRODUCTION_HOST_REQUIRED');
  if(app.game_ids.some(g=>['thunder','tiger'].includes(g)))reject('PRODUCTION_MATH_NOT_APPROVED');
- if(!(await db.query('SELECT 1 FROM gp_wallet_bindings WHERE app_id=$1',[app.id])).rowCount||!app.wallet_url.startsWith('https://'))reject('PRODUCTION_EXTERNAL_WALLET_REQUIRED');
+ const binding=(await db.query('SELECT * FROM gp_wallet_bindings WHERE app_id=$1',[app.id])).rows[0];
+ const fields={partner_id:app.partner_id,app_id:app.id,environment:app.environment,wallet_scope_id:app.wallet_scope_id,currency_id:app.currency_id};
+ if(!binding||Object.entries(fields).some(([key,value])=>binding.scope?.[key]!==value))reject('PRODUCTION_WALLET_REQUIRED');
+ if(binding.provider==='platform'){
+  if(app.wallet_url!==''||binding.wallet_url!==null||binding.wallet_key_id!==null)reject('WALLET_BINDING_CHANGED');
+  if(!(await db.query('SELECT 1 FROM wallet_scopes WHERE partner_id=$1 AND app_id=$2 AND environment=$3 AND wallet_scope_id=$4 AND currency_id=$5 AND currency_scale=$6',[app.partner_id,app.id,app.environment,app.wallet_scope_id,app.currency_id,app.currency_scale])).rowCount)reject('PRODUCTION_WALLET_REQUIRED');
+ }else if(binding.provider!=='external'||!app.wallet_url.startsWith('https://')||binding.wallet_url!==app.wallet_url)reject('PRODUCTION_EXTERNAL_WALLET_REQUIRED');
 }

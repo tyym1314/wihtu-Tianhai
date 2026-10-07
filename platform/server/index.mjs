@@ -54,7 +54,7 @@ async function adminRoutes(req,res,path,b){
     const a=(await pool.query('SELECT count(*)::int n FROM gp_apps')).rows[0].n;
     const c=(await pool.query("SELECT count(*)::int n,count(*) FILTER(WHERE status NOT IN ('SETTLED','REJECTED'))::int pending FROM gp_cycles")).rows[0];
     const p=(await pool.query("SELECT count(*)::int n,count(*) FILTER(WHERE status NOT IN ('settled','cancelled','voided'))::int pending,COALESCE(sum((result->>'fee_minor')::bigint) FILTER(WHERE status='settled' AND NOT practice),0)::text fee FROM pvp_rooms")).rows[0];
-    return send(res,200,{apps_count:a,games_count:RELEASED_IDS.length,cycles_count:c.n+p.n,pending_count:c.pending+p.pending,fee_minor:p.fee,environment:runtime.environment,wallet_status:runtime.production?'external_wallet_required':'reference_wallet',released_games:RELEASED_IDS.length});
+    return send(res,200,{apps_count:a,games_count:RELEASED_IDS.length,cycles_count:c.n+p.n,pending_count:c.pending+p.pending,fee_minor:p.fee,environment:runtime.environment,wallet_status:'app_scoped',released_games:RELEASED_IDS.length});
   }
   if(path==='/api/admin/overview-activity'&&req.method==='GET')return send(res,200,await overviewActivity(activityTimeZone(req)));
   if(path==='/api/admin/rounds'&&req.method==='GET')return send(res,200,{rounds:(await pool.query(`

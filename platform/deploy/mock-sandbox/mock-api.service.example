@@ -1,18 +1,19 @@
 [Unit]
 Description=OASIS isolated Android mock game API and reference wallet
-After=network-online.target docker.service
+After=network-online.target oasis-android-mock-db.service oasis-android-mock-network.service
 Wants=network-online.target
-Requires=docker.service
+Requires=oasis-android-mock-db.service oasis-android-mock-network.service
 
 [Service]
 Type=simple
 User=oasis-mock
 Group=oasis-mock
-WorkingDirectory=/opt/oasis/current/platform
-EnvironmentFile=/opt/oasis/private/android-mock/runtime.env
+WorkingDirectory=/opt/oasis/android-mock-current/platform
+EnvironmentFile=/opt/oasis/android-mock-private/runtime.env
 # Prefix + runs this one-shot check as root, so the long-lived mock process
 # never receives the live DB password or private key.
-ExecStartPre=+/usr/bin/node deploy/mock-sandbox/preflight.mjs --mock-env /opt/oasis/private/android-mock/runtime.env --live-env /opt/oasis/private/runtime.env
+ExecStartPre=+/usr/bin/python3 deploy/mock-sandbox/install.py guard
+ExecStartPre=+/usr/bin/node deploy/mock-sandbox/preflight.mjs --mock-env /opt/oasis/android-mock-private/runtime.env --live-env /opt/oasis/private/runtime.env
 ExecStart=/usr/bin/node --import tsx server/index.mjs
 Restart=on-failure
 RestartSec=5
@@ -22,7 +23,9 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/oasis/private/android-mock
+ReadWritePaths=/opt/oasis/android-mock-private/state
+CPUQuota=100%
+MemoryHigh=1G
 MemoryMax=2G
 TasksMax=128
 

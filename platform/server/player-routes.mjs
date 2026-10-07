@@ -3,16 +3,30 @@ import {pool} from './db.mjs';
 import {credentialRate} from './credentials.mjs';
 import {appById,createSession,origin,scope} from './platform.mjs';
 import {runtime,assertProductionAppReady} from './runtime-mode.mjs';
+import {RELEASED_IDS} from '../shared/games.mjs';
 import {PLAYER_COOKIE,registerPlayer,loginPlayer,playerSession,csrfFor,requirePlayerCsrf,revokePlayerSession,appPlayerId} from './player-records.mjs';
 
 const exact=(body,keys)=>{if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(key=>!keys.includes(key)))fail(400,'INVALID_REQUEST');};
 const exactOrigin=req=>{if(req.headers.origin!==origin)fail(403,'ORIGIN_FORBIDDEN');};
 const cookie=(token,maxAge)=>`${PLAYER_COOKIE}=${token}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${maxAge}`;
+const queryAppId=path=>{
+ const query=new URL(path,origin).searchParams,appId=query.get('app_id');
+ if([...query.keys()].some(key=>key!=='app_id')||query.getAll('app_id').length!==1||!/^[-A-Za-z0-9_]{1,128}$/.test(appId||''))fail(400,'INVALID_REQUEST');
+ return appId;
+};
 
 /** Browser-facing platform BFF. The player credential never enters partner HMAC. */
 export async function routePlayer(req,res,path,body,raw){
  if(!path.startsWith('/api/player/'))return false;
  if(!runtime.production)fail(404,'NOT_FOUND');
+ if(path==='/api/player/app'||path.startsWith('/api/player/app?')){
+  if(req.method!=='GET')fail(405,'METHOD_NOT_ALLOWED');
+  const appId=queryAppId(path);
+  const app=await appById(appId);if(app.environment!=='production')fail(404,'NOT_FOUND');
+  let admissionOpen=app.status==='active'&&app.allowed_origins?.includes(origin);
+  if(admissionOpen)try{await assertProductionAppReady(pool,app);}catch(error){if(error.status!==409)throw error;admissionOpen=false;}
+  send(res,200,{name:app.name,game_ids:app.game_ids.filter(game=>RELEASED_IDS.includes(game)),admission_open:Boolean(admissionOpen)});return true;
+ }
  if(path==='/api/player/register'){
   if(req.method!=='POST')fail(405,'METHOD_NOT_ALLOWED');exactOrigin(req);credentialRate(req,'player-register',6);exact(body,['app_id','username','password']);
   if(typeof body.app_id!=='string')fail(400,'INVALID_REQUEST');const app=await appById(body.app_id);
@@ -27,6 +41,17 @@ export async function routePlayer(req,res,path,body,raw){
   send(res,200,{player,app_id:app.id,external_user_id:externalUserId,csrf_token:csrfFor(token),expires_in:28800});return true;
  }
  const session=await playerSession(req);if(!session)fail(401,'LOGIN_REQUIRED');
+ if(path==='/api/player/recovery'||path.startsWith('/api/player/recovery?')){
+  if(req.method!=='GET')fail(405,'METHOD_NOT_ALLOWED');
+  const app=await appById(queryAppId(path));if(app.environment!=='production')fail(404,'NOT_FOUND');
+  const {rows}=await pool.query(`SELECT DISTINCT ON (active.room_id) game_session.id AS session_id,game_session.game_id
+   FROM gp_sessions game_session JOIN pvp_active_users active
+   ON active.app_id=game_session.app_id AND active.external_user_id=game_session.external_user_id
+   JOIN pvp_rooms room ON room.id=active.room_id AND room.app_id=game_session.app_id AND room.game_id=game_session.game_id
+   WHERE game_session.app_id=$1 AND game_session.player_id=$2 AND room.status NOT IN ('cancelled','settled','voided')
+   ORDER BY active.room_id,game_session.created_at DESC,game_session.id DESC`,[app.id,session.id]);
+  send(res,200,{sessions:rows});return true;
+ }
  if(path==='/api/player/session'){
   if(req.method!=='GET')fail(405,'METHOD_NOT_ALLOWED');
   send(res,200,{player:{id:session.id,username:session.username},csrf_token:csrfFor(session.token),expires_at:session.expires_at});return true;

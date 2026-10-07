@@ -80,6 +80,7 @@ export async function registerMathProfiles(pool,{scope,math_profiles=[]}){
  return withScope(pool,scopeId(scope),async c=>{for(const p of math_profiles){if(!['thunder','tiger'].includes(p.game_id)||!/^[a-f0-9]{64}$/.test(p.math_config_hash)||!/^[A-Za-z0-9_.-]{1,96}$/.test(p.math_version))fail('INVALID_REQUEST','Invalid approved math profile',400);amount(p.max_payout_multiplier);const old=(await c.db.query('SELECT * FROM wallet_math_profiles WHERE scope_id=$1 AND game_id=$2 AND math_version=$3',[c.id,p.game_id,p.math_version])).rows[0];if(old&&(old.math_config_hash!==p.math_config_hash||old.max_payout_multiplier!==p.max_payout_multiplier))fail('IDEMPOTENCY_CONFLICT','Immutable math version already registered');await c.db.query('INSERT INTO wallet_math_profiles(scope_id,game_id,math_version,math_config_hash,max_payout_multiplier) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING',[c.id,p.game_id,p.math_version,p.math_config_hash,p.max_payout_multiplier]);}return {registered:math_profiles.length};});
 }
 export async function provisionWallet(pool,{scope,key_id,secret_base64,users=[],treasury_minor,math_profiles=[]}){
+ if(scope?.environment!=='sandbox')fail('REFERENCE_PROVISION_SANDBOX_ONLY','Reference opening balances are restricted to sandbox',403);
  for(const k of fields)if(typeof scope[k]!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(scope[k]))fail('INVALID_REQUEST','Invalid scope',400);
  if(!['sandbox','production'].includes(scope.environment)||!/^[A-Za-z0-9_-]{1,128}$/.test(key_id)||typeof secret_base64!=='string'||Buffer.from(secret_base64,'base64').length<32)fail('INVALID_REQUEST','Invalid provision key',400);
  amount(treasury_minor);const id=scopeId(scope);
@@ -201,6 +202,23 @@ async function query(pool,key,path){
  const a=path.match(/^\/wallet\/v1\/probability\/authorizations\/([A-Za-z0-9_-]{1,128})$/);if(a)return withScope(pool,key.row.scope_id,async c=>{const v=await auth(c,a[1]);if(!v)fail('NOT_FOUND','No visible authorization',404);return authResource(c.s,v);});
  const b=path.match(/^\/wallet\/v1\/scopes\/([A-Za-z0-9_-]{1,128})\/currencies\/([A-Za-z0-9_-]{1,128})\/users\/([A-Za-z0-9_-]{1,128})\/balance$/);if(b){if(b[1]!==key.row.wallet_scope_id||b[2]!==key.row.currency_id)fail('SCOPE_FORBIDDEN','Credential scope/currency differs',403);return withScope(pool,key.row.scope_id,async c=>{const u=await user(c,b[3]);return {...scopeOf(c.s),balance:{external_user_id:u.external_user_id,available_minor:u.available,reserved_minor:u.reserved,currency_scale:c.s.currency_scale,ledger_version:c.s.ledger_version},as_of:now()};});}
  fail('NOT_FOUND','Unknown wallet endpoint',404);
+}
+export async function ledgerRequest(pool,{scope,method,path,raw='',requestId}){
+ for(const field of fields)if(typeof scope?.[field]!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(scope[field]))fail('INVALID_REQUEST','Invalid ledger scope',400);
+ if(!['GET','POST'].includes(method)||!/^\/wallet\/v1(?:\/[A-Za-z0-9_-]+)+$/.test(path)||typeof raw!=='string'||Buffer.byteLength(raw)>65536||!/^[A-Za-z0-9_-]{1,128}$/.test(requestId)||(method==='GET'&&raw))fail('INVALID_REQUEST','Invalid ledger request',400);
+ const key={row:{...scope,scope_id:scopeId(scope)},request_id:requestId};
+ if(method==='GET')return{status:200,body:await query(pool,key,path)};
+ const body=parseRaw(Buffer.from(raw));
+ if(path==='/wallet/v1/events'){
+  validate('PartnerEvent',body);checkScope(body.scope,key.row);if(body.request_id!==requestId||body.request_id!==body.event_id)fail('INVALID_REQUEST','Event/request IDs must match',400);
+  await withScope(pool,key.row.scope_id,async context=>{
+   const old=(await context.db.query('SELECT body_sha256 FROM wallet_events WHERE scope_id=$1 AND event_id=$2',[context.id,body.event_id])).rows[0],digest=sha256(raw);
+   if(old&&old.body_sha256!==digest)fail('IDEMPOTENCY_CONFLICT','Event reused with another body');
+   await context.db.query('INSERT INTO wallet_events(scope_id,event_id,body_sha256,payload) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING',[context.id,body.event_id,digest,JSON.stringify(body)]);
+  },{expire:false});return{status:204,body:null};
+ }
+ if(!commands[path])fail('NOT_FOUND','Unknown wallet endpoint',404);
+ return execute(pool,key,path,raw,body);
 }
 export function createWalletServer(pool){
  return http.createServer(async(req,res)=>{

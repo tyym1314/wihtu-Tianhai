@@ -9,6 +9,7 @@ import {chromium} from 'playwright';
 import {ARENA_IDS,LEGACY_IDS,RELEASED_IDS} from '../shared/games.mjs';
 import {playOneArenaAction} from '../scripts/android-game-actions.mjs';
 import {createSnapshotTransfer} from '../arena/shared/snapshot-transfer.mjs';
+import {classifyReturningRoomBodyLoss,proveReturningRoomBodyLoss} from './public-smoke-observer.mjs';
 
 const origin=new URL(process.env.OASIS_VERIFY_ORIGIN||'https://game.tianyahuyu.com').origin;
 assert.equal(new URL(origin).protocol,'https:','Public verification requires HTTPS');
@@ -17,12 +18,12 @@ const out=pathToFileURL(resolve(process.env.OASIS_VERIFY_OUT||`review/deployment
 await fs.mkdir(out,{recursive:true});assert.equal((await fs.readdir(out)).length,0,'OUTPUT_ALREADY_EXISTS: keep the previous evidence and choose a fresh output directory');
 const dnsPin=process.env.OASIS_VERIFY_DNS_IP;
 if(dnsPin&&!isIP(dnsPin))throw new Error('OASIS_VERIFY_DNS_IP must be an IP literal');
-const report={schema:'public-smoke-v2',runId,at:new Date().toISOString(),origin,scope:'External HTTPS; desktop Chrome, 390x844 touch/mobile viewport. Fresh independent public-demo test wallets. One accepted UI action per arena game and one UI spin/ACK per probability game; not physical iPhone, full gameplay or performance acceptance.',inputBoundary:'All possible controls use trusted touch taps. Shared helper still uses mouse drag for Darts and TowerLink; Match proves two-tap swap, not swipe.',games:[],errors:[],observerErrors:[],httpErrors:[],failedAssets:[],abortedAssets:[],externalAssets:[],practice:[],probability:[],cleanupErrors:[],passed:false};
+const report={schema:'public-smoke-v3',runId,at:new Date().toISOString(),origin,scope:'External HTTPS; desktop Chrome, 390x844 touch/mobile viewport. Fresh independent public-demo test wallets. One accepted UI action per arena game and one UI spin/ACK per probability game; not physical iPhone, full gameplay or performance acceptance.',inputBoundary:'All possible controls use trusted touch taps. Shared helper still uses mouse drag for Darts and TowerLink; Match proves two-tap swap, not swipe.',games:[],errors:[],observerErrors:[],lifecycleReadBodyLosses:[],httpErrors:[],failedAssets:[],abortedAssets:[],externalAssets:[],practice:[],probability:[],cleanupErrors:[],passed:false};
 if(dnsPin)report.browserDnsOverride={hostname:new URL(origin).hostname,address:dnsPin,reason:'Explicit resolver override; TLS certificate verification remains enabled. This run does not verify ordinary DNS resolution.'};
 // Reserve the report name before launching a browser. Later writes update this run only.
 await fs.writeFile(new URL('public-browser.json',out),JSON.stringify(report,null,2)+'\n',{flag:'wx'});
 const internals=new Map(),requests=new WeakMap(),pendingObservers=new Set(),ownedRooms=new Map();
-let browser,context,page,current=null,guestId=null,failed=false,closing=false;
+let browser,context,page,current=null,guestId=null,failed=false,closing=false,observationOrder=0;
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 const terminal=room=>['cancelled','settled','voided'].includes(room?.status);
 const id=prefix=>prefix+'_'+randomUUID().replaceAll('-','');
@@ -39,13 +40,20 @@ function rememberRoom(attempt,room,source){
  if(!attempt.room||attempt.room.id!==room.id||Number(room.version)>=Number(attempt.room.version))attempt.room=room;
  if(!attempt.roomIds.includes(room.id))attempt.roomIds.push(room.id);
 }
+function reconcileReadBodyLosses(){
+ for(const loss of report.lifecycleReadBodyLosses){
+  const attempt=report.games.find(value=>value.game===loss.game),internal=internals.get(attempt),owned=ownedRooms.get(loss.game+':'+loss.roomId);
+  const proof=proveReturningRoomBodyLoss(loss,{attempt,ownedRoom:owned?.attempt===attempt?owned.room:null,frameDetached:internal?.gameFrame?.isDetached()===true,terminalReads:internal?.terminalReads});
+  loss.reconciled=!!proof;if(proof)loss.readbackProof=proof;
+ }
+}
 function observe(target){
  target.on('pageerror',e=>report.errors.push({game:current?.game||null,message:e.message}));
  target.on('request',request=>{try{
   const u=new URL(request.url()),attempt=current,internal=internals.get(attempt),entry={attempt,phase:attempt?.phase||'lobby'};requests.set(request,entry);
   if(isAsset(request)&&u.origin!==origin)report.externalAssets.push({...address(request),game:attempt?.game||null});
   if(u.origin!==origin||!attempt)return;
-  if(u.pathname.startsWith('/api/pvp/rooms'))entry.snapshotTicket=internal.transfer.begin(u.pathname,request.method()==='GET');
+  if(u.pathname.startsWith('/api/pvp/rooms')){entry.snapshotTicket=internal.transfer.begin(u.pathname,request.method()==='GET');entry.frame=request.frame();}
   if(request.method()==='POST'&&new RegExp(`^/api/play/${attempt.game}/(spin|ack)$`).test(u.pathname)){
    const body=request.postDataJSON();entry.probability={type:u.pathname.endsWith('/spin')?'spin':'ack',phase:entry.phase,requestId:body.requestId||null,roundId:body.roundId||null,status:null};attempt.probabilityRequests.push(entry.probability);
   }
@@ -88,7 +96,12 @@ function observe(target){
    if(entry.phase==='cleanup')return;
    if(u.pathname===`/api/play/${attempt.game}/spin`){const d=await response.json();attempt.spins.push({round:d.round.id,cycle:d.round.cycleId,status:d.round.settlementStatus,isFreeSpin:d.round.isFreeSpin===true,requestId:request.postDataJSON()?.requestId});}
    if(u.pathname===`/api/play/${attempt.game}/ack`){const d=await response.json();attempt.acknowledged.push({round:request.postDataJSON()?.roundId,httpStatus:response.status(),sessionId:d.session?.sessionId,pendingRound:d.session?.pendingRound?.id||null});}
-  })().catch(e=>report.observerErrors.push({game:attempt.game,path:u.pathname,error:errorInfo(e)}));
+  })().catch(e=>{
+   const internal=internals.get(attempt),loss={game:attempt.game,path:u.pathname,method:request.method(),status:response.status(),requestPhase:entry.phase,phase:attempt.phase,gameFrameRequest:!!internal.gameFrame&&entry.frame===internal.gameFrame,returnStarted:internal.returnStarted===true,frameDetachedAtError:internal.gameFrame?.isDetached()===true,error:errorInfo(e),order:++observationOrder,reconciled:false};
+   const roomId=classifyReturningRoomBodyLoss(loss),owned=roomId?ownedRooms.get(attempt.game+':'+roomId):null;
+   if(roomId&&owned?.attempt===attempt)report.lifecycleReadBodyLosses.push({...loss,roomId});
+   else report.observerErrors.push({game:attempt.game,path:u.pathname,method:request.method(),phase:attempt.phase,error:errorInfo(e)});
+  });
   pendingObservers.add(task);task.finally(()=>pendingObservers.delete(task));
  });
 }
@@ -99,10 +112,10 @@ async function api(attempt,path,body){
  const result=await page.evaluate(async({path,token,body})=>{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);try{const response=await fetch(path,{method:body===undefined?'GET':'POST',headers:{authorization:'Bearer '+token,...(body===undefined?{}:{'content-type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:controller.signal});return{status:response.status,body:await response.json()};}finally{clearTimeout(timer);}},{path,token:internal.token,body});
  if(result.status<200||result.status>=300)throw Object.assign(new Error(`${path}: HTTP ${result.status} ${result.body.error?.code||''}`),{status:result.status,code:result.body.error?.code});return result.body;
 }
-async function readRoom(attempt,roomId){const data=await api(attempt,`/api/pvp/rooms/${roomId}`),room=data.room||data;rememberRoom(attempt,room,'authenticated-readback');return room;}
+async function readRoom(attempt,roomId){const startedOrder=++observationOrder,data=await api(attempt,`/api/pvp/rooms/${roomId}`),room=data.room||data;assert.equal(room.id,roomId,'Authenticated readback returned another room');rememberRoom(attempt,room,'authenticated-readback');if(terminal(room))internals.get(attempt).terminalReads.push({startedOrder,roomId:room.id,game:room.game_id,sessionId:attempt.sessionId,me:room.me,status:room.status,practice:room.practice,entry:room.entry_minor});return room;}
 async function readProbability(attempt){const state=await api(attempt,`/api/play/${attempt.game}/session`);assert.equal(state.sessionId,attempt.sessionId);return state;}
 async function back(attempt,frame){
- attempt.phase='returning';await page.locator('#back').tap();
+ attempt.phase='returning';internals.get(attempt).returnStarted=true;await page.locator('#back').tap();
  await until(async()=>{
   if(await page.locator('#home').isVisible()){assert(frame.isDetached(),'Host returned but game iframe remains');return true;}
   if(!frame.isDetached())for(const button of [frame.getByRole('button',{name:'确认离开',exact:true}),frame.locator('[data-return="confirm"]')])if(await button.isVisible())await button.tap();
@@ -161,9 +174,9 @@ try{
  const firstConfig=await page.evaluate(()=>fetch('/api/demo/config').then(r=>r.json()));
  const second=await browser.newContext();try{const secondPage=await second.newPage();observe(secondPage);const secondConfig=await secondPage.goto(origin+'/api/demo/config').then(r=>r.json());assert.notEqual(firstConfig.csrf,secondConfig.csrf);assert.notEqual(firstConfig.profile.name,secondConfig.profile.name);report.distinctGuests=true;}finally{await second.close();}
  for(const game of RELEASED_IDS){
-  const attempt=current={game,phase:'entry',spins:[],acknowledged:[],creations:[],roomIds:[],actionRequests:[],probabilityRequests:[],snapshotNotes:[],launched:false,returned:false,cleanupComplete:false};report.games.push(attempt);internals.set(attempt,{token:null,transfer:createSnapshotTransfer()});await flush();
+  const attempt=current={game,phase:'entry',spins:[],acknowledged:[],creations:[],roomIds:[],actionRequests:[],probabilityRequests:[],snapshotNotes:[],launched:false,returned:false,cleanupComplete:false};report.games.push(attempt);internals.set(attempt,{token:null,transfer:createSnapshotTransfer(),terminalReads:[],gameFrame:null,returnStarted:false});await flush();
   await page.locator(`[data-game="${game}"]`).tap();await page.locator('#connection').filter({hasText:'已连接'}).waitFor();
-  const frame=page.frames().find(f=>f.url()===origin+'/play/'+game);assert.ok(frame);await until(()=>!!attempt.sessionId,'session exchange '+game);attempt.launched=true;
+  const frame=page.frames().find(f=>f.url()===origin+'/play/'+game);assert.ok(frame);internals.get(attempt).gameFrame=frame;await until(()=>!!attempt.sessionId,'session exchange '+game);attempt.launched=true;
   if(ARENA_IDS.includes(game)){
    await frame.locator('.lobby-settings').waitFor();await frame.getByRole('button',{name:'免费练习',exact:false}).tap();await frame.getByRole('button',{name:'确认规则 · 准备开局',exact:true}).tap();
    await until(()=>attempt.room?.status==='active','active '+game);await frame.locator('.arena-loading').waitFor({state:'hidden'});attempt.phase='playing';
@@ -184,11 +197,11 @@ try{
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.equal(await frame.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   await page.screenshot({path:new URL(`public-${game}-390.png`,out).pathname,fullPage:true});await back(attempt,frame);
   if(ARENA_IDS.includes(game)){const room=await readRoom(attempt,attempt.action.roomId);assert(terminal(room),'UI return did not release its practice room');attempt.returnReadback={roomId:room.id,status:room.status};}
-  await cleanupAttempt(attempt);await drainObservers();await flush();console.log(game+' HTTPS launch/action-or-spin/ACK/return passed');current=null;
+  await cleanupAttempt(attempt);await drainObservers();reconcileReadBodyLosses();await flush();console.log(game+' HTTPS launch/action-or-spin/ACK/return passed');current=null;
  }
  const kit=await page.evaluate(async()=>{const r=await fetch('/downloads/oasis-partner-sandbox-kit.zip');return{status:r.status,bytes:(await r.arrayBuffer()).byteLength};});assert.equal(kit.status,200);assert.ok(kit.bytes>100000);report.partnerKit=true;await drainObservers();
  assert.equal(report.games.length,RELEASED_IDS.length);assert.equal(report.practice.length,ARENA_IDS.length);assert.equal(report.probability.length,LEGACY_IDS.length);assert(report.games.every(g=>g.launched&&g.returned&&g.cleanupComplete));
- assert.deepEqual(report.errors,[]);assert.deepEqual(report.observerErrors,[]);assert.deepEqual(report.httpErrors,[]);assert.deepEqual(report.failedAssets,[]);assert.deepEqual(report.externalAssets,[],'Unexpected external runtime assets');report.functionalChecksPassed=true;
+ reconcileReadBodyLosses();assert(report.lifecycleReadBodyLosses.every(loss=>loss.reconciled),'Lost GET response body lacks a detached frame and subsequent authenticated terminal cleanup proof');assert.deepEqual(report.errors,[]);assert.deepEqual(report.observerErrors,[]);assert.deepEqual(report.httpErrors,[]);assert.deepEqual(report.failedAssets,[]);assert.deepEqual(report.externalAssets,[],'Unexpected external runtime assets');report.functionalChecksPassed=true;
 }catch(e){failed=true;report.failure=errorInfo(e);if(current)current.failure=errorInfo(e);await page?.screenshot({path:new URL('public-failure.png',out).pathname,fullPage:true}).catch(()=>{});}
 finally{
  // Stop UI producers before protocol cleanup, so an auto/free presentation or
@@ -207,6 +220,6 @@ finally{
  report.roomInventory=[...ownedRooms.values()].map(({attempt,room,source})=>({game:attempt.game,roomId:room.id,status:room.status,practice:room.practice,entry:room.entry_minor,me:room.me,source}));
  closing=true;try{if(browser){await browser.close();report.browserClosed=true;}else report.browserClosed=false;}catch(e){report.cleanupErrors.push({stage:'browser-close',error:errorInfo(e)});}
  try{await drainObservers();}catch(e){report.cleanupErrors.push({stage:'final-observer-drain',error:errorInfo(e)});}
- report.finishedAt=new Date().toISOString();report.passed=!failed&&report.functionalChecksPassed===true&&report.browserClosed===true&&report.games.every(g=>g.cleanupComplete)&&report.cleanupErrors.length===0&&report.errors.length===0&&report.observerErrors.length===0&&report.httpErrors.length===0&&report.failedAssets.length===0&&report.externalAssets.length===0;
+ reconcileReadBodyLosses();report.finishedAt=new Date().toISOString();report.passed=!failed&&report.functionalChecksPassed===true&&report.browserClosed===true&&report.games.every(g=>g.cleanupComplete)&&report.lifecycleReadBodyLosses.every(loss=>loss.reconciled)&&report.cleanupErrors.length===0&&report.errors.length===0&&report.observerErrors.length===0&&report.httpErrors.length===0&&report.failedAssets.length===0&&report.externalAssets.length===0;
  await flush();console.log(JSON.stringify({report:new URL('public-browser.json',out).pathname,passed:report.passed,games:report.games.length,cleanupErrors:report.cleanupErrors.length}));if(!report.passed)process.exitCode=1;
 }

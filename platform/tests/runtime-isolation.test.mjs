@@ -67,18 +67,20 @@ test('production boots with independent master key and an admin, without demo ap
  await assert.rejects(readFile(join(production.folder,'sandbox-app-credentials.json')),e=>e.code==='ENOENT');assert.equal(walletRequests,0);
  const localCredentials=JSON.parse(await readFile(join(production.folder,'development-credentials.json'),'utf8'));
  const login=await request(production,'/api/admin/login',localCredentials);assert.equal(login.status,200);assert.match(login.headers.get('set-cookie'),/; Secure/);productionCookie=login.cookie;
+ const overview=await request(production,'/api/admin/overview',undefined,productionCookie);assert.equal(overview.status,200);assert.equal(overview.body.wallet_status,'app_scoped');
 });
 
-test('production partner App starts paused with released competitive games and zero test money or wallet keys',async()=>{
+test('production external-wallet App starts paused with released competitive games and zero test money or wallet keys',async()=>{
  const password='Runtime-fixture-only-2026!',created=await request(production,'/api/admin/partner-accounts',{name:'Runtime partner',username:'runtime_partner',password},productionCookie);assert.equal(created.status,201);partner=created.body.account;
  const login=await request(production,'/api/partner/login',{username:partner.username,password});assert.equal(login.status,200);assert.match(login.headers.get('set-cookie'),/; Secure/);partnerCookie=login.cookie;
- const createdApp=await request(production,'/api/partner/apps',{name:'Production isolation fixture'},partnerCookie);assert.equal(createdApp.status,201);item=createdApp.body;
+ const createdApp=await request(production,'/api/partner/apps',{name:'Production isolation fixture',wallet_provider:'external'},partnerCookie);assert.equal(createdApp.status,201);item=createdApp.body;
  assert.equal(item.app.environment,'production');assert.equal(item.app.status,'paused');assert.equal(item.app.wallet_url,'');assert.deepEqual([...item.app.game_ids].sort(),[...ARENA_IDS].sort());assert.equal(item.app.game_ids.length,ARENA_IDS.length);
  const actual=(await productionDb.query('SELECT * FROM gp_apps WHERE id=$1',[item.app.id])).rows[0];assert.equal(actual.status,'paused');assert.equal(actual.environment,'production');
  assert.equal((await productionDb.query("SELECT count(*)::int n FROM gp_keys WHERE app_id=$1 AND direction='partner-to-platform'",[item.app.id])).rows[0].n,1);
  assert.equal((await productionDb.query("SELECT count(*)::int n FROM gp_keys WHERE direction='platform-to-wallet'")).rows[0].n,0);
  for(const table of ['wallet_scopes','wallet_users','wallet_keys','wallet_ledger'])assert.equal(await count(productionDb,table),0);
  const integration=await request(production,`/api/partner/apps/${item.app.id}/integration`,undefined,partnerCookie);assert.equal(integration.status,200);assert.equal(integration.body.wallet.mode,'unconfigured');assert.equal(integration.body.wallet.can_configure,true);assert.equal(walletRequests,0);
+ const missingProbeUser=await request(production,`/api/partner/apps/${item.app.id}/integration/probe`,{},partnerCookie);assert.equal(missingProbeUser.status,400);assert.equal(missingProbeUser.body.error.code,'INVALID_USER');assert.equal(walletRequests,0);
 });
 
 test('production rejects HTTP loopback hosts and preserves the deployed four-column launch-intent insert',async()=>{
@@ -105,7 +107,7 @@ test('both admin and partner activation stay closed and console launch cannot by
 });
 
 test('platform player cookie, per-App identity and BFF resume reject forged, cross-App and expired access without test credits',async()=>{
- const appTwo=(await request(production,'/api/partner/apps',{name:'Second production App'},partnerCookie)).body.app;
+ const appTwo=(await request(production,'/api/partner/apps',{name:'Second production App',wallet_provider:'external'},partnerCookie)).body.app;
  const password='Player-fixture-only-2026!';
  const blockedRegister=await request(production,'/api/player/register',{app_id:item.app.id,username:'new_player',password});
  assert.equal(blockedRegister.status,409);assert.equal(blockedRegister.body.error.code,'PRODUCTION_ACCEPTANCE_REQUIRED');assert.equal(await count(productionDb,'gp_players'),0);
@@ -221,7 +223,7 @@ test('production rejects even allowlisted loopback HTTP wallet without persistin
 });
 
 test('paused App blocks new player binding and an unavailable external wallet blocks new launch without creating credits',async()=>{
- const newApp=(await request(production,'/api/partner/apps',{name:'Wallet preflight fixture'},partnerCookie)).body.app;
+ const newApp=(await request(production,'/api/partner/apps',{name:'Wallet preflight fixture',wallet_provider:'external'},partnerCookie)).body.app;
  await productionDb.query('UPDATE gp_apps SET allowed_origins=$2 WHERE id=$1',[newApp.id,JSON.stringify([publicOrigin])]);
  await stop(production);
  production=await launch(names[0],'production',join(dir,'production'),{

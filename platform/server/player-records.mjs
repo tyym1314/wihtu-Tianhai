@@ -3,6 +3,7 @@ import {pool,tx} from './db.mjs';
 import {id,hash,fail} from './security.mjs';
 import {loginCredential,passwordMaterial} from './credentials.mjs';
 import {assertProductionAppReady} from './runtime-mode.mjs';
+import {ensurePlatformWalletAccount} from './platform-wallet.mjs';
 
 export const PLAYER_COOKIE='__Host-oasis_player';
 const tokenPattern=/^[A-Za-z0-9_-]{43}$/;
@@ -27,6 +28,7 @@ export async function registerPlayer(username,password,appId){
   const playerId=id('player');
   try{await db.query('INSERT INTO gp_players(id,username,salt,password_hash) VALUES($1,$2,$3,$4)',[playerId,normalized,material.salt,material.password_hash]);}
   catch(error){if(error.code==='23505')fail(409,'USERNAME_TAKEN');throw error;}
+  await appPlayerId(db,app.id,playerId);
   await db.query("INSERT INTO gp_audit(actor,action,detail) VALUES($1,'player.registered',$2)",[playerId,{player_id:playerId}]);
   return{id:playerId,username:normalized};
  });
@@ -66,7 +68,7 @@ export async function appPlayerId(db,appId,playerId){
  const accepted=(await db.query('SELECT DISTINCT external_user_id FROM gp_sessions WHERE app_id=$1 AND player_id=$2',[appId,playerId])).rows;
  if(accepted.length>1)fail(409,'PLAYER_IDENTITY_CONFLICT');
  const mapped=(await db.query('SELECT external_user_id FROM gp_player_app_ids WHERE app_id=$1 AND player_id=$2',[appId,playerId])).rows[0];
- if(mapped){if(accepted.length&&mapped.external_user_id!==accepted[0].external_user_id)fail(409,'PLAYER_IDENTITY_CONFLICT');return mapped.external_user_id;}
+ if(mapped){if(accepted.length&&mapped.external_user_id!==accepted[0].external_user_id)fail(409,'PLAYER_IDENTITY_CONFLICT');await ensurePlatformWalletAccount(db,appId,playerId,mapped.external_user_id);return mapped.external_user_id;}
  if(!accepted.length){
   const app=(await db.query('SELECT * FROM gp_apps WHERE id=$1 FOR SHARE',[appId])).rows[0];
   if(!app)fail(404,'NOT_FOUND');
@@ -76,5 +78,6 @@ export async function appPlayerId(db,appId,playerId){
  await db.query('INSERT INTO gp_player_app_ids(app_id,player_id,external_user_id) VALUES($1,$2,$3) ON CONFLICT(app_id,player_id) DO NOTHING',[appId,playerId,accepted[0]?.external_user_id||id('player')]);
  const result=(await db.query('SELECT external_user_id FROM gp_player_app_ids WHERE app_id=$1 AND player_id=$2',[appId,playerId])).rows[0].external_user_id;
  if(accepted.length&&result!==accepted[0].external_user_id)fail(409,'PLAYER_IDENTITY_CONFLICT');
+ await ensurePlatformWalletAccount(db,appId,playerId,result);
  return result;
 }

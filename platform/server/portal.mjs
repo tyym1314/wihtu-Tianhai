@@ -71,7 +71,7 @@ export async function routePortal(req,res,path,body){
  identity(user);if(req.method!=='GET')checkOrigin(req);
  if(path==='/api/partner/logout'&&req.method==='POST'){await pool.query('DELETE FROM gp_partner_sessions WHERE token_hash=$1',[hash(cookieToken(req))]);setCookie(res,'',0);send(res,200,{ok:true});return true;}
  if(path==='/api/partner/apps'&&req.method==='GET'){const apps=(await pool.query("SELECT * FROM gp_apps WHERE partner_id=$1 ORDER BY created_at",[user.partner_id])).rows;send(res,200,{apps:apps.map(publicApp)});return true;}
- if(path==='/api/partner/apps'&&req.method==='POST'){exact(body,['name']);const created=await createApp(body.name,{partnerId:user.partner_id,actor:user.id});send(res,201,{app:publicApp(created.app),credentials:created.credentials});return true;}
+ if(path==='/api/partner/apps'&&req.method==='POST'){exact(body,['name','wallet_provider']);const created=await createApp(body.name,{partnerId:user.partner_id,actor:user.id,walletProvider:body.wallet_provider});send(res,201,{app:publicApp(created.app),credentials:created.credentials});return true;}
  const match=path.match(/^\/api\/partner\/apps\/([A-Za-z0-9_-]+)(\/launch)?$/);
  if(match){
   const app=await requirePartnerApp(user,match[1]);

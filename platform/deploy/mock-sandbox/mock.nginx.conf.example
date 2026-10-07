@@ -6,7 +6,7 @@ server {
     ssl_certificate /opt/oasis/acme/config/live/ANDROID_MOCK/fullchain.pem;
     ssl_certificate_key /opt/oasis/acme/config/live/ANDROID_MOCK/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
-    root /opt/oasis/current/platform/dist;
+    root /opt/oasis/android-mock-current/platform/dist;
     server_tokens off;
     client_max_body_size 128k;
     add_header X-Content-Type-Options nosniff always;

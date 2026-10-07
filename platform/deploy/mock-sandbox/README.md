@@ -21,12 +21,53 @@ The two example systemd units run the preflight **before every start**. Do not s
 ## Staging setup
 
 1. Allocate a new HTTPS hostname and certificate. Install `mock.nginx.conf.example` only after replacing its hostname and certificate paths and checking that every upstream points to the mock ports. Do not edit the existing live vhost. The root must serve the same verified `platform/dist` build as the API code version.
-2. Create a fresh PostgreSQL database and dedicated login with permissions only on that database. Do not copy live tables or data. Keep the database URL in `/opt/oasis/private/android-mock/runtime.env`, based on `mock.env.example`, mode `0600`.
-3. Create `/opt/oasis/private/android-mock/state` owned by `oasis-mock`, mode `0700`. Generate **new**, independently random `master.key` and `hosted-demo-guest.key` files, each exactly 32 bytes and mode `0600`. Never copy either key from the live state directory.
-4. Run `node deploy/mock-sandbox/preflight.mjs --mock-env /opt/oasis/private/android-mock/runtime.env --live-env /opt/oasis/private/runtime.env` from `platform/` as an operator able to read both files. Only `MOCK_SANDBOX_PREFLIGHT_OK` permits startup. The check prints no database password or key material.
+2. Create a fresh PostgreSQL database and dedicated login with permissions only on that database. Do not copy live tables or data. Keep the database URL in `/opt/oasis/android-mock-private/runtime.env`, based on `mock.env.example`, mode `0600`.
+3. Create `/opt/oasis/android-mock-private/state` owned by `oasis-mock`, mode `0700`. Generate **new**, independently random `master.key` and `hosted-demo-guest.key` files, each exactly 32 bytes and mode `0600`. Never copy either key from the live state directory.
+4. Run `node deploy/mock-sandbox/preflight.mjs --mock-env /opt/oasis/android-mock-private/runtime.env --live-env /opt/oasis/private/runtime.env` from `platform/` as an operator able to read both files. Only `MOCK_SANDBOX_PREFLIGHT_OK` permits startup. The check prints no database password or key material.
 5. Install the two example systemd units under the names `oasis-android-mock-api.service` and `oasis-android-mock-demo.service`. The root-only `ExecStartPre` reads the live runtime, and the long-running `oasis-mock` processes can write only their mock private directory. Validate the Nginx config before reloading it.
 6. Independently verify HTTPS certificate, `/health`, `/demo/native/<id>` for all 13 IDs, guest cookie isolation, game action/settlement, resume, and response headers. Then build an APK bound to this exact mock HTTPS origin and run the entire physical Android acceptance matrix. An APK still bound to the live public demo is an interim artifact, not the isolated mock deliverable.
 
 The mock stack must not share a database even when the live instance is itself named “sandbox.” The word “sandbox” in `OASIS_ENVIRONMENT=sandbox` controls test-credit behavior, not deployment isolation. Production admission remains disabled (`OASIS_PRODUCTION_ADMISSION_ENABLED=0`), and the local reference wallet is mandatory (`OASIS_START_WALLET=1`).
 
 The files in this directory are templates and checks; **no mock service, DNS, TLS certificate, or APK was deployed by adding them**. Copy only sanitized templates into review. The actual runtime files, keys, and database credentials stay outside Git and the release tree.
+
+## Same-host installer
+
+`install.py` implements the above contract for the currently authorized host, `43.98.202.236`, using the exact new origin `https://oasis-mock.43.98.202.236.sslip.io`. It does not operate over SSH or modify the existing live vhost, Unix user, data volume, release link, private directory, or wallet. A root operator runs the following commands **on that server**, after packaging this tooling in a fully verified immutable release. Replace `YYYYMMDD-NN` with that actual release directory, never `current`:
+
+```sh
+python3 /opt/oasis/releases/YYYYMMDD-NN/platform/deploy/mock-sandbox/install.py check --release /opt/oasis/releases/YYYYMMDD-NN
+python3 /opt/oasis/releases/YYYYMMDD-NN/platform/deploy/mock-sandbox/install.py provision --release /opt/oasis/releases/YYYYMMDD-NN
+python3 /opt/oasis/android-mock-current/platform/deploy/mock-sandbox/install.py acme
+python3 /opt/oasis/android-mock-current/platform/deploy/mock-sandbox/install.py certificate
+python3 /opt/oasis/android-mock-current/platform/deploy/mock-sandbox/install.py start
+python3 /opt/oasis/android-mock-current/platform/deploy/mock-sandbox/install.py status
+```
+
+`check` is read-only. It verifies every file in the release manifest, local dependencies, DNS, free ports, the existing local PostgreSQL image, Nginx configurations and includes, command availability, and absence of unrelated resources using any reserved name. It requires at least 3 GiB free disk, 3 GiB available memory and four host CPUs. These are installation reserves, not a performance guarantee. It refuses a symlink or mutable release alias. Subsequent stages are resumable for the exact same release; an existing differing file or a resource without the installation's random ownership label aborts rather than being overwritten or deleted.
+
+`provision` creates a root-owned installation marker and secrets under `/opt/oasis/android-mock-private`, plus the independently pinned `/opt/oasis/android-mock-current` link. The mock user cannot traverse or read the live private directory. It creates `oasis-android-mock-postgres` with its own empty volume `oasis-android-mock-postgres-data` and Docker `--internal` network `oasis-android-mock-internal`, using the exact image ID already present for the live PostgreSQL container without pulling a new image. Its only published database endpoint is `127.0.0.1:18983`. The runtime uses a dedicated, nonsuperuser `oasis_mock_app` role; credentials are generated on the server, kept in mode-0600 files and never echoed in process arguments or installer errors. Other databases reject connections by that role. The PostgreSQL bootstrap administrator credential is separate from the API credential. Provisioning starts only the mock database; it leaves the API and public HTTPS route inactive.
+
+The dedicated nftables `inet oasis_android_mock` table applies only to the `oasis-mock` UID: existing connections and the mock loopback ports are allowed, as is the exact private mock PostgreSQL address after Docker destination translation; all other outbound traffic from that UID is rejected. The live API, wallet and database ports and external wallets are unreachable by the mock processes. The policy does not flush or edit any existing firewall table. A new database address or a changed policy fails closed. API and demo startup each verify the immutable release pin, container ownership, database binding, network fingerprint and live-config unreadability, then run the key/database challenge preflight. Direct service starts receive the same checks; restarting the host starts the network boundary before either mock process.
+
+`acme` adds only two exact-host challenge configurations: `/etc/nginx/conf.d/oasis-android-mock-acme.conf` on the host and the same dedicated filename in the existing `proxy-nginx` container. It uses the existing host bridge listener `172.17.0.1:18884` with a new named vhost and its own `/opt/oasis/android-mock-acme-webroot`. Both Nginx configurations must pass before reload. A random HTTP challenge is fetched through the public hostname before certificate issuance. `certificate` creates only the `oasis-android-mock` certificate under the existing certbot directories. `start` publishes its independent HTTPS vhost only after isolation and local health pass, and requires public HTTPS health with certificate validation before enabling boot startup. A failed startup stops only the mock API and demo.
+
+`oasis-android-mock-certificate.timer` runs twice daily with jitter, restores only its own ACME proxy file if the proxy container was recreated, validates the route, and renews only its own certificate. Inspect restricted service logs without publishing credentials or cookies. The certbot account currently has no email contact; an operator must monitor timer failures and expiry.
+
+Limits are API 1 CPU / 2 GiB maximum (1 GiB memory-high), guest host 0.25 CPU / 512 MiB maximum, and mock PostgreSQL 0.5 CPU / 1 GiB. The API uses one engine worker and a queue of 16. Docker logs are bounded to two 10 MiB files. This same-host constrained instance is **for single-user internal Android QA**, not independent production capacity or latency acceptance; synthetic database growth still requires disk monitoring. Do not run a 100-user load test against it or use its constrained timings as commercial launch evidence.
+
+Read back the public origin, pinned release, service states, startup enablement, loopback endpoints and isolation guards with `status`. It reports `stopped` without opening a database connection when the stack is inactive. It reports `running` and `healthy: true` only when all four services and the database container are active, the isolation guard passes, the local database readiness and demo checks pass, and public HTTPS health identifies the sandbox environment. Partial starts or failed health checks report `degraded`; an isolation guard failure aborts the command. Then run the 13-game public smoke and physical Android full-game matrix against this new origin. Verify that the mock database begins empty, creates only mock identities and test-credit ledgers, can resume/settle, and that the live platform records do not change. The APK must be rebuilt with the exact new mock origin only after this validation.
+
+To take this new stack out of service without touching live traffic:
+
+```sh
+python3 /opt/oasis/android-mock-current/platform/deploy/mock-sandbox/install.py stop
+```
+
+This disables and stops only the installed mock API/demo/database, network unit and certificate timer. Disabling the network unit prevents its database dependency from restarting the stopped mock database at the next boot. The loaded nftables rules remain in place until reboot; stopping the unit never deletes or flushes them. The mock vhost then returns an upstream-unavailable response; its configs, certificate, release pin, firewall policy file, volume and keys are intentionally retained for diagnosis and resumable restart. Run `status` afterward to verify the stopped state and disabled startup. There is no automated uninstall, forced resource replacement, data deletion or migration path. To choose a different immutable release after deployment requires a separately reviewed compatibility upgrade; changing the release argument cannot silently move this mock instance with the live release.
+
+Local fixture checks (no host mutation):
+
+```sh
+python3 -m unittest discover -s platform/deploy/mock-sandbox -p 'test_install.py' -v
+```
