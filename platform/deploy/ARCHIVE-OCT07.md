@@ -99,7 +99,7 @@ The new 12-test suite and unchanged 19-test suite passed locally and on the Linu
 host; independent source review passed. Releases `20261007-01` and `20261007-02`
 were then archived individually with real extraction verification. Net reclaimed
 allocation was **276,107,264 bytes**, with both tar files permanently retained.
-`20261007-03` remains in place. Post-operation available space was 6,742,315,008
+At that point `20261007-03` remained in place. Available space was 6,742,315,008
 bytes (83.902% used); this is the pre-candidate measurement, not the next release's
 post-deployment capacity result.
 
@@ -109,3 +109,17 @@ JSON evidence files were unchanged. Local ignored evidence is in
 `review/release/oct07-{before,after01,after02}-20261008.json` and the two
 `oct07-archived-*-20261008.json` receipts. These same-host archives do not establish
 offsite recovery.
+
+After public release `20261008-05` was activated, a fresh protection/coverage
+check allowed `20261007-03` to be archived separately. Real extraction verification
+completed; its permanently retained tar is 230,352,394 bytes and net reclaimed
+allocation is **138,784,768 bytes**. All three October 7 archives together
+reclaimed **414,892,032 bytes**. The later readback had 6,490,832,896 available
+bytes (84.5024% used); this is still before the next candidate is staged.
+
+Public `20261008-05`, Mock `20261007-04`, private release/static-head hashes,
+the original 47 JSON evidence files, and both prior October 7 archives were
+unchanged. Both health checks returned 200. Evidence:
+`review/release/oct07-{before03,after03,archived-03}-20261008.json` and
+`oct07-03-pre06-check.json`. This operation does not itself prove sufficient
+space for another release or establish offsite recovery.
