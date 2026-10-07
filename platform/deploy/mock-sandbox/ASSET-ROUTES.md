@@ -90,6 +90,27 @@ files, inherited SPA errors, and unchanged API/private/unknown-path behavior.
 It never downloads dependencies or invokes Docker, SSH, a public endpoint or an
 existing Nginx service. These tests are not production deployment commands.
 
+The fixture must explicitly set **all five** temporary paths (client body,
+proxy, FastCGI, uWSGI and SCGI), plus PID, logs and lock file, inside its private
+directory. `-p` does not relocate compiled absolute paths. Even `nginx -t` and
+`nginx -T` initialize paths and can change their owner; they are not inherently
+read-only. `nginx_fixture_config` is shared by the HTTP fixture and an offline
+regression that checks every path under both root and non-root invocation.
+
+The earlier Linux run described below used a fixture that isolated only the
+client-body path. A later public07 check found five complete, correctly hashed
+WebP files whose HTTP responses were truncated: the live worker could not write
+the shared proxy temporary directory. The diagnostic `nginx -T` itself restored
+the configured worker ownership; subsequent HTTP/1.1 and HTTP/2 downloads passed
+all ten full-body hashes, and the 13-game public smoke passed. The shared-path
+initialization explains the isolation failure, although ownership before the
+diagnostic was not sampled directly. The original failing reports remain under
+`review/release/public07-nginx-temp-incident.json` and the linked evidence.
+The old 11/11 HTTP result therefore proves its route assertions, **not complete
+filesystem isolation**. Do not rerun that frozen old fixture. The corrected
+fixture has 11 passing offline tests and one explicit local HTTP skip on this
+Mac; it has not been rerun against the production server.
+
 ## Validation boundary and remaining work
 
 This Mac has no local Nginx executable. The Mac run therefore explicitly

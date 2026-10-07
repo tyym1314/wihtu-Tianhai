@@ -4,6 +4,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import socket
 import ssl
@@ -24,6 +25,47 @@ def load(name, path):
 HERE = Path(__file__).resolve().parent
 routes = load('asset_routes_under_test', HERE / 'asset_routes.py')
 fixture_module = load('asset_routes_bundle_fixture', HERE / 'test_asset_bundle.py')
+
+
+def nginx_fixture_config(root, port, locations):
+    """Keep all cycle-created paths private, including during nginx -t.
+
+    The prefix (-p) does not relocate compiled absolute temp paths. Nginx's
+    configuration check also creates/chowns those paths, so each HTTP module's
+    temp path must be explicit even when this fixture never uses that module.
+    """
+    root = Path(root).resolve(strict=True)
+    if not root.is_dir() or any(c in str(root) for c in '\n\r"\\$;{}'):
+        raise ValueError('UNSAFE_NGINX_FIXTURE_ROOT')
+
+    def path(name):
+        return '"' + str(root / name) + '"'
+
+    # Root fixtures need access to their 0700 temporary parent. This user must
+    # never receive implicit system-wide paths from the installed Nginx build.
+    caller = 'user root;\n' if os.geteuid() == 0 else ''
+    return caller + f'''pid {path('nginx.pid')};
+lock_file {path('nginx.lock')};
+error_log {path('error.log')};
+events {{}}
+http {{
+access_log {path('access.log')};
+client_body_temp_path {path('body')};
+proxy_temp_path {path('proxy')};
+fastcgi_temp_path {path('fastcgi')};
+uwsgi_temp_path {path('uwsgi')};
+scgi_temp_path {path('scgi')};
+server {{ listen 127.0.0.1:{port} ssl; server_name {routes.HOST};
+ssl_certificate {path('cert.pem')}; ssl_certificate_key {path('key.pem')};
+gzip on; gzip_min_length 1; gzip_types text/javascript text/css; charset utf-8;
+error_page 404 /index.html;
+location = /index.html {{ default_type text/html; return 200 '<html>shell</html>'; }}
+location /api/ {{ return 200 'existing API'; }}
+location /private/ {{ return 403; }}
+location / {{ return 404; }}
+{locations}
+}} }}
+'''
 
 
 class RoutesTests(unittest.TestCase):
@@ -169,6 +211,31 @@ class RoutesTests(unittest.TestCase):
             with patch('sys.stderr', io.StringIO()), self.assertRaises(SystemExit):
                 routes.main([command])
 
+    def test_actual_nginx_fixture_config_confines_all_cycle_created_paths(self):
+        self.generate()
+        store = self.root / 'store'
+        locations = (self.output / 'locations.conf').read_text().replace(routes.STORE, str(store))
+        # Assert the emitted configuration, independently of the helper's path
+        # construction, so deleting one directive catches a compiled default.
+        required = {'client_body_temp_path', 'proxy_temp_path', 'fastcgi_temp_path',
+                    'uwsgi_temp_path', 'scgi_temp_path', 'pid', 'lock_file',
+                    'error_log', 'access_log'}
+        for uid in (0, 1000):
+            with self.subTest(uid=uid), patch('os.geteuid', return_value=uid):
+                config = nginx_fixture_config(self.root, 45678, locations)
+                for directive in required:
+                    matches = re.findall(r'^\s*' + directive + r'\s+([^;]+);', config, re.MULTILINE)
+                    self.assertEqual(len(matches), 1, directive)
+                    self.assertRegex(matches[0], r'^"[^"]+"$')
+                    value = Path(matches[0][1:-1])
+                    self.assertTrue(value.is_absolute(), directive)
+                    self.assertEqual(value.parent, self.root.resolve(), directive)
+                self.assertEqual('user root;' in config, uid == 0)
+                self.assertNotRegex(config, r'(?m)^\s*include\s')
+                self.assertNotIn('/var/lib/nginx/', config)
+                self.assertNotIn('/var/log/nginx/', config)
+                self.assertNotIn('/run/nginx', config)
+
     @unittest.skipUnless(shutil.which('nginx') and shutil.which('openssl'),
                          'HTTP NOT VERIFIED: local nginx and openssl executables are required; no download/install fallback')
     def test_real_nginx_https_raw_paths_cache_range_head_and_isolation(self):
@@ -188,24 +255,7 @@ class RoutesTests(unittest.TestCase):
         # Only the immutable store path is relocated into this owned local fixture.
         locations = (self.output / 'locations.conf').read_text().replace(routes.STORE, str(store))
         config = self.root / 'nginx.conf'
-        # A root-invoked Linux fixture must not silently drop to nobody and lose
-        # access to its private temporary parent. This never edits a service.
-        caller = 'user root;\n' if os.geteuid() == 0 else ''
-        config.write_text(caller + f'''pid {self.root}/nginx.pid;
-error_log {self.root}/error.log;
-events {{}}
-http {{ access_log off; client_body_temp_path {self.root}/body;
-server {{ listen 127.0.0.1:{port} ssl; server_name {routes.HOST};
-ssl_certificate {cert}; ssl_certificate_key {key};
-gzip on; gzip_min_length 1; gzip_types text/javascript text/css; charset utf-8;
-error_page 404 /index.html;
-location = /index.html {{ default_type text/html; return 200 '<html>shell</html>'; }}
-location /api/ {{ return 200 'existing API'; }}
-location /private/ {{ return 403; }}
-location / {{ return 404; }}
-{locations}
-}} }}
-''')
+        config.write_text(nginx_fixture_config(self.root, port, locations))
         cmd = [shutil.which('nginx'), '-p', str(self.root), '-c', str(config)]
         checked = subprocess.run(cmd + ['-t'], capture_output=True, text=True)
         self.assertEqual(checked.returncode, 0, checked.stderr)
