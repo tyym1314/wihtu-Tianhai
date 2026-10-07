@@ -21,6 +21,7 @@ import {routePlayer} from './player-routes.mjs';
 import {ApiRateLimits} from './rate-limit.mjs';
 import {activityTimeZone,migrateOverviewActivity,overviewActivity} from './overview-activity.mjs';
 import {clientAddress,adminSessionCookie} from './proxy-context.mjs';
+import {beginRoomReadTiming} from './request-timing.mjs';
 const PORT=Number(process.env.OASIS_API_PORT||8797),WALLET_PORT=Number(process.env.OASIS_WALLET_PORT||8798);
 const limiter=new ApiRateLimits();
 function rate(req,key,limit){limiter.ip(clientAddress(req),key,limit);}
@@ -67,7 +68,7 @@ async function adminRoutes(req,res,path,b){
   if(path==='/api/admin/profiles'&&req.method==='GET')return send(res,200,{profiles:['thunder','tiger'].flatMap(g=>['98','99'].map(p=>getProfile(g,p)))});
   fail(404,'NOT_FOUND');
 }
-export function createPlatformServer(){return createServer(async(req,res)=>{try{
+export function createPlatformServer(){return createServer(async(req,res)=>{beginRoomReadTiming(req,res);try{
   const path=req.url||'/';if(path.includes('?')&&path.startsWith('/v1/'))fail(400,'INVALID_TARGET');
   if(path==='/health/ready'&&req.method==='GET'){await pool.query('SELECT 1');return send(res,200,{status:'ok',environment:runtime.environment});}
   if(path==='/health'&&req.method==='GET')return send(res,200,{status:'ok',environment:runtime.environment});
@@ -99,7 +100,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{try{
     let balance=null,balance_error=null;try{balance=await walletBalance(app,s.external_user_id);}catch(e){balance_error='BALANCE_UNAVAILABLE';}
     return send(res,200,{session_id:s.id,external_user_id:s.external_user_id,game_id:s.game_id,scope:scope(app),balance,balance_error,competitive_fee_bps:app.competitive_fee_bps,active_room_id:active?.game_id===s.game_id?active.id:null,other_active_game:active&&active.game_id!==s.game_id?active.game_id:null});
   }
-  if(path.startsWith('/api/pvp/')){if(req.method==='POST')checkOrigin(req);const session=await authenticated(req,()=>playSession(req));limiter.player(session,'pvp',req.method,path);const r=await routePvp(session,req.method,path,body);if(!r)fail(404,'NOT_FOUND');return send(res,r.status,req.method==='GET'&&r.status===200?compactRoomSnapshot(r.body,req.headers['x-oasis-known-actions']):r.body);}
+  if(path.startsWith('/api/pvp/')){if(req.method==='POST')checkOrigin(req);const session=await authenticated(req,()=>playSession(req));limiter.player(session,'pvp',req.method,path);const r=await routePvp(session,req.method,path,body);if(!r)fail(404,'NOT_FOUND');return send(res,r.status,req.method==='GET'&&r.status===200?compactRoomSnapshot(r.body,req.headers['x-oasis-known-actions'],{runKey:req.headers['x-oasis-known-run-game'],session}):r.body);}
   const play=path.match(/^\/api\/play\/(thunder|tiger)\/(session|spin|ack|history|config)$/);
   if(play){const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability',req.method,path);if(req.method==='POST')checkOrigin(req);if(s.game_id!==play[1])fail(403,'SCOPE_FORBIDDEN');const route=play[2];
     if(route==='session'&&req.method==='GET'){

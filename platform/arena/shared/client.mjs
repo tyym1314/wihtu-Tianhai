@@ -11,18 +11,21 @@ export async function api(path,body,{signal}={}){
  // A new token is not usable by the old UI until its identity is verified.
  if(launchPending&&path!=='/v1/launch/exchange'&&path!=='/api/arena/session'){const e=new Error('The session is changing. Retry after the current room is restored.');e.code='SESSION_CHANGED';throw e;}
  const ticket=snapshotTransfer.begin(path,body===undefined);
- const send=known=>fetch(path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(accessToken?{Authorization:`Bearer ${accessToken}`} :{}),...(known?{'X-Oasis-Known-Actions':known}:{})},body:body===undefined?undefined:JSON.stringify(body),credentials:'same-origin',signal:signal||AbortSignal.timeout(12000)});
+ const send=transfer=>fetch(path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(accessToken?{Authorization:`Bearer ${accessToken}`} :{}),...(transfer.entry?{'X-Oasis-Known-Actions':transfer.entry.key}:{}),...(transfer.runEnabled?{'X-Oasis-Known-Run-Game':transfer.runEntry?.key||'full'}:{})},body:body===undefined?undefined:JSON.stringify(body),credentials:'same-origin',signal:signal||AbortSignal.timeout(12000)});
  async function read(response){
   let data;try{data=await response.json();}catch{throw new Error('Connection interrupted. Please reconnect to recover your room.');}
   snapshotTransfer.assertCurrent(ticket);
   if(!response.ok){const error=new Error(data.error?.message||data.message||`Request failed (${response.status})`);error.code=data.error?.code||data.code;error.status=response.status;const retry=response.headers.get('retry-after');if(retry){const seconds=Number(retry);error.retryAfterMs=Number.isFinite(seconds)?Math.max(0,seconds*1000):Math.max(0,Date.parse(retry)-Date.now())||0;}if(response.status===401&&path!=='/v1/launch/exchange')hostBridge?.requestReauth();throw error;}
   return data;
  }
- const data=await read(await send(ticket.entry?.key));
- try{return snapshotTransfer.restore(ticket,data);}catch(error){
+ const data=await read(await send(ticket));
+ const restore=(current,value)=>snapshotTransfer.restoreRun(current,snapshotTransfer.restore(current,value));
+ try{return await restore(ticket,data);}catch(error){
   // Safe GET-only recovery, without a retained-action hint. Never replay POSTs.
   if(error.code!=='SNAPSHOT_REFRESH_REQUIRED'||body!==undefined)throw error;
-  return snapshotTransfer.restore(snapshotTransfer.begin(path,true),await read(await send()));
+  snapshotTransfer.assertCurrent(ticket);
+  const full=snapshotTransfer.begin(path,true,{full:true});
+  return restore(full,await read(await send(full)));
  }
 }
 export async function waitForLaunch(game,onStatus){

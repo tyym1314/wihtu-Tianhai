@@ -2,6 +2,7 @@ import {createHash,createHmac,randomBytes,timingSafeEqual,createCipheriv,createD
 import {mkdirSync,readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {parseTree} from 'jsonc-parser';
+import {finishRoomReadTiming} from './request-timing.mjs';
 export const localDir=(process.env.OASIS_LOCAL_DIR||fileURLToPath(new URL('../.local/',import.meta.url))).replace(/\/?$/,'/');
 mkdirSync(localDir,{recursive:true,mode:0o700});
 const masterPath=localDir+'master.key';
@@ -38,4 +39,4 @@ export async function readBody(req) {
   function walk(n){if(n?.type==='object'){const seen=new Set();for(const p of n.children||[]){const key=p.children[0].value;if(seen.has(key))fail(400,'DUPLICATE_JSON_KEY');seen.add(key);walk(p.children[1]);}}else for(const child of n?.children||[])walk(child);}
   if(errors.length||tree?.type!=='object')fail(400,'INVALID_REQUEST');walk(tree);return {raw,body:JSON.parse(raw)};
 }
-export function send(res,status,value){res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff'});res.end(JSON.stringify(value));}
+export function send(res,status,value){const body=JSON.stringify(value);finishRoomReadTiming(res);res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff'});res.end(body);}
