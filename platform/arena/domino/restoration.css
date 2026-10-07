@@ -14,3 +14,14 @@
 .do-hand>button{height:46px;touch-action:pan-x pan-y}.do-hand{min-height:85px;scroll-padding-inline:10px;-webkit-overflow-scrolling:touch}
 .do-actions{height:48px}.do-actions>button{min-height:48px;touch-action:manipulation}
 .do-header button,.do-help-close{min-width:44px;min-height:44px}.do-footer{min-height:44px}.do-footer button{min-height:44px;padding-inline:8px}
+
+/* Keep the full hand, actions and footer inside shorter phone viewports. */
+@media(max-height:865px){
+  .do-scene{padding-top:8px}
+  .do-prize{margin-top:3px}
+  .do-rivals{height:99px}
+  .do-felt{height:clamp(240px,calc(100svh - 558px),282px)}
+  .do-player-dock{height:81px}
+  .do-hand{padding-top:13px}
+  .do-actions{margin-top:10px}
+}

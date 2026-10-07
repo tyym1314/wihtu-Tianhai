@@ -163,7 +163,7 @@ async function cleanup(page,state){
  const result={attempted:Boolean(state.token),passed:!state.practiceRequested&&!state.spins.length,scope:'Only this isolated guest and its free practice rooms / pending demo result acknowledgements'};
  if(!state.token)return result;
  const api=async(path,body)=>{
-  const response=await page.request.fetch(origin+path,{method:body===undefined?'GET':'POST',headers:{authorization:'Bearer '+state.token,...(body===undefined?{}:{'content-type':'application/json'})},...(body===undefined?{}:{data:body}),timeout:12000,failOnStatusCode:false});
+  const response=await page.request.fetch(origin+path,{method:body===undefined?'GET':'POST',headers:{authorization:'Bearer '+state.token,...(body===undefined?{}:{origin,'content-type':'application/json'})},...(body===undefined?{}:{data:body}),timeout:12000,failOnStatusCode:false});
   if(!response.ok())throw new Error(`Cleanup ${response.status()} at ${path.replace(/\/rooms\/[^/]+/,'/rooms/[private-id]')}`);
   return response.json();
  };
