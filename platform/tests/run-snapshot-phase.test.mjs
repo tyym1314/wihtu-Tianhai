@@ -6,6 +6,45 @@ const base=()=>engine.view(engine.createState('02'.repeat(32),10000,{players:[{k
 const atTick=(tick,extra={})=>{const game={...base(),snapshotTick:tick};game.players=game.players.map(p=>({...p,distance:tick*40/300,...extra}));return game;};
 const near=(a,b)=>assert(Math.abs(a-b)<1e-8,`${a} != ${b}`);
 
+test('a newer snapshot cannot be evaluated before its receipt by an older RAF timestamp',()=>{
+ // Android public06: the frame timestamp was 8.8 ms earlier than the new
+ // snapshot callback, after the preceding snapshot reached its 650 ms cap.
+ const clock=createRunSnapshotClock(),old=atTick(2647,{distance:314.26666666666665});
+ clock.receive(old,47071.9);
+ const before=projectedPose(old.players[0],old,clock.elapsed(47775.5));
+ const next=atTick(2677,{distance:318.26666666666665});
+ clock.receive(next,47801);
+ const atReceipt=projectedPose(next.players[0],next,clock.elapsed(47801));
+ const staleFrame=projectedPose(next.players[0],next,clock.elapsed(47792.2));
+ near(before.tick,2686);near(atReceipt.tick,2686);
+ assert.deepEqual(staleFrame,atReceipt);
+ near(staleFrame.distance,before.distance);
+ assert(projectedPose(next.players[0],next,clock.elapsed(47808.9)).distance>staleFrame.distance);
+});
+test('old frame timestamps and duplicate receipts do not extend a carried projection budget',()=>{
+ const clock=createRunSnapshotClock(),old=atTick(0),next=atTick(30);
+ clock.receive(old,0);clock.receive(next,750);
+ near(clock.elapsed(741.2),150);
+ clock.receive(next,900);
+ near(clock.elapsed(891.2),300);
+ const atLimit=projectedPose(next.players[0],next,650);
+ assert.deepEqual(projectedPose(next.players[0],next,clock.elapsed(1250)),atLimit);
+ clock.receive(next,2000);
+ assert.deepEqual(projectedPose(next.players[0],next,clock.elapsed(1991.2)),atLimit);
+ assert.equal(clock.receive(atTick(29),2100),false);
+ assert.deepEqual(projectedPose(next.players[0],next,clock.elapsed(20000)),atLimit);
+});
+test('old RAF timestamps do not defer authoritative fall or finish corrections',()=>{
+ for(const correction of [{distance:49,speed:0,fallStartTick:115,fallUntilTick:205},
+                          {distance:480,speed:0,finishTick:115}]){
+  const clock=createRunSnapshotClock(),old=atTick(100,{distance:50});clock.receive(old,0);
+  const next=atTick(115,correction);clock.receive(next,400);
+  const result=projectedPose(next.players[0],next,clock.elapsed(391.2));
+  assert.deepEqual(result,projectedPose(next.players[0],next,clock.elapsed(400)));
+  near(result.distance,correction.distance);
+ }
+});
+
 test('150 ms reads / 250 ms publications / varying RTT do not rewind unobstructed motion',()=>{
  const delays=[18,95,27,74,12,110,36,89,7,66],events=[];
  for(let sent=0,index=0;sent<=18000;sent+=150,index++){const tick=Math.floor(Math.floor(sent/250)*250*.06);events.push({at:sent+delays[index%delays.length],game:atTick(tick)});}

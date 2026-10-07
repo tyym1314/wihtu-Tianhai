@@ -15,6 +15,7 @@ import {PRACTICE_RULE_VERSION as RUN_PRACTICE_RULE_VERSION,RUN_SCENE_READY_POLIC
 import {runRequiresSceneReady} from '../../arena/run/start-policy.mjs';
 import {newTowerPracticeStartOptions,roomStartDelayMs} from './tower-start-policy.mjs';
 import {makeRunActionReceipt} from '../../shared/run-action-receipt.mjs';
+import {walletRetryNotDue} from './retry-time.mjs';
 const terminal=new Set(['settled','voided','cancelled']);
 const RUN_SCENE_READY_PRESENCE_MS=2000;
 function runSceneReadyFresh(p,now,heartbeatKey){
@@ -79,7 +80,7 @@ async function command(app,r,path,body){
  const op=(await pool.query('SELECT * FROM pvp_operations WHERE id=$1',[body.request_id])).rows[0];if(op.app_id!==app.id||op.room_id!==r.id||op.path!==path)fail(409,'IDEMPOTENCY_CONFLICT');
  if(op.state==='SUCCEEDED')return op.response;
  if(op.state==='REJECTED'){const e=new Error(op.response.rejection.code);e.code=op.response.rejection.code;e.walletRejected=true;throw e;}
- if(op.attempts>0&&Date.parse(op.next_attempt_at)>Date.now())fail(503,'WALLET_PENDING');
+ if(op.attempts>0&&walletRetryNotDue(op.next_attempt_at))fail(503,'WALLET_PENDING');
  let response;try{
   if(op.attempts>0){try{response=await walletRequest(app,'GET','/wallet/v1/operations/'+op.id);}catch(e){if(e.status!==404)throw e;}}
   if(!response||response.state==='PENDING')response=await walletRequest(app,'POST',op.path,op.raw_body,op.id);

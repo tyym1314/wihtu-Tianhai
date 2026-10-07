@@ -274,9 +274,76 @@ test('Golf paid two-player shot is authoritative and forfeit settles with the sa
  const f=await fixture('golf'),r=await setup(f);const shot=await call(f.sessions[0],'POST',`/api/pvp/rooms/${r.id}/action`,{seq:1,action:{type:'shot',angle:0,power:.5}});assert.equal(shot.body.me_last_seq,1);assert.ok(shot.body.game.me.trajectory.length>1);await assert.rejects(call(f.sessions[0],'POST',`/api/pvp/rooms/${r.id}/action`,{seq:2,action:{type:'shot',angle:0,power:999,score:0}}),e=>['BUSY','INVALID_ACTION'].includes(e.code));await call(f.sessions[1],'POST',`/api/pvp/rooms/${r.id}/leave`);await tickPvp({roomIds:[r.id]});const db=await read(r.id);assert.equal(db.status,'settled');assert.equal(db.result.payouts.find(p=>p.external_user_id==='player_0').payout_minor,'19000');conservation(await snapshot(f));
 });
 test('dropped successful capture and settlement HTTP responses recover by original durable operation IDs',async()=>{
- const f=await fixture();let drops=new Set(['capture','settle']),forwarded=[];
- const proxy=http.createServer(async(req,res)=>{let raw='';for await(const chunk of req)raw+=chunk;const upstream=await fetch(origin+req.url,{method:req.method,headers:req.headers,body:req.method==='GET'?undefined:raw});const data=await upstream.text();forwarded.push({method:req.method,path:req.url});const kind=req.url.split('/').pop();if(req.method==='POST'&&drops.has(kind)&&JSON.parse(data).state==='SUCCEEDED'){drops.delete(kind);req.socket.destroy();return;}res.writeHead(upstream.status,{'content-type':'application/json'});res.end(data);});await new Promise(r=>proxy.listen(0,'127.0.0.1',r));
- try{process.env.OASIS_WALLET_ALLOWED_ORIGINS+=',http://127.0.0.1:'+proxy.address().port;await pool.query('UPDATE gp_apps SET wallet_url=$2 WHERE id=$1',[f.app.id,'http://127.0.0.1:'+proxy.address().port]);let r=await setup(f);assert.equal(r.status,'funding');await pool.query("UPDATE pvp_operations SET next_attempt_at=now() WHERE room_id=$1",[r.id]);await tickPvp({roomIds:[r.id]});assert.equal((await read(r.id)).status,'active');await call(f.sessions[1],'POST',`/api/pvp/rooms/${r.id}/leave`);await tickPvp({roomIds:[r.id]});let db=await read(r.id);assert.equal(db.status,'settling');const fixed=db.result_hash;const s=await snapshot(f);assert.equal(s.fee_minor,'1000');await pool.query("UPDATE pvp_operations SET next_attempt_at=now() WHERE room_id=$1",[r.id]);const restored=await import('../server/pvp/index.mjs?walletrestart='+uid('restart'));await restored.migratePvp(pool);await restored.tickPvp({roomIds:[r.id]});db=await read(r.id);assert.equal(db.status,'settled');assert.equal(db.result_hash,fixed);assert.ok(forwarded.some(x=>x.method==='GET'&&x.path.endsWith('capture_'+r.id)));assert.ok(forwarded.some(x=>x.method==='GET'&&x.path.endsWith('settle_'+r.id)));assert.equal((await snapshot(f)).fee_minor,'1000');conservation(await snapshot(f));}finally{await new Promise(r=>proxy.close(r));}
+ const f=await fixture(),committed=new Map(),released=new Set(),forwarded=[],blocked=[],proxyErrors=[];
+ const proxy=http.createServer(async(req,res)=>{
+  try{
+   let raw='';for await(const chunk of req)raw+=chunk;
+   const postBody=req.method==='POST'?JSON.parse(raw):null;
+   // Keep committed outcomes unknown until this fixture explicitly restores
+   // that operation's connection, even when a retry is already eligible.
+   const pending=[...committed].find(([kind,op])=>!released.has(kind)&&(req.method==='GET'?req.url===`/wallet/v1/operations/${op.operation_id}`:postBody?.request_id===op.operation_id));
+   if(pending){blocked.push({method:req.method,path:req.url});req.socket.destroy();return;}
+   const upstream=await fetch(origin+req.url,{method:req.method,headers:req.headers,body:req.method==='GET'?undefined:raw});
+   const data=await upstream.text(),operation=JSON.parse(data);
+   forwarded.push({method:req.method,path:req.url,operation_id:operation.operation_id,state:operation.state});
+   const kind=req.url.split('/').pop();
+   if(req.method==='POST'&&['capture','settle'].includes(kind)&&!committed.has(kind)&&operation.state==='SUCCEEDED'){
+    committed.set(kind,operation);req.socket.destroy();return;
+   }
+   res.writeHead(upstream.status,{'content-type':'application/json'});res.end(data);
+  }catch(error){proxyErrors.push(error);req.socket.destroy();}
+ });
+ await new Promise(r=>proxy.listen(0,'127.0.0.1',r));
+ try{
+  process.env.OASIS_WALLET_ALLOWED_ORIGINS+=',http://127.0.0.1:'+proxy.address().port;
+  await pool.query('UPDATE gp_apps SET wallet_url=$2 WHERE id=$1',[f.app.id,'http://127.0.0.1:'+proxy.address().port]);
+  const r=await setup(f),captureId=`capture_${r.id}`,settleId=`settle_${r.id}`;
+  const makeRetryDue=id=>pool.query("UPDATE pvp_operations SET next_attempt_at=now()-interval '1 second' WHERE id=$1",[id]);
+  const operation=id=>pool.query('SELECT * FROM pvp_operations WHERE id=$1',[id]).then(result=>result.rows[0]);
+  assert.equal(r.status,'funding');
+  assert.equal(committed.get('capture')?.operation_id,captureId);
+  const unknownCapture=await operation(captureId);
+  assert.equal(unknownCapture.state,'PENDING');assert.equal(unknownCapture.response,null);
+  assert.ok(unknownCapture.next_attempt_at instanceof Date,'integration uses the real pg timestamptz representation');
+  const captured=await snapshot(f);
+  assert.deepEqual(captured.operations.filter(op=>op.operation_id===captureId),[{operation_id:captureId,state:'SUCCEEDED'}]);
+  await makeRetryDue(captureId);await tickPvp({roomIds:[r.id]});
+  assert.equal((await read(r.id)).status,'funding');assert.equal((await operation(captureId)).state,'PENDING');
+  assert.ok(blocked.some(x=>x.method==='GET'&&x.path===`/wallet/v1/operations/${captureId}`));
+  assert.deepEqual(await snapshot(f),captured,'failed recovery cannot recapture money');
+  released.add('capture');await makeRetryDue(captureId);await tickPvp({roomIds:[r.id]});
+  assert.equal((await read(r.id)).status,'active');assert.equal((await operation(captureId)).state,'SUCCEEDED');
+  assert.deepEqual(await snapshot(f),captured,'GET recovery adds no wallet operation or ledger entry');
+
+  await call(f.sessions[1],'POST',`/api/pvp/rooms/${r.id}/leave`);
+  let db=await read(r.id);assert.equal(db.status,'settling');
+  const fixed=db.result_hash;assert.match(fixed,/^[a-f0-9]{64}$/);
+  assert.equal(committed.get('settle')?.operation_id,settleId);
+  assert.equal(committed.get('settle').receipt.resource.result_hash,fixed);
+  assert.equal((await operation(settleId)).state,'PENDING');
+  const paid=await snapshot(f);assert.equal(paid.fee_minor,'1000');
+  assert.deepEqual(paid.operations.filter(op=>op.operation_id===settleId),[{operation_id:settleId,state:'SUCCEEDED'}]);
+  assert.deepEqual(paid.users.map(user=>user.available),['109000','90000','100000','100000']);
+  await makeRetryDue(settleId);await tickPvp({roomIds:[r.id]});
+  db=await read(r.id);assert.equal(db.status,'settling');assert.equal(db.result_hash,fixed);
+  assert.equal((await operation(settleId)).state,'PENDING');
+  assert.ok(blocked.some(x=>x.method==='GET'&&x.path===`/wallet/v1/operations/${settleId}`));
+  assert.deepEqual(await snapshot(f),paid,'a lost settlement receipt cannot move money again');
+
+  const restored=await import('../server/pvp/index.mjs?walletrestart='+uid('restart'));
+  await restored.migratePvp(pool);
+  released.add('settle');await makeRetryDue(settleId);await restored.tickPvp({roomIds:[r.id]});
+  db=await read(r.id);assert.equal(db.status,'settled');assert.equal(db.result_hash,fixed);
+  assert.equal((await operation(settleId)).state,'SUCCEEDED');
+  for(const [kind,id]of [['capture',captureId],['settle',settleId]]){
+   assert.equal(forwarded.filter(x=>x.method==='POST'&&x.path.endsWith('/'+kind)).length,1,`${kind} is committed exactly once`);
+   assert.ok(forwarded.some(x=>x.method==='GET'&&x.path===`/wallet/v1/operations/${id}`&&x.operation_id===id&&x.state==='SUCCEEDED'));
+  }
+  assert.deepEqual(await snapshot(f),paid,'restored platform reads the original durable receipt without another payout');
+  await restored.tickPvp({roomIds:[r.id]});
+  assert.equal((await read(r.id)).result_hash,fixed);assert.deepEqual(await snapshot(f),paid);
+  assert.deepEqual(proxyErrors,[]);conservation(paid);
+ }finally{await new Promise(r=>proxy.close(r));}
 });
 
 test('fresh OS processes restore the exact room, shuffled seats and board without creating a new entry',async()=>{

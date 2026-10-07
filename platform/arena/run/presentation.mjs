@@ -63,6 +63,10 @@ export function createRunSnapshotClock(){
    room=roomId;player=playerKey;active=nextActive;lastAt=at;if(changed)phase=nextPhase;else phase=Math.max(phase,nextPhase);
    return true;
   },
-  elapsed(at){return active?Math.max(0,at-received):0;},
+  // RAF's timestamp can predate a snapshot consumed earlier in this same
+  // browser frame. Never evaluate that newer state before its receive time:
+  // doing so subtracts already-carried phase and can rewind a capped runner.
+  // This only bounds the sample time; it does not renew the projection budget.
+  elapsed(at){return active?Math.max(0,Math.max(at,lastAt)-received):0;},
  };
 }

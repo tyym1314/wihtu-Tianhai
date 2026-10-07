@@ -39,7 +39,7 @@ function App(){const[room,setRoom]=useState(null),[requestState,setRequestState]
 `;
 function instrumentScene(content){
  const needle='onFrame(time);if(mine&&!readyAnnounced)';assert.equal(content.split(needle).length,2,'scene post-render observation anchor must be unique');
- return content.replace(needle,`onFrame(time);if(mine&&window.inputWebgl){const observedRoot=runners.get(me)?.root,observedAuthority=projectedPose(mine,game,time-received),probe=window.inputWebgl;
+ return content.replace(needle,`onFrame(time);if(mine&&window.inputWebgl){const observedRoot=runners.get(me)?.root,observedAuthority=projectedPose(mine,game,snapshotClock.elapsed(time)),probe=window.inputWebgl;
   if(probe.frames.length<6000)probe.frames.push({at:performance.now(),raf_at:time,snapshot_tick:game.snapshotTick,input_no:mine.inputNo,applied_input_no:mine.appliedInputNo,actual:{x:observedRoot.position.x,y:observedRoot.position.y,z:observedRoot.position.z,clip:observedRoot.userData.clip},authority:observedAuthority,camera_distance:cameraDistance,camera_z:camera.position.z,feedback_at:container.dataset.inputFeedbackAt||null,feedback_type:container.dataset.inputFeedbackType||null,feedback_state:container.dataset.inputFeedbackState||null,calls:renderer.info.render.calls,textures:renderer.info.memory.textures});else probe.droppedFrames++;
  }if(mine&&!readyAnnounced)`);
 }
