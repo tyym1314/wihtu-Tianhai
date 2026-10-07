@@ -21,6 +21,34 @@ function units(value){
 function uniqueMembers(values,allowed){
  return Array.isArray(values)&&values.length<=allowed.size&&new Set(values).size===values.length&&values.every(value=>allowed.has(value));
 }
+const sameInput=(a,b)=>a!==null&&b!==null&&a.type===b.type&&a.tick===b.tick&&a.no===b.no&&a.item===b.item;
+function acceptedHistory(inputs,player,start,last){
+ if(!Array.isArray(inputs)||inputs.length>HORIZON_TICKS)return null;
+ const byTick=new Map();let nextNo=player.inputNo+1,lastTick=player.pendingInput?.tick??start,sawBasePending=false;
+ for(const input of inputs){
+  if(!exactKeys(input,['type','tick','no','item'])||!['left','right','jump','slide','item'].includes(input.type)||!integer(input.tick,start+1,last)||!integer(input.no,1,LAST_TICK+1)||!held(input.item)||(input.type==='item'?input.item===null:input.item!==null))return null;
+  if(player.pendingInput!==null&&input.no===player.pendingInput.no){
+   if(sawBasePending||byTick.size||!sameInput(input,player.pendingInput))return null;
+   sawBasePending=true;continue;
+  }
+  if(input.no!==nextNo||input.tick<=lastTick)return null;
+  byTick.set(input.tick,{...input});nextNo++;lastTick=input.tick;
+ }
+ return byTick;
+}
+// This is the admission rule at tick input.tick - 1, not the movement rule at
+// input.tick. History supplied by the caller must come from received server
+// events or the requesting player's pendingInput, never local input intents.
+function canInject(player,input){
+ const next=input.tick;
+ if(player.pendingInput!==null||player.forfeited||player.finishTick!==null||input.no!==player.inputNo+1||next-player.lastInputTick<RUN_RULES.inputRateTicks||player.fallUntilTick!==null||next<player.stunUntilTick)return false;
+ if(input.type==='left'||input.type==='right')return next>=player.changeEndTick&&integer(player.lane+(input.type==='left'?-1:1),0,2);
+ if(input.type==='jump'||input.type==='slide')return(player.jumpStartTick===null||next>=player.jumpStartTick+RUN_RULES.jumpTicks)&&next>=player.slideUntilTick;
+ return player.inventory!==null&&input.item===player.inventory&&(player.inventory!=='boost'||next>=player.boostUntilTick);
+}
+function ownedState(player,tick){
+ return Object.freeze({tick,...player,claimedItems:Object.freeze([...player.claimedItems]),resolvedObstacles:Object.freeze([...player.resolvedObstacles]),pendingInput:player.pendingInput===null?null:Object.freeze({...player.pendingInput})});
+}
 
 // Reconstruct only the requesting player's complete, versioned simulation
 // state. Public positions alone cannot tell whether an obstacle was already
@@ -88,34 +116,51 @@ function frame(player,tick,boundary=null,authoritativeFinishTick=player.finishTi
 
 /** Bounded visual projection. This object has no clock, requests, events or authority writes. */
 export function createRunSelfProjection(){
- let room=null,viewer=null,version=-1,sourceTick=-1,frames=null,profile=null;
- function clear(){room=null;viewer=null;version=-1;sourceTick=-1;frames=null;profile=null;}
+ let room=null,viewer=null,version=-1,sourceTick=-1,frames=null,states=null,profile=null;
+ function invalidate(){frames=null;states=null;return false;}
+ function clear(){room=null;viewer=null;version=-1;sourceTick=-1;frames=null;states=null;profile=null;}
  return{
   clear,
-  update(game,playerKey,{roomId=null,roomVersion=-1}={}){
-   if(typeof roomId!=='string'||!roomId||typeof playerKey!=='string'||!playerKey||!integer(roomVersion,0,Number.MAX_SAFE_INTEGER)){frames=null;return false;}
+  update(game,playerKey,{roomId=null,roomVersion=-1,acceptedInputs=[]}={}){
+   if(typeof roomId!=='string'||!roomId||typeof playerKey!=='string'||!playerKey||!integer(roomVersion,0,Number.MAX_SAFE_INTEGER))return invalidate();
    if(roomId!==room||playerKey!==viewer){clear();room=roomId;viewer=playerKey;}
-   if(game?.me!==playerKey){frames=null;return false;}
+   if(game?.me!==playerKey)return invalidate();
    if(roomVersion<=version||integer(game?.snapshotTick)&&game.snapshotTick<sourceTick)return false;
    version=roomVersion;
    const restored=restore(game,playerKey);
-   if(!restored){frames=null;return false;}
+   if(!restored)return invalidate();
    const nextProfile=[game.ruleVersion,game.courseId,game.contentVersion,game.levelVersion,game.physicsVersion].join('/');
-   if(profile!==null&&nextProfile!==profile){frames=null;return false;}
+   if(profile!==null&&nextProfile!==profile)return invalidate();
    profile=nextProfile;
    const {course,tick,endTick,player}=restored,authoritativeFinishTick=player.finishTick;
    sourceTick=tick;
-   frames=[frame(player,tick)];
    const steps=Math.min(HORIZON_TICKS,endTick-tick);
+   const history=acceptedHistory(acceptedInputs,player,tick,tick+steps);
+   if(history===null)return invalidate();
+   const nextFrames=[frame(player,tick)],nextStates=[ownedState(player,tick)];
    for(let offset=1;offset<=steps;offset++){
     const current=tick+offset,wasStunned=current-1<player.stunUntilTick,resolvedCount=player.resolvedObstacles.length;
+    const input=history.get(current);
+    if(input){
+     if(!canInject(player,input))return invalidate();
+     player.pendingInput={...input};player.inputNo=input.no;player.lastInputTick=current;
+     // act accepts tick t at authority tick t-1. Save that exact accepted
+     // state as well as the subsequent applied state for timeline comparison.
+     nextStates[offset-1]=ownedState(player,current-1);
+    }
     let boundary=null;
     stepRunnerInPlace(player,current,course,{at:game.startedAt+current*1000/RUN_RULES.hz,emit(type){if(['hit','shield_hit','fall','respawn','finish'].includes(type))boundary=type;}});
     if(boundary===null&&resolvedCount!==player.resolvedObstacles.length)boundary='collision';
     if(boundary===null&&wasStunned&&current>=player.stunUntilTick)boundary='recovery';
-    frames.push(frame(player,current,boundary,authoritativeFinishTick));
+    nextFrames.push(frame(player,current,boundary,authoritativeFinishTick));
+    nextStates.push(ownedState(player,current));
    }
+   frames=nextFrames;states=nextStates;
    return true;
+  },
+  stateAtTick(tick){
+   if(states===null||!integer(tick,sourceTick,sourceTick+states.length-1))return null;
+   return states[tick-sourceTick];
   },
   sample(elapsed){
    if(frames===null||!Number.isFinite(elapsed))return null;

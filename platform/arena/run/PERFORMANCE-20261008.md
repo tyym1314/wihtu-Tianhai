@@ -25,9 +25,32 @@ steps without advancing or mutating authority. Invalid or unsupported state
 returns no projection. Collision/respawn boundaries, the 480 m finish and the
 server deadline are explicit limits. The helper does not guess an unacknowledged
 input's acceptance tick and does not own or extend the 650 ms clock budget.
-**It is not yet connected to the renderer.** Switching the scene to this helper
-alone would not resolve publication-phase jumps and could incorrectly predict
-a collision while a new input is awaiting its response.
+
+The renderer candidate now connects this helper through `createRunTimeline()`.
+It retains and reconciles successive authority bases rather than jumping the
+display to each newly published snapshot. Exact accepted input history is
+replayed with the shared runner physics. The local character and camera use
+one selected pose per frame; other players keep the existing projection.
+Unsupported old views fall back to the old renderer. Conflicting history,
+physical divergence and background recovery remain explicit resynchronizations.
+
+The display starts with a fixed **100 ms buffer only at the first tick-zero
+start**. This is additional display latency, not an RTT estimate or a renewed
+650 ms projection allowance. A subsequently unknown boost outcome keeps the
+already confirmed movement speed. Once exact accepted history proves the
+boost, the candidate can find the same visible distance on that new trajectory,
+retreating display time by at most **100 ms once per accepted input**. It does
+not accelerate beyond the actual boost speed to catch up. This is a bounded
+adjustment to presentation time, not to server time, input success or results.
+Unsafe physical/animation boundaries and larger discrepancies cannot use that
+adjustment. Unknown inputs near a possible collision can still hold; a lost
+connection stops projection at its original limit.
+
+Client movement prediction using shared movement code and correction from
+server updates is described in Valve's
+[network protocol paper](https://developer.valvesoftware.com/w/index.php?title=Latency_Compensating_Methods_in_Client%2FServer_In-game_Protocol_Design_and_Optimization&uselang=en).
+Our choice to replay only accepted boost history and limit display-time
+adjustment is a project-specific tradeoff, not a guarantee from that reference.
 
 `readRoomResponseTiming(room)` supplies four local `performance.now()`
 observations: request start, headers observed, body parsed and restoration
@@ -39,10 +62,44 @@ browser parsing/restoration work; they do not measure server generation time,
 one-way latency or a valid RTT/2 correction. Chromium and WebKit exercised 18
 real HTTP/WebCrypto cases, including a controlled asynchronous digest wait.
 
-The candidate still needs renderer integration with accepted-input handling,
-deadline-preserving clock reconciliation, complete race regression and fresh
-public physical-device verification. Neither this contract work nor the
-browser checks constitutes a smoothness or launch-readiness pass.
+HTTP 408 and server/network failures retain the original unresolved request;
+they do not count as definite input rejection. Chromium and WebKit each passed
+24 UI shell cases, including retrying the original 408/503 request without
+replaying local feedback. These shell cases replace WebGL with a fixture.
+
+The candidate still needs fresh public physical-device verification. The initial
+timeline passed 12 complete
+course/input combinations but exposed a 150 ms mid-race boost hold; that failure
+is retained as the regression motivating the bounded adjustment above. Neither
+contract tests nor browser compatibility checks constitute a smoothness or
+launch-readiness pass. Public remains `20261008-07` until a new deployment and
+independent public readback establish otherwise.
+
+The frozen timeline `51fa0f8e08e186971d2b928f1937e278ca4038ce171c22eeeba5407b1f7b4b9f`
+has the following local evidence:
+
+- Isolated backend suite: **1,896 passed, no skips**, owned database removed.
+- Controller boundaries: 24 passed. Independent complete-race and mid-race
+  regression: 23 passed with source hashes unchanged. All six routes completed
+  both idle and assisted races; ordinary forward/backward discontinuities,
+  100 ms holds and resyncs were zero in those scenarios. Maximum display lag
+  was 240–440 ms; the startup buffer remains an explicit tradeoff.
+- Actual Chrome/WebGL/Metal, real assets and HTTP engine: **9/9 passed**,
+  387 rendered frames matched complete controller-command replay. Seven
+  jump/lane cases had local feedback in 13.9–14.9 ms. The added grounded boost
+  acceptance/rejection cases had measured ACKs of 258.5/254 ms, zero ordinary
+  hold and maximum speeds of 9.6/8 m/s. Configured delay is not measured RTT.
+- A remaining legal combination—lane change or jump followed by boost—can
+  require explicit `accepted-boost-unsafe-boundary` resync because preserving
+  distance alone would rewind lateral/vertical animation. The measured
+  correction is **0.053333 m**. This is retained as an unresolved flow defect,
+  not counted among the smooth scenarios above. Item visibility and event audio
+  also still follow the newest authority rather than the delayed visual tick.
+
+Evidence is retained under ignored `review/release/run-timeline-boost-retime-20261008-v2/`,
+`review/deployment/run-input-webgl-1791413470595-72f21f/` and
+`review/run-timeline-release-suite-20261008.tap`. These desktop/engine results
+do not replace Android, iPhone, GPU presentation or full launch acceptance.
 
 ## Historical 05 transfer evidence
 

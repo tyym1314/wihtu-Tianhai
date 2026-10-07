@@ -111,7 +111,7 @@ function Arena(){
    const inputReceipt=runAction&&ownsRoom()?readRunActionReceipt(unwrap(raw),intent.runInput):null;
    clearIntent();if(ownsRoom())setNetwork(false);return{room:r,event:r?.game?.lastEvent,...(runAction?{inputReceipt}: {})};
   }catch(e){
-   if(e.status&&e.status<500&&e.status!==429){clearIntent();if(e.code==='INVALID_SEQUENCE')try{await refreshRoom();}catch{}}
+   if(e.status&&e.status<500&&e.status!==429&&e.status!==408){clearIntent();if(e.code==='INVALID_SEQUENCE')try{await refreshRoom();}catch{}}
    if(intent.body?.action&&(GAME==='run'&&RUN_RECOVERABLE_ACTION_ERRORS.has(e.code)||IS_TOWER&&TOWER_RECOVERABLE_ACTION_ERRORS.has(e.code))){
     if(ownsRoom()){setError('');try{await refreshRoom();}catch{if(ownsRoom())setNetwork(true);}}
    }else if(ownsRoom())setError(e.code==='SESSION_CHANGED'?'会话已更新；上一项操作可能已受理，请同步房间或重试原请求核对结果。':e.message);

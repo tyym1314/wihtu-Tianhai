@@ -93,7 +93,7 @@ export default function RunGame({room,me,onAction,onSceneReady,audio,onExit,loca
   pending.current=true;lastSend.current=Date.now();setSending(true);setNotice('');setFeedback(type);scene.current?.feedback(type);audioRef.current?.play?.('click');
   const token=`${owner}:${generation}`;let inputScene=null;
   try{const result=await actionRef.current({type,observed_tick:current.snapshotTick},{onDispatch:dispatch=>{if(!ownsFeedback()||document.hidden)return;const currentScene=scene.current;if(currentScene?.beginInput?.({...dispatch,token})===true)inputScene=currentScene;}});if(ownsFeedback()){if(result?.inputReceipt){if(inputScene?.acceptInput?.({token,receipt:result.inputReceipt})!==true)inputScene?.cancelInput?.(token,'invalid-receipt');}else inputScene?.cancelInput?.(token,'missing-receipt');if(result?.room?.game)apply(result.room.game,result.room.server_now,result.room.version);}}
-  catch(e){inputScene?.cancelInput?.(token,'rejected');if(ownsFeedback()){if(e.code==='STALE_INPUT'){inputGuard.current.rejectStale();setNotice('');setClock(Date.now());}else setNotice(e.message||t.wait);}}
+  catch(e){inputScene?.cancelInput?.(token,Number.isInteger(e.status)&&e.status>=400&&e.status<500&&e.status!==408?'rejected':'unresolved');if(ownsFeedback()){if(e.code==='STALE_INPUT'){inputGuard.current.rejectStale();setNotice('');setClock(Date.now());}else setNotice(e.message||t.wait);}}
   finally{if(ownsFeedback()){pending.current=false;setSending(false);feedbackTimer.current=setTimeout(()=>{feedbackTimer.current=null;if(ownsFeedback())setFeedback('');},170);}}
  }
  const sendRef=useRef(send);sendRef.current=send;

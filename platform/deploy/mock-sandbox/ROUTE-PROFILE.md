@@ -73,8 +73,9 @@ return 405, unknown/noncanonical forms return 404, and errors cannot use the SPA
 fallback. They use `no-store`, no gzip transformation, `open_file_cache off`,
 native ETags and `if_modified_since off`. `max_ranges 0` asks Nginx to return the
 whole representation instead of supporting cross-pin byte-range assembly.
-Other native conditional-request semantics are retained; these are proposed
-configuration semantics requiring HTTP tests, not an HTTP acceptance claim.
+Other native conditional-request semantics are retained. An isolated Linux
+Nginx fixture now verifies these semantics with the actual generated overlay;
+this does not establish that production has loaded that overlay.
 The existing 88 routes retain their independently reviewed immutable contract.
 
 Only the known `android-mock-current` symlink is exempted from `disable_symlinks`
@@ -84,13 +85,14 @@ symlink exception. The overlay must remain installed after a rollback to 04.
 
 ## Validation and remaining gates
 
-Run only the local protocol tests with:
+Run the local protocol tests with:
 
 ```sh
 python3 -B platform/deploy/mock-sandbox/test_route_profile.py -v
+python3 -B platform/deploy/mock-sandbox/test_route_profile_http.py -v
 ```
 
-Tests use synthetic pins and temporary directories, including real relocated
+The pure tests use synthetic pins and temporary directories, including real relocated
 store transactions. They cover exact profiles, source/body identity, metadata
 semantics, config/material links and permissions, incomplete receipts, store
 drift and read-only checks. They do not invoke Nginx or contact a server.
@@ -99,13 +101,30 @@ An actual historical-input candidate and read-only check against the existing
 relocated 88-file store are retained in ignored
 `review/release/mock-route-profile-04-to-05-20261008-v1/`. This verifies the pinned
 real inputs and local material/store bytes, not a production installation. The
-original vhost is 1,840 bytes; the overlay is 89,491 bytes. No HTTP test was run.
+original vhost is 1,840 bytes; the overlay is 89,491 bytes.
+
+The separate HTTP suite completed **5/5 tests without skips** on Linux using
+both synthetic inputs and the authenticated historical source capsule. Each
+HTTP case made 427 loopback HTTPS requests across 04→05→04. It checked the four
+mutable routes, GET/HEAD, exact bodies/MIME/cache headers, conditional requests,
+whole-body Range responses, query/noncanonical paths and 404/405 isolation from
+the SPA fallback. All five Nginx temporary paths, logs, pid and lock paths were
+confined to the fixture; upstream ports were isolated. Both owned Nginx
+processes exited and ports closed, temporary fixture/upload directories were
+removed, and public/Mock pins plus shared Nginx directory metadata were
+unchanged. Evidence is retained in ignored
+`review/release/mock-route-profile-http-final-20261008-223131Z-3663d2a9/`.
+
+On hosts without Nginx/OpenSSL, HTTP cases explicitly skip. Historical cases
+also require `OASIS_MOCK_ROUTE_HTTP_INPUTS`, pointing to a capsule containing
+`bundle.tar` and the selected 04/05 manifest-authenticated inputs. The suite
+does not install dependencies, reload production Nginx or activate the profile.
 
 Still required: fresh full server release/static/dependency checks; the profile
 aware startup and upgrade identity adapter; an atomic activation/recovery
 transaction; validation of the enclosing Nginx configuration and worker access;
-04→05→04 HTTP tests for all 88 assets and the four aliases, including HEAD,
-conditions, downloads during pin changes, Range and negative paths; fresh Mock
+production 04→05→04 acceptance for all 88 assets and the four aliases, including
+downloads during live pin changes and worker permissions; fresh Mock
 13-game and APK acceptance. `no-store` does not invalidate an old cached schema-1
 JSON response. The reviewed historical documentation bad links and ZIP download
 wording also remain unchanged. This module does not waive any of those gates.

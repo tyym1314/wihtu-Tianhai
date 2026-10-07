@@ -187,3 +187,74 @@ test('complete legal bot and idle race snapshots on every current course restore
  }
  assert.ok(accepted>15000);assert.ok(pending>100);assert.ok(falling>1000);assert.equal(finishing,0,'equal bot finishers end the whole room together');
 });
+
+function historyModel(game,acceptedInputs,roomVersion=1){
+ const model=createRunSelfProjection();assert.equal(model.update(game,'self',{roomId:'history-room',roomVersion,acceptedInputs}),true);return model;
+}
+function assertOwnedState(actual,p,tick){
+ assert.equal(actual.tick,tick);
+ for(const field of Object.keys(actual))if(field!=='tick')assert.deepEqual(actual[field],p[field],`state tick ${tick} ${field}`);
+}
+test('two complete accepted historical inputs replay against the full engine including pre-apply pending state',()=>{
+ const s=state(),base=freeze(view(s)),history=[];
+ E.act(s,'self',{type:'jump'},s.now);history.push(clone(s.players[0].pendingInput));
+ E.tick(s,s.startedAt+100);E.act(s,'self',{type:'left'},s.now);history.push(clone(s.players[0].pendingInput));
+ const model=historyModel(base,freeze(history)),reference=state();
+ for(let tick=0;tick<=39;tick++){
+  const input=history.find(input=>input.tick===tick+1);
+  if(input)E.act(reference,'self',{type:input.type},reference.startedAt+Math.ceil(tick*1000/60));
+  assertOwnedState(model.stateAtTick(tick),reference.players[0],tick);
+  const pose=visual(reference),actual=model.sample(tick*1000/60);
+  for(const field of ['x','y','distance','scale'])near(actual[field],pose[field],`history ${tick} ${field}`);
+  if(tick<39)E.testing.step(reference);
+ }
+ assert.deepEqual(model.stateAtTick(0).pendingInput,history[0]);assert.deepEqual(model.stateAtTick(6).pendingInput,history[1]);
+ assert.equal(model.stateAtTick(7).appliedInputNo,2);assert.equal(model.stateAtTick(7).pendingInput,null);
+});
+test('exact duplicate of base pending is deduplicated while a later accepted input is replayed once',()=>{
+ const s=state();E.act(s,'self',{type:'jump'},s.now);const base=freeze(view(s)),first=clone(s.players[0].pendingInput);
+ E.tick(s,s.startedAt+100);E.act(s,'self',{type:'left'},s.now);const second=clone(s.players[0].pendingInput);
+ const withDuplicate=historyModel(base,[first,second]),withoutDuplicate=historyModel(base,[second]);
+ for(let tick=0;tick<=39;tick++)assert.deepEqual(withDuplicate.stateAtTick(tick),withoutDuplicate.stateAtTick(tick));
+ assert.equal(withDuplicate.stateAtTick(39).inputNo,2);
+});
+test('stateAtTick returns owned immutable complete physics state only inside its scope and horizon',()=>{
+ const s=state();E.act(s,'self',{type:'jump'},s.now);const game=freeze(view(s)),model=historyModel(game,[]),owned=model.stateAtTick(0);
+ assertOwnedState(owned,s.players[0],0);assert.ok(Object.isFrozen(owned));assert.ok(Object.isFrozen(owned.claimedItems));assert.ok(Object.isFrozen(owned.resolvedObstacles));assert.ok(Object.isFrozen(owned.pendingInput));
+ assert.notEqual(owned.pendingInput,game.selfPrediction.pendingInput);assert.notEqual(owned.claimedItems,game.players[0].claimedItems);assert.equal(model.stateAtTick(0),owned);
+ assert.throws(()=>owned.resolvedObstacles.push('invented'),TypeError);assert.throws(()=>{owned.pendingInput.no=99;},TypeError);
+ for(const tick of [-1,.5,40,NaN,Infinity])assert.equal(model.stateAtTick(tick),null);
+ const later=state();place(later,31);assert.equal(model.update(view(later),'self',{roomId:'another',roomVersion:1}),true);assert.equal(model.stateAtTick(0),null);assert.notEqual(model.stateAtTick(500),null);
+ model.clear();assert.equal(model.stateAtTick(500),null);
+});
+test('wrong order, gaps, duplicates, conflicts and records outside the bounded history fail closed',()=>{
+ const game=view(state()),first={type:'jump',tick:1,no:1,item:null},second={type:'left',tick:7,no:2,item:null};
+ const histories=[null,{},[second],[second,first],[first,first],[first,{...second,no:3}],[first,{...second,tick:1}],[{...first,tick:0}],[{...first,tick:40}],[{...first,type:'boost',item:'boost'}],[{...first,item:'boost'}],[{...first,local:true}],[{type:'jump',tick:1,no:1}]];
+ for(const acceptedInputs of histories){const model=createRunSelfProjection();assert.equal(model.update(game,'self',{roomId:'room',roomVersion:1,acceptedInputs}),false);assert.equal(model.sample(100),null);assert.equal(model.stateAtTick(0),null);}
+ const pending=state();E.act(pending,'self',{type:'jump'},pending.now);const base=view(pending);
+ for(const acceptedInputs of [[{...first,type:'left'}],[first,first],[second,first]]){const model=createRunSelfProjection();assert.equal(model.update(base,'self',{roomId:'room',roomVersion:1,acceptedInputs}),false);assert.equal(model.stateAtTick(0),null);}
+});
+test('every historical action is rechecked against legal rate, lane, animation and held-item state',()=>{
+ const invalid=[
+  [{type:'jump',tick:1,no:1,item:null},{type:'left',tick:6,no:2,item:null}],
+  [{type:'left',tick:1,no:1,item:null},{type:'left',tick:13,no:2,item:null}],
+  [{type:'left',tick:1,no:1,item:null},{type:'right',tick:7,no:2,item:null}],
+  [{type:'jump',tick:1,no:1,item:null},{type:'jump',tick:7,no:2,item:null}],
+  [{type:'jump',tick:1,no:1,item:null},{type:'slide',tick:7,no:2,item:null}],
+  [{type:'slide',tick:1,no:1,item:null},{type:'jump',tick:7,no:2,item:null}],
+  [{type:'item',tick:1,no:1,item:'shield'}],
+ ];
+ for(const acceptedInputs of invalid){const model=createRunSelfProjection();assert.equal(model.update(view(state()),'self',{roomId:'room',roomVersion:1,acceptedInputs}),false);assert.equal(model.stateAtTick(0),null);}
+ const item=state();item.players[0].inventory='shield';const model=createRunSelfProjection();assert.equal(model.update(view(item),'self',{roomId:'room',roomVersion:1,acceptedInputs:[{type:'item',tick:1,no:1,item:'boost'}]}),false);
+});
+test('a collision, fall or finish before a later claimed accepted input invalidates the whole history',()=>{
+ const hit=state(),obstacle=resolveRunCourse(hit).obstacles.find(o=>o.type==='crate');place(hit,obstacle.z-obstacle.depth/2-.27-.05,obstacle.lane);
+ const fall=state(),gap=resolveRunCourse(fall).gaps[0];place(fall,gap.start-.27*.35-.04,gap.lanes[0]);
+ const finish=state();place(finish,479.95);
+ for(const s of [hit,fall,finish]){const model=createRunSelfProjection();assert.equal(model.update(view(s),'self',{roomId:'room',roomVersion:1,acceptedInputs:[{type:'left',tick:s.tick+7,no:1,item:null}]}),false);assert.equal(model.stateAtTick(s.tick),null);assert.equal(model.sample(0),null);}
+});
+test('historical item acceptance uses inventory acquired by preceding physics and respects deadline',()=>{
+ const s=state();place(s,59.8);const base=freeze(view(s));E.tick(s,s.startedAt+Math.ceil((s.tick+3)*1000/60));assert.equal(s.players[0].inventory,'shield');E.act(s,'self',{type:'item'},s.now);
+ const input=clone(s.players[0].pendingInput),model=historyModel(base,[input]);assert.equal(model.stateAtTick(input.tick-1).inventory,'shield');assert.equal(model.stateAtTick(input.tick-1).pendingInput.item,'shield');assert.equal(model.stateAtTick(input.tick).inventory,null);assert.equal(model.stateAtTick(input.tick).shieldUntilTick,input.tick+480);
+ const deadline=state();place(deadline,31,1,5998);const denied=createRunSelfProjection();assert.equal(denied.update(view(deadline),'self',{roomId:'room',roomVersion:1,acceptedInputs:[{type:'jump',tick:6001,no:1,item:null}]}),false);assert.equal(denied.stateAtTick(5998),null);
+});
