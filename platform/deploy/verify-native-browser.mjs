@@ -15,7 +15,7 @@ import {isIP} from 'node:net';
 import {chromium} from 'playwright';
 import {RELEASED_IDS,ARENA_IDS} from '../shared/games.mjs';
 import {playOneArenaAction} from '../scripts/android-game-actions.mjs';
-import {observeNativeBrowser,cleanupNativeSession,createNativeCleanupApi,runNativeActionOnce,nativeErrorsEmpty,reserveNativeReportDirectory} from './native-browser-checks.mjs';
+import {observeNativeBrowser,installNativeFetchProbe,cleanupNativeSession,createNativeCleanupApi,runNativeActionOnce,nativeErrorsEmpty,reserveNativeReportDirectory} from './native-browser-checks.mjs';
 
 const target=new URL(process.env.OASIS_VERIFY_ORIGIN||'https://game.tianyahuyu.com');
 assert.ok(!target.username&&!target.password&&!target.search&&!target.hash&&target.pathname==='/','OASIS_VERIFY_ORIGIN must be an origin');
@@ -28,7 +28,7 @@ const viewport={width:390,height:844};
 const requested=process.env.OASIS_VERIFY_GAMES?process.env.OASIS_VERIFY_GAMES.split(','):RELEASED_IDS;
 assert.ok(requested.length&&new Set(requested).size===requested.length&&requested.every(id=>RELEASED_IDS.includes(id)),'OASIS_VERIFY_GAMES must contain unique released IDs');
 const secrets=new Set(),sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-const report={schema:'native-browser-v2',run_id:runId,started_at:new Date().toISOString(),origin,scope:'Desktop Chrome with a 390x844 mobile viewport. Real native-host pages, SDK launch and one UI action or paid-cycle spin against independent public sandbox guests. Original-session cleanup may present existing free continuations; it never opens another paid cycle. No physical phone, APK, iOS, production wallet or frame-rate acceptance.',observer_policy:'Every observer, API HTTP and transport error fails this run, including return/teardown body loss; no automatic reconciliation or action retry.',physical_device:false,viewport,full_catalog:requested.length===RELEASED_IDS.length,requested_games:[...requested],games:[],passed:false};
+const report={schema:'native-browser-v3',run_id:runId,started_at:new Date().toISOString(),origin,scope:'Desktop Chrome with a 390x844 mobile viewport. Real native-host pages, SDK launch and one UI action or paid-cycle spin against independent public sandbox guests. Original-session cleanup may present existing free continuations; it never opens another paid cycle. No physical phone, APK, iOS, production wallet or frame-rate acceptance.',observer_policy:'Original transport and fetch observations are retained. Only uniquely matched, owned-room GET fetch rejections before response headers, caused by the actual first OASIS_ROOM_POLL_STOPPED/BACKGROUND AbortError, are classified separately as lifecycle_cancellations. Missing or ambiguous proof, timeouts, mutations, body loss and every other observer/API/transport error fail; no automatic reconciliation or action retry.',physical_device:false,viewport,full_catalog:requested.length===RELEASED_IDS.length,requested_games:[...requested],games:[],passed:false};
 let browser;
 
 function clean(value){
@@ -106,11 +106,12 @@ try{
  browser=await chromium.launch({channel:'chrome',headless:true,args:[...(process.platform==='darwin'?['--use-angle=metal']:[]),...(dnsPin?[`--host-resolver-rules=MAP ${target.hostname} ${dnsPin}`]:[])]});
  report.browser={name:'desktop Chrome',version:browser.version(),dns_override:Boolean(dnsPin)};
  for(const game of requested){
-  const context=await browser.newContext({viewport,isMobile:true,hasTouch:true}),page=await context.newPage();
+  const context=await browser.newContext({viewport,isMobile:true,hasTouch:true}),fetchProbe=await installNativeFetchProbe(context,{clean}),page=await context.newPage();
+  await fetchProbe.attach(page);
   page.setDefaultTimeout(45000);
   const state={game,token:null,sessionId:null,playerId:null,room:null,ownedRooms:new Set(),practiceRequested:false,spins:[],acks:new Set(),returning:false,phase:'entry'};
   const result={game,launch_exchange:false,host_returned:false,passed:false};
-  report.games.push(result);const drain=observeNativeBrowser(page,{origin,state,result,clean,remember});
+  report.games.push(result);const drain=observeNativeBrowser(page,{origin,state,result,clean,remember,fetchProbe});
   try{
    const response=await page.goto(origin+'/demo/native/'+game,{waitUntil:'domcontentloaded'});
    assert.equal(response?.status(),200,'Native host route must exist');

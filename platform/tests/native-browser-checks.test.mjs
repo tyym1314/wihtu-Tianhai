@@ -4,7 +4,7 @@ import {EventEmitter} from 'node:events';
 import fs from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {observeNativeBrowser,cleanupNativeSession,createNativeCleanupApi,runNativeActionOnce,nativeErrorsEmpty,reserveNativeReportDirectory} from '../deploy/native-browser-checks.mjs';
+import {observeNativeBrowser,createNativeFetchEvidence,cleanupNativeSession,createNativeCleanupApi,runNativeActionOnce,nativeErrorsEmpty,reserveNativeReportDirectory} from '../deploy/native-browser-checks.mjs';
 
 const origin='https://fixture.invalid';
 const knownLoss='response.json: Protocol error (Network.getResponseBody): No data found for resource with given identifier';
@@ -191,4 +191,194 @@ test('report reservation refuses nonempty directories without replacing old evid
   const fresh=join(root,'fresh');await reserveNativeReportDirectory(fresh,{passed:false});const original=await fs.readFile(join(fresh,'native-browser.json'),'utf8');
   await assert.rejects(reserveNativeReportDirectory(fresh,{passed:true}),/OUTPUT_ALREADY_EXISTS/);assert.equal(await fs.readFile(join(fresh,'native-browser.json'),'utf8'),original);
  }finally{await fs.rm(root,{recursive:true,force:true});}
+});
+
+function cancellationFixture({requestOptions={},stateOptions={},traceOptions={},timing=115,frameUrl=origin+'/play/run',redirected=false}={}){
+ const page=new EventEmitter(),current=state({ownedRooms:new Set(['owned']),...stateOptions}),result={},probe=createNativeFetchEvidence(),frame={url:()=>frameUrl};
+ const req={...request({failure:'net::ERR_ABORTED',...requestOptions}),frame:()=>frame,postData:()=>requestOptions.method==='POST'?'{}':null,timing:()=>({startTime:timing}),redirectedFrom:()=>redirected?{}:null,redirectedTo:()=>null};
+ const reason={name:'AbortError',message:'OASIS_ROOM_POLL_STOPPED'},base={document_id:'fixture-document'};
+ const trace=[
+  {...base,event_seq:1,at_ms:100,kind:'document',frame_url:frameUrl},
+  {...base,event_seq:2,at_ms:110,kind:'start',attempt_id:1,url:req.url(),method:req.method(),body_present:false,supported:true,frame_url:frameUrl,...traceOptions.start},
+  {...base,event_seq:3,at_ms:130,kind:'abort',attempt_id:1,reason,already_aborted:false,...traceOptions.abort},
+  {...base,event_seq:4,at_ms:135,kind:'rejected',attempt_id:1,signal_aborted:true,reject_is_signal_reason:true,sync_throw:false,reason,error:reason,...traceOptions.end},
+ ];
+ const drain=observeNativeBrowser(page,{origin,state:current,result,fetchProbe:probe});
+ const deliver=(events=trace,target=frame)=>{for(const event of events)probe.receive(target,event);};
+ const fail=()=>{page.emit('request',req);page.emit('requestfailed',req);};
+ return{page,state:current,result,probe,frame,req,trace,deliver,fail,drain};
+}
+
+for(const message of ['OASIS_ROOM_POLL_STOPPED','OASIS_ROOM_POLL_BACKGROUND'])test(`actual first ${message} rejection has a separate lifecycle classification and immutable raw failure`,async()=>{
+ const reason={name:'AbortError',message},fixture=cancellationFixture({traceOptions:{abort:{reason},end:{reason,error:reason}}});
+ fixture.deliver();fixture.fail();assert.equal(nativeErrorsEmpty(fixture.result),false);await fixture.drain();
+ assert.equal(nativeErrorsEmpty(fixture.result),true);assert.equal(fixture.result.lifecycle_cancellations.length,1);assert.equal(fixture.result.network_observations.length,1);assert.equal(Object.isFrozen(fixture.result.network_observations[0]),true);assert.equal(fixture.result.fetch_observations.length,4);
+ assert.equal(fixture.result.lifecycle_cancellations[0].reason.message,message);assert.equal(fixture.result.lifecycle_cancellations[0].fetch_attempt_id,1);
+});
+
+for(const [name,options] of [
+ ['timeout first',{traceOptions:{abort:{reason:{name:'TimeoutError',message:'OASIS_ROOM_POLL_TIMEOUT'}}}}],
+ ['unknown reason',{traceOptions:{abort:{reason:{name:'AbortError',message:'UNKNOWN'}}}}],
+ ['different rejection',{traceOptions:{end:{error:{name:'TypeError',message:'Failed to fetch'}}}}],
+ ['rejection not actual reason',{traceOptions:{end:{reject_is_signal_reason:false}}}],
+ ['pre-aborted signal',{traceOptions:{abort:{already_aborted:true}}}],
+ ['no aborted signal',{traceOptions:{end:{signal_aborted:false}}}],
+ ['synchronous throw',{traceOptions:{end:{sync_throw:true}}}],
+ ['unsupported fetch input',{traceOptions:{start:{supported:false}}}],
+ ['request body',{traceOptions:{start:{body_present:true}}}],
+ ['POST mutation',{requestOptions:{method:'POST',path:'/api/pvp/rooms/owned/action'}}],
+ ['arena session GET',{requestOptions:{path:'/api/arena/session'}}],
+ ['unowned room',{requestOptions:{path:'/api/pvp/rooms/another'}}],
+ ['query parameters',{requestOptions:{path:'/api/pvp/rooms/owned?unexpected=1'}}],
+ ['non-abort transport error',{requestOptions:{failure:'net::ERR_EMPTY_RESPONSE'}}],
+ ['wrong frame URL',{frameUrl:origin+'/play/bowling'}],
+ ['missing session',{stateOptions:{sessionId:null}}],
+ ['missing player',{stateOptions:{playerId:null}}],
+ ['missing network time',{timing:undefined}],
+ ['negative network time',{timing:-1}],
+ ['redirected request',{redirected:true}],
+ ['wrong full URL',{traceOptions:{start:{url:origin+'/api/pvp/rooms/owned?other=1'}}}],
+ ['abort time before fetch',{traceOptions:{abort:{at_ms:109}}}],
+])test(`lifecycle classifier fails closed for ${name}`,async()=>{
+ const fixture=cancellationFixture(options);if(name==='missing network time')fixture.req.timing=()=>({});fixture.deliver();fixture.fail();await fixture.drain();
+ assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,1);assert.equal(fixture.result.network_observations.length,1);assert.equal(nativeErrorsEmpty(fixture.result),false);
+});
+
+test('later room ownership cannot be used to classify an earlier request',async()=>{
+ const fixture=cancellationFixture({stateOptions:{ownedRooms:new Set()}});fixture.deliver();fixture.page.emit('request',fixture.req);fixture.state.ownedRooms.add('owned');fixture.page.emit('requestfailed',fixture.req);await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,1);
+});
+
+test('response headers and JSON body loss cannot be reclassified even with an abort trace',async()=>{
+ const fixture=cancellationFixture();fixture.deliver();response(fixture,fixture.req,{json:async()=>{throw new Error(knownLoss);}});fixture.page.emit('requestfailed',fixture.req);await fixture.drain();
+ assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors[0].classification_failure,'RESPONSE_HEADERS_OBSERVED');assert.equal(fixture.result.observer_errors.length,1);
+});
+
+test('missing first abort or terminal event cannot classify a network failure',async()=>{
+ for(const omitted of ['abort','rejected','document']){
+  const fixture=cancellationFixture();fixture.deliver(fixture.trace.filter(event=>event.kind!==omitted));fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,1);
+ }
+});
+
+test('trace from another Frame cannot classify the request',async()=>{
+ const fixture=cancellationFixture();fixture.deliver(fixture.trace,{url:()=>origin+'/play/run'});fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,1);
+});
+
+test('duplicate telemetry sequence is a strict observer failure',async()=>{
+ const fixture=cancellationFixture();fixture.deliver();fixture.deliver([fixture.trace[1]]);fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.observer_errors[0].message,'CONFLICTING_FETCH_PROBE_EVENT');
+});
+
+test('a successful or unsupported overlapping fetch also prevents unique matching',async()=>{
+ for(const supported of [true,false]){
+  const fixture=cancellationFixture();fixture.deliver();fixture.deliver([
+   {...fixture.trace[0],document_id:'second-document'},
+   {...fixture.trace[1],document_id:'second-document',supported},
+   {...fixture.trace[3],document_id:'second-document',event_seq:3,kind:'fulfilled'},
+  ]);fixture.fail();await fixture.drain();assert.equal(fixture.result.network_errors[0].classification_failure,supported?'AMBIGUOUS_FETCH_ATTEMPT':'UNSUPPORTED_COMPETING_FETCH');assert.equal(fixture.result.lifecycle_cancellations.length,0);
+ }
+});
+
+test('one fetch proof cannot classify two network requests',async()=>{
+ const fixture=cancellationFixture();fixture.deliver();fixture.fail();const other={...fixture.req};fixture.page.emit('request',other);fixture.page.emit('requestfailed',other);await fixture.drain();assert.equal(fixture.result.network_errors.length,2);assert.ok(fixture.result.network_errors.every(error=>error.classification_failure==='AMBIGUOUS_NETWORK_REQUEST'));
+});
+
+test('late evidence destroying uniqueness revokes exemption and retains original observation',async()=>{
+ const fixture=cancellationFixture();fixture.deliver();fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,1);
+ fixture.deliver(fixture.trace.map(event=>({...event,document_id:'late-document'})));await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,1);assert.equal(fixture.result.network_observations.length,1);assert.equal(nativeErrorsEmpty(fixture.result),false);
+});
+
+test('evidence received during drain is considered before classification',async()=>{
+ const fixture=cancellationFixture();fixture.probe.flush=async()=>{await new Promise(resolve=>setTimeout(resolve,5));fixture.deliver();};fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,1);
+});
+
+test('once missing proof failed a drain, later evidence cannot erase that failure',async()=>{
+ const fixture=cancellationFixture();fixture.fail();await fixture.drain();fixture.deliver();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,1);assert.equal(nativeErrorsEmpty(fixture.result),false);
+});
+
+function networkProof(fixture,overrides={}){
+ fixture.probe.receiveNetworkDocument('protocol-frame',fixture.trace[0]);
+ fixture.probe.network.set('protocol-request',{id:'protocol-request',frame:'protocol-frame',url:fixture.req.url(),method:fixture.req.method(),type:'Fetch',started_at_ms:115,failed_at_ms:132,response_seen:false,redirected:false,error:'net::ERR_ABORTED',cancelled:true,...overrides});
+}
+
+test('zero Playwright timing requires an independently joined document and actual CDP network clock',async()=>{
+ const fixture=cancellationFixture({timing:0});fixture.deliver();networkProof(fixture);fixture.fail();await fixture.drain();
+ assert.equal(fixture.result.lifecycle_cancellations.length,1);assert.equal(fixture.result.lifecycle_cancellations[0].network_timing_source,'cdp');assert.equal(fixture.result.lifecycle_cancellations[0].network_protocol_id,'protocol-request');assert.equal(fixture.result.network_protocol_observations.length,1);
+});
+
+for(const [name,override] of [['wrong URL',{url:origin+'/api/pvp/rooms/owned?different=1'}],['wrong method',{method:'POST'}],['wrong frame',{frame:'other-frame'}],['non-fetch',{type:'XHR'}],['not cancelled',{cancelled:false}],['headers seen',{response_seen:true}],['redirect',{redirected:true}],['invalid failure time',{failed_at_ms:100}]])test(`CDP fallback refuses ${name}`,async()=>{
+ const fixture=cancellationFixture({timing:0});fixture.deliver();networkProof(fixture,override);fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,1);
+});
+
+test('CDP document identity must match the independent Playwright binding exactly',async()=>{
+ const fixture=cancellationFixture({timing:0});fixture.deliver();fixture.probe.receiveNetworkDocument('protocol-frame',{...fixture.trace[0],at_ms:99});fixture.probe.network.set('protocol-request',{id:'protocol-request',frame:'protocol-frame',url:fixture.req.url(),method:'GET',type:'Fetch',started_at_ms:115,failed_at_ms:132,error:'net::ERR_ABORTED',cancelled:true});fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,1);
+});
+
+test('multiple CDP failures with the same URL and frame cannot be guessed by arrival order',async()=>{
+ const fixture=cancellationFixture({timing:0});fixture.deliver();networkProof(fixture);fixture.probe.network.set('another',{...fixture.probe.network.get('protocol-request'),id:'another',started_at_ms:120});fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors[0].classification_failure,'AMBIGUOUS_CDP_NETWORK_FAILURE');
+});
+
+test('one CDP failure cannot explain multiple Playwright failures',async()=>{
+ const fixture=cancellationFixture({timing:0});fixture.deliver();networkProof(fixture);fixture.fail();const other={...fixture.req};fixture.page.emit('request',other);fixture.page.emit('requestfailed',other);await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,2);
+});
+
+test('missing request-start observation never acquires ownership at failure time',async()=>{
+ const fixture=cancellationFixture();fixture.deliver();fixture.page.emit('requestfailed',fixture.req);await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,1);
+});
+
+test('clock quantization expands every candidate interval and never chooses the nearest fetch',async()=>{
+ const fixture=cancellationFixture({timing:109.9});fixture.deliver();fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,1);assert.equal(fixture.result.lifecycle_cancellations[0].clock_uncertainty_ms,1);
+ fixture.deliver([
+  {...fixture.trace[0],document_id:'previous-document',at_ms:95},
+  {...fixture.trace[1],document_id:'previous-document',at_ms:105},
+  {...fixture.trace[3],document_id:'previous-document',kind:'fulfilled',event_seq:3,at_ms:109.5},
+ ]);await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors[0].classification_failure,'AMBIGUOUS_FETCH_ATTEMPT');
+});
+
+test('an unsupported fetch with unknown URL is never excluded from temporal ambiguity',async()=>{
+ const fixture=cancellationFixture();fixture.deliver();fixture.deliver([
+  {...fixture.trace[0],document_id:'unsupported-document'},
+  {...fixture.trace[1],document_id:'unsupported-document',supported:false,url:'',method:''},
+ ]);fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors[0].classification_failure,'UNSUPPORTED_COMPETING_FETCH');
+});
+
+for(const contradiction of ['headers','headers without failure event','different failure','duplicate failure','uncancelled','redirect','clock'])test(`usable Playwright timing cannot ignore later CDP ${contradiction}`,async()=>{
+ const fixture=cancellationFixture();fixture.deliver();networkProof(fixture);fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,1);
+ const record=fixture.probe.network.get('protocol-request');
+ if(contradiction==='headers')record.response_seen=true;
+ if(contradiction==='headers without failure event'){record.response_seen=true;delete record.error;}
+ if(contradiction==='different failure')record.error='net::ERR_CONNECTION_RESET';
+ if(contradiction==='duplicate failure')fixture.probe.network.set('duplicate',{...record,id:'duplicate'});
+ if(contradiction==='uncancelled')record.cancelled=false;
+ if(contradiction==='redirect')record.redirected=true;
+ if(contradiction==='clock')record.started_at_ms=105;
+ await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,1);assert.ok(fixture.result.network_errors[0].previous_lifecycle_classification);assert.equal(nativeErrorsEmpty(fixture.result),false);
+});
+
+test('failed telemetry drain remains a recorded observer failure after later successful drains',async()=>{
+ const fixture=cancellationFixture();fixture.deliver();fixture.fail();fixture.probe.flush=async()=>{throw new Error('lost probe checkpoint');};await assert.rejects(fixture.drain(),/lost probe/);fixture.probe.flush=async()=>{};await fixture.drain();assert.equal(fixture.result.observer_errors.length,1);assert.equal(nativeErrorsEmpty(fixture.result),false);
+});
+
+for(const reason of [{name:'TimeoutError',message:'OASIS_ROOM_POLL_TIMEOUT'},{name:'AbortError',message:'OASIS_ROOM_POLL_STOPPED'},{name:'TypeError',message:'Invalid GET body'}])test(`networkless caught ${reason.name} fetch rejection remains a failure`,async()=>{
+ const fixture=cancellationFixture({traceOptions:{abort:{already_aborted:true,reason},end:{reason,error:reason}}});fixture.deliver();await fixture.drain();assert.equal(fixture.result.network_observations.length,0);assert.equal(fixture.result.unmatched_fetch_rejections.length,1);assert.equal(fixture.result.observer_errors.length,1);assert.equal(nativeErrorsEmpty(fixture.result),false);
+});
+
+test('an earlier networkless timeout cannot hide behind a later valid same-URL cancellation',async()=>{
+ const fixture=cancellationFixture();fixture.deliver();fixture.fail();await fixture.drain();assert.equal(nativeErrorsEmpty(fixture.result),true);
+ const reason={name:'TimeoutError',message:'OASIS_ROOM_POLL_TIMEOUT'};fixture.deliver(fixture.trace.map(event=>({...event,document_id:'earlier-document',at_ms:event.at_ms-50,...(event.reason?{reason}:{}),...(event.error?{error:reason}:{})})));await fixture.drain();
+ assert.equal(fixture.result.lifecycle_cancellations.length,1);assert.equal(fixture.result.unmatched_fetch_rejections.length,1);assert.equal(nativeErrorsEmpty(fixture.result),false);
+});
+
+for(const type of ['fetch','xhr'])test(`${type} resource failures outside API paths stay strict`,async()=>{
+ const fixture=observation(),req=request({path:'/arena/assets/model-1234abcd.glb',type,failure:'net::ERR_ABORTED'});response(fixture,req);fixture.page.emit('requestfailed',req);await fixture.drain();assert.equal(fixture.result.network_errors.length,1);assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(nativeErrorsEmpty(fixture.result),false);
+});
+
+for(const type of ['fetch','xhr'])test(`${type} resource HTTP errors outside API paths stay strict`,async()=>{
+ const fixture=observation();response(fixture,request({path:'/arena/assets/model-1234abcd.glb',type}),{status:404});await fixture.drain();assert.equal(fixture.result.http_errors.length,1);assert.equal(nativeErrorsEmpty(fixture.result),false);
+});
+
+test('orphan rejected telemetry without a start or network event is a permanent failure',async()=>{
+ const fixture=cancellationFixture();fixture.deliver([fixture.trace[3]]);await fixture.drain();assert.equal(fixture.result.network_observations.length,0);assert.equal(fixture.result.unmatched_fetch_rejections.length,1);assert.equal(fixture.result.unmatched_fetch_rejections[0].started_at_ms,null);assert.equal(nativeErrorsEmpty(fixture.result),false);
+});
+
+test('foreign-origin fetch with an owned room pathname cannot use the lifecycle exemption',async()=>{
+ const fixture=cancellationFixture();fixture.req.url=()=> 'https://another.invalid/api/pvp/rooms/owned';fixture.trace[1].url=fixture.req.url();fixture.deliver();fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,1);assert.equal(fixture.result.network_errors[0].classification_failure,'NOT_OWNED_READ_ONLY_ROOM_POLL');
 });
