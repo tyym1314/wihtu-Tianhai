@@ -29,6 +29,9 @@ LABEL = 'com.oasis.android-mock'
 HOST = 'oasis-mock.43.98.202.236.sslip.io'
 PORTS = (18981, 18982, 18983, 18985)
 UNITS = ('oasis-android-mock-api', 'oasis-android-mock-demo', 'oasis-android-mock-db', 'oasis-android-mock-network', 'oasis-android-mock-certificate')
+PROXY_UNIT = 'oasis-android-mock-db-proxy'
+PROXY_BINARY = Path('/usr/lib/systemd/systemd-socket-proxyd')
+RUNTIME_UNITS = (*UNITS[:4], PROXY_UNIT + '.socket', PROXY_UNIT + '.service')
 PROXY_CONF = '/etc/nginx/conf.d/oasis-android-mock-acme.conf'
 BRIDGE_CONF = Path('/etc/nginx/conf.d/oasis-android-mock-acme.conf')
 TLS_CONF = Path('/etc/nginx/conf.d/oasis-android-mock.conf')
@@ -119,7 +122,7 @@ def resources(state=None):
         if resource:
             labels = resource.get('Labels') or resource.get('Config', {}).get('Labels', {})
             require(state and labels.get(LABEL) == state['id'], 'UNOWNED_DOCKER_RESOURCE: ' + name)
-    for path in [PRIVATE, PIN, WEBROOT, BRIDGE_CONF, TLS_CONF, *[Path('/etc/systemd/system/' + name + '.service') for name in UNITS], Path('/etc/systemd/system/oasis-android-mock-certificate.timer')]:
+    for path in [PRIVATE, PIN, WEBROOT, BRIDGE_CONF, TLS_CONF, *[Path('/etc/systemd/system/' + name + '.service') for name in UNITS], Path('/etc/systemd/system/oasis-android-mock-certificate.timer'), *proxy_unit_paths()]:
         require(state or not path.exists() and not path.is_symlink(), 'UNOWNED_EXISTING_PATH: ' + str(path))
     if not state:
         require(run(['getent', 'passwd', USER], check=False).returncode != 0, 'UNOWNED_UNIX_USER')
@@ -133,6 +136,7 @@ def check(release_value, state=None):
     for executable in ('docker', 'systemctl', 'nginx', 'nft', 'getent', 'useradd', 'runuser', 'node', 'ss'):
         require(shutil.which(executable), 'REQUIRED_COMMAND_MISSING: ' + executable)
     require((BASE / 'certbot/bin/certbot').is_file(), 'CERTBOT_MISSING')
+    proxy_binary_guard()
     require(LIVE_ENV.is_file(), 'LIVE_ENV_MISSING')
     release, release_hash = release_check(release_value)
     if state:
@@ -163,7 +167,7 @@ def database_guard(state):
     resource = inspect('container', CONTAINER)
     require(resource and resource['Config']['Labels'].get(LABEL) == state['id'], 'MOCK_CONTAINER_NOT_OWNED')
     require(resource['Image'] == state['postgres_image'], 'MOCK_POSTGRES_IMAGE_CHANGED')
-    require(resource['HostConfig']['PortBindings'] == {'5432/tcp': [{'HostIp': '127.0.0.1', 'HostPort': '18983'}]}, 'MOCK_POSTGRES_BINDING_CHANGED')
+    require((resource['HostConfig'].get('PortBindings') or {}) in ({}, {'5432/tcp': [{'HostIp': '127.0.0.1', 'HostPort': '18983'}]}), 'MOCK_POSTGRES_BINDING_CHANGED')
     mounts = [entry for entry in resource['Mounts'] if entry['Destination'] == '/var/lib/postgresql/data']
     require(len(mounts) == 1 and mounts[0]['Type'] == 'volume' and mounts[0]['Name'] == VOLUME, 'MOCK_POSTGRES_VOLUME_CHANGED')
     require(resource['HostConfig']['Memory'] == 1024 ** 3 and resource['HostConfig']['NanoCpus'] == 500000000, 'MOCK_POSTGRES_LIMITS_CHANGED')
@@ -249,7 +253,7 @@ def provision(release_value):
     if not inspect('network', NETWORK):
         run(['docker', 'network', 'create', '--internal', '--label', LABEL + '=' + state['id'], NETWORK])
     if not inspect('container', CONTAINER):
-        run(['docker', 'create', '--name', CONTAINER, '--label', LABEL + '=' + state['id'], '--network', NETWORK, '--restart=no', '--memory=1g', '--memory-swap=1g', '--cpus=0.5', '--pids-limit=128', '--publish', '127.0.0.1:18983:5432', '--mount', 'type=volume,src=' + VOLUME + ',dst=/var/lib/postgresql/data', '--env-file', str(PRIVATE / 'postgres.env'), '--log-opt', 'max-size=10m', '--log-opt', 'max-file=2', state['postgres_image'], '-c', 'shared_buffers=128MB', '-c', 'max_connections=110'])
+        run(['docker', 'create', '--name', CONTAINER, '--label', LABEL + '=' + state['id'], '--network', NETWORK, '--restart=no', '--memory=1g', '--memory-swap=1g', '--cpus=0.5', '--pids-limit=128', '--mount', 'type=volume,src=' + VOLUME + ',dst=/var/lib/postgresql/data', '--env-file', str(PRIVATE / 'postgres.env'), '--log-opt', 'max-size=10m', '--log-opt', 'max-file=2', state['postgres_image'], '-c', 'shared_buffers=128MB', '-c', 'max_connections=110'])
     database_guard(state)
     state['database_created'] = True
     save(state)
@@ -270,12 +274,12 @@ def provision(release_value):
     state['postgres_address'] = database_address
     save(state)
     exact_file(PRIVATE / 'network.nft', network_text(account.pw_uid, database_address), 0o600)
-    install_units(release)
+    install_units(release, state)
     run(['systemctl', 'daemon-reload'])
     print('MOCK_PROVISIONED: API and HTTPS remain stopped; next run acme, certificate, then start')
 
 
-def install_units(release):
+def install_units(release, state=None):
     templates = release / 'platform/deploy/mock-sandbox'
     for name in ('api', 'demo'):
         exact_file(Path('/etc/systemd/system/oasis-android-mock-' + name + '.service'), (templates / ('mock-' + name + '.service.example')).read_text())
@@ -321,6 +325,77 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 ''')
+    if state is not None:
+        install_proxy_units(state)
+
+
+def proxy_binary_guard():
+    require(PROXY_BINARY.is_file() and os.access(PROXY_BINARY, os.X_OK), 'SOCKET_PROXY_BINARY_MISSING')
+    require(PROXY_BINARY.stat().st_uid == 0 and PROXY_BINARY.stat().st_mode & 0o022 == 0, 'SOCKET_PROXY_BINARY_PERMISSIONS')
+
+
+def proxy_unit_paths():
+    return (Path('/etc/systemd/system/' + PROXY_UNIT + '.socket'), Path('/etc/systemd/system/' + PROXY_UNIT + '.service'), Path('/etc/systemd/system/oasis-android-mock-api.service.d'))
+
+
+def proxy_unit_files(state):
+    address = state['postgres_address']
+    require(ipaddress.ip_address(address).version == 4 and ipaddress.ip_address(address).is_private, 'INVALID_MOCK_DATABASE_ADDRESS')
+    socket_path, service_path, dropin_dir = proxy_unit_paths()
+    command = '/usr/bin/python3 /opt/oasis/android-mock-current/platform/deploy/mock-sandbox/install.py '
+    return {socket_path: f'''[Unit]
+Description=Loopback listener for the isolated Android mock database
+DefaultDependencies=no
+After=oasis-android-mock-network.service
+Requires=oasis-android-mock-network.service
+Before=oasis-android-mock-api.service shutdown.target
+Conflicts=shutdown.target
+[Socket]
+ListenStream=127.0.0.1:18983
+Accept=no
+Service={PROXY_UNIT}.service
+[Install]
+WantedBy=multi-user.target
+''', service_path: f'''[Unit]
+Description=UID-confined proxy to the isolated Android mock database
+After=oasis-android-mock-network.service {PROXY_UNIT}.socket
+Requires=oasis-android-mock-network.service {PROXY_UNIT}.socket
+[Service]
+Type=simple
+User={USER}
+Group={USER}
+ExecStartPre=+{command}guard-proxy
+ExecStart={PROXY_BINARY} {address}:5432
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+MemoryMax=128M
+TasksMax=16
+''', dropin_dir / '10-database-proxy.conf': f'''[Unit]
+After={PROXY_UNIT}.socket {PROXY_UNIT}.service
+Requires={PROXY_UNIT}.socket {PROXY_UNIT}.service
+'''}
+
+
+def install_proxy_units(state):
+    proxy_binary_guard()
+    directory = proxy_unit_paths()[2]
+    require(not directory.is_symlink(), 'SOCKET_PROXY_DROPIN_SYMLINK')
+    directory.mkdir(mode=0o755, exist_ok=True)
+    require(directory.is_dir() and directory.stat().st_uid == 0, 'SOCKET_PROXY_DROPIN_OWNER')
+    directory.chmod(0o755)
+    for path, content in proxy_unit_files(state).items():
+        exact_file(path, content)
+
+
+def proxy_files_guard(state):
+    proxy_binary_guard()
+    for path, content in proxy_unit_files(state).items():
+        require(path.is_file() and not path.is_symlink() and path.read_text() == content, 'SOCKET_PROXY_UNIT_CHANGED')
+        require(path.stat().st_uid == 0 and path.stat().st_mode & 0o777 == 0o644, 'SOCKET_PROXY_UNIT_PERMISSIONS')
 
 
 def network(state):
@@ -355,13 +430,20 @@ def release_guard(state):
     return release
 
 
-def guard(state):
+def proxy_guard(state):
     release = release_guard(state)
     database_guard(state)
+    require(pwd.getpwnam(USER).pw_uid == state['uid'], 'MOCK_UID_CHANGED')
     require(inspect('container', CONTAINER)['NetworkSettings']['Networks'][NETWORK]['IPAddress'] == state['postgres_address'], 'MOCK_DATABASE_ADDRESS_CHANGED')
     require(state.get('network_fingerprint') == network_fingerprint(), 'NETWORK_POLICY_DRIFT')
+    proxy_files_guard(state)
     run(['runuser', '-u', USER, '--', 'test', '-r', str(release / 'platform/server/index.mjs')])
     require(run(['runuser', '-u', USER, '--', 'test', '-r', str(LIVE_ENV)], check=False).returncode != 0, 'MOCK_CAN_READ_LIVE_ENV')
+
+
+def guard(state):
+    proxy_guard(state)
+    require(output(['systemctl', 'is-active', PROXY_UNIT + '.socket'], check=False) == 'active', 'SOCKET_PROXY_NOT_LISTENING')
     probe = '''import socket
 for port in (18881,18882,18883,18885):
     try:
@@ -373,6 +455,26 @@ for port in (18881,18882,18883,18885):
 socket.create_connection(('127.0.0.1',18983),timeout=2).close()
 '''
     run(['runuser', '-u', USER, '--', '/usr/bin/python3', '-c', probe])
+
+
+def public_probe(url, accepts, failure):
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, request, response, code, message, headers, new_url):
+            return None
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+    deadline = time.monotonic() + 12
+    while time.monotonic() < deadline:
+        try:
+            with opener.open(url, timeout=min(1.5, max(0.01, deadline - time.monotonic()))) as response:
+                payload = response.read(4097)
+                if response.status == 200 and len(payload) <= 4096 and accepts(payload):
+                    return
+        except Exception:
+            pass
+        remaining = deadline - time.monotonic()
+        if remaining > 0:
+            time.sleep(min(0.25, remaining))
+    raise RuntimeError(failure)
 
 
 def acme(state):
@@ -416,9 +518,7 @@ def acme(state):
     target = challenge / challenge_name
     exact_file(target, challenge_name, 0o644)
     try:
-        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-        with opener.open('http://' + HOST + '/.well-known/acme-challenge/' + challenge_name, timeout=15) as response:
-            require(response.status == 200 and response.read().decode() == challenge_name, 'PUBLIC_ACME_ROUTE_FAILED')
+        public_probe('http://' + HOST + '/.well-known/acme-challenge/' + challenge_name, lambda body: body == challenge_name.encode(), 'PUBLIC_ACME_ROUTE_FAILED')
     finally:
         target.unlink()
     print('MOCK_ACME_ROUTE_OK')
@@ -444,7 +544,7 @@ def certificate(state, renew=False):
 def start(state):
     check(state['release'], state)
     require(CERT.exists(), 'MOCK_CERTIFICATE_MISSING')
-    run(['systemctl', 'start', 'oasis-android-mock-network', 'oasis-android-mock-db'])
+    run(['systemctl', 'start', 'oasis-android-mock-network', 'oasis-android-mock-db', PROXY_UNIT + '.socket', PROXY_UNIT + '.service'])
     guard(load())
     try:
         run(['systemctl', 'start', 'oasis-android-mock-api', 'oasis-android-mock-demo'])
@@ -464,9 +564,8 @@ def start(state):
         exact_file(TLS_CONF, template.replace('mock-game.example.invalid', HOST).replace('/live/ANDROID_MOCK/', '/live/oasis-android-mock/'))
         run(['nginx', '-t'])
         run(['systemctl', 'reload', 'nginx'])
-        with urllib.request.urlopen('https://' + HOST + '/health', timeout=15) as response:
-            require(json.load(response).get('status') == 'ok', 'MOCK_PUBLIC_HEALTH_FAILED')
-        run(['systemctl', 'enable', 'oasis-android-mock-api', 'oasis-android-mock-demo', 'oasis-android-mock-db', 'oasis-android-mock-network'])
+        public_probe('https://' + HOST + '/health', lambda body: json.loads(body).get('status') == 'ok' and json.loads(body).get('environment') == 'sandbox', 'MOCK_PUBLIC_HEALTH_FAILED')
+        run(['systemctl', 'enable', 'oasis-android-mock-api', 'oasis-android-mock-demo', 'oasis-android-mock-db', 'oasis-android-mock-network', PROXY_UNIT + '.socket'])
         run(['systemctl', 'enable', '--now', 'oasis-android-mock-certificate.timer'])
     except Exception:
         run(['systemctl', 'stop', 'oasis-android-mock-demo', 'oasis-android-mock-api'], check=False)
@@ -476,15 +575,15 @@ def start(state):
 
 def stop(state):
     resources(state)
-    run(['systemctl', 'disable', '--now', 'oasis-android-mock-certificate.timer', 'oasis-android-mock-demo', 'oasis-android-mock-api', 'oasis-android-mock-network', 'oasis-android-mock-db'])
+    run(['systemctl', 'disable', '--now', 'oasis-android-mock-certificate.timer', 'oasis-android-mock-demo', 'oasis-android-mock-api', PROXY_UNIT + '.socket', PROXY_UNIT + '.service', 'oasis-android-mock-network', 'oasis-android-mock-db'])
     print('MOCK_STOPPED: mock database volume, keys, certificate, release pin and network boundary retained; no live resources changed')
 
 
 def status(state):
     release_guard(state)
     database_guard(state)
-    services = {name: output(['systemctl', 'is-active', name], check=False) for name in UNITS[:4]}
-    startup = {name: output(['systemctl', 'is-enabled', name], check=False) for name in (*UNITS[:4], 'oasis-android-mock-certificate.timer')}
+    services = {name: output(['systemctl', 'is-active', name], check=False) for name in RUNTIME_UNITS}
+    startup = {name: output(['systemctl', 'is-enabled', name], check=False) for name in (*RUNTIME_UNITS, 'oasis-android-mock-certificate.timer')}
     database_running = inspect('container', CONTAINER)['State']['Running']
     deployment_status = 'stopped' if all(value == 'inactive' for value in services.values()) and not database_running else 'degraded'
     health = {'api': False, 'demo': False, 'public_https': False}
@@ -515,7 +614,7 @@ def status(state):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('stage', choices=('check', 'provision', 'acme', 'certificate', 'start', 'status', 'stop', 'guard', 'guard-db', 'network', 'renew'))
+    parser.add_argument('stage', choices=('check', 'provision', 'acme', 'certificate', 'start', 'status', 'stop', 'guard', 'guard-db', 'guard-proxy', 'network', 'renew'))
     parser.add_argument('--release', help='Exact /opt/oasis/releases/YYYYMMDD-NN directory; required for check/provision')
     arguments = parser.parse_args()
     require(os.geteuid() == 0, 'ROOT_REQUIRED')
@@ -524,8 +623,8 @@ def main():
         require(arguments.release, 'RELEASE_REQUIRED')
         check(arguments.release, load() if MARKER.exists() else None)
         return
-    if arguments.stage in ('guard', 'guard-db'):
-        (guard if arguments.stage == 'guard' else database_guard)(load())
+    if arguments.stage in ('guard', 'guard-db', 'guard-proxy'):
+        {'guard': guard, 'guard-db': database_guard, 'guard-proxy': proxy_guard}[arguments.stage](load())
         return
     if arguments.stage == 'network':
         with open('/run/lock/oasis-android-mock-network.lock', 'a') as lock:

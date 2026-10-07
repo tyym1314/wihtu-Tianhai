@@ -56,6 +56,9 @@ class InstallSafetyTests(unittest.TestCase):
             resources['network']['Internal'] = False
             with self.assertRaisesRegex(RuntimeError, 'MOCK_NETWORK_NOT_ISOLATED'):
                 installer.database_guard(state)
+            resources['network']['Internal'] = True
+            container['HostConfig']['PortBindings'] = {}
+            installer.database_guard(state)
 
     def test_command_failures_never_echo_sensitive_output(self):
         result = installer.subprocess.CompletedProcess(['docker'], 1, 'private-password', 'private-key')
@@ -89,14 +92,68 @@ class InstallSafetyTests(unittest.TestCase):
         with patch.object(installer, 'resources') as resources, patch.object(installer, 'run') as run, patch('sys.stdout', new=io.StringIO()):
             installer.stop({'id': 'owned'})
         resources.assert_called_once_with({'id': 'owned'})
-        run.assert_called_once_with(['systemctl', 'disable', '--now', 'oasis-android-mock-certificate.timer', 'oasis-android-mock-demo', 'oasis-android-mock-api', 'oasis-android-mock-network', 'oasis-android-mock-db'])
+        run.assert_called_once_with(['systemctl', 'disable', '--now', 'oasis-android-mock-certificate.timer', 'oasis-android-mock-demo', 'oasis-android-mock-api', installer.PROXY_UNIT + '.socket', installer.PROXY_UNIT + '.service', 'oasis-android-mock-network', 'oasis-android-mock-db'])
         network_unit = {}
         with patch.object(installer, 'exact_file', side_effect=lambda path, text: network_unit.update({path.name: text})):
             installer.install_units(Path(__file__).resolve().parents[3])
         self.assertNotIn('ExecStop=', network_unit['oasis-android-mock-network.service'])
 
+    def test_proxy_units_are_loopback_uid_confined_and_boot_ordered(self):
+        files = installer.proxy_unit_files({'postgres_address': '172.20.0.2'})
+        socket_unit = next(text for path, text in files.items() if path.suffix == '.socket')
+        service_unit = next(text for path, text in files.items() if path.suffix == '.service')
+        dropin = next(text for path, text in files.items() if path.suffix == '.conf')
+        self.assertIn('ListenStream=127.0.0.1:18983', socket_unit)
+        self.assertIn('DefaultDependencies=no', socket_unit)
+        self.assertIn('After=oasis-android-mock-network.service', socket_unit)
+        self.assertIn('WantedBy=multi-user.target', socket_unit)
+        self.assertNotIn('WantedBy=sockets.target', socket_unit)
+        self.assertIn('User=oasis-mock', service_unit)
+        self.assertIn('ExecStart=/usr/lib/systemd/systemd-socket-proxyd 172.20.0.2:5432', service_unit)
+        self.assertIn('install.py guard-proxy', service_unit)
+        self.assertNotIn('runtime.env', service_unit)
+        self.assertIn('Requires=oasis-android-mock-db-proxy.socket oasis-android-mock-db-proxy.service', dropin)
+        with self.assertRaisesRegex(RuntimeError, 'INVALID_MOCK_DATABASE_ADDRESS'):
+            installer.proxy_unit_files({'postgres_address': '8.8.8.8'})
+
+    def test_api_guard_requires_socket_after_proxy_boundary_checks(self):
+        with patch.object(installer, 'proxy_guard') as boundary, patch.object(installer, 'output', return_value='inactive'), patch.object(installer, 'run') as run:
+            with self.assertRaisesRegex(RuntimeError, 'SOCKET_PROXY_NOT_LISTENING'):
+                installer.guard({'id': 'owned'})
+        boundary.assert_called_once_with({'id': 'owned'})
+        run.assert_not_called()
+
+    def test_public_probe_retries_reload_window_and_requires_exact_body(self):
+        wrong = io.BytesIO(b'wrong-vhost')
+        correct = io.BytesIO(b'exact-challenge')
+        wrong.status = correct.status = 200
+        opener = Mock()
+        opener.open.side_effect = [OSError('old listener'), wrong, correct]
+        with patch.object(installer.urllib.request, 'build_opener', return_value=opener) as build, patch.object(installer.time, 'sleep') as sleep:
+            installer.public_probe('http://' + installer.HOST + '/challenge', lambda body: body == b'exact-challenge', 'PUBLIC_ACME_ROUTE_FAILED')
+        self.assertEqual(opener.open.call_count, 3)
+        self.assertEqual(sleep.call_count, 2)
+        self.assertTrue(all(call.kwargs['timeout'] <= 1.5 for call in opener.open.call_args_list))
+        self.assertIsNone(build.call_args.args[1].redirect_request(None, None, 301, '', {}, 'https://unexpected.example'))
+
+    def test_public_probe_failure_is_bounded_and_uses_fixed_error(self):
+        opener = Mock()
+        opener.open.side_effect = OSError('private details')
+        ticks = iter(range(30))
+        with patch.object(installer.urllib.request, 'build_opener', return_value=opener), patch.object(installer.time, 'sleep'), patch.object(installer.time, 'monotonic', side_effect=lambda: next(ticks)):
+            with self.assertRaisesRegex(RuntimeError, '^MOCK_PUBLIC_HEALTH_FAILED$'):
+                installer.public_probe('https://' + installer.HOST + '/health', lambda body: True, 'MOCK_PUBLIC_HEALTH_FAILED')
+        self.assertLessEqual(opener.open.call_count, 4)
+
+    def test_certificate_issuance_is_not_retried(self):
+        with patch.object(installer, 'acme'), patch.object(installer, 'run', side_effect=RuntimeError('COMMAND_FAILED')) as run:
+            with self.assertRaisesRegex(RuntimeError, 'COMMAND_FAILED'):
+                installer.certificate({'id': 'owned'})
+        self.assertEqual(run.call_count, 1)
+        self.assertIn('certonly', run.call_args.args[0])
+
     def status_result(self, *, service_states=None, database_running=False, responses=(), guard_failure=None):
-        service_states = service_states or {name: 'inactive' for name in installer.UNITS[:4]}
+        service_states = service_states or {name: 'inactive' for name in installer.RUNTIME_UNITS}
         opener = Mock()
         opener.open.side_effect = responses
         state = {'release': '/opt/oasis/releases/20261007-02'}
@@ -126,8 +183,17 @@ class InstallSafetyTests(unittest.TestCase):
         guard.assert_not_called()
         opener.open.assert_not_called()
 
+    def test_status_requires_running_proxy_not_only_application_services(self):
+        states = {name: 'active' for name in installer.RUNTIME_UNITS}
+        states[installer.PROXY_UNIT + '.service'] = 'failed'
+        result, guard, opener = self.status_result(service_states=states, database_running=True)
+        self.assertEqual(result['status'], 'degraded')
+        self.assertFalse(result['healthy'])
+        guard.assert_not_called()
+        opener.open.assert_not_called()
+
     def test_active_services_need_database_readiness_and_sandbox_https_health(self):
-        states = {name: 'active' for name in installer.UNITS[:4]}
+        states = {name: 'active' for name in installer.RUNTIME_UNITS}
         for failed_check in ('api', 'public_https'):
             with self.subTest(failed_check=failed_check):
                 responses = [self.health_response(), self.health_response(), self.health_response()]
@@ -141,7 +207,7 @@ class InstallSafetyTests(unittest.TestCase):
                 self.assertEqual(opener.open.call_args_list[0].args[0], 'http://127.0.0.1:18981/health/ready')
 
     def test_healthy_status_requires_all_probes_and_isolation(self):
-        states = {name: 'active' for name in installer.UNITS[:4]}
+        states = {name: 'active' for name in installer.RUNTIME_UNITS}
         result, guard, opener = self.status_result(service_states=states, database_running=True, responses=[self.health_response() for _ in range(3)])
         self.assertEqual(result['status'], 'running')
         self.assertTrue(result['healthy'])
@@ -152,7 +218,7 @@ class InstallSafetyTests(unittest.TestCase):
         self.assertEqual(opener.open.call_args_list[2].args[0], 'https://' + installer.HOST + '/health')
 
     def test_status_aborts_on_isolation_failure(self):
-        states = {name: 'active' for name in installer.UNITS[:4]}
+        states = {name: 'active' for name in installer.RUNTIME_UNITS}
         with self.assertRaisesRegex(RuntimeError, 'NETWORK_POLICY_DRIFT'):
             self.status_result(service_states=states, database_running=True, guard_failure=RuntimeError('NETWORK_POLICY_DRIFT'))
 
