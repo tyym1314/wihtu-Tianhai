@@ -92,3 +92,20 @@ Local fixtures are not a real-host execution record. Independent review and a
 Linux fixture with Linux ownership/symlink timestamp behavior must complete before
 the first real archive operation. No real archive or space-saving
 claim is implied by the presence of this tool.
+
+## Execution record: 2026-10-08
+
+The new 12-test suite and unchanged 19-test suite passed locally and on the Linux
+host; independent source review passed. Releases `20261007-01` and `20261007-02`
+were then archived individually with real extraction verification. Net reclaimed
+allocation was **276,107,264 bytes**, with both tar files permanently retained.
+`20261007-03` remains in place. Post-operation available space was 6,742,315,008
+bytes (83.902% used); this is the pre-candidate measurement, not the next release's
+post-deployment capacity result.
+
+Both service health checks passed after each archive. Current `20261008-04`, Mock
+`20261007-04`, private release/static-head hashes and all 47 original nine-release
+JSON evidence files were unchanged. Local ignored evidence is in
+`review/release/oct07-{before,after01,after02}-20261008.json` and the two
+`oct07-archived-*-20261008.json` receipts. These same-host archives do not establish
+offsite recovery.
