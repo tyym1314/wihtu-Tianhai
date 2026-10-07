@@ -95,7 +95,7 @@ test('captured first-jump timing retains its confirmed prediction until authorit
    const g=game(tick,{phase:at<transitionAt?'arming':'racing'});
    g.players=g.players.map(p=>({...p,distance:tick*40/300,inputNo,appliedInputNo,jumpStartTick:appliedInputNo?248:null}));return g;
   };
-  let g=rowGame([initialAt,0,0,0]);const update=()=>{c.receive(g,now,owner);model.update(g,'p0',{...owner,at:now,elapsed:c.elapsed(now)});};update();
+  let g=rowGame([initialAt,0,0,0]);const update=()=>{c.receive(g,now,owner);model.update(g,'p0',{...owner,at:now,inputFreshUntil:now+1500});};update();
   const receipt={...owner,request_id:'actual-jump-fixture',seq:1,type:'jump',ruleVersion:g.ruleVersion,inputNo:1,acceptedTick:248};
   const intent={...receipt,token:'first-jump'};delete intent.inputNo;delete intent.acceptedTick;
   const events=actual.filter(r=>r[0]>=initialAt).map(row=>({at:row[0],kind:'room',row}));

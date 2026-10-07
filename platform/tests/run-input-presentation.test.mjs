@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as E from '../arena/run/engine.mjs';
-import {projectedPose} from '../arena/run/presentation.mjs';
+import {projectedPose,RUN_PROJECTION_LIMIT_MS} from '../arena/run/presentation.mjs';
+import {createRunInputGuard,RUN_INPUT_FRESH_MS} from '../arena/run/input-readiness.mjs';
 import {createRunInputPresentation,RUN_INPUT_RECONCILE_MS} from '../arena/run/input-presentation.mjs';
 
 function fixture(){
@@ -9,7 +10,7 @@ function fixture(){
  const state=E.createState('02'.repeat(32),10000,{players:[{key:'p0',seatIndex:0},{key:'p1',seatIndex:1}]});
  let game=E.view(state,'p0');const model=createRunInputPresentation({now:()=>time});
  const sample=(at=time,elapsed=at)=>{time=at;const base=projectedPose(game.players[0],game,elapsed);return{base,visual:model.sample(base,{at,elapsed})};};
- const update=(next,at=time,options={})=>{time=at;game=next;return model.update(next,'p0',{roomId:'room-a',at,...options});};
+ const update=(next,at=time,options={})=>{time=at;game=next;return model.update(next,'p0',{roomId:'room-a',at,inputFreshUntil:at+RUN_INPUT_FRESH_MS,...options});};
  const dispatch=(type='jump',extra={})=>({token:'owner:1',roomId:'room-a',playerKey:'p0',request_id:'request_0001',seq:1,type,ruleVersion:game.ruleVersion,...extra});
  const receipt=(input,extra={})=>{const {token,...fields}=input;return{...fields,inputNo:1,acceptedTick:1,...extra};};
  update(game);sample(0);
@@ -98,16 +99,57 @@ test('a new respawn event interrupts even when the latest snapshot is already re
  const f=fixture();f.model.beginInput(f.dispatch('left'));f.sample(100);const next=structuredClone(f.game());next.snapshotTick=6;next.events=[{id:1,playerKey:'p0',type:'respawn'}];f.update(next,100);assert.equal(f.model.state().active,0);
 });
 
-test('same-tick polling and a receipt never renew the 650ms authority horizon',()=>{
+test('same-tick polling and a receipt never renew the input admission deadline',()=>{
  const f=fixture(),input=f.dispatch();f.model.beginInput(input);f.setTime(300);f.model.acceptInput({token:input.token,receipt:f.receipt(input)});f.update(structuredClone(f.game()),600);
- assert.ok(f.sample(649).visual.y>0);assert.equal(f.sample(650).visual.y,0);assert.equal(f.model.state().reason,'stale');
+ assert.ok(f.sample(649).visual.y>0);assert.ok(f.sample(650).visual.feedback);assert.ok(f.sample(1499).visual.feedback);
+ assert.equal(f.sample(1500).visual.feedback,null);assert.equal(f.model.state().reason,'stale');
 });
 test('unconfirmed prediction expires after 650ms even while unrelated new authority ticks arrive',()=>{
  const f=fixture(),input=f.dispatch();f.model.beginInput(input);const next=structuredClone(f.game());next.snapshotTick=30;f.update(next,500);f.sample(649,149);assert.equal(f.sample(650,150).visual.y,0);
  assert.equal(f.model.state().reason,'unconfirmed-expired');assert.equal(f.model.acceptInput({token:input.token,receipt:f.receipt(input)}),false);
 });
-test('carried snapshot projection age counts toward the stale boundary',()=>{
- const f=fixture();f.model.beginInput(f.dispatch());const next=structuredClone(f.game());next.snapshotTick=1;f.update(next,600,{elapsed:600});assert.ok(f.sample(649,649).visual.y>0);assert.equal(f.sample(650,650).visual.y,0);
+test('forward phase carry cannot erase a newly dispatched legal input at the first frame',()=>{
+ for(const at of [649,650,729.0667]){
+  const f=fixture();f.setTime(at);assert.equal(f.model.beginInput(f.dispatch()),true);
+  const first=f.sample(at+16.7,at+16.7);
+  assert.ok(first.visual.y>0);assert.equal(first.visual.feedback.state,'predicted');
+  assert.equal(first.base.distance,Math.min(at+16.7,RUN_PROJECTION_LIMIT_MS)*.008,'forward projection still stops at650ms');
+  assert.equal(f.sample(at+650).visual.feedback,null,'unconfirmed dispatch still expires after650ms');
+ }
+});
+
+test('input presentation uses the guard deadline including server age and cannot renew it on duplicate reads',()=>{
+ const f=fixture(),guard=createRunInputGuard(),g=f.game();
+ guard.receive(g,g.serverNow+875,100);guard.sceneReady(true);
+ const next=structuredClone(g);next.snapshotTick++;next.serverNow+=1000/60;
+ guard.receive(next,next.serverNow+875,100);
+ const freshness=guard.current(100);assert.equal(freshness.freshUntil,725);
+ f.update(next,100,{inputFreshUntil:freshness.freshUntil});f.sample(700,600);
+ f.setTime(708.3);assert.equal(guard.current(708.3).ready,true);assert.equal(f.model.beginInput(f.dispatch()),true);
+ assert.ok(f.sample(724.9,649).visual.feedback);
+ f.update(next,724.9,{inputFreshUntil:2224.9});
+ assert.equal(guard.current(725).ready,false);assert.equal(f.sample(725,650).visual.feedback,null);
+ assert.equal(f.model.state().reason,'stale');
+});
+
+test('missing, nonfinite or overlong input freshness cannot authorize a render prediction',()=>{
+ for(const inputFreshUntil of [undefined,NaN,Infinity,-Infinity,1500.01]){
+  const f=fixture(),next=structuredClone(f.game());next.snapshotTick++;
+  f.update(next,0,{inputFreshUntil});f.sample(0);
+  assert.equal(f.model.beginInput(f.dispatch()),false);
+ }
+});
+
+test('an old RAF timestamp cannot extend the absolute input or unconfirmed deadline',()=>{
+ for(const {dispatchAt,callbackAt,frameAt} of [
+  {dispatchAt:1000,callbackAt:1520,frameAt:1499.5},
+  {dispatchAt:500,callbackAt:1151,frameAt:1149.5},
+ ]){
+  const f=fixture();f.setTime(dispatchAt);assert.equal(f.model.beginInput(f.dispatch()),true);
+  f.setTime(callbackAt);
+  const visual=f.model.sample(projectedPose(f.game().players[0],f.game(),frameAt),{at:frameAt});
+  assert.equal(visual.feedback,null);
+ }
 });
 test('new authority past an accepted tick without its applied watermark fails closed',()=>{
  const f=fixture(),input=f.dispatch();f.model.beginInput(input);f.model.acceptInput({token:input.token,receipt:f.receipt(input)});const next=structuredClone(f.game());next.snapshotTick=2;f.update(next,40);assert.equal(f.model.state().active,0);assert.equal(f.model.state().reason,'inconsistent-authority');

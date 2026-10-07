@@ -1,8 +1,9 @@
 import {LANES} from './level.mjs';
-import {RUN_PROJECTION_LIMIT_MS} from './presentation.mjs';
+import {RUN_INPUT_FRESH_MS} from './input-readiness.mjs';
 import {runRequiresSceneReady} from './start-policy.mjs';
 
 export const RUN_INPUT_RECONCILE_MS=100;
+export const RUN_INPUT_CONFIRM_MS=650;
 const supported=g=>g?.physicsVersion==='run-60hz-v1.0.0'&&(['pvp-run-v1.0.0','pvp-run-v2.0.0'].includes(g.ruleVersion)||runRequiresSceneReady(g.ruleVersion));
 const axisOf=type=>type==='left'||type==='right'?'x':type==='jump'||type==='slide'?'y':null;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),mix=(a,b,t)=>a+(b-a)*t;
@@ -14,24 +15,27 @@ export function readRunVisualAction(action){return action&&visualActionTypes.has
 
 /** A bounded, local-runner render overlay. It never writes to a game snapshot. */
 export function createRunInputPresentation({now=()=>performance.now()}={}){
- let game=null,player=null,scope=null,playerKey=null,authorityAt=-Infinity,lastTick=-1,lastEventId=0;
+ let game=null,player=null,scope=null,playerKey=null,authorityUntil=-Infinity,lastTick=-1,lastEventId=0;
  let dead=false,lastBase=null,lastVisual=null,correction=null,correctNext=0,lastReason=null;
  const records=new Map(),seenTokens=new Set();
  const bit=axis=>axis==='x'?1:2;
  const clear=(reason)=>{records.clear();correction=null;correctNext=0;lastReason=reason;};
  const removeAxis=axis=>{records.delete(axis);correctNext&=~bit(axis);if(correction){delete correction[axis];if(!Object.keys(correction).length)correction=null;}};
- const stale=(at,elapsed)=>Math.max(at-authorityAt,Number.isFinite(elapsed)?elapsed:0)>=RUN_PROJECTION_LIMIT_MS;
- function prune(at,elapsed){
-  if(stale(at,elapsed)){clear('stale');return;}
-  for(const [axis,record] of records)if(record.state==='predicted'&&at-record.at>=RUN_PROJECTION_LIMIT_MS){removeAxis(axis);lastReason='unconfirmed-expired';}
+ const stale=at=>at>=authorityUntil;
+ function prune(at){
+  if(stale(at)){clear('stale');return;}
+  for(const [axis,record] of records)if(record.state==='predicted'&&at>=record.at+RUN_INPUT_CONFIRM_MS){removeAxis(axis);lastReason='unconfirmed-expired';}
  }
- function update(g,key,{roomId,at=now(),elapsed=0}={}){
+ function update(g,key,{roomId,at=now(),inputFreshUntil=-Infinity}={}){
   if(dead||typeof roomId!=='string'||!roomId||typeof key!=='string'||!Number.isFinite(at)||!integer(g?.snapshotTick))return false;
   const nextScope=JSON.stringify([roomId,key,g.ruleVersion,g.startedAt]);
-  if(nextScope!==scope){clear('scope');seenTokens.clear();scope=nextScope;lastTick=-1;lastEventId=0;lastBase=null;lastVisual=null;authorityAt=-Infinity;}
+  if(nextScope!==scope){clear('scope');seenTokens.clear();scope=nextScope;lastTick=-1;lastEventId=0;lastBase=null;lastVisual=null;authorityUntil=-Infinity;}
   if(g.snapshotTick<lastTick)return false;
   const prior=player;game=g;playerKey=key;player=g.players?.find(p=>p.key===key);
-  if(g.snapshotTick>lastTick){lastTick=g.snapshotTick;authorityAt=at-Math.max(0,Number.isFinite(elapsed)?elapsed:0);}
+  // Input admission includes the server's snapshot age. Forward projection's
+  // carried phase is a different clock: its 650 ms hold must not erase a legal
+  // local jump before the first frame. Duplicates never renew either budget.
+  if(g.snapshotTick>lastTick){lastTick=g.snapshotTick;authorityUntil=Number.isFinite(inputFreshUntil)&&inputFreshUntil<=at+RUN_INPUT_FRESH_MS?inputFreshUntil:-Infinity;}
   let interrupt=false;
   for(const event of g.events||[]){if(integer(event.id)&&event.id>lastEventId&&event.playerKey===key&&interruptEvents.has(event.type))interrupt=true;if(integer(event.id))lastEventId=Math.max(lastEventId,event.id);}
   if(!supported(g)||g.status!=='active'||['arming','countdown','finished'].includes(g.phase)||interrupted(player)||prior&&player.hits>prior.hits||interrupt){clear('authority-interruption');return true;}
@@ -42,7 +46,7 @@ export function createRunInputPresentation({now=()=>performance.now()}={}){
    if(integer(player.appliedInputNo)&&player.appliedInputNo>=watermark){records.delete(axis);correctNext|=bit(axis);}
    else if(record.state==='confirmed'&&g.snapshotTick>=record.acceptedTick){removeAxis(axis);lastReason='inconsistent-authority';}
   }
-  prune(at,elapsed);return true;
+  prune(at);return true;
  }
  function beginInput(input){
   const at=now(),axis=axisOf(input?.type);prune(at);
@@ -81,10 +85,12 @@ export function createRunInputPresentation({now=()=>performance.now()}={}){
    return;
   }
  }
- function sample(base,{at=now(),elapsed}={}){
+ function sample(base,{at=now()}={}){
   const result={x:base.x,y:base.y,visualAction:null,feedback:null};
   if(!Number.isFinite(at)||!Number.isFinite(base.x)||!Number.isFinite(base.y)||!Number.isFinite(base.tick))return result;
-  lastBase={x:base.x,y:base.y,tick:base.tick};prune(at,elapsed);
+  // RAF can carry an older frame timestamp. Animation uses that timestamp,
+  // but it must not keep an expired input alive when the callback runs late.
+  lastBase={x:base.x,y:base.y,tick:base.tick};prune(Math.max(at,now()));
   if(dead||!supported(game)||interrupted(player)||base.tick<player.stunUntilTick){clear('authority-interruption');lastVisual={x:base.x,y:base.y};return result;}
   for(const record of records.values()){
    const elapsedMs=Math.max(0,at-record.at);

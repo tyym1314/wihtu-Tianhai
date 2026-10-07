@@ -19,9 +19,12 @@ export function createRunInputGuard(){
   rejectStale(){afterTick=Math.max(afterTick,snapshot?.tick??-1);},
   current(at){
    const age=snapshot?Math.max(0,at-snapshot.at)+snapshot.age:Infinity;
+   const freshUntil=snapshot?snapshot.at+RUN_INPUT_FRESH_MS-snapshot.age:-Infinity;
    // Leave 500 ms of the server's existing 2 s limit for request delivery.
-   return{ready:sceneReady&&!!snapshot&&snapshot.tick>afterTick&&age<RUN_INPUT_FRESH_MS,
-    sceneReady,waiting:!!snapshot&&snapshot.tick<=afterTick,age,tick:snapshot?.tick??null};
+   // Share one absolute deadline with the renderer, including at the boundary.
+   return{ready:sceneReady&&!!snapshot&&snapshot.tick>afterTick&&at<freshUntil,
+    sceneReady,waiting:!!snapshot&&snapshot.tick<=afterTick,age,tick:snapshot?.tick??null,
+    freshUntil};
   }
  };
 }

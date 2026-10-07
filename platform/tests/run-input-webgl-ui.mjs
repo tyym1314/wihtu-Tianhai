@@ -13,7 +13,7 @@ import {makeRunActionReceipt} from '../shared/run-action-receipt.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const out=resolve(root,'review/deployment',`run-input-webgl-${Date.now()}-${Math.random().toString(16).slice(2,8)}`);
 await mkdir(out,{recursive:true});console.log(JSON.stringify({report_directory:out}));
-const sourceFiles=['arena/run/RunGame.jsx','arena/run/scene.mjs','arena/run/input-presentation.mjs','arena/run/frame-trace.mjs','arena/run/presentation.mjs','arena/run/atlas-characters.mjs','arena/run/characters.mjs','arena/run/engine.mjs','shared/run-action-receipt.mjs'];
+const sourceFiles=['arena/run/RunGame.jsx','arena/run/scene.mjs','arena/run/input-presentation.mjs','arena/run/input-readiness.mjs','arena/run/frame-trace.mjs','arena/run/presentation.mjs','arena/run/atlas-characters.mjs','arena/run/characters.mjs','arena/run/engine.mjs','shared/run-action-receipt.mjs'];
 const hashes=async()=>Object.fromEntries(await Promise.all(sourceFiles.map(async file=>[file,createHash('sha256').update(await readFile(resolve(root,file))).digest('hex')])));
 const report={scope:'Local Chrome with actual RunGame, scene, GLB/WebP assets and WebGL renderer. Isolated real HTTP wrapper and pinned engine; controlled ACK/publication delays, not Arena backend, device, public-host, FPS or full-round acceptance.',harness_sha256:createHash('sha256').update(await readFile(fileURLToPath(import.meta.url))).digest('hex'),cases:[],errors:[],source_hashes:await hashes(),passed:false};
 const source=`
@@ -40,7 +40,7 @@ function App(){const[room,setRoom]=useState(null),[requestState,setRequestState]
 function instrumentScene(content){
  const needle='onFrame(time);if(mine&&!readyAnnounced)';assert.equal(content.split(needle).length,2,'scene post-render observation anchor must be unique');
  return content.replace(needle,`onFrame(time);if(mine&&window.inputWebgl){const observedRoot=runners.get(me)?.root,observedAuthority=projectedPose(mine,game,snapshotClock.elapsed(time)),probe=window.inputWebgl;
-  if(probe.frames.length<6000)probe.frames.push({at:performance.now(),raf_at:time,snapshot_tick:game.snapshotTick,input_no:mine.inputNo,applied_input_no:mine.appliedInputNo,actual:{x:observedRoot.position.x,y:observedRoot.position.y,z:observedRoot.position.z,clip:observedRoot.userData.clip},authority:observedAuthority,camera_distance:cameraDistance,camera_z:camera.position.z,feedback_at:container.dataset.inputFeedbackAt||null,feedback_type:container.dataset.inputFeedbackType||null,feedback_state:container.dataset.inputFeedbackState||null,calls:renderer.info.render.calls,textures:renderer.info.memory.textures});else probe.droppedFrames++;
+  if(probe.frames.length<6000)probe.frames.push({at:performance.now(),raf_at:time,snapshot_tick:game.snapshotTick,snapshot_elapsed:snapshotClock.elapsed(time),input_no:mine.inputNo,applied_input_no:mine.appliedInputNo,actual:{x:observedRoot.position.x,y:observedRoot.position.y,z:observedRoot.position.z,clip:observedRoot.userData.clip},authority:observedAuthority,camera_distance:cameraDistance,camera_z:camera.position.z,feedback_at:container.dataset.inputFeedbackAt||null,feedback_type:container.dataset.inputFeedbackType||null,feedback_state:container.dataset.inputFeedbackState||null,calls:renderer.info.render.calls,textures:renderer.info.memory.textures});else probe.droppedFrames++;
  }if(mine&&!readyAnnounced)`);
 }
 let server,browser,timer,publicationTimer,context;
@@ -86,7 +86,7 @@ try{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));timer=setInterval(advance,250);
  const origin=`http://127.0.0.1:${server.address().port}`;report.origin=origin;
  browser=await chromium.launch({headless:true,channel:'chrome',args:['--use-angle=metal']});report.browser=browser.version();
- const cases=[{name:'jump-ack300-publish450',type:'jump',ack:300,publish:450},{name:'left-ack450-publish200',type:'left',ack:450,publish:200},{name:'jump-ack450-publish450',type:'jump',ack:450,publish:450},{name:'left-ack300-publish200',type:'left',ack:300,publish:200},{name:'left-rejected-ack450',type:'left',ack:450,publish:0,reject:true}];
+ const cases=[{name:'jump-ack300-publish450',type:'jump',ack:300,publish:450},{name:'left-ack450-publish200',type:'left',ack:450,publish:200},{name:'jump-ack450-publish450',type:'jump',ack:450,publish:450},{name:'left-ack300-publish200',type:'left',ack:300,publish:200},{name:'left-rejected-ack450',type:'left',ack:450,publish:0,reject:true},{name:'jump-after-forward-hold',type:'jump',ack:300,publish:450,preHold:true},{name:'left-after-forward-hold',type:'left',ack:300,publish:450,preHold:true}];
  for(const current of cases){
   reset(current);const row={...current,errors:[],resources:[],passed:false};report.cases.push(row);
   row.trace_enabled=report.cases.length>1;
@@ -102,6 +102,12 @@ try{
   row.gpu=await page.evaluate(()=>{const canvas=document.querySelector('[data-testid=run-track] canvas'),gl=canvas.getContext('webgl2'),ext=gl.getExtension('WEBGL_debug_renderer_info');return{renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),canvas:{width:canvas.width,height:canvas.height},loadedModels:document.querySelector('[data-testid=run-track]').dataset.modelsReady};});
   assert.equal(await page.evaluate(()=>!!document.querySelector('[data-testid=run-track]').__oasisRunFrameTrace),row.trace_enabled,'trace is exposed only after explicit session opt-in');
   await page.evaluate(()=>{window.inputWebgl.frames=[];window.inputWebgl.requests=[];document.querySelector('[data-testid=run-track]').__oasisRunFrameTrace?.reset();});
+  if(current.preHold){
+   heldUntil=Date.now()+1800;
+   await page.waitForFunction(()=>window.inputWebgl.frames.at(-1)?.snapshot_elapsed>=700,{},{timeout:2000});
+   row.before_held_dispatch=await page.evaluate(()=>({frame:window.inputWebgl.frames.at(-1),enabled:!document.querySelector('[data-testid=run-jump]').disabled}));
+   assert.ok(row.before_held_dispatch.enabled);assert.ok(row.before_held_dispatch.frame.snapshot_elapsed>=700);
+  }
   await page.getByTestId(`run-${current.type}`).tap();
   await page.waitForFunction(type=>window.inputWebgl.frames.some(f=>f.feedback_state==='predicted'&&(type==='jump'?f.actual.y>0&&f.actual.clip==='jump':f.actual.x<-.001)&&f.applied_input_no===0),current.type,{timeout:1500});
   await page.screenshot({path:resolve(out,`${current.name}-immediate.png`)});
