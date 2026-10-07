@@ -97,11 +97,18 @@ def save(state):
     os.replace(temporary, MARKER)
 
 
-def exact_file(path, text, mode=0o644):
+def existing_exact_file(path, text, mode=0o644):
+    """Validate an existing owned file without creating an absent one."""
     require(not path.is_symlink(), 'REFUSE_SYMLINK: ' + str(path))
     if path.exists():
         require(path.is_file() and path.read_text() == text, 'REFUSE_EXISTING_DIFFERENT_FILE: ' + str(path))
         require(path.stat().st_uid == 0 and path.stat().st_mode & 0o777 == mode, 'EXISTING_FILE_PERMISSIONS: ' + str(path))
+        return True
+    return False
+
+
+def exact_file(path, text, mode=0o644):
+    if existing_exact_file(path, text, mode):
         return
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
     with os.fdopen(descriptor, 'w') as target:
@@ -542,10 +549,19 @@ def certificate(state, renew=False):
 
 
 def start(state):
+    template = (Path(state['release']) / 'platform/deploy/mock-sandbox/mock.nginx.conf.example').read_text()
+    tls_text = template.replace('mock-game.example.invalid', HOST).replace('/live/ANDROID_MOCK/', '/live/oasis-android-mock/')
+    # Reject unknown profiles before check() invokes Nginx or any service starts.
+    # Missing TLS configuration is normal for the first start; do not create it
+    # until the existing release, certificate and isolation checks have passed.
+    existing_exact_file(TLS_CONF, tls_text)
     check(state['release'], state)
     require(CERT.exists(), 'MOCK_CERTIFICATE_MISSING')
     run(['systemctl', 'start', 'oasis-android-mock-network', 'oasis-android-mock-db', PROXY_UNIT + '.socket', PROXY_UNIT + '.service'])
     guard(load())
+    # Recheck/create exclusively before entering application startup's failure
+    # handler, so a conflicting file cannot stop already-running applications.
+    exact_file(TLS_CONF, tls_text)
     try:
         run(['systemctl', 'start', 'oasis-android-mock-api', 'oasis-android-mock-demo'])
         for attempt in range(30):
@@ -560,8 +576,6 @@ def start(state):
                 time.sleep(1)
         else:
             raise RuntimeError('MOCK_HEALTH_TIMEOUT')
-        template = (Path(state['release']) / 'platform/deploy/mock-sandbox/mock.nginx.conf.example').read_text()
-        exact_file(TLS_CONF, template.replace('mock-game.example.invalid', HOST).replace('/live/ANDROID_MOCK/', '/live/oasis-android-mock/'))
         run(['nginx', '-t'])
         run(['systemctl', 'reload', 'nginx'])
         public_probe('https://' + HOST + '/health', lambda body: json.loads(body).get('status') == 'ok' and json.loads(body).get('environment') == 'sandbox', 'MOCK_PUBLIC_HEALTH_FAILED')

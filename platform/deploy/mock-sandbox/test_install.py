@@ -223,5 +223,192 @@ class InstallSafetyTests(unittest.TestCase):
             self.status_result(service_states=states, database_running=True, guard_failure=RuntimeError('NETWORK_POLICY_DRIFT'))
 
 
+class StartProfileTests(unittest.TestCase):
+    """Filesystem and call-sequence fixtures; every external operation is mocked."""
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.release = self.root / 'release'
+        templates = self.release / 'platform/deploy/mock-sandbox'
+        templates.mkdir(parents=True)
+        text = Path(__file__).with_name('mock.nginx.conf.example').read_text()
+        (templates / 'mock.nginx.conf.example').write_text(text)
+        self.expected = text.replace('mock-game.example.invalid', installer.HOST).replace('/live/ANDROID_MOCK/', '/live/oasis-android-mock/')
+        self.tls = self.root / 'mock.conf'
+        self.cert = self.root / 'certificate'
+        self.cert.mkdir()
+        self.state = {'release': str(self.release)}
+        self.events = []
+        self.active = {'oasis-android-mock-api', 'oasis-android-mock-demo'}
+        self.tls_uid = 0
+        stat = Path.stat
+
+        def fixture_stat(path, *args, **kwargs):
+            result = stat(path, *args, **kwargs)
+            # Model root-owned production files without chown/root privileges.
+            if path == self.tls:
+                return os.stat_result((*result[:4], self.tls_uid, *result[5:]))
+            return result
+
+        def run(arguments, **kwargs):
+            self.events.append(tuple(arguments))
+            if arguments[:2] == ['systemctl', 'start']:
+                self.active.update(arguments[2:])
+            elif arguments[:2] == ['systemctl', 'stop']:
+                self.active.difference_update(arguments[2:])
+            return installer.subprocess.CompletedProcess(arguments, 0, '', '')
+
+        def ensure(*args, **kwargs):
+            self.events.append('tls-ensure')
+            return exact_file(*args, **kwargs)
+
+        def response(_request, **_kwargs):
+            self.events.append('health')
+            value = io.StringIO('{"status":"ok","environment":"sandbox"}')
+            value.status = 200
+            return value
+
+        exact_file = installer.exact_file
+        patches = (
+            patch.object(installer, 'TLS_CONF', self.tls),
+            patch.object(installer, 'CERT', self.cert),
+            patch.object(Path, 'stat', fixture_stat),
+            patch.object(installer, 'check', side_effect=lambda *_args: self.events.append('check')),
+            patch.object(installer, 'guard', side_effect=lambda *_args: self.events.append('guard')),
+            patch.object(installer, 'load', return_value=self.state),
+            patch.object(installer, 'run', side_effect=run),
+            patch.object(installer, 'exact_file', side_effect=ensure),
+            patch.object(installer.urllib.request, 'urlopen', side_effect=response),
+            patch.object(installer, 'public_probe', side_effect=lambda *_args: self.events.append('public-health')),
+            patch('sys.stdout', new=io.StringIO()),
+        )
+        for item in patches:
+            item.start()
+            self.addCleanup(item.stop)
+
+    def write_original(self):
+        self.tls.write_text(self.expected)
+        self.tls.chmod(0o644)
+
+    def assert_no_application_mutation(self):
+        applications = {'oasis-android-mock-api', 'oasis-android-mock-demo'}
+        self.assertTrue(applications <= self.active)
+        for call in installer.run.call_args_list:
+            arguments = call.args[0]
+            self.assertFalse(arguments[0] == 'systemctl' and applications.intersection(arguments[2:]), arguments)
+
+    def test_unknown_existing_profile_rejects_before_any_command_and_preserves_running_apps(self):
+        self.tls.write_text(self.expected + '\n# unknown overlay\n')
+        before = self.tls.read_bytes(), self.tls.stat().st_ino
+        with self.assertRaisesRegex(RuntimeError, 'REFUSE_EXISTING_DIFFERENT_FILE'):
+            installer.start(self.state)
+        installer.check.assert_not_called()
+        installer.run.assert_not_called()
+        installer.exact_file.assert_not_called()
+        self.assert_no_application_mutation()
+        self.assertEqual((self.tls.read_bytes(), self.tls.stat().st_ino), before)
+
+    def test_original_profile_wrong_owner_or_mode_rejects_before_any_command(self):
+        self.write_original()
+        for owner, mode in ((991, 0o644), (0, 0o666), (0, 0o600)):
+            with self.subTest(owner=owner, mode=oct(mode)):
+                self.tls_uid = owner
+                self.tls.chmod(mode)
+                with self.assertRaisesRegex(RuntimeError, 'EXISTING_FILE_PERMISSIONS'):
+                    installer.start(self.state)
+        installer.check.assert_not_called()
+        installer.run.assert_not_called()
+        self.assert_no_application_mutation()
+
+    def test_symlink_and_directory_profiles_reject_before_any_command(self):
+        for target in (self.root / 'absent', self.release):
+            with self.subTest(target=target.name):
+                self.tls.symlink_to(target)
+                with self.assertRaisesRegex(RuntimeError, 'REFUSE_SYMLINK'):
+                    installer.start(self.state)
+                self.tls.unlink()
+        self.tls.mkdir()
+        with self.assertRaisesRegex(RuntimeError, 'REFUSE_EXISTING_DIFFERENT_FILE'):
+            installer.start(self.state)
+        installer.check.assert_not_called()
+        installer.run.assert_not_called()
+        self.assert_no_application_mutation()
+
+    def test_original_profile_keeps_identity_and_normal_startup_order(self):
+        self.write_original()
+        before = self.tls.read_bytes(), self.tls.stat().st_ino, self.tls.stat().st_mtime
+        installer.start(self.state)
+        self.assertEqual((self.tls.read_bytes(), self.tls.stat().st_ino, self.tls.stat().st_mtime), before)
+        app_start = ('systemctl', 'start', 'oasis-android-mock-api', 'oasis-android-mock-demo')
+        self.assertLess(self.events.index('check'), self.events.index('guard'))
+        self.assertLess(self.events.index('guard'), self.events.index('tls-ensure'))
+        self.assertLess(self.events.index('tls-ensure'), self.events.index(app_start))
+        self.assertLess(self.events.index('health'), self.events.index(('nginx', '-t')))
+        self.assertLess(self.events.index(('systemctl', 'reload', 'nginx')), self.events.index('public-health'))
+        self.assertFalse(any(call.args[0][:2] == ['systemctl', 'stop'] for call in installer.run.call_args_list))
+
+    def test_first_tls_creation_follows_isolation_and_precedes_app_start(self):
+        self.active.clear()
+        original_guard = installer.guard.side_effect
+
+        def guarded(state):
+            self.assertFalse(self.tls.exists())
+            original_guard(state)
+
+        installer.guard.side_effect = guarded
+        original_run = installer.run.side_effect
+
+        def commands(arguments, **kwargs):
+            if arguments[:3] == ['systemctl', 'start', 'oasis-android-mock-api']:
+                self.assertEqual(self.tls.read_text(), self.expected)
+                self.assertEqual(self.tls.stat().st_mode & 0o777, 0o644)
+            return original_run(arguments, **kwargs)
+
+        installer.run.side_effect = commands
+        installer.start(self.state)
+        self.assertLess(self.events.index('guard'), self.events.index('tls-ensure'))
+        self.assertEqual(self.tls.read_text(), self.expected)
+
+    def test_first_tls_file_not_created_before_release_check_or_certificate(self):
+        installer.check.side_effect = RuntimeError('RELEASE_PIN_CHANGED')
+        with self.assertRaisesRegex(RuntimeError, 'RELEASE_PIN_CHANGED'):
+            installer.start(self.state)
+        self.assertFalse(self.tls.exists())
+        installer.run.assert_not_called()
+        installer.check.side_effect = None
+        self.cert.rmdir()
+        with self.assertRaisesRegex(RuntimeError, 'MOCK_CERTIFICATE_MISSING'):
+            installer.start(self.state)
+        self.assertFalse(self.tls.exists())
+        installer.run.assert_not_called()
+
+    def test_isolation_failure_creates_no_tls_and_never_stops_existing_apps(self):
+        installer.guard.side_effect = RuntimeError('NETWORK_POLICY_DRIFT')
+        with self.assertRaisesRegex(RuntimeError, 'NETWORK_POLICY_DRIFT'):
+            installer.start(self.state)
+        self.assertFalse(self.tls.exists())
+        installer.exact_file.assert_not_called()
+        self.assert_no_application_mutation()
+
+    def test_late_tls_conflict_precedes_app_start_and_stop_handler(self):
+        def conflict(_state):
+            self.tls.write_text('different profile created during isolation checks')
+
+        installer.guard.side_effect = conflict
+        with self.assertRaisesRegex(RuntimeError, 'REFUSE_EXISTING_DIFFERENT_FILE'):
+            installer.start(self.state)
+        self.assert_no_application_mutation()
+        self.assertEqual(self.tls.read_text(), 'different profile created during isolation checks')
+        self.assertFalse(any(call.args[0][0] == 'nginx' for call in installer.run.call_args_list))
+
+    def test_exclusive_tls_create_failure_does_not_enter_app_stop_handler(self):
+        installer.exact_file.side_effect = FileExistsError('exclusive fixture conflict')
+        with self.assertRaises(FileExistsError):
+            installer.start(self.state)
+        self.assert_no_application_mutation()
+        self.assertFalse(self.tls.exists())
+
+
 if __name__ == '__main__':
     unittest.main()
