@@ -7,7 +7,7 @@ export const RUN_PROJECTION_LIMIT_MS=650;
 const mix=(a,b,t)=>a+(b-a)*t,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 // Both pinned rule versions declare this same 60 Hz movement profile. Keep
 // unknown profiles still rather than guessing how a zero speed may recover.
-const knownProfile=g=>(g.ruleVersion==='pvp-run-v1.0.0'||g.ruleVersion==='pvp-run-v2.0.0')&&g.physicsVersion==='run-60hz-v1.0.0';
+const knownProfile=g=>['pvp-run-v1.0.0','pvp-run-v2.0.0','pvp-run-v2.1.0'].includes(g.ruleVersion)&&g.physicsVersion==='run-60hz-v1.0.0';
 function travel(p,g,tick){
  const start=g.snapshotTick,stun=p.stunUntilTick,boost=p.boostUntilTick;
  if(!Number.isSafeInteger(start)||!Number.isSafeInteger(stun)||!Number.isSafeInteger(boost)||stun<0||boost<0)return 0;
@@ -24,7 +24,7 @@ function travel(p,g,tick){
  return meters;
 }
 export function projectedPose(p,g,elapsed){
- const active=knownProfile(g)&&g.status==='active'&&!p.forfeited&&p.finishTick==null&&!(Number.isFinite(g.serverNow)&&Number.isFinite(g.startedAt)&&g.serverNow<g.startedAt);
+ const active=knownProfile(g)&&g.status==='active'&&g.phase!=='arming'&&g.phase!=='countdown'&&!p.forfeited&&p.finishTick==null&&!(Number.isFinite(g.serverNow)&&Number.isFinite(g.startedAt)&&g.serverNow<g.startedAt);
  const ahead=active?clamp(elapsed,0,RUN_PROJECTION_LIMIT_MS):0,tick=g.snapshotTick+ahead*.06;
  const lt=p.changeEndTick>p.changeStartTick?clamp((tick-p.changeStartTick)/(p.changeEndTick-p.changeStartTick),0,1):1;
  const jt=p.jumpStartTick===null?1:(tick-p.jumpStartTick)/48;

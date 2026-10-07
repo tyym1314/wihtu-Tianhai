@@ -40,13 +40,14 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import java.util.Locale;
 
-/** Native catalogue + one full-screen WebView per selected game. Debug-only host. */
+/** Mock partner App lobby + one platform-backed full-screen WebView per selected game. */
 public final class MainActivity extends Activity {
     private static final String ORIGIN = "https://game.tianyahuyu.com";
     private static final String NATIVE_PREFIX = "/demo/native/";
     private static final String RETURN_URL = ORIGIN + "/demo/native-return";
-    private static final String VERSION = "1.1.1 (4)";
+    private static final String VERSION = "1.2.0 (5)";
     private static final int BG = Color.rgb(11, 15, 24);
     private static final int TEXT = Color.rgb(244, 239, 224);
     private static final int MUTED = Color.rgb(144, 155, 176);
@@ -66,6 +67,7 @@ public final class MainActivity extends Activity {
         {"run", "沙丘竞速", "DUNE DASH", "竞技", "#B28744"}
         ,{"towerlink", "连线夺塔", "TOWER LINK", "竞技", "#3B6E9F"}
     };
+    private final MockPartnerApi mockPartnerApi = new MockPartnerApi();
     private FrameLayout root;
     private WebView webView;
     private String activeGame;
@@ -77,6 +79,7 @@ public final class MainActivity extends Activity {
     private boolean backRequestPending;
     private boolean errorDialogVisible;
     private String appliedInsets = "等待系统安全区";
+    private MockPartnerApi.LaunchSelection lastSelection;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -144,11 +147,30 @@ public final class MainActivity extends Activity {
         diagnostics.setOnClickListener(v -> showDiagnostics());
         top.addView(diagnostics, new LinearLayout.LayoutParams(dp(54), dp(32)));
         page.addView(top);
-        page.addView(label("P L A Y   C L U B   /   原生游戏大厅", 9, MUTED));
+        page.addView(label("P L A Y   C L U B   /   合作方 Mock 大厅", 9, MUTED));
+        MockPartnerApi.Identity identity = mockPartnerApi.getIdentity();
+        MockPartnerApi.Profile profile = mockPartnerApi.getProfile(identity.userId);
+        MockPartnerApi.WalletBalance balance = mockPartnerApi.getWalletBalance(identity.userId);
+        LinearLayout mockPanel = new LinearLayout(this);
+        mockPanel.setOrientation(LinearLayout.VERTICAL);
+        mockPanel.setPadding(dp(14), dp(12), dp(14), dp(12));
+        mockPanel.setBackground(rounded(Color.rgb(23, 30, 43), 14, 0x554F6179));
+        LinearLayout.LayoutParams mockParams = new LinearLayout.LayoutParams(-1, -2);
+        mockParams.setMargins(0, dp(18), 0, 0);
+        page.addView(mockPanel, mockParams);
+        mockPanel.addView(label("合作方 App 本地 Mock · 不发网络请求", 11, GOLD));
+        TextView mockUser = label(profile.displayName + "  ·  " + identity.userId, 12, TEXT);
+        LinearLayout.LayoutParams mockUserParams = new LinearLayout.LayoutParams(-1, -2);
+        mockUserParams.setMargins(0, dp(7), 0, 0); mockPanel.addView(mockUser, mockUserParams);
+        String displayBalance = String.format(Locale.US, "%,d.%02d", balance.availableMinor / 100, balance.availableMinor % 100);
+        mockPanel.addView(label("展示余额 " + displayBalance + " " + balance.currency + "（仅大厅）", 11, TEXT));
+        TextView mockBoundary = label("游戏内账号、余额、对局与结算来自平台真实沙箱服务；此展示余额不参与游戏，也不同步。", 10, MUTED);
+        LinearLayout.LayoutParams mockBoundaryParams = new LinearLayout.LayoutParams(-1, -2);
+        mockBoundaryParams.setMargins(0, dp(7), 0, 0); mockPanel.addView(mockBoundary, mockBoundaryParams);
         TextView heading = label("选一款，开始精彩。", 23, TEXT);
         heading.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         LinearLayout.LayoutParams headingParams = new LinearLayout.LayoutParams(-1, -2);
-        headingParams.setMargins(0, dp(25), 0, dp(7)); page.addView(heading, headingParams);
+        headingParams.setMargins(0, dp(20), 0, dp(7)); page.addView(heading, headingParams);
         LinearLayout.LayoutParams summaryParams = new LinearLayout.LayoutParams(-1, -2);
         summaryParams.setMargins(0, 0, 0, dp(20));
         page.addView(label(GAMES.length + " 款游戏  ·  独立全屏  ·  测试币体验", 11, MUTED), summaryParams);
@@ -162,7 +184,7 @@ public final class MainActivity extends Activity {
             }
             page.addView(row);
         }
-        TextView footer = label("OASIS ANDROID  " + VERSION + "\n原生大厅 · 点击后才加载所选游戏", 10, MUTED);
+        TextView footer = label("OASIS ANDROID  " + VERSION + "\n合作方本地 Mock · 点击后加载平台单游戏服务", 10, MUTED);
         footer.setGravity(Gravity.CENTER); footer.setLineSpacing(dp(5), 1);
         footer.setPadding(0, dp(8), 0, 0); page.addView(footer);
         root.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
@@ -204,9 +226,12 @@ public final class MainActivity extends Activity {
 
     private void openGame(String id) {
         if (activeGame != null || !knownGame(id)) return;
-        activeGame = id; lastGame = id; lastError = null; resourceErrors = 0; consoleErrors = 0;
+        MockPartnerApi.Identity identity = mockPartnerApi.getIdentity();
+        MockPartnerApi.LaunchSelection selection = mockPartnerApi.selectGame(identity.userId, id);
+        lastSelection = selection;
+        activeGame = selection.gameId; lastGame = selection.gameId; lastError = null; resourceErrors = 0; consoleErrors = 0;
         root.removeAllViews(); createWebView(); applySystemBars();
-        webView.loadUrl(ORIGIN + NATIVE_PREFIX + id);
+        webView.loadUrl(ORIGIN + NATIVE_PREFIX + selection.gameId);
     }
     private void createWebView() {
         webView = new WebView(this); webView.setBackgroundColor(BG);
@@ -219,7 +244,7 @@ public final class MainActivity extends Activity {
         settings.setSafeBrowsingEnabled(true); settings.setJavaScriptCanOpenWindowsAutomatically(false);
         settings.setSupportMultipleWindows(false); settings.setMediaPlaybackRequiresUserGesture(true);
         settings.setSupportZoom(false); settings.setLoadWithOverviewMode(true); settings.setUseWideViewPort(true);
-        settings.setUserAgentString(settings.getUserAgentString() + " OASISSmoke/1.1.1 NativeLobby/1");
+        settings.setUserAgentString(settings.getUserAgentString() + " OASISSmoke/1.2.0 NativeLobby/1");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, false);
         webView.setWebChromeClient(new WebChromeClient() {
@@ -338,10 +363,11 @@ public final class MainActivity extends Activity {
                         + " (API " + android.os.Build.VERSION.SDK_INT + ")\nWebView: " + engineLabel
                         + "\n当前视图: " + (activeGame == null ? "原生大厅，无 WebView" : "全屏游戏 " + activeGame)
                         + "\n最近游戏: " + lastGame + "\n最近页面: " + lastPage
+                        + "\nMock 启动选择: " + (lastSelection == null ? "无" : lastSelection.selectionId)
                         + "\n系统安全区: " + appliedInsets + "\n原生容器: " + root.getWidth() + " × " + root.getHeight() + " px"
                         + "\n资源/HTTP 错误: " + resourceErrors + "\n控制台错误: " + consoleErrors
                         + "\n最近错误: " + (lastError == null ? "无" : lastError)
-                        + "\n\n平台沙箱测试币；不包含合作方真实登录或主钱包。")
+                        + "\n\n合作方身份、资料、展示余额与启动选择由 APK 内本地 Mock 提供；游戏 WebView 使用平台真实沙箱接口和独立测试钱包。")
                 .setPositiveButton("关闭", null).show();
     }
 

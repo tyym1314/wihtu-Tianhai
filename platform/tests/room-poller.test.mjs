@@ -20,6 +20,18 @@ test('normal network latency does not add another full interval after each respo
  await f.advance(1);assert.equal(f.requests[1].at,150);assert.deepEqual(f.rooms,[{version:1}]);f.stop();
 });
 
+test('an early-ready Run client receives the shared start with 1.2s left at 150ms RTT',async()=>{
+ const f=fixture();await f.advance(0);
+ // The first read began before the final player's ACK at t=1, so its reply is stale.
+ const serverArmAt=1,sharedStartAt=serverArmAt+1500;
+ await f.advance(149);f.requests[0].resolve({version:1,starts_at:null});await f.flush();
+ await f.advance(1);assert.equal(f.requests[1].at,150);
+ await f.advance(150);f.requests[1].resolve({version:2,starts_at:sharedStartAt});await f.flush();
+ assert.equal(f.rooms.at(-1).starts_at,sharedStartAt);
+ assert.ok(sharedStartAt-300>=1200);
+ f.stop();
+});
+
 test('slow reads remain serial with no catch-up burst',async()=>{
  const f=fixture();await f.advance(0);await f.advance(500);assert.equal(f.requests.length,1);
  f.requests[0].resolve({version:1});await f.flush();await f.advance(0);

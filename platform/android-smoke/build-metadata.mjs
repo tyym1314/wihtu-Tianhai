@@ -6,7 +6,7 @@ import {pathToFileURL} from 'node:url';
 import vm from 'node:vm';
 import {RELEASED_IDS} from '../shared/games.mjs';
 
-export function inspectAndroidSource(activity,manifest){
+export function inspectAndroidSource(activity,manifest,mockSource){
  const version=manifest.match(/android:versionName="([0-9.]+)"/)?.[1];
  const versionCode=Number(manifest.match(/android:versionCode="([0-9]+)"/)?.[1]);
  assert.ok(version&&Number.isSafeInteger(versionCode)&&versionCode>0);
@@ -14,6 +14,14 @@ export function inspectAndroidSource(activity,manifest){
  assert.ok(activity.includes(`OASISSmoke/${version} NativeLobby/1`),'WebView version differs');
  const catalog=[...activity.matchAll(/\{"([a-z]+)",\s*"[^"]+",\s*"[^"]+",\s*"(?:概率|竞技)",\s*"#[0-9A-Fa-f]{6}"\}/g)].map(match=>match[1]);
  assert.deepEqual(catalog,RELEASED_IDS,'Native cards must match the released catalogue');
+ if(mockSource){
+  const declarations=mockSource.match(/private static final String\[\] GAME_IDS\s*=\s*\{([\s\S]*?)\};/)?.[1];
+  assert.ok(declarations,'Mock partner launch catalogue is missing');
+  const mockGames=[...declarations.matchAll(/"([a-z]+)"/g)].map(match=>match[1]);
+  assert.deepEqual(mockGames,RELEASED_IDS,'Mock partner launch catalogue must match the released catalogue');
+  assert.match(activity,/mockPartnerApi\.selectGame\(identity\.userId, id\)/,'Game launch must pass through the local App mock');
+  assert.doesNotMatch(mockSource,/java\.net\.|HttpURLConnection|Socket\b|https?:\/\//,'Mock App API must remain in-process');
+ }
 
  // Evaluate the actual Java loop bounds (also valid JS), including odd-sized
  // catalogues. Out-of-range access throws instead of silently returning null.
@@ -46,19 +54,20 @@ export function inspectAndroidSource(activity,manifest){
   assert.equal(result,expected,label);assert.equal(calls,expectedCalls,label);
   return{case:label,result,calls};
  });
- return{version,versionCode,catalog,gridCases,actualBackScriptCases};
+ return{version,versionCode,catalog,gridCases,actualBackScriptCases,mockPartnerApi:'deterministic in-process App fixture for identity/profile/display balance/game selection; platform game WebView uses separate real HTTPS sandbox'};
 }
 
 export async function writeBuildMetadata(){
  const root=new URL('./',import.meta.url);
- const [activity,manifest]=await Promise.all([
+ const [activity,manifest,mockSource]=await Promise.all([
   readFile(new URL('app/src/com/tianyahuyu/oasis/smoke/MainActivity.java',root),'utf8'),
   readFile(new URL('app/AndroidManifest.xml',root),'utf8'),
+  readFile(new URL('app/src/com/tianyahuyu/oasis/smoke/MockPartnerApi.java',root),'utf8'),
  ]);
- const checks=inspectAndroidSource(activity,manifest),apk=`oasis-android-smoke-${checks.version}-debug.apk`;
+ const checks=inspectAndroidSource(activity,manifest,mockSource),apk=`oasis-android-smoke-${checks.version}-debug.apk`;
  const bytes=await readFile(new URL(`dist/${apk}`,root));
  const apkSha256=createHash('sha256').update(bytes).digest('hex');
- const metadata={...checks,apk,apkSha256,scope:'source contract and signed APK only; no physical Android verification performed'};
+ const metadata={...checks,apk,apkSha256,scope:'pure Java local MockPartnerApi contract, source contract and signed APK only; no physical Android verification performed'};
  await writeFile(new URL('dist/build-checks.json',root),JSON.stringify(metadata,null,2)+'\n');
  await writeFile(new URL('dist/SHA256SUMS',root),`${apkSha256}  ${apk}\n`);
  return metadata;

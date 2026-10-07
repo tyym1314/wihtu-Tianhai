@@ -193,7 +193,7 @@
       ],
       "mode": "三赛道短程个人竞速",
       "rendering": "Three.js 3D characters, course and authoritative movement",
-      "ruleVersion": "pvp-run-v2.0.0",
+      "ruleVersion": "pvp-run-v2.1.0",
       "status": "local-sandbox-game",
       "designStage": "playable-build-physical-device-review-pending",
       "conceptPath": "output/design/pvp-arena-concepts-v1/10-run.png",

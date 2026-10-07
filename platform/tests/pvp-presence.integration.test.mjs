@@ -7,6 +7,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import pg from 'pg';
 import {dropOwnedTestDatabase} from './database-cleanup.mjs';
+import * as run from '../arena/run/engine.mjs';
 let pool,locked,tryLocked,closePools,routePvp,tickPvp,admin,localDir,created=false;
 const name='oasis_pvp_test_'+process.pid+'_'+randomBytes(8).toString('hex');
 const adminUrl=new URL(process.env.OASIS_TEST_ADMIN_DATABASE_URL||'postgres://oasis_local@127.0.0.1:5487/postgres'),dbUrl=new URL(adminUrl);dbUrl.pathname='/'+name;
@@ -26,9 +27,10 @@ async function fixture(){
  const call=(session,method,path,body={})=>routePvp(session,method,path,{request_id:uid('presence_req'),...body});
  const room=(await call(owner,'POST','/api/pvp/rooms',{game_id:'run',capacity:2,practice:true})).body;
  // A free fixture with two independent human identities, so timeout tests do
- // not need financial operations or BOT scheduling/physics.
+ // not need financial operations or BOT scheduling/physics. Pin the previous
+ // immediate-start rules so these tests reach gameplay without v2.1 arming.
  const db=await read(room.id);Object.assign(db.players[1],{external_user_id:peer.external_user_id,bot:false,name:'peer'});
- await pool.query('UPDATE pvp_rooms SET players=$2 WHERE id=$1',[room.id,JSON.stringify(db.players)]);
+ await pool.query("UPDATE pvp_rooms SET players=$2,rule_version=$3,terms=jsonb_set(terms,'{rule_version}',to_jsonb($3::text)) WHERE id=$1",[room.id,JSON.stringify(db.players),run.PREVIOUS_RULE_VERSION]);
  await call(owner,'POST',`/api/pvp/rooms/${room.id}/ready`);await tickPvp({roomIds:[room.id]});
  return{id:room.id,owner,peer,call,get:s=>call(s,'GET',`/api/pvp/rooms/${room.id}`)};
 }

@@ -9,22 +9,32 @@ function fixture(engine=current){
  return{engine,state,room,at:tick=>engine.tick(state,1000+Math.ceil(tick*1000/60))};
 }
 for(const engine of [current,legacy]){
- test(engine.RULE_VERSION+': pending first jump and airborne snapshots block a second UI jump until the authoritative admission tick',()=>{
+ const version=engine===current?current.PREVIOUS_RULE_VERSION:engine.RULE_VERSION;
+ test(version+': pending first jump and airborne snapshots block a second UI jump until the authoritative admission tick',()=>{
   const f=fixture(engine);engine.act(f.state,'a',{type:'jump'},1000);assert.equal(canExercise('run',f.room()),false);
   f.at(1);assert.equal(canExercise('run',f.room()),false);
   f.at(47);assert.equal(canExercise('run',f.room()),false);assert.throws(()=>engine.act(structuredClone(f.state),'a',{type:'jump'},f.state.now),{code:'ALREADY_JUMPING'});
   f.at(48);assert.equal(canExercise('run',f.room()),true);assert.doesNotThrow(()=>engine.act(structuredClone(f.state),'a',{type:'jump'},f.state.now));
  });
- test(engine.RULE_VERSION+': slide admission boundary agrees with the actual engine',()=>{
+ test(version+': slide admission boundary agrees with the actual engine',()=>{
   const f=fixture(engine);engine.act(f.state,'a',{type:'slide'},1000);f.at(35);assert.equal(canExerciseRunJump(f.room()),false);assert.throws(()=>engine.act(structuredClone(f.state),'a',{type:'jump'},f.state.now),{code:'SLIDING'});f.at(36);assert.equal(canExerciseRunJump(f.room()),true);assert.doesNotThrow(()=>engine.act(structuredClone(f.state),'a',{type:'jump'},f.state.now));
  });
- test(engine.RULE_VERSION+': collision stun waits until the actual input-admission tick',()=>{
+ test(version+': collision stun waits until the actual input-admission tick',()=>{
   const f=fixture(engine);f.state.players[0].stunUntilTick=4;f.at(2);assert.equal(canExerciseRunJump(f.room()),false);assert.throws(()=>engine.act(structuredClone(f.state),'a',{type:'jump'},f.state.now),{code:'BUSY'});f.at(3);assert.equal(canExerciseRunJump(f.room()),true);assert.doesNotThrow(()=>engine.act(structuredClone(f.state),'a',{type:'jump'},f.state.now));
  });
- test(engine.RULE_VERSION+': fall recovery requires an observed respawn, not guessed elapsed wall time',()=>{
+ test(version+': fall recovery requires an observed respawn, not guessed elapsed wall time',()=>{
   const f=fixture(engine);f.state.players[0].fallStartTick=0;f.state.players[0].fallUntilTick=3;f.at(2);assert.equal(canExerciseRunJump(f.room()),false);const stale=f.room();stale.server_now+=10000;assert.equal(canExerciseRunJump(stale),false);f.at(3);assert.equal(canExerciseRunJump(f.room()),true);assert.doesNotThrow(()=>engine.act(structuredClone(f.state),'a',{type:'jump'},f.state.now));
  });
 }
+test('v2.1 continuous jump waits for scene arming and shared countdown, then accepts racing',()=>{
+ const state=current.createState('a'.repeat(64),1000,{ruleVersion:current.RULE_VERSION,startPolicy:current.RUN_SCENE_READY_POLICY,players:[{key:'a',seatIndex:0},{key:'b',seatIndex:1}]});
+ const room=()=>({id:'run-room',game_id:'run',status:'active',me:'a',me_last_seq:1,server_now:state.now,game:current.view(state,'a')});
+ assert.equal(canExercise('run',room()),false);
+ current.armStart(state,1000);
+ assert.equal(canExercise('run',room()),false);
+ current.tick(state,state.startedAt);
+ assert.equal(canExercise('run',room()),true);
+});
 test('lane input rate limit is checked when the public input event identifies its tick',()=>{const f=fixture();current.act(f.state,'a',{type:'left'},1000);f.at(1);assert.equal(canExerciseRunJump(f.room()),false);assert.throws(()=>current.act(structuredClone(f.state),'a',{type:'jump'},f.state.now),{code:'RATE_LIMIT'});f.at(6);assert.equal(canExerciseRunJump(f.room()),true);assert.doesNotThrow(()=>current.act(structuredClone(f.state),'a',{type:'jump'},f.state.now));});
 for(const [name,change]of [
  ['countdown',r=>r.server_now=r.game.startedAt-1],['deadline',r=>r.server_now=r.game.deadlineAt],

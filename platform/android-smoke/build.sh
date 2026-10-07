@@ -15,8 +15,9 @@ done
 test -f "$TASK_ANDROID_JAR"
 test -x "$TASK_JAVA/bin/javac"
 
-mkdir -p "$TASK_ROOT/build/classes" "$TASK_ROOT/build/dex" "$TASK_ROOT/build/generated" "$TASK_ROOT/dist" "$TASK_ROOT/.local/signing"
+mkdir -p "$TASK_ROOT/build/classes" "$TASK_ROOT/build/test-classes" "$TASK_ROOT/build/dex" "$TASK_ROOT/build/generated" "$TASK_ROOT/dist" "$TASK_ROOT/.local/signing"
 find "$TASK_ROOT/build/classes" -type f -name '*.class' -delete
+find "$TASK_ROOT/build/test-classes" -type f -name '*.class' -delete
 TASK_KEY="$TASK_ROOT/.local/signing/debug.jks"
 TASK_PASS="$TASK_ROOT/.local/signing/password"
 if [ ! -f "$TASK_KEY" ]; then
@@ -38,6 +39,9 @@ chmod 600 "$TASK_KEY" "$TASK_PASS"
 "$TASK_JAVA/bin/javac" -encoding UTF-8 --release 8 -classpath "$TASK_ANDROID_JAR" \
   -d "$TASK_ROOT/build/classes" \
   "$TASK_ROOT/app/src/com/tianyahuyu/oasis/smoke/"*.java
+"$TASK_JAVA/bin/javac" -encoding UTF-8 --release 8 -classpath "$TASK_ROOT/build/classes" \
+  -d "$TASK_ROOT/build/test-classes" "$TASK_ROOT/test/MockPartnerApiContract.java"
+"$TASK_JAVA/bin/java" -cp "$TASK_ROOT/build/classes:$TASK_ROOT/build/test-classes" MockPartnerApiContract
 "$TASK_JAVA/bin/jar" cf "$TASK_ROOT/build/classes.jar" -C "$TASK_ROOT/build/classes" .
 "$TASK_TOOLS/d8" --debug --min-api 26 --lib "$TASK_ANDROID_JAR" \
   --output "$TASK_ROOT/build/dex" "$TASK_ROOT/build/classes.jar"
@@ -46,9 +50,9 @@ cp "$TASK_ROOT/build/base.apk" "$TASK_ROOT/build/unsigned.apk"
 "$TASK_TOOLS/zipalign" -f -p 4 "$TASK_ROOT/build/unsigned.apk" "$TASK_ROOT/build/aligned.apk"
 "$TASK_TOOLS/apksigner" sign --ks "$TASK_KEY" --ks-key-alias oasis-local-debug \
   --ks-pass "file:$TASK_PASS" \
-  --out "$TASK_ROOT/dist/oasis-android-smoke-1.1.1-debug.apk" "$TASK_ROOT/build/aligned.apk"
-"$TASK_TOOLS/apksigner" verify --verbose "$TASK_ROOT/dist/oasis-android-smoke-1.1.1-debug.apk"
-"$TASK_TOOLS/aapt2" dump badging "$TASK_ROOT/dist/oasis-android-smoke-1.1.1-debug.apk"
+  --out "$TASK_ROOT/dist/oasis-android-smoke-1.2.0-debug.apk" "$TASK_ROOT/build/aligned.apk"
+"$TASK_TOOLS/apksigner" verify --verbose "$TASK_ROOT/dist/oasis-android-smoke-1.2.0-debug.apk"
+"$TASK_TOOLS/aapt2" dump badging "$TASK_ROOT/dist/oasis-android-smoke-1.2.0-debug.apk"
 node "$TASK_ROOT/build-metadata.mjs"
 cat "$TASK_ROOT/dist/SHA256SUMS"
-printf 'APK: %s\n' "$TASK_ROOT/dist/oasis-android-smoke-1.1.1-debug.apk"
+printf 'APK: %s\n' "$TASK_ROOT/dist/oasis-android-smoke-1.2.0-debug.apk"

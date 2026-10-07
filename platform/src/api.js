@@ -13,14 +13,14 @@ export function setApiMode(mode){
 }
 function scopedPath(path,mode){
   if(mode!=='partner'||!path.startsWith('/api/admin/'))return path;
-  if(!/^\/api\/admin\/(?:apps(?:\/|$)|overview$|rounds$|operations$|audit$|health$|login$|session$|logout$|password$)/.test(path))throw new ApiError('此功能仅供平台管理员使用。',403,'SCOPE_FORBIDDEN');
+  if(!/^\/api\/admin\/(?:apps(?:\/|$)|overview(?:-activity)?$|rounds$|operations$|audit$|health$|login$|session$|logout$|password$)/.test(path))throw new ApiError('此功能仅供平台管理员使用。',403,'SCOPE_FORBIDDEN');
   return path.replace('/api/admin/','/api/partner/');
 }
 export async function api(path, { method = 'GET', body, signal, mode=apiMode } = {}) {
   const target=scopedPath(path,mode);
   let response;
   try {
-    response = await fetch(target, { method, credentials: 'same-origin', cache: 'no-store', signal, headers: { Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+    response = await fetch(target, { method, credentials: 'same-origin', cache: 'no-store', signal, headers: { Accept: 'application/json', ...(path.endsWith('/overview-activity') ? { 'X-Oasis-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' } : {}), ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
   } catch (error) {
     if (error.name === 'AbortError') throw error;
     throw new ApiError(method === 'GET' ? '无法连接后台，请检查本地服务后重试。' : '网络中断，操作结果尚未确认。请刷新查验，避免重复提交。');

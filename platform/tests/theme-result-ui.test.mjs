@@ -19,7 +19,7 @@ before(async()=>{
  function isolated(input,fn){const room=freeze(input),saved=JSON.stringify(room),originalFetch=globalThis.fetch;let requests=0,commands=0;
   globalThis.fetch=()=>{requests++;throw Error('Result rendering must never request wallet or network');};
   try{const value=fn(room,()=>{commands++;});return{...value,unchanged:saved===JSON.stringify(room),requests,commands};}finally{globalThis.fetch=originalFetch;}}
- export function render(input,game='carrom',meId='a'){return isolated(input,(room,onAgain)=>({html:renderToStaticMarkup(<ThemeResult game={game} room={room} meId={meId} meta={{scoreUnit:'SCORE'}} onAgain={onAgain} onRetryTraining={game==='towerlink'&&room.game?.training?onAgain:undefined} onNextTraining={game==='towerlink'&&room.game?.training?.completed&&room.game.training.nextLessonId?onAgain:undefined}/>)}));}
+ export function render(input,game='carrom',meId='a',locale='zh'){return isolated(input,(room,onAgain)=>({html:renderToStaticMarkup(<ThemeResult game={game} room={room} meId={meId} locale={locale} meta={{scoreUnit:'SCORE'}} onAgain={onAgain} onRetryTraining={game==='towerlink'&&room.game?.training?onAgain:undefined} onNextTraining={game==='towerlink'&&room.game?.training?.completed&&room.game.training.nextLessonId?onAgain:undefined}/>)}));}
  export function present(input){return isolated(input,room=>{let result;function Probe(){result=useResultPresentation(room);return null;}renderToStaticMarkup(<Probe/>);return{presenting:result.presenting,sameRoom:result.presentationRoom===room,room:result.presentationRoom,revealIsFunction:typeof result.reveal==='function'};});}
  `,resolveDir:resolve(import.meta.dirname,'..'),loader:'jsx'},bundle:true,jsx:'automatic',platform:'node',format:'cjs',outfile,loader:{'.css':'empty','.png':'file','.webp':'file','.svg':'file','.glb':'file'},logLevel:'silent'});
  ({render,present}=createRequire(import.meta.url)(outfile));
@@ -75,6 +75,25 @@ test('voided paid room shows each original entry returned without a fee or winne
 });
 test('voiding with a frozen refund plan must not claim funds already returned before wallet confirmation',()=>{
  const html=safe(render(room({status:'voiding',result:{resolution:'void',fee_minor:'0'},players:[player('a',0,null,10000),player('b',1,null,10000)]})));assert.match(html,/settlement-wait/);assert.doesNotMatch(html,/已退回|已到账|result-play-again/,'refund result is still unknown');assert.match(html,/确认|处理中|待退/);
+});
+for(const [reason,explanation] of [['scene_ready_timeout','画面准备超时'],['scene_ready_aborted','开局前有玩家退出']])test(`Run ${reason} explains its no-start refund without a winner claim`,()=>{
+ const players=[player('a',0,null,10000),player('b',1,null,10000)];
+ const pending=safe(render(room({game_id:'run',status:'voiding',result:{resolution:'void',reason,fee_minor:'0'},players}),'run'));
+ assert.match(pending,new RegExp(explanation));assert.match(pending,/退款确认中/);assert.doesNotMatch(pending,/入场已退回|奖励已到账|VICTORY/);
+ const confirmed=safe(render(room({game_id:'run',status:'voided',result:{resolution:'void',reason,fee_minor:'0'},players}),'run'));
+ assert.match(confirmed,new RegExp(explanation));assert.match(confirmed,/入场已退回/);assert.match(confirmed,/没有收取服务费/);assert.doesNotMatch(confirmed,/VICTORY|result-confetti/);
+});
+test('Run practice that fails scene preparation says no coins changed, not that practice completed',()=>{
+ const html=safe(render(room({game_id:'run',status:'voided',practice:true,entry_minor:'0',prize_minor:'0',result:{resolution:'void',reason:'scene_ready_timeout',fee_minor:'0'},players:[player('a',0,null,0),player('b',1,null,0)]}),'run'));
+ assert.match(html,/免费练习未开始/);assert.match(html,/没有金币变化/);assert.doesNotMatch(html,/练习已完成|入场已退回|已退回入场金币|result-reward-panel/);
+});
+for(const [locale,word] of [['en','Scene preparation timed out'],['ar','انتهت مهلة تجهيز المشهد']])test(`Run ${locale} no-start result is fully localized for paid and practice rooms`,()=>{
+ for(const status of ['voiding','voided'])for(const practice of [false,true]){
+  const html=safe(render(room({game_id:'run',status,practice,entry_minor:practice?'0':'10000',result:{resolution:'void',reason:'scene_ready_timeout',fee_minor:'0'},players:[player('a',0,null,practice?0:10000),player('b',1,null,practice?0:10000)]}),'run','a',locale));
+  assert.match(text(panel(html,'result-title-ribbon')),new RegExp(word));
+  assert.doesNotMatch(html,/[\u3400-\u9fff]/,`${locale} ${status} ${practice?'practice':'paid'} result has Chinese`);
+  if(locale==='ar')assert.match(html,/dir="rtl"/);
+ }
 });
 for(const game of ['carrom','match','golf','darts','ludo','pool','bowling','jackaroo','domino','run','towerlink'])test(`${game} result theme remains pure with a deeply frozen server room`,()=>{
  const html=safe(render(room(),game));assert.match(html,new RegExp(`result-${game}`));assert.match(html,/<h1>VICTORY<\/h1>/);

@@ -21,9 +21,16 @@ export default function MatchGame({room,me,onAction,audio,onExit=()=>{},locale='
  const [board,setBoard]=useState(()=>copy(game.board)),[selected,setSelected]=useState(null),[phase,setPhase]=useState('idle'),[clearing,setClearing]=useState([]),[fallOffsets,setFallOffsets]=useState({}),[effects,setEffects]=useState([]),[combo,setCombo]=useState(0),[gain,setGain]=useState(0),[score,setScore]=useState(game.score||0),[celebration,setCelebration]=useState(0),[moment,setMoment]=useState(null),[help,setHelp]=useState(false),[reaction,setReaction]=useState(false),[sound,setSound]=useState(audio?.enabled!==false),[message,setMessage]=useState(''),[pending,setPending]=useState(false),[now,setNow]=useState(room?.server_now||Date.now());
  const roomRef=useRef(room);roomRef.current=room;const busy=useRef(false),generation=useRef(0),timers=useRef(new Set()),boardRef=useRef(null),pointer=useRef(null),mounted=useRef(true),clock=useRef({server:room?.server_now||Date.now(),local:performance.now()});
  if(!pointer.current)pointer.current=createCardinalSwipe();
+ // The HUD shows whole seconds. Keep the 80 ms deadline/busy check, but do not
+ // reconcile 36 gems and all effects unless that visible second or lock changes.
+ function presentServerTime(value){setNow(previous=>{
+  const current=roomRef.current,currentGame=current?.game||{},deadline=currentGame.deadlineAt||current?.end_at||value,busyUntil=currentGame.busyUntil||0;
+  const seconds=time=>Math.max(0,Math.ceil((deadline-time)/1000));
+  return seconds(previous)!==seconds(value)||(previous<busyUntil)!==(value<busyUntil)?value:previous;
+ });}
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;generation.current++;for(const id of timers.current)clearTimeout(id);timers.current.clear();};},[]);
- useEffect(()=>{clock.current={server:room.server_now||Date.now(),local:performance.now()};setNow(clock.current.server);},[room.server_now]);
- useEffect(()=>startVisibleInterval(()=>setNow(clock.current.server+performance.now()-clock.current.local),80),[]);
+ useEffect(()=>{clock.current={server:room.server_now||Date.now(),local:performance.now()};presentServerTime(clock.current.server);},[room.server_now]);
+ useEffect(()=>startVisibleInterval(()=>presentServerTime(clock.current.server+performance.now()-clock.current.local),80),[]);
  useEffect(()=>{if(!busy.current){setBoard(copy(game.board));setScore(game.score||0);}},[game.board,game.score]);
  useEffect(()=>{const escape=e=>{if(e.key==='Escape'){setHelp(false);setSelected(null);}};window.addEventListener('keydown',escape);return()=>window.removeEventListener('keydown',escape);},[]);
  useEffect(()=>{const cancel=()=>pointer.current.cancel(),hidden=()=>{if(document.hidden)cancel();},secondary=e=>{if(e.pointerType==='touch'&&e.isPrimary===false)cancel();};document.addEventListener('pointerdown',secondary,true);window.addEventListener('blur',cancel);document.addEventListener('visibilitychange',hidden);return()=>{window.removeEventListener('blur',cancel);document.removeEventListener('visibilitychange',hidden);document.removeEventListener('pointerdown',secondary,true);};},[]);

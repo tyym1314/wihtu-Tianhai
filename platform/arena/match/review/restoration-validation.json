@@ -1,12 +1,12 @@
 {
-  "at": "2026-09-19T16:27:31.377Z",
+  "at": "2026-10-07T12:57:20.049Z",
   "scope": "Desktop Chrome mobile viewports, independent HTTP authoritative engine, no wallet or platform service",
   "engineBackedTap": true,
   "engineBackedSwipe": true,
   "bounceScoreZero": true,
   "bouncePreservesBoard": true,
   "pollingDuringAnimations": true,
-  "roomPollsDuringBusy": 9,
+  "roomPollsDuringBusy": 8,
   "acceptedActions": 4,
   "boardCells": 36,
   "gemElement": "span.match-gem",
@@ -45,7 +45,7 @@
     },
     {
       "selector": ".oasis-portrait",
-      "url": "/arena/assets/restoration/player-portraits-v2.webp",
+      "url": "/arena/assets/restoration/player-portraits-v2-mobile-e193e8ea76.webp",
       "width": 1254,
       "height": 1254
     }
@@ -54,6 +54,14 @@
     {
       "path": "/arena/assets/match-palace.png",
       "mime": "image/png"
+    },
+    {
+      "path": "/arena/assets/match-palace-mobile-09ad602636.webp",
+      "mime": "image/webp"
+    },
+    {
+      "path": "/arena/assets/restoration/player-portraits-v2-mobile-e193e8ea76.webp",
+      "mime": "image/webp"
     },
     {
       "path": "/arena/assets/restoration/fox-idle-v3.png",

@@ -1,4 +1,4 @@
-/** Shared readiness gate: resolving means every declared core texture decoded. */
+/** Progressive Tower art. Gameplay never waits for these optional textures. */
 import {preloadImages} from '../shared/image-preloader.mjs';
 const urls=import.meta.glob('./assets/v2/*.webp',{eager:true,query:'?url',import:'default'});
 const manifests=import.meta.glob('./assets/v2/manifest.json',{eager:true,import:'default'});
@@ -8,22 +8,38 @@ export const artURL=(...names)=>names.map(name=>TOWER_ART[name]).find(Boolean);
 export const coreAssetURL=kind=>TOWER_ART[TOWER_MANIFEST.files?.[kind]];
 let readyPromise=null;
 const loadedImages=new Map();
+const failedImages=new Set();
+const listeners=new Set();
+let loading=false;
+const coreKinds=['sky','terrain','barracks','citadel','soldiers'];
+const coreFiles=()=>coreKinds.map(kind=>[kind,TOWER_MANIFEST.files?.[kind]]);
+export const towerAssetStatus=()=>({loaded:loadedImages.size,failed:failedImages.size,total:coreKinds.length,loading,failures:[...failedImages]});
+function notify(name,image){const status=towerAssetStatus();for(const listener of listeners)listener({name,image,...status});}
+export function subscribeTowerAssets(listener){
+ listeners.add(listener);
+ for(const [name,image] of loadedImages)listener({name,image,...towerAssetStatus()});
+ listener(towerAssetStatus());
+ return()=>listeners.delete(listener);
+}
 export const getTowerImage=name=>loadedImages.get(name);
 export function preloadTowerAssets(){
  // Keep one barrier even if callers request retry while it is pending. Failed
  // barriers are evicted below; successful images stay in the shared cache.
  if(readyPromise)return readyPromise;
- const files=Object.entries(TOWER_MANIFEST.files||{}).filter(([key])=>['sky','terrain','barracks','citadel','soldiers'].includes(key));
+ const files=coreFiles();
  const promise=(async()=>{
   const errors=[];
-  if(files.length!==5)errors.push('manifest:missing-core-assets');
-  const images=await Promise.all(files.map(async([kind,name])=>{const url=TOWER_ART[name];if(!url){errors.push(`${kind}:${name||'missing'}`);return;}
-   try{const [image]=await preloadImages([url]);return[name,image];}catch{errors.push(`${kind}:${name}`);}
+  loading=true;notify();
+  await Promise.all(files.map(async([kind,name])=>{
+   const failure=`${kind}:${name||'missing'}`;
+   const url=TOWER_ART[name];
+   if(!name||!url){errors.push(failure);failedImages.add(failure);notify();return;}
+   if(loadedImages.has(name)){failedImages.delete(failure);return;}
+   try{const [image]=await preloadImages([url]);loadedImages.set(name,image);failedImages.delete(failure);notify(name,image);}
+   catch{errors.push(failure);failedImages.add(failure);notify();}
   }));
-  if(errors.length){const e=new Error('战场资源未就绪，请重试加载');e.code='TOWER_ASSETS_FAILED';e.failures=errors;throw e;}
-  // Publish only a complete decoded set. A timed-out decode has no remaining
-  // path to this map, so its late completion cannot replace a retry's image.
-  for(const [name,image] of images)loadedImages.set(name,image);
+  loading=false;notify();
+  if(errors.length){const e=new Error('部分战场画面资源加载失败');e.code='TOWER_ASSETS_FAILED';e.failures=errors;throw e;}
   return{images:loadedImages,manifest:TOWER_MANIFEST};
  })().catch(error=>{if(readyPromise===promise)readyPromise=null;throw error;});
  readyPromise=promise;

@@ -1,0 +1,8 @@
+{
+  "scope": "Isolated RunGame and authoritative Run engine in Chrome mobile emulation, 390x844 DPR3, Apple Metal, CPU x4; not iPhone Safari or public-host acceptance",
+  "method": "Time from authoritative startAt to the first enabled Jump button; fresh contexts, identical 1.5s countdown, three cold repetitions per HUD cadence",
+  "hud_100_ms_unlock_delay_ms": [112, 80, 81],
+  "hud_250_ms_unlock_delay_ms": [191, 198, 192],
+  "decision": "The 250ms HUD cadence reduced React render work but was rejected because it added approximately 80-118ms to first-control unlock without fixing the 166.7ms WebGL long frame. Product cadence remains 100ms.",
+  "render_blocking_evidence": "Chrome Long Animation Frame attributed the 166ms early active long task to the Run scene render2 RAF (approximately 164.8ms script), and the first-hit approximately 75ms long task to the same RAF (approximately 70.1ms script). The exact GPU/shader/texture sub-operation is not yet isolated."
+}

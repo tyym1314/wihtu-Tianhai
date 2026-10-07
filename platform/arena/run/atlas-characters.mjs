@@ -10,6 +10,10 @@ import {selectRunPreloadKinds} from './asset-selection.mjs';
 export const RUN_CYCLE_URLS={fox:foxRun,cat:catRun,bear:bearRun,rabbit:rabbitRun};
 export const RUN_ATLAS_URLS={run:foxRun,action:actionUrl,front:frontUrl};
 export const RUN_CYCLE_FRAMES=8;
+// A URL switch allows a same-device A/B: ?runAtlasBlend=0 restores the original
+// single-sample sprite shader if the extra atlas lookup costs too much on GPU.
+const blendEnabled=typeof window==='undefined'||new URLSearchParams(window.location.search).get('runAtlasBlend')!=='0';
+const RUN_BLEND_START=.55;
 // Fetch owns cancellation. CSS portraits lease a Blob URL from the same front
 // source; WebKit otherwise splits native fetch and CSS image cache entries.
 const order=['fox','cat','bear','rabbit'],cache=new Map();
@@ -30,6 +34,23 @@ export function createIllustratedRunner(kind='fox',ghost=false,{onError=()=>{}}=
  if(!order.includes(kind))kind='fox';
  const row=order.indexOf(kind),root=new T.Group();
  const sprite=new T.Sprite(new T.SpriteMaterial({transparent:true,alphaTest:.12,depthTest:true,depthWrite:false,toneMapped:false}));
+ const blendUniforms={amount:{value:0},nextUvDelta:{value:new T.Vector2()}};
+ if(blendEnabled)sprite.material.onBeforeCompile=shader=>{
+  shader.uniforms.runFrameBlend=blendUniforms.amount;
+  shader.uniforms.runNextUvDelta=blendUniforms.nextUvDelta;
+  shader.fragmentShader=shader.fragmentShader.replace('#include <map_pars_fragment>','#include <map_pars_fragment>\n#ifdef USE_MAP\nuniform float runFrameBlend;\nuniform vec2 runNextUvDelta;\n#endif');
+  shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#ifdef USE_MAP
+   vec4 sampledDiffuseColor = texture2D(map, vMapUv);
+   #ifdef DECODE_VIDEO_TEXTURE
+    sampledDiffuseColor = sRGBTransferEOTF(sampledDiffuseColor);
+   #endif
+   if (runFrameBlend > 0.0) {
+    vec4 nextDiffuseColor = texture2D(map, vMapUv + runNextUvDelta);
+    sampledDiffuseColor = mix(sampledDiffuseColor, nextDiffuseColor, runFrameBlend);
+   }
+   diffuseColor *= sampledDiffuseColor;
+  #endif`);
+ };
  // Three's default Sprite geometry is global; renderer listeners must belong
  // to this runner and be released when its scene exits.
  sprite.geometry=sprite.geometry.clone();
@@ -40,29 +61,33 @@ export function createIllustratedRunner(kind='fox',ghost=false,{onError=()=>{}}=
  ring.rotation.x=-Math.PI/2;ring.position.y=.018;root.add(ring);
  const shield=new T.Mesh(new T.SphereGeometry(.85,24,18),new T.MeshPhysicalMaterial({color:0x65fff1,transparent:true,opacity:.09,roughness:.1,depthWrite:false}));
  shield.position.y=.78;shield.visible=false;root.add(shield);
- root.userData={character:kind,loaded:false,bones:0,clip:'loading',modelSource:'8-frame illustrated cycle on authoritative 3D trajectory',renderer:'atlas',trophy:'embedded',runFrameCount:RUN_CYCLE_FRAMES};
+ root.userData={character:kind,loaded:false,bones:0,clip:'loading',modelSource:'8-frame illustrated cycle on authoritative 3D trajectory',renderer:'atlas',trophy:'embedded',runFrameCount:RUN_CYCLE_FRAMES,frameBlendEnabled:blendEnabled,frameBlend:0};
  const controller=new AbortController();let textures=null,dead=false,lastArgs=null,lastFall=null,recoverTick=-100,finishVisual=null,lastSheet=null,lastFrame=null;
  const ready=preloadIllustratedRunners([kind],{signal:controller.signal}).then(source=>{
   if(dead)return;
   textures=Object.fromEntries(['run','action','front'].map((key,i)=>{const t=source[i].clone();t.needsUpdate=true;return[key,t];}));
   root.userData.loaded=true;sprite.visible=true;if(lastArgs)pose(...lastArgs);else pose('idle',0,0);
  }).catch(error=>{if(!dead)onError(error);});
- function frame(sheet,index){
+ function frame(sheet,index,blend=0){
   if(!textures)return;
+  blendUniforms.amount.value=sheet==='run'&&blendEnabled?blend:0;
+  root.userData.frameBlend=blendUniforms.amount.value;
   if(sheet===lastSheet&&index===lastFrame)return;
   const t=textures[sheet],columns=4,rows=sheet==='run'?2:4,cellRow=sheet==='run'?Math.floor(index/4):row,column=index%4;
   // Inset half a texel to prevent adjacent frames leaking at filtered edges.
   const dx=.5/t.image.width,dy=.5/t.image.height;
   t.repeat.set(1/columns-2*dx,1/rows-2*dy);t.offset.set(column/columns+dx,1-(cellRow+1)/rows+dy);
+  if(sheet==='run'&&blendEnabled){const next=(index+1)%RUN_CYCLE_FRAMES;blendUniforms.nextUvDelta.value.set((next%columns-column)/columns,(cellRow-Math.floor(next/columns))/rows);}
   if(sheet!==lastSheet){const firstMap=!sprite.material.map;sprite.material.map=t;if(firstMap)sprite.material.needsUpdate=true;lastSheet=sheet;}
   lastFrame=index;
   root.userData.sheet=sheet;root.userData.frame=index;root.userData.uv=t.offset.toArray();
  }
  function pose(clip,elapsed,time=elapsed){
-  lastArgs=[clip,elapsed,time];let sheet='front',index=3,bob=0,tilt=0,sy=1,sx=1;
+  lastArgs=[clip,elapsed,time];let sheet='front',index=3,bob=0,tilt=0,sy=1,sx=1,blend=0;
   if(clip==='run'){
    // elapsed is travelled distance / 4.4m: cadence follows actual movement.
-   const phase=Math.max(0,elapsed)%1;sheet='run';index=Math.floor(phase*RUN_CYCLE_FRAMES);
+   const phase=Math.max(0,elapsed)%1,framePhase=phase*RUN_CYCLE_FRAMES;sheet='run';index=Math.floor(framePhase);
+   if(blendEnabled){const fraction=framePhase-index,t=clamp((fraction-RUN_BLEND_START)/(1-RUN_BLEND_START),0,1);blend=t*t*(3-2*t);}
    bob=.012*(1-Math.cos(phase*TAU*2));tilt=Math.sin(phase*TAU)*.014;
   }else if(['jump','land','slide','hit','fall','recover'].includes(clip)){
    sheet='action';index=clip==='slide'?1:clip==='hit'?2:clip==='fall'?3:0;
@@ -79,7 +104,7 @@ export function createIllustratedRunner(kind='fox',ghost=false,{onError=()=>{}}=
   }else if(clip==='rear-idle'){
    sheet='run';index=0;
   }
-  frame(sheet,index);sprite.position.y=bob;sprite.material.rotation=tilt;
+  frame(sheet,index,blend);sprite.position.y=bob;sprite.material.rotation=tilt;
   sprite.scale.set(1.65*sx,1.65*sy,1);root.userData.clip=clip;root.userData.clipTime=elapsed;
  }
  function animate(p,tick,time){

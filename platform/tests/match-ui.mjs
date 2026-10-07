@@ -12,7 +12,7 @@ const out=path.join(root,'arena/match/review');
 let state=createState('12'.repeat(32),Date.now(),{players:[{key:'you',name:'LINA',seatIndex:0},{key:'omar',name:'OMAR',seatIndex:1,isBot:true},{key:'noor',name:'NOOR',seatIndex:2,isBot:true},{key:'zain',name:'ZAIN',seatIndex:3,isBot:true}]});
 let acceptedActions=0,roomPollsDuringBusy=0;
 const assetResponses=[];
-const assetNames=['match-palace.png',...['fox-idle-v3','fox-cheer-v3'].flatMap(name=>['png','webp'].map(extension=>`restoration/${name}.${extension}`)),...['gems','fox-poses','player-portraits'].flatMap(name=>['png','webp'].map(extension=>`restoration/${name}-v2.${extension}`))];
+const assetNames=['match-palace.png','match-palace-mobile-09ad602636.webp','restoration/player-portraits-v2-mobile-e193e8ea76.webp',...['fox-idle-v3','fox-cheer-v3'].flatMap(name=>['png','webp'].map(extension=>`restoration/${name}.${extension}`)),...['gems','fox-poses','player-portraits'].flatMap(name=>['png','webp'].map(extension=>`restoration/${name}-v2.${extension}`))];
 const assets=new Map(assetNames.map(name=>[`/arena/assets/${name}`,{file:path.join(root,'arena/public/assets',name),mime:name.endsWith('.webp')?'image/webp':'image/png'}]));
 const snapshot=()=>({id:'isolated-match-review',game_id:'match',status:'ACTIVE',practice:true,players:rank(state).map(p=>({external_user_id:p.playerKey,name:state.players[p.playerKey].name,seat_index:state.players[p.playerKey].seatIndex,score:p.score,rank:p.rank,connected:true,bot:state.players[p.playerKey].isBot})),me:'you',entry_minor:'0',prize_minor:'0',server_now:Date.now(),end_at:state.deadlineAt,game:view(state,'you')});
 const source=`import React,{useState,useEffect} from 'react';import{createRoot}from'react-dom/client';import MatchGame from './arena/match/MatchGame.jsx';function App(){const[room,setRoom]=useState(null);useEffect(()=>{const pull=()=>fetch('/room').then(r=>r.json()).then(setRoom);pull();const id=setInterval(pull,300);return()=>clearInterval(id)},[]);return room?<MatchGame room={room} me="you" locale={new URLSearchParams(location.search).get('locale')||'en'} audio={{enabled:true,play(){},setEnabled(){}}} onAction={async action=>{const r=await fetch('/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(action)});const data=await r.json();if(!r.ok)throw new Error(data.error);setRoom(data.room);return data;}}/>:null}createRoot(document.getElementById('root')).render(<App/>);`;
@@ -37,7 +37,7 @@ const errors=[],failedResources=[];
 const track=page=>{page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.url().startsWith(origin)&&r.status()>=400)failedResources.push({url:r.url(),status:r.status()});});};
 async function waitIdle(page){await page.waitForFunction(()=>document.querySelector('.match-board')?.classList.contains('match-phase-idle'));await page.waitForFunction(()=>!document.querySelector('[data-cell="0"]').disabled);}
 async function tap(page,move){const response=page.waitForResponse(r=>r.url()===origin+'/action');await page.locator(`[data-cell="${move.from}"]`).click();await page.locator(`[data-cell="${move.to}"]`).click();const r=await response;assert.equal(r.status(),200);return r.json();}
-async function assertBoardAndScore(page){assert.equal(await page.locator('.match-piece').count(),36,'board did not refill');assert.equal(await page.locator('.match-pieces span.match-gem').count(),36,'gem atlas elements missing');assert.equal((await page.locator('.match-player-me .match-player-score').innerText()).replaceAll(',',''),String(state.players.you.score),'display score differs from server');}
+async function assertBoardAndScore(page){assert.equal(await page.locator('.match-piece').count(),36,'board did not refill');assert.equal(await page.locator('.match-pieces span.match-gem').count(),36,'gem atlas elements missing');assert.equal((await page.locator('.match-player-me .match-player-score').evaluate(el=>el.firstChild?.textContent||'')).replaceAll(',',''),String(state.players.you.score),'display score differs from server');}
 try{
  await fs.mkdir(out,{recursive:true});
  const context=await browser.newContext({viewport:{width:390,height:844}}),p=await context.newPage();track(p);
@@ -45,6 +45,8 @@ try{
  assert.equal(await p.locator('.match-pieces span.match-gem').count(),36);
  assert.equal(await p.locator('.match-avatar .oasis-portrait').count(),4);
  assert.equal(await p.locator('.match-fox-actor').getAttribute('data-pose'),'idle');
+ const firstTimer=await p.locator('.match-timer strong').textContent();
+ await p.waitForFunction(previous=>document.querySelector('.match-timer strong')?.textContent!==previous,firstTimer,{timeout:2500});
  // Decode the assets actually referenced by CSS, rather than only checking an HTTP status.
  const decodedAssets=await p.evaluate(async()=>{
   const selectors=['.match-gem-surface','.match-fox-actor','.oasis-portrait'];
@@ -65,6 +67,11 @@ try{
  assert.ok(invalid,'fixture must exercise a non-matching adjacent pair');await p.waitForTimeout(200);const before=state.players.you.score,beforeBoard=structuredClone(state.players.you.board),rejected=await tap(p,invalid);assert.equal(rejected.event.valid,false);await p.getByText('No match. Try another pair!',{exact:true}).waitFor();await waitIdle(p);assert.equal(state.players.you.score,before,'invalid score');assert.deepEqual(state.players.you.board,beforeBoard,'invalid swap changed authoritative board');await assertBoardAndScore(p);
  assert.ok(roomPollsDuringBusy>0,'no actual polling occurred while a server animation was busy');
  for(const width of[360,390]){await p.setViewportSize({width,height:844});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'horizontal overflow '+width);}
+ await p.setViewportSize({width:412,height:866});
+ assert.equal(await p.evaluate(()=>Math.max(document.documentElement.scrollHeight,document.body.scrollHeight)>innerHeight),false,'412×866 vertical overflow');
+ assert.equal(await p.locator('.match-scene').count(),1);
+ await p.waitForTimeout(250);
+ await p.screenshot({path:path.join(out,'match-412x866.png')});
  await p.goto(origin+'/?locale=zh');await p.getByRole('button',{name:'玩法说明',exact:true}).click();await p.getByRole('dialog').waitFor();await p.getByRole('button',{name:'知道了',exact:true}).last().click();await p.goto(origin+'/?locale=ar');await p.locator('.match-piece').nth(35).waitFor();assert.equal(await p.locator('.match-scene').getAttribute('dir'),'rtl');
  // Reduced motion changes decoration only: the same engine still accepts, animates and scores a swap.
  const reducedContext=await browser.newContext({viewport:{width:360,height:844},reducedMotion:'reduce'}),reduced=await reducedContext.newPage();track(reduced);await reduced.goto(origin);await reduced.locator('.match-piece').nth(35).waitFor();await waitIdle(reduced);

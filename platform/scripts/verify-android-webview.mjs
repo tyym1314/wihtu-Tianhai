@@ -1,4 +1,4 @@
-/** Real USB Android WebView smoke. Own test APK and sandbox wallets only. */
+/** Android WebView smoke on an explicitly selected USB or remote device. Own test APK and sandbox wallets only. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {basename} from 'node:path';
@@ -9,6 +9,8 @@ import {RELEASED_IDS} from '../shared/games.mjs';
 import {playOneArenaAction} from './android-game-actions.mjs';
 const run=promisify(execFile),serial=process.env.OASIS_ANDROID_SERIAL||'46dcfd25';
 const origin='https://game.tianyahuyu.com',pkg='com.tianyahuyu.oasis.smoke',port=19220;
+const remoteDevice=process.env.OASIS_ANDROID_ALLOW_REMOTE==='1';
+const expectedApkVersion=JSON.parse(await fs.readFile(new URL('../public/downloads/android-smoke-build.json',import.meta.url),'utf8')).version;
 const catalog=RELEASED_IDS;
 const selected=process.env.OASIS_ANDROID_GAMES?process.env.OASIS_ANDROID_GAMES.split(','):catalog;
 assert.ok(selected.length&&selected.every(g=>catalog.includes(g))&&new Set(selected).size===selected.length);
@@ -24,7 +26,7 @@ async function deployedRelease(){
  return{version,activated_at:state.activated_at};
 }
 const until=async(fn,label,timeout=45000)=>{const end=Date.now()+timeout;while(Date.now()<end){if(await fn())return;await sleep(120);}throw Error('Timeout: '+label);};
-const report={started_at:new Date().toISOString(),origin,requested_games:selected,full_catalog:selected.length===catalog.length,scope:'Physical USB Android native game buttons and fullscreen single-game WebView; existing sandbox/test wallets. No new partner server or embedded API secret.',mock_app_service:true,network_origins:[],external_asset_origins:[],games:[],lifecycle:{},negative_checks:[],page_errors:[],asset_failures:[],expected_network_failures:[],passed:false};
+const report={started_at:new Date().toISOString(),origin,requested_games:selected,full_catalog:selected.length===catalog.length,scope:remoteDevice?'Remote Android WebView native game buttons and fullscreen single-game flow; not physical USB proof. Existing sandbox/test wallets.':'Physical USB Android native game buttons and fullscreen single-game WebView; existing sandbox/test wallets.',physical_device:!remoteDevice,mock_app_service:true,network_origins:[],external_asset_origins:[],games:[],lifecycle:{},negative_checks:[],page_errors:[],asset_failures:[],expected_network_failures:[],passed:false};
 let browser,context,page,current,cdp,injectingOffline=false;
 const tokens=new Map(),tasks=new Set();
 function watch(p){
@@ -78,7 +80,7 @@ async function connect(){
  const pid=await adb('shell','pidof',pkg);
  await until(async()=>(await adb('shell','cat','/proc/net/unix')).includes('@webview_devtools_remote_'+pid),'WebView debug socket');
  await adb('forward',`tcp:${port}`,`localabstract:webview_devtools_remote_${pid}`);
- browser=await chromium.connectOverCDP(`http://127.0.0.1:${port}`);context=browser.contexts()[0];
+ browser=await chromium.connectOverCDP(`http://127.0.0.1:${port}`,{isWebView:true,noDefaults:true});context=browser.contexts()[0];
  await until(()=>context.pages().length>0,'native WebView page');page=context.pages()[0];page.setDefaultTimeout(45000);watch(page);
  cdp=await context.newCDPSession(page);
  return page;
@@ -206,7 +208,7 @@ async function arenaAction(frame,game){
 }
 try{
  const releaseBefore=await deployedRelease();report.tested_release=releaseBefore.version;
- const devices=(await run('adb',['devices','-l'])).stdout;assert.ok(devices.split('\n').some(line=>line.startsWith(serial+' ')&&line.includes('usb:')),'Expected explicitly selected USB device');
+ const devices=(await run('adb',['devices','-l'])).stdout;assert.ok(devices.split('\n').some(line=>line.startsWith(serial+' ')&&line.includes(' device')&&(remoteDevice||line.includes('usb:'))),remoteDevice?'Expected explicitly selected remote device':'Expected explicitly selected USB device');
  report.device={model:await adb('shell','getprop','ro.product.model'),android:await adb('shell','getprop','ro.build.version.release'),api:await adb('shell','getprop','ro.build.version.sdk')};
  // A previous failed smoke run may have left the APK on a single-game page;
  // start each independent report from the native card lobby.
@@ -222,7 +224,7 @@ try{
  }
  for(const game of selected){
   const frame=await openGame(game);let result={game,session_id:current.session_id,guest:current.guest,launch_exchange:true,native_button:true,reloaded_for_network_observation:true};
-  report.webview=await page.evaluate(()=>({user_agent:navigator.userAgent,width:innerWidth,height:innerHeight,dpr:devicePixelRatio,secure:isSecureContext}));assert.ok(report.webview.secure&&report.webview.user_agent.includes('OASISSmoke/1.1.1'));
+  report.webview=await page.evaluate(()=>({user_agent:navigator.userAgent,width:innerWidth,height:innerHeight,dpr:devicePixelRatio,secure:isSecureContext}));assert.ok(report.webview.secure&&report.webview.user_agent.includes('OASISSmoke/'+expectedApkVersion));
   if(!['thunder','tiger'].includes(game)){
    await startPractice(frame);result.room_id=current.room.id;result.entry_minor=current.room.entry_minor;assert.equal(result.entry_minor,'0');
    if(game==='carrom'){

@@ -1,8 +1,8 @@
 /** Same-room UI exercise. It does not create rooms, submit API mutations or certify motion. */
 import {roomAllowsAction} from './mobile-quality-metrics.mjs';
-import {RULE_VERSION as RUN_VERSION,RULES as RUN_RULES} from '../arena/run/engine.mjs';
+import {RULE_VERSION as RUN_VERSION,PREVIOUS_RULE_VERSION as PREVIOUS_RUN_VERSION,RULES as RUN_RULES} from '../arena/run/engine.mjs';
 import {RULE_VERSION as LEGACY_RUN_VERSION,RULES as LEGACY_RUN_RULES} from '../arena/run/engine-v1.mjs';
-const runRules=new Map([[RUN_VERSION,RUN_RULES],[LEGACY_RUN_VERSION,LEGACY_RUN_RULES]]);
+const runRules=new Map([[RUN_VERSION,RUN_RULES],[PREVIOUS_RUN_VERSION,RUN_RULES],[LEGACY_RUN_VERSION,LEGACY_RUN_RULES]]);
 
 /** Conservative public-snapshot admission for the helper's actual action: jump. */
 export function canExerciseRunJump(room){

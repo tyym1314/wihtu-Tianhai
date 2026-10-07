@@ -136,7 +136,7 @@ test('duplicate JSON keys, compressed bodies, excessive bodies and unknown route
 
 test('demo assets reuse existing host, route under /demo, and label test-only currency',async t=>{
  const f=await fixture(t),index=await f.send('/demo/'),script=await f.send('/demo/host.mjs');
- assert.equal(index.status,200);assert.match(index.raw,/12,000 测试币/);assert.match(index.raw,/不可充值或提现/);assert.match(index.raw,/src="\/demo\/host.mjs"/);
+ assert.equal(index.status,200);assert.match(index.raw,/12,000 测试币/);assert.match(index.raw,/不可充值或提现/);assert.match(index.raw,/src="\/demo\/static\/[a-f0-9]{64}\/host\.mjs"/);
  assert.match(script.raw,/\/api\/demo\/launch/);assert.doesNotMatch(script.raw,/\/api\/host\/|固定本地测试/);
  assert.match(index.headers['content-security-policy'],/frame-ancestors 'none'/);
  assert.equal((await f.send('/demo')).headers.location,'/demo/');assert.equal((await f.send('/demo/../../.local/hosted-demo-guest.key')).status,404);

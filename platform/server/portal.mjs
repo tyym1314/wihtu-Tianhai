@@ -7,6 +7,7 @@ import {runtime,assertProductionAppReady} from './runtime-mode.mjs';
 import {RELEASED_IDS} from '../shared/games.mjs';
 import {loginCredential} from './credentials.mjs';
 import {clientAddress} from './proxy-context.mjs';
+import {activityTimeZone,overviewActivity} from './overview-activity.mjs';
 
 const derive=promisify(scrypt),COOKIE='oasis_partner';
 const appFields=['id','name','partner_id','environment','wallet_scope_id','currency_id','currency_scale','status','game_ids','math_profile','competitive_fee_bps','wallet_url','created_at'];
@@ -95,6 +96,9 @@ export async function routePortal(req,res,path,body){
   const cycles=(await pool.query(`SELECT count(*)::int n,count(*) FILTER(WHERE c.status NOT IN ('SETTLED','REJECTED'))::int pending FROM gp_cycles c JOIN gp_apps a ON a.id=c.app_id WHERE a.partner_id=$1`,[user.partner_id])).rows[0];
   const rooms=(await pool.query(`SELECT count(*)::int n,count(*) FILTER(WHERE r.status NOT IN ('settled','cancelled','voided'))::int pending,COALESCE(sum((r.result->>'fee_minor')::bigint) FILTER(WHERE r.status='settled' AND NOT r.practice),0)::text fee FROM pvp_rooms r JOIN gp_apps a ON a.id=r.app_id WHERE a.partner_id=$1`,[user.partner_id])).rows[0];
   send(res,200,{apps_count:apps.n,games_count:RELEASED_IDS.length,cycles_count:cycles.n+rooms.n,pending_count:cycles.pending+rooms.pending,fee_minor:rooms.fee,environment:runtime.environment,wallet_status:'app_scoped',released_games:RELEASED_IDS.length});return true;
+ }
+ if(path==='/api/partner/overview-activity'&&req.method==='GET'){
+  send(res,200,await overviewActivity(activityTimeZone(req),user.partner_id));return true;
  }
  if(path==='/api/partner/rounds'&&req.method==='GET'){
   const rows=(await pool.query(`SELECT c.id,c.app_id,c.game_id,c.external_user_id,c.status,c.stake_minor,c.payout_minor,c.math_version,c.created_at,c.result_hash,'settle_'||c.id operation_id,'probability' category,false practice FROM gp_cycles c JOIN gp_apps a ON a.id=c.app_id WHERE a.partner_id=$1

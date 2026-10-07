@@ -106,7 +106,7 @@ try{
    assert.equal(state.room.entry_minor,'0');assert.equal(state.room.practice,true);
    await frame.locator('.arena-loading').waitFor({state:'hidden'});
    result.active_room_ms=Date.now()-started;result.entry_phases.push({name:'active-room',elapsed_ms:result.active_room_ms});
-   const ready=await waitForPlayable(frame,game,{pendingStatic:()=>entryGate.pendingCount(),readRoom:()=>state.room,readinessDiagnostics:()=>entryGate.snapshot()});measurement.entryReady=ready;measurement.entryEpoch=Date.now();result.playable_ms=measurement.entryEpoch-started;result.entry_phases.push({name:'observed-playable',elapsed_ms:result.playable_ms,excluded_turn_wait_ms:ready.turn_wait_ms});
+   const ready=await waitForPlayable(frame,game,{pendingStatic:()=>entryGate.pendingCount(),readRoom:()=>state.room,readinessDiagnostics:()=>entryGate.snapshot()});measurement.entryReady=ready;measurement.entryEpoch=Date.now();result.playable_ms=measurement.entryEpoch-started;result.entry_phases.push({name:'observed-playable',elapsed_ms:result.playable_ms,excluded_turn_wait_ms:ready.turn_wait_ms,excluded_other_player_ready_wait_ms:ready.other_player_ready_wait_ms});
    const mark=name=>frame.evaluate(name=>{const at=performance.now();window.__gamePerf.marks.push({name,at});return at;},name);
    await mark('action-start');
    let action;

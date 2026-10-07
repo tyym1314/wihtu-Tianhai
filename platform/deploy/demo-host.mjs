@@ -1,7 +1,8 @@
 /** Public HTTPS sandbox host. Guest cookies identify test wallets, never real App users. */
 import {createServer} from 'node:http';
-import {createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
-import {mkdir,open,readFile,lstat} from 'node:fs/promises';
+import {createHash,createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
+import {constants as fsConstants} from 'node:fs';
+import {mkdir,open,readFile,lstat,readdir,rename,unlink} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {parseTree} from 'jsonc-parser';
@@ -13,9 +14,69 @@ export const COOKIE='__Host-oasis_demo';
 const GUEST_LIFETIME=30*24*60*60;
 const publicDir=fileURLToPath(new URL('../specs/examples/partner-host/public/',import.meta.url));
 const sdkPath=fileURLToPath(new URL('../public/sdk/oasis-h5.mjs',import.meta.url));
+const STATIC_CACHE_SECONDS=30*24*60*60;
+const STATIC_ARCHIVE_SECONDS=45*24*60*60;
+const STATIC_ARCHIVE_MAX_FILES=512;
+const STATIC_ARCHIVE_MAX_BYTES=16*1024*1024;
+const STATIC_FILE_MAX_BYTES=1024*1024;
+// This registry is independent of the current bundle's filenames. A renamed
+// public module remains readable by its old content-addressed URL until its
+// cache promise expires; no other extension can be served from the archive.
+const STATIC_ARCHIVE_TYPES=Object.freeze({mjs:'text/javascript',css:'text/css'});
+const staticName=/^[a-z0-9-]+\.(mjs|css)$/;
+const staticRoute=/^\/demo\/static\/([a-f0-9]{64})\/([a-z0-9-]+\.(mjs|css))$/;
 const error=(status,code,message=code)=>Object.assign(new Error(message),{status,code});
 const mac=(key,value)=>createHmac('sha256',key).update(value).digest('hex');
+const sha256=value=>createHash('sha256').update(value).digest('hex');
 const same=(a,b)=>{if(typeof a!=='string'||typeof b!=='string')return false;const left=Buffer.from(a),right=Buffer.from(b);return left.length===right.length&&timingSafeEqual(left,right);};
+
+async function archivePublicStatic(dir,entries){
+ await mkdir(dir,{recursive:true,mode:0o700});
+ const directory=await lstat(dir);
+ if(!directory.isDirectory()||directory.isSymbolicLink()||(directory.mode&0o777)!==0o700)throw new Error('DEMO_STATIC_ARCHIVE_UNSAFE');
+ const protectedNames=new Set();
+ for(const {digest,name,bytes,type} of entries){
+  if(!staticName.test(name)||STATIC_ARCHIVE_TYPES[name.split('.').at(-1)]!==type)throw new Error('DEMO_STATIC_TYPE_UNSAFE');
+  if(bytes.length>STATIC_FILE_MAX_BYTES)throw new Error('DEMO_STATIC_FILE_TOO_LARGE');
+  const filename=digest+'-'+name,destination=path.join(dir,filename);protectedNames.add(filename);
+  try{const info=await lstat(destination);if(info.isFile()&&!info.isSymbolicLink()&&(info.mode&0o777)===0o600&&info.size<=STATIC_FILE_MAX_BYTES&&Date.now()-info.mtimeMs<STATIC_ARCHIVE_SECONDS*1000){const old=await readFile(destination);if(sha256(old)===digest)continue;}}catch(e){if(e.code!=='ENOENT')throw e;}
+  // A temporary 0600 file and atomic rename ensure a previous release cannot
+  // observe a truncated asset while a new release is warming its archive.
+  const temp=path.join(dir,'.'+randomBytes(12).toString('hex')+'.tmp');
+  try{const handle=await open(temp,'wx',0o600);try{await handle.writeFile(bytes);await handle.sync();}finally{await handle.close();}await rename(temp,destination);}finally{await unlink(temp).catch(e=>{if(e.code!=='ENOENT')throw e;});}
+ }
+ const now=Date.now(),files=[];
+ for(const name of await readdir(dir)){
+  const match=/^([a-f0-9]{64})-([a-z0-9-]+\.(mjs|css))$/.exec(name);
+  if(!match)continue;
+  const stat=await lstat(path.join(dir,name));
+  if(!stat.isFile()||stat.isSymbolicLink()||(stat.mode&0o777)!==0o600||stat.size>STATIC_FILE_MAX_BYTES)throw new Error('DEMO_STATIC_ARCHIVE_UNSAFE');
+  if(!protectedNames.has(name)&&now-stat.mtimeMs>STATIC_ARCHIVE_SECONDS*1000){await unlink(path.join(dir,name));continue;}
+  files.push({name,mtimeMs:stat.mtimeMs,size:stat.size});
+ }
+ // Every unexpired file may have advertised 30 days of immutable caching at
+ // its last response. Never evict it merely to admit a new release.
+ if(files.length>STATIC_ARCHIVE_MAX_FILES||files.reduce((sum,file)=>sum+file.size,0)>STATIC_ARCHIVE_MAX_BYTES)throw new Error('DEMO_STATIC_ARCHIVE_CAPACITY');
+}
+
+async function archivedStatic(dir,pathname,{current=false}={}){
+ const match=staticRoute.exec(pathname);
+ if(!match)return null;
+ try{
+  const file=path.join(dir,match[1]+'-'+match[2]),handle=await open(file,fsConstants.O_RDONLY|fsConstants.O_NOFOLLOW);
+  try{
+   const info=await handle.stat();
+   if(!info.isFile()||(info.mode&0o777)!==0o600||info.size>STATIC_FILE_MAX_BYTES||(!current&&Date.now()-info.mtimeMs>STATIC_ARCHIVE_SECONDS*1000))return null;
+   const body=await handle.readFile();
+   if(sha256(body)!==match[1])return null;
+   // mtime is the last successful service, not the release date. Touch before
+   // sending a 200 or 304 so every 30-day max-age has at least 45 days of
+   // archive availability behind it, including a request on day 44.
+   const servedAt=new Date();await handle.utimes(servedAt,servedAt);
+   return {body,type:STATIC_ARCHIVE_TYPES[match[3]],etag:'"'+match[1]+'"',cache:`public,max-age=${STATIC_CACHE_SECONDS},immutable`};
+  }finally{await handle.close();}
+ }catch{return null;}
+}
 
 export function parseConfig(env=process.env){
  const raw=env.OASIS_PUBLIC_ORIGIN;if(!raw)throw new Error('OASIS_PUBLIC_ORIGIN is required');
@@ -115,21 +176,49 @@ export async function createLiveBackend(config){
 export async function createDemoHost(config,{backend,key,clock=Date.now}={}){
  if(!backend||!Buffer.isBuffer(key)||key.length!==32)throw new Error('Demo backend and private guest key required');
  const host=new URL(config.origin).host,consume=createRateLimiter({clock}),anonymous=createRateLimiter({clock}),limits=config.rateLimits||demoRateConfiguration();
+ const files=new Map(),archiveEntries=[];
+ // The HTML and API carry visitor state and must be fetched afresh. The public
+ // scripts, styles and SDK are byte-identical for every visitor, so give each
+ // build's exact bytes a distinct URL while keeping old unversioned URLs
+ // revalidatable for pages already open during a release switch.
+ const addStatic=(route,body,type)=>{
+  const bytes=Buffer.isBuffer(body)?body:Buffer.from(body);
+  const digest=sha256(bytes),name=path.posix.basename(route);
+  const file={body:bytes,type,etag:'"'+digest+'"'};
+  files.set(route,{...file,cache:'public,max-age=0,must-revalidate'});
+  const versioned='/demo/static/'+digest+'/'+name;
+  files.set(versioned,{...file,cache:'public,max-age=0,must-revalidate',versioned:true});
+  archiveEntries.push({digest,name,bytes,type});
+  return versioned;
+ };
+ const sdkUrl=addStatic('/demo/sdk/oasis-h5.mjs',await readFile(sdkPath),'text/javascript');
  let index=await readFile(path.join(publicDir,'index.html'),'utf8');
  index=index.replaceAll('/host.css','/demo/host.css').replaceAll('/host.mjs','/demo/host.mjs').replace('href="/"','href="/demo/"').replace('<i>L</i><span>Lina<small>本地测试身份</small></span>','<i>G</i><span id="guest-name">试玩访客<small>独立测试身份</small></span>').replace('合作方 H5 自接入示例','OASIS 游戏试玩').replace('独立宿主 · 游戏在平台域内运行<br>仅限本地沙箱与测试币','每位访客独立测试钱包 · 初始 12,000 测试币<br>测试币无现金价值，不可充值或提现');
  let script=await readFile(path.join(publicDir,'host.mjs'),'utf8');
- script=script.replaceAll("'/sdk/oasis-h5.mjs'","'/demo/sdk/oasis-h5.mjs'").replaceAll('/api/host/','/api/demo/').replace("config=await json('/api/demo/config');","config=await json('/api/demo/config');$('#guest-name').firstChild.textContent=config.profile.name;");
- const files=new Map([['/demo/',{body:index,type:'text/html'}],['/demo/host.mjs',{body:script,type:'text/javascript'}],['/demo/host.css',{body:await readFile(path.join(publicDir,'host.css')),type:'text/css'}],['/demo/sdk/oasis-h5.mjs',{body:await readFile(sdkPath),type:'text/javascript'}]]);
+ script=script.replaceAll("'/sdk/oasis-h5.mjs'",`'${sdkUrl}'`).replaceAll('/api/host/','/api/demo/').replace("config=await json('/api/demo/config');","config=await json('/api/demo/config');$('#guest-name').firstChild.textContent=config.profile.name;");
+ const scriptUrl=addStatic('/demo/host.mjs',script,'text/javascript');
+ const cssUrl=addStatic('/demo/host.css',await readFile(path.join(publicDir,'host.css')),'text/css');
+ index=index.replace('/demo/host.css',cssUrl).replace('/demo/host.mjs',scriptUrl);
+ files.set('/demo/',{body:index,type:'text/html'});
  const nativePage=await readFile(new URL('./native-game-host.html',import.meta.url),'utf8');
- for(const game of NATIVE_GAME_IDS)files.set('/demo/native/'+game,{body:nativePage.replace('__OASIS_NATIVE_GAME__',game),type:'text/html'});
- for(const [name,type]of [['native-game-host.mjs','text/javascript'],['native-game-host-boot.mjs','text/javascript'],['native-game-host.css','text/css']])files.set('/demo/'+name,{body:await readFile(new URL('./'+name,import.meta.url)),type});
+ const nativeModuleUrl=addStatic('/demo/native-game-host.mjs',await readFile(new URL('./native-game-host.mjs',import.meta.url)),'text/javascript');
+ const nativeBoot=(await readFile(new URL('./native-game-host-boot.mjs',import.meta.url),'utf8')).replace('/demo/sdk/oasis-h5.mjs',sdkUrl).replace('/demo/native-game-host.mjs',nativeModuleUrl);
+ const nativeBootUrl=addStatic('/demo/native-game-host-boot.mjs',nativeBoot,'text/javascript');
+ const nativeCssUrl=addStatic('/demo/native-game-host.css',await readFile(new URL('./native-game-host.css',import.meta.url)),'text/css');
+ for(const game of NATIVE_GAME_IDS)files.set('/demo/native/'+game,{body:nativePage.replace('__OASIS_NATIVE_GAME__',game).replace('/demo/native-game-host.css',nativeCssUrl).replace('/demo/native-game-host-boot.mjs',nativeBootUrl),type:'text/html'});
  files.set('/demo/native-return',{body:'<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>已返回 App</title></head><body><p>已退出游戏，请返回 App 游戏大厅。</p></body></html>',type:'text/html'});
+ let archiveDir=null;
+ if(config.localDir){
+  archiveDir=path.join(config.localDir,'demo-public-static-v1');
+  await archivePublicStatic(archiveDir,archiveEntries);
+ }
  const headers={'cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer','content-security-policy':`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src ${config.origin}; frame-ancestors 'none'; base-uri 'none'; form-action 'self'`};
  const json=(res,status,value,extra={})=>{res.writeHead(status,{...headers,'content-type':'application/json; charset=utf-8',...extra});res.end(JSON.stringify(value));};
  const cookieHeader=value=>`${COOKIE}=${value}; Path=/; Max-Age=${GUEST_LIFETIME}; Secure; HttpOnly; SameSite=Lax`;
  const server=createServer(async(req,res)=>{try{
   if(req.headers.host!==host)throw error(403,'HOST_REJECTED');
-  const pathname=new URL(req.url,'http://loopback.invalid').pathname;
+  const parsed=new URL(req.url,'http://loopback.invalid'),pathname=parsed.pathname,rawPath=req.url.split('?')[0];
+  if(rawPath.startsWith('/demo/static/')&&(rawPath!==pathname||parsed.search))throw error(404,'NOT_FOUND');
   if(req.headers.origin&&req.headers.origin!==config.origin)throw error(403,'ORIGIN_REJECTED');
   if(pathname.startsWith('/api/demo/')){
    if(req.headers['sec-fetch-site']==='cross-site')throw error(403,'ORIGIN_REJECTED');
@@ -158,9 +247,17 @@ export async function createDemoHost(config,{backend,key,clock=Date.now}={}){
    throw error(404,'NOT_FOUND');
   }
   if(req.method==='GET'&&pathname==='/demo'){res.writeHead(308,{...headers,location:'/demo/'});return res.end();}
-  const file=files.get(pathname);
+  let file=files.get(pathname);
+  if(archiveDir&&staticRoute.test(pathname)){
+   const archived=await archivedStatic(archiveDir,pathname,{current:!!file?.versioned});
+   if(file?.versioned&&!archived)throw error(503,'DEMO_STATIC_ARCHIVE_UNAVAILABLE');
+   file=archived;
+  }
   if(!file||!['GET','HEAD'].includes(req.method))throw error(404,'NOT_FOUND');
-  res.writeHead(200,{...headers,'content-type':file.type+'; charset=utf-8'});res.end(req.method==='HEAD'?undefined:file.body);
+  const cacheHeaders=file.etag?{'cache-control':file.cache,etag:file.etag}:{'cache-control':'no-store'};
+  const matched=file.etag&&req.headers['if-none-match']?.split(',').some(tag=>tag.trim()==='*'||tag.trim().replace(/^W\//,'')===file.etag);
+  if(matched){res.writeHead(304,{...headers,...cacheHeaders});return res.end();}
+  res.writeHead(200,{...headers,...cacheHeaders,'content-type':file.type+'; charset=utf-8','content-length':Buffer.byteLength(file.body)});res.end(req.method==='HEAD'?undefined:file.body);
  }catch(e){
   if(e.status>=500||!e.status)console.error('Hosted demo request failed:',e.code||e.name||'Error');
   const extra=e.status===401?{'set-cookie':`${COOKIE}=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax`}:e.status===429?{'retry-after':String(e.retryAfterSeconds||60)}:{};

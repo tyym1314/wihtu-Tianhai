@@ -12,6 +12,7 @@ The platform entry imports `migratePvp(pool)`, calls `routePvp(session,method,pa
 - `GET /api/pvp/rooms/:idOrCode`: member-only private snapshot and own heartbeat.
 - `POST /api/pvp/rooms/:idOrCode/join`: `{request_id}`. Same App, same game, same scope, independent authenticated user.
 - `POST /api/pvp/rooms/:id/ready`: `{request_id}`. Ready waits for everyone, then starts persisted funding.
+- `POST /api/pvp/rooms/:id/scene-ready`: `{request_id}` for new Run v2.1 rooms. Each authenticated human acknowledges a real rendered frame and refreshes that proof while the scene remains visible. Before starting, every human must have a frame proof and server presence no older than 2 seconds; old frame proofs or GET heartbeats alone cannot start a room. The server then fixes one start instant 1.5 seconds ahead. The 15-second arming deadline is absolute and voids/refunds on expiry; departure before the start instant also voids/refunds. Old Run rooms do not use this route.
 - `POST /api/pvp/rooms/:id/action`: `{request_id,seq,action}`. `seq` starts at 1 and must increase by exactly one. A transport retry MUST retain both request ID and seq. Same request replays its original response. A different request with the same seq returns `INVALID_SEQUENCE`; GET the room for `me_last_seq` before accepting another action.
 - `POST /api/pvp/rooms/:id/leave`: `{request_id}`. Waiting/funding cancels the full lobby. Paid active means explicit surrender, not merely closing the WebView. The sole human can end free practice immediately, cancelling its bots without any wallet call.
 

@@ -1,6 +1,8 @@
 import * as legacy from './level.mjs';
 
 export const CONTENT_VERSION='dune-courses-v2.0.0';
+export const SAFE_INTRO_CONTENT_VERSION='dune-courses-v2.1.0';
+export const SAFE_INTRO_METERS=30;
 const all=[0,1,2];
 // Each 60m segment has safe boundaries and 30m checkpoints. Compositions are
 // authored and replay-tested; arbitrary random concatenation is not allowed.
@@ -33,13 +35,22 @@ function build([id,difficulty,titleZh,titleEn,segments]){
  return deepFreeze({id,contentVersion:CONTENT_VERSION,levelVersion:`${CONTENT_VERSION}/${id}`,physicsVersion:legacy.PHYSICS_VERSION,trackLength:480,difficulty,title:{zh:titleZh,en:titleEn,ar:titleEn},segments:[...segments],obstacles,gaps,items:legacy.ITEMS.map(x=>({...x})),checkpoints:[...legacy.CHECKPOINTS],guide});
 }
 export const RUN_COURSES=deepFreeze(definitions.map(build));
+// V2.1 keeps the six pinned routes and their later challenge, but gives every
+// lane a hazard-free first 30 m. V2.0 objects remain byte-for-byte unchanged.
+export const RUN_COURSES_V21=deepFreeze(RUN_COURSES.map(course=>({
+ ...course,contentVersion:SAFE_INTRO_CONTENT_VERSION,
+ levelVersion:`${SAFE_INTRO_CONTENT_VERSION}/${course.id}`,
+ obstacles:course.obstacles.filter(obstacle=>obstacle.z>=SAFE_INTRO_METERS),
+ gaps:course.gaps.filter(gap=>gap.start>=SAFE_INTRO_METERS),
+})));
 const original=deepFreeze({id:'golden-causeway-v1',contentVersion:legacy.LEVEL_VERSION,levelVersion:legacy.LEVEL_VERSION,physicsVersion:legacy.PHYSICS_VERSION,trackLength:legacy.TRACK_LENGTH,difficulty:1,title:{zh:'金色绿洲长桥',en:'Oasis Crossing',ar:'جسر الواحة'},obstacles:legacy.OBSTACLES,gaps:legacy.GAPS,items:legacy.ITEMS,checkpoints:legacy.CHECKPOINTS,guide:[]});
-export function selectRunCourse(seed){return RUN_COURSES[Number.parseInt(seed.slice(0,8),16)%RUN_COURSES.length];}
+export function selectRunCourse(seed,ruleVersion='pvp-run-v2.0.0'){const courses=ruleVersion==='pvp-run-v2.1.0'?RUN_COURSES_V21:RUN_COURSES;return courses[Number.parseInt(seed.slice(0,8),16)%courses.length];}
 export function resolveRunCourse(state){
- if(state?.ruleVersion==='pvp-run-v2.0.0'&&!state.courseId)throw new Error('Missing pinned Dune Dash course');
+ if(['pvp-run-v2.0.0','pvp-run-v2.1.0'].includes(state?.ruleVersion)&&!state.courseId)throw new Error('Missing pinned Dune Dash course');
  if(!state?.courseId&&(!state?.levelVersion||state.levelVersion===legacy.LEVEL_VERSION))return original;
- const course=RUN_COURSES.find(c=>c.id===state.courseId);
- if(!course||state.contentVersion!==CONTENT_VERSION||state.levelVersion!==course.levelVersion)throw new Error('Unsupported pinned Dune Dash course');
+ const courses=state?.ruleVersion==='pvp-run-v2.1.0'?RUN_COURSES_V21:RUN_COURSES;
+ const course=courses.find(c=>c.id===state.courseId);
+ if(!course||state.contentVersion!==course.contentVersion||state.levelVersion!==course.levelVersion)throw new Error('Unsupported pinned Dune Dash course');
  return course;
 }
 export function courseGapAt(course,x,z,radius=0){return course.gaps.find(g=>z+radius>g.start&&z-radius<g.end&&g.lanes.some(lane=>Math.abs(x-legacy.LANES[lane])<.75));}

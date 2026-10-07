@@ -1,0 +1,42 @@
+{
+  "label": "after-clock-250",
+  "scope": "Isolated authoritative engine + real RunGame/WebGL + Chrome mobile emulation 390x844 DPR3, Apple Metal, CPU x4; no wallet, no public host or physical iPhone Safari claim",
+  "browser": "Chrome mobile emulation",
+  "duration_ms": 62064,
+  "rule_version": "pvp-run-v2.1.0",
+  "course_id": "palm-weave",
+  "start_at": 1791376296774,
+  "phase": "finished",
+  "final_distance_m": 480,
+  "final_net_distance_m": 480,
+  "hits": 1,
+  "legal_actions": 18,
+  "frames": {
+    "count": 3702,
+    "p50": 16.69999999999709,
+    "p95": 16.700000000004366,
+    "p99": 16.80000000000291,
+    "max": 166.69999999999982
+  },
+  "frames_over_50_ms_percent": 0.08103727714748785,
+  "frames_over_100_ms": 1,
+  "long_tasks": {
+    "count": 3,
+    "p50": 85,
+    "p95": 166,
+    "p99": 166,
+    "max": 166
+  },
+  "react_commits": {
+    "count": 1032,
+    "p50": 7.599999904632568,
+    "p95": 8.800000190734863,
+    "p99": 9.200000286102295,
+    "max": 9.5
+  },
+  "react_commits_per_second": 16.62799690641918,
+  "react_total_render_ms": 7890.800005912781,
+  "canvas_ready": "true",
+  "input_ready": "true",
+  "errors": []
+}

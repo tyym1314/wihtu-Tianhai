@@ -93,7 +93,7 @@ export function createProbes(config){
   demo:async()=>{
    // /api/demo/config creates a guest and is rate limited. This check creates no identity.
    const response=await requestHealth(`http://127.0.0.1:${config.demoPort}/demo/`,{host:config.host,timeoutMs:config.timeoutMs});
-   if(response.status!==200||!response.body.includes('/demo/host.mjs')||!response.body.includes('OASIS 游戏试玩'))throw new Error('DEMO_UNAVAILABLE');
+   if(response.status!==200||!/<script type="module" src="\/demo\/static\/[a-f0-9]{64}\/host\.mjs"><\/script>/.test(response.body)||!response.body.includes('OASIS 游戏试玩'))throw new Error('DEMO_UNAVAILABLE');
    return {reachable:true};
   },
   systemd:async()=>Object.fromEntries(await Promise.all(units.map(async unit=>{

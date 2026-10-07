@@ -56,9 +56,16 @@ async function fixture(game='match',balances=['100000','100000','100000','100000
  return{app,scope,sessions:balances.map((_,i)=>({id:uid('session'),app_id:app.id,external_user_id:'player_'+i,game_id:game}))};
 }
 const call=(s,method,path,body={},opts={})=>routePvp(s,method,path,method==='POST'?{request_id:uid('request'),...body}:body,opts);
-async function setup(f,n=2,entry='10000',practice=false){const created=await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:f.sessions[0].game_id,capacity:n,entry_minor:entry,practice});const room=created.body;if(!practice)for(let i=1;i<n;i++)await call(f.sessions[i],'POST',`/api/pvp/rooms/${room.code}/join`);for(let i=0;i<(practice?1:n);i++)await call(f.sessions[i],'POST',`/api/pvp/rooms/${room.id}/ready`);await tickPvp({roomIds:[room.id]});return(await call(f.sessions[0],'GET',`/api/pvp/rooms/${room.id}`)).body;}
+async function setup(f,n=2,entry='10000',practice=false){const created=await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:f.sessions[0].game_id,capacity:n,entry_minor:entry,practice});const room=created.body;if(!practice)for(let i=1;i<n;i++)await call(f.sessions[i],'POST',`/api/pvp/rooms/${room.code}/join`);for(let i=0;i<(practice?1:n);i++)await call(f.sessions[i],'POST',`/api/pvp/rooms/${room.id}/ready`);await tickPvp({roomIds:[room.id]});if(f.sessions[0].game_id==='run')for(let i=0;i<(practice?1:n);i++)await call(f.sessions[i],'POST',`/api/pvp/rooms/${room.id}/scene-ready`);return(await call(f.sessions[0],'GET',`/api/pvp/rooms/${room.id}`)).body;}
 const read=async id=>(await pool.query('SELECT * FROM pvp_rooms WHERE id=$1',[id])).rows[0];
 const snapshot=f=>readWalletSnapshot(pool,{scope:f.scope});
+async function startPaidRunRace(f,room){
+ const armed=await read(room.id);assert.equal(armed.game_state.phase,'countdown');
+ const raceAt=Number(armed.starts_at)+1;
+ const started=(await call(f.sessions[0],'GET',`/api/pvp/rooms/${room.id}`,{}, {now:raceAt,skipGap:true})).body;
+ assert.equal(started.game.phase,'racing');assert.equal(started.starts_at,Number(armed.starts_at));
+ return raceAt;
+}
 async function deadline(id){await locked('pvp:'+id,async()=>{const r=await read(id),now=Date.now()-1;r.game_state.deadlineAt=now;for(const p of Object.values(r.game_state.players))p.busyUntil=now;await pool.query('UPDATE pvp_rooms SET game_state=$2,last_tick_at=$3 WHERE id=$1',[id,r.game_state,now]);});await tickPvp({roomIds:[id]});}
 function conservation(s){assert.equal(s.ledger.reduce((sum,l)=>sum+BigInt(l.delta_available)+BigInt(l.delta_reserved),0n),0n);assert.ok(s.users.every(u=>BigInt(u.available)>=0n&&u.reserved==='0'&&u.credit_pending==='0'));}
 for(const game of['run','match','golf','towerlink'])test(`${game} historical waiting rooms start and execute their pinned rules after deployment`,async()=>{
@@ -72,6 +79,106 @@ for(const game of['run','match','golf','towerlink'])test(`${game} historical wai
  const acted=(await call(f.sessions[0],'POST',`/api/pvp/rooms/${r.id}/action`,{seq:1,action},{now})).body;assert.equal(acted.game.ruleVersion,legacyVersion);assert.equal(acted.me_last_seq,1);
  await tickPvp({roomIds:[r.id]});db=await read(r.id);assert.equal(db.game_state.ruleVersion,legacyVersion);assert.equal(db.status,'active');
  await call(f.sessions[0],'POST',`/api/pvp/rooms/${r.id}/leave`);assert.equal((await read(r.id)).status,'cancelled');assert.equal((await snapshot(f)).operations.length,0);
+});
+test('new paid Run waits for both rendered humans, then uses one immutable countdown and supports reconnect',async()=>{
+ const f=await fixture('run');const created=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'10000'})).body;
+ await call(f.sessions[1],'POST',`/api/pvp/rooms/${created.id}/join`);
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/ready`);
+ await call(f.sessions[1],'POST',`/api/pvp/rooms/${created.id}/ready`);
+ await tickPvp({roomIds:[created.id]});let db=await read(created.id);
+ assert.equal(db.rule_version,engines.run.RULE_VERSION);assert.equal(db.game_state.phase,'arming');assert.equal(db.starts_at,null);
+ assert.ok(db.game_state.players.every(p=>p.distanceU===0));
+ const firstAt=Number(db.last_tick_at)+1000,firstRequest={request_id:uid('scene_ready')};
+ await assert.rejects(call(f.sessions[2],'POST',`/api/pvp/rooms/${created.id}/scene-ready`,{}, {now:firstAt,skipGap:true}),{code:'NOT_A_PLAYER'});
+ const first=await routePvp(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/scene-ready`,firstRequest,{now:firstAt,skipGap:true});
+ assert.equal(first.body.start_protocol.ready_count,1);assert.equal(first.body.game.phase,'arming');
+ const replay=await routePvp(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/scene-ready`,firstRequest,{now:firstAt+1,skipGap:true});assert.deepEqual(replay,first);
+ db=await read(created.id);assert.equal(db.game_state.tick,0);
+ const secondAt=firstAt+5000;
+ await tickPvp({roomIds:[created.id],now:secondAt-1,skipGap:true});db=await read(created.id);assert.equal(db.game_state.phase,'arming');assert.ok(db.game_state.players.every(p=>p.distanceU===0));
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/scene-ready`,{}, {now:secondAt-100,skipGap:true});
+ const second=await call(f.sessions[1],'POST',`/api/pvp/rooms/${created.id}/scene-ready`,{}, {now:secondAt,skipGap:true});
+ assert.equal(second.body.game.phase,'countdown');assert.equal(second.body.start_protocol.ready_count,2);
+ const startAt=secondAt+engines.run.RUN_START_COUNTDOWN_MS;assert.equal(second.body.starts_at,startAt);
+ await assert.rejects(call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/action`,{seq:1,action:{type:'jump'}},{now:startAt-1,skipGap:true}),{code:'NOT_STARTED'});
+ await tickPvp({roomIds:[created.id],now:startAt-1,skipGap:true});db=await read(created.id);assert.equal(db.game_state.tick,0);assert.ok(db.game_state.players.every(p=>p.distanceU===0));
+ const repeat=await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/scene-ready`,{}, {now:startAt-1,skipGap:true});assert.equal(repeat.body.starts_at,startAt);
+ const resumed=(await call(f.sessions[0],'GET',`/api/pvp/rooms/${created.id}`,{}, {now:startAt+1000,skipGap:true})).body;
+ assert.equal(resumed.starts_at,startAt);assert.equal(resumed.game.phase,'racing');assert.ok(resumed.game.snapshotTick>=60);assert.equal(resumed.players.filter(p=>p.scene_ready).length,2);
+ await call(f.sessions[1],'POST',`/api/pvp/rooms/${created.id}/leave`,{}, {now:startAt+1001,skipGap:true});await tickPvp({roomIds:[created.id],now:startAt+1002,skipGap:true});conservation(await snapshot(f));
+});
+test('Run scene-ready deadline and explicit departure void captured matches with full refunds',async()=>{
+ for(const scenario of ['timeout','departure']){
+  const f=await fixture('run');const room=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'10000'})).body;
+  await call(f.sessions[1],'POST',`/api/pvp/rooms/${room.id}/join`);for(const s of f.sessions.slice(0,2))await call(s,'POST',`/api/pvp/rooms/${room.id}/ready`);
+  await tickPvp({roomIds:[room.id]});let db=await read(room.id);assert.equal(db.status,'active');assert.equal(db.game_state.phase,'arming');assert.equal((await snapshot(f)).users[0].available,'90000');
+  await call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/scene-ready`);
+  if(scenario==='timeout')await tickPvp({roomIds:[room.id],now:Number(db.game_state.armingDeadlineAt)+1,skipGap:true});
+  else await call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/leave`);
+  db=await read(room.id);assert.equal(db.status,'voided',JSON.stringify(db.error));assert.equal(db.result.resolution,'void');assert.equal(db.result.reason,scenario==='timeout'?'scene_ready_timeout':'scene_ready_aborted');assert.equal(db.result.fee_minor,'0');
+  const walletState=await snapshot(f);assert.ok(walletState.users.every(u=>u.available==='100000'));conservation(walletState);
+ }
+});
+test('Run arming deadline remains absolute when the room receives no ticks',async()=>{
+ const f=await fixture('run'),room=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'10000'})).body;
+ await call(f.sessions[1],'POST',`/api/pvp/rooms/${room.id}/join`);
+ for(const session of f.sessions.slice(0,2))await call(session,'POST',`/api/pvp/rooms/${room.id}/ready`);
+ await tickPvp({roomIds:[room.id]});const armed=await read(room.id),deadline=Number(armed.game_state.armingDeadlineAt);
+ assert.equal(armed.game_state.phase,'arming');assert.ok(deadline-Number(armed.last_tick_at)>5000);
+ await assert.rejects(call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/scene-ready`,{}, {now:deadline+1}),{code:'NOT_ACTIVE'});
+ const ended=await read(room.id),walletState=await snapshot(f);
+ assert.equal(ended.status,'voided');assert.equal(ended.result.reason,'scene_ready_timeout');assert.equal(ended.result.fee_minor,'0');
+ assert.equal(Number(ended.game_state.armingDeadlineAt),deadline);
+ assert.ok(walletState.users.every(user=>user.available==='100000'));conservation(walletState);
+});
+test('Run paid countdown departure before starts_at voids with no fee',async()=>{
+ const f=await fixture('run'),room=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'10000'})).body;
+ await call(f.sessions[1],'POST',`/api/pvp/rooms/${room.id}/join`);
+ for(const session of f.sessions.slice(0,2))await call(session,'POST',`/api/pvp/rooms/${room.id}/ready`);
+ await tickPvp({roomIds:[room.id]});const armed=await read(room.id),firstAt=Number(armed.last_tick_at)+500;
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/scene-ready`,{}, {now:firstAt,skipGap:true});
+ await call(f.sessions[1],'POST',`/api/pvp/rooms/${room.id}/scene-ready`,{}, {now:firstAt+500,skipGap:true});
+ const countdown=await read(room.id);assert.equal(countdown.game_state.phase,'countdown');assert.equal(countdown.game_state.tick,0);
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/leave`,{}, {now:Number(countdown.starts_at)-1});
+ const ended=await read(room.id),walletState=await snapshot(f);
+ assert.equal(ended.status,'voided');assert.equal(ended.result.reason,'scene_ready_aborted');assert.equal(ended.result.fee_minor,'0');
+ assert.ok(walletState.users.every(user=>user.available==='100000'));conservation(walletState);
+});
+test('Run waits for recently present humans and refunds if a ready player stays away',async()=>{
+ const f=await fixture('run'),room=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'10000'})).body;
+ await call(f.sessions[1],'POST',`/api/pvp/rooms/${room.id}/join`);
+ for(const session of f.sessions.slice(0,2))await call(session,'POST',`/api/pvp/rooms/${room.id}/ready`);
+ await tickPvp({roomIds:[room.id]});const armed=await read(room.id),firstAt=Number(armed.last_tick_at)+1000;
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/scene-ready`,{}, {now:firstAt,skipGap:true});
+ const secondAt=firstAt+5000;
+ const second=(await call(f.sessions[1],'POST',`/api/pvp/rooms/${room.id}/scene-ready`,{}, {now:secondAt,skipGap:true})).body;
+ assert.equal(second.game.phase,'arming');assert.equal(second.start_protocol.ready_count,1);assert.equal(second.starts_at,null);
+ await tickPvp({roomIds:[room.id],now:Number(armed.game_state.armingDeadlineAt)+1});
+ const ended=await read(room.id),walletState=await snapshot(f);
+ assert.equal(ended.status,'voided');assert.equal(ended.result.reason,'scene_ready_timeout');assert.equal(ended.result.fee_minor,'0');
+ assert.ok(walletState.users.every(user=>user.available==='100000'));conservation(walletState);
+});
+test('Run foreground polling alone cannot replace a fresh rendered-frame acknowledgement',async()=>{
+ const f=await fixture('run'),room=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'10000'})).body;
+ await call(f.sessions[1],'POST',`/api/pvp/rooms/${room.id}/join`);
+ for(const session of f.sessions.slice(0,2))await call(session,'POST',`/api/pvp/rooms/${room.id}/ready`);
+ await tickPvp({roomIds:[room.id]});const armed=await read(room.id),firstAt=Number(armed.last_tick_at)+1000,secondAt=firstAt+5000;
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/scene-ready`,{}, {now:firstAt,skipGap:true});
+ await call(f.sessions[1],'POST',`/api/pvp/rooms/${room.id}/scene-ready`,{}, {now:secondAt,skipGap:true});
+ const polled=(await call(f.sessions[0],'GET',`/api/pvp/rooms/${room.id}`,{}, {now:secondAt+100,skipGap:true})).body;
+ assert.equal(polled.game.phase,'arming');assert.equal(polled.starts_at,null);
+ const refreshed=(await call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/scene-ready`,{}, {now:secondAt+200,skipGap:true})).body;
+ assert.equal(refreshed.game.phase,'countdown');assert.equal(refreshed.starts_at,secondAt+200+engines.run.RUN_START_COUNTDOWN_MS);
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/leave`,{}, {now:refreshed.starts_at-1,skipGap:true});
+ const ended=await read(room.id);assert.equal(ended.status,'voided');assert.equal(ended.result.fee_minor,'0');conservation(await snapshot(f));
+});
+test('persisted Run v2.0 room keeps immediate start and rejects the new acknowledgement',async()=>{
+ const f=await fixture('run'),room=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'0',practice:true})).body;
+ const previous='pvp-run-v2.0.0';await pool.query("UPDATE pvp_rooms SET rule_version=$2,terms=jsonb_set(terms,'{rule_version}',to_jsonb($2::text)) WHERE id=$1",[room.id,previous]);
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/ready`);await tickPvp({roomIds:[room.id]});const db=await read(room.id);
+ assert.equal(db.game_state.ruleVersion,previous);assert.equal(db.game_state.phase,'racing');assert.equal(Number(db.starts_at),db.game_state.startedAt);
+ await assert.rejects(call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/scene-ready`),{code:'UNSUPPORTED_START_PROTOCOL'});
+ await call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/leave`);
 });
 for(const n of [2,3,4])test(`real ${n}-player reserve/capture/tied settlement persists one fee and complete roster`,async()=>{
  const f=await fixture(),r=await setup(f,n);assert.equal(r.status,'active',JSON.stringify(r.error));assert.equal(r.players.length,n);assert.ok(r.players.every(p=>!p.bot));assert.equal(new Set(r.players.map(p=>p.seat_index)).size,n);
@@ -189,7 +296,11 @@ for(const game of ['carrom','darts','ludo','jackaroo','domino','pool','bowling',
  assert.ok(accepted,'human seat must receive a legal action');assert.equal((await pool.query('SELECT count(*) FROM pvp_actions WHERE room_id=$1',[r.id])).rows[0].count,'1');await routePvp(f.sessions[0],'POST',`/api/pvp/rooms/${r.id}/leave`,{request_id:uid('endpractice')},{now:clock,skipGap:true});assert.equal((await read(r.id)).status,'cancelled');assert.equal((await snapshot(f)).operations.length,0);
 });
 for(const game of ['darts','ludo','domino','carrom','pool','bowling','run'])test(`${game} paid duel captures and settles a 190-coin winner`,async()=>{
- const f=await fixture(game),r=await setup(f,2);assert.equal(r.status,'active',JSON.stringify(r.error));await call(f.sessions[1],'POST',`/api/pvp/rooms/${r.id}/leave`);await tickPvp({roomIds:[r.id]});const done=await read(r.id);assert.equal(done.status,'settled',JSON.stringify(done.error));assert.equal(done.result.payouts.find(p=>p.external_user_id==='player_0').payout_minor,'19000');assert.equal(done.result.fee_minor,'1000');conservation(await snapshot(f));
+ const f=await fixture(game),r=await setup(f,2);assert.equal(r.status,'active',JSON.stringify(r.error));
+ const raceAt=game==='run'?await startPaidRunRace(f,r):null;
+ await call(f.sessions[1],'POST',`/api/pvp/rooms/${r.id}/leave`,{},raceAt===null?{}:{now:raceAt+1,skipGap:true});
+ await tickPvp({roomIds:[r.id],...(raceAt===null?{}:{now:raceAt+2,skipGap:true})});
+ const done=await read(r.id);assert.equal(done.status,'settled',JSON.stringify(done.error));assert.equal(done.result.payouts.find(p=>p.external_user_id==='player_0').payout_minor,'19000');assert.equal(done.result.fee_minor,'1000');conservation(await snapshot(f));
 });
 for(const game of ['jackaroo','domino'])test(`${game} views omit opponents hands, stock sequence and RNG`,async()=>{
  const f=await fixture(game),r=await setup(f,game==='jackaroo'?4:2);
@@ -241,8 +352,9 @@ for(const game of ['pool','bowling','run'])test(`${game} simultaneous disconnect
 });
 for(const game of ['bowling','run'])test(`${game} four-person individual room retains last eligible player and pays the net pool once`,async()=>{
  const f=await fixture(game),r=await setup(f,4);assert.equal(r.status,'active');assert.equal(r.team_size,1);assert.ok(r.players.every(p=>p.team_id===null));
- for(const session of f.sessions.slice(1,4))await call(session,'POST',`/api/pvp/rooms/${r.id}/leave`);
- await tickPvp({roomIds:[r.id]});const done=await read(r.id);assert.equal(done.status,'settled',JSON.stringify(done.error));assert.equal(done.result.payouts.find(p=>p.external_user_id==='player_0').payout_minor,'38000');assert.equal(done.result.fee_minor,'2000');assert.equal((await snapshot(f)).fee_minor,'2000');conservation(await snapshot(f));
+ const raceAt=game==='run'?await startPaidRunRace(f,r):null;
+ for(const [index,session]of f.sessions.slice(1,4).entries())await call(session,'POST',`/api/pvp/rooms/${r.id}/leave`,{},raceAt===null?{}:{now:raceAt+index+1,skipGap:true});
+ await tickPvp({roomIds:[r.id],...(raceAt===null?{}:{now:raceAt+4,skipGap:true})});const done=await read(r.id);assert.equal(done.status,'settled',JSON.stringify(done.error));assert.equal(done.result.payouts.find(p=>p.external_user_id==='player_0').payout_minor,'38000');assert.equal(done.result.fee_minor,'2000');assert.equal((await snapshot(f)).fee_minor,'2000');conservation(await snapshot(f));
 });
 
 for(const game of ['pool','bowling','run'])test(`${game} practice deadline is resolved before a bot can send a stale action`,async()=>{

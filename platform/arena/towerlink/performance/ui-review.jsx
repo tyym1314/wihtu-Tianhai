@@ -3,7 +3,7 @@ import {createRoot} from 'react-dom/client';
 import Game from '../TowerLinkGame.jsx';
 import {preloadTowerAssets} from '../tower-assets.mjs';
 import '../../shell.css';
-await preloadTowerAssets();
+void preloadTowerAssets().catch(()=>{});
 const params=new URLSearchParams(location.search),audio={enabled:false,play(){},unlock(){},silence(){},subscribe(){return()=>{};}};
 let data=await fetch('/__tower-ui-state?'+params).then(r=>r.json());
 function App(){const[room,setRoom]=useState(data.room);

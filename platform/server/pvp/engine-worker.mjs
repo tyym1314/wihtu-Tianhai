@@ -20,7 +20,7 @@ export function executeEngineTask(job){
   const botUpdates=[];
   for(const bot of job.bots||[]){
     if(state.status!=='active'||state.phase==='fault'||state.fault)break;
-    const botPeriod=job.gameId==='run'&&job.ruleVersion==='pvp-run-v2.0.0'?100:1200;
+    const botPeriod=job.gameId==='run'&&['pvp-run-v2.0.0','pvp-run-v2.1.0'].includes(job.ruleVersion)?100:1200;
     if(now-(bot.lastBotAt||0)<botPeriod)continue;
     const action=engine.botAction?.(state,bot.key,now);
     if(action){const response=engine.act(state,bot.key,action,now);botUpdates.push({key:bot.key,lastEvent:response.event||null,lastBotAt:now});}

@@ -1,0 +1,46 @@
+# Dedicated HTTPS vhost; replace hostname and certificate paths. Do not route
+# any location to the live 18881/18882/18885 ports or reuse the live hostname.
+server {
+    listen 443 ssl http2;
+    server_name mock-game.example.invalid;
+    ssl_certificate /opt/oasis/acme/config/live/ANDROID_MOCK/fullchain.pem;
+    ssl_certificate_key /opt/oasis/acme/config/live/ANDROID_MOCK/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    root /opt/oasis/current/platform/dist;
+    server_tokens off;
+    client_max_body_size 128k;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy no-referrer always;
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/javascript application/javascript application/json application/wasm image/svg+xml model/gltf-binary;
+
+    location = /demo { return 308 /demo/; }
+    location ^~ /demo/ {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_pass http://127.0.0.1:18985;
+    }
+    location ^~ /api/demo/ {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_pass http://127.0.0.1:18985;
+    }
+    location ~ ^/(api|v1|play|arena|legacy)/ {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_read_timeout 60s;
+        proxy_pass http://127.0.0.1:18981;
+    }
+    location = /health {
+        proxy_set_header Host $host;
+        proxy_pass http://127.0.0.1:18981;
+    }
+    location ~ /\. { deny all; }
+    location ~* \.(pem|key|env|sql)$ { deny all; }
+    location / { try_files $uri $uri/ /index.html; }
+}

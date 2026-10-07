@@ -34,6 +34,57 @@ test('admin authentication, CSRF, credential-once creation and persistence',asyn
   const listing=await request('/api/admin/apps',undefined,{cookie});assert.equal(listing.data.apps.length,3);assert.equal(JSON.stringify(listing.data).includes('secret_base64'),false);
   assert.equal((await request('/api/admin/apps',{name:'production',environment:'production'},{cookie})).status,400);completed.push('admin login/CSRF/persistence/one-time secret');
 });
+test('seven-day activity counts all rows beyond recent-200 limit and respects partner scope and local midnight',async()=>{
+ const headers={'X-Oasis-Timezone':'Asia/Shanghai'};
+ assert.equal((await request('/api/admin/overview-activity',undefined,headers)).status,401);
+ assert.equal((await request('/api/admin/overview-activity',undefined,{...headers,cookie,'X-Oasis-Timezone':'Invalid/Zone'})).status,400);
+ assert.equal((await request('/api/admin/overview-activity',undefined,{...headers,cookie,'X-Oasis-Timezone':''})).status,400);
+ const account=(await request('/api/admin/partner-accounts',{name:'Activity partner',username:'activity_'+Date.now(),password:'activity fixture passphrase'},{cookie}));
+ assert.equal(account.status,201,JSON.stringify(account.data));
+ const login=await request('/api/partner/login',{username:account.data.account.username,password:'activity fixture passphrase'});
+ assert.equal(login.status,200,JSON.stringify(login.data));
+ const partnerCookie=login.headers.get('set-cookie').split(';')[0];
+ const created=await request('/api/partner/apps',{name:'Activity app'},{cookie:partnerCookie});
+ assert.equal(created.status,201,JSON.stringify(created.data));
+ const appId=created.data.app.id,sessionId=id('activity_session'),foreignSessionId=id('activity_foreign');
+ await db.query('INSERT INTO gp_sessions(id,app_id,external_user_id,game_id) VALUES($1,$2,$3,$4),($5,$6,$3,$4)',[sessionId,appId,'activity_user','tiger',foreignSessionId,apps[0].app.id]);
+ const adminBefore=await request('/api/admin/overview-activity',undefined,{...headers,cookie});
+ const partnerBefore=await request('/api/partner/overview-activity',undefined,{...headers,cookie:partnerCookie});
+ const utcBefore=await request('/api/admin/overview-activity',undefined,{cookie,'X-Oasis-Timezone':'UTC'});
+ assert.equal(adminBefore.status,200,JSON.stringify(adminBefore.data));
+ assert.equal(partnerBefore.status,200,JSON.stringify(partnerBefore.data));
+ assert.equal(adminBefore.data.days.length,7);
+ assert.equal(partnerBefore.data.days.length,7);
+ assert.equal(utcBefore.status,200,JSON.stringify(utcBefore.data));
+ const targetDay=adminBefore.data.days[4].date,firstDay=adminBefore.data.days[0].date,prefix=id('activity');
+ await db.query(`INSERT INTO gp_cycles(id,session_id,app_id,external_user_id,game_id,request_id,stake_minor,math_profile,math_version,math_hash,max_payout_minor,status,created_at)
+  SELECT $1||'_'||g,$2,$3,'activity_user','tiger',$1||'_req_'||g,100,'99','fixture','fixture',100,'SETTLED',($4::date::timestamp AT TIME ZONE 'Asia/Shanghai')+interval '1 hour'
+  FROM generate_series(1,251) AS g`,[prefix,sessionId,appId,targetDay]);
+ await db.query(`INSERT INTO pvp_rooms(id,code,app_id,game_id,status,capacity,practice,entry_minor,fee_bps,terms,scope,players,rule_version,seed_enc,last_tick_at,expires_at,created_at)
+  VALUES($1,$2,$3,'towerlink','settled',2,true,0,500,'{}','{}','[]','fixture','fixture',0,0,($4::date::timestamp AT TIME ZONE 'Asia/Shanghai')+interval '23 hours')`,[id('activity_room'),id('activity_code'),appId,targetDay]);
+ await db.query(`INSERT INTO gp_cycles(id,session_id,app_id,external_user_id,game_id,request_id,stake_minor,math_profile,math_version,math_hash,max_payout_minor,status,created_at)
+  VALUES($1,$2,$3,'activity_user','tiger',$1,100,'99','fixture','fixture',100,'SETTLED',($4::date::timestamp AT TIME ZONE 'Asia/Shanghai')+interval '2 hours')`,[id('activity_foreign_cycle'),foreignSessionId,apps[0].app.id,targetDay]);
+ for(const [suffix,createdAt] of [['in',`($4::date::timestamp AT TIME ZONE 'Asia/Shanghai')`],['out',`($4::date::timestamp AT TIME ZONE 'Asia/Shanghai')-interval '1 minute'`]]){
+  await db.query(`INSERT INTO gp_cycles(id,session_id,app_id,external_user_id,game_id,request_id,stake_minor,math_profile,math_version,math_hash,max_payout_minor,status,created_at)
+   VALUES($1,$2,$3,'activity_user','tiger',$1,100,'99','fixture','fixture',100,'SETTLED',${createdAt})`,[id('activity_'+suffix),sessionId,appId,firstDay]);
+ }
+ const adminAfter=await request('/api/admin/overview-activity',undefined,{...headers,cookie});
+ const partnerAfter=await request('/api/partner/overview-activity',undefined,{...headers,cookie:partnerCookie});
+ const utcAfter=await request('/api/admin/overview-activity',undefined,{cookie,'X-Oasis-Timezone':'UTC'});
+ assert.equal(adminAfter.status,200,JSON.stringify(adminAfter.data));
+ assert.equal(partnerAfter.status,200,JSON.stringify(partnerAfter.data));
+ const delta=(before,after,date)=>after.days.find(day=>day.date===date).count-before.days.find(day=>day.date===date).count;
+ assert.equal(delta(adminBefore.data,adminAfter.data,targetDay),253);
+ assert.equal(delta(partnerBefore.data,partnerAfter.data,targetDay),252);
+ assert.equal(delta(adminBefore.data,adminAfter.data,firstDay),1);
+ assert.equal(delta(partnerBefore.data,partnerAfter.data,firstDay),1);
+ const utcPrevious=new Date(targetDay+'T00:00:00Z');utcPrevious.setUTCDate(utcPrevious.getUTCDate()-1);
+ assert.equal(delta(utcBefore.data,utcAfter.data,utcPrevious.toISOString().slice(0,10)),252);
+ assert.equal(delta(utcBefore.data,utcAfter.data,targetDay),1);
+ assert.equal((await request('/api/admin/rounds',undefined,{cookie})).data.rounds.length,200);
+ assert.equal((await request('/api/partner/overview-activity',undefined,{...headers,cookie})).status,401);
+ completed.push('seven natural-day database aggregation beyond 200 rows, partner isolation and midnight boundary');
+});
 test('HMAC rejects raw-body tampering, nonce replay, expired clocks and cross-App scope',async()=>{
   const a=apps[0],body={...s(a.app),request_id:id('launch'),external_user_id:'demo_player',game_id:'tiger',locale:'en',host_platform:'web'};
   const first=await partner(a,'/v1/sessions',body);assert.equal(first.status,201);

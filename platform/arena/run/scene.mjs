@@ -10,7 +10,7 @@ import {LANES} from './level.mjs';
 import {createRunSceneResources} from './scene-resources.mjs';
 import {resolveRunCourse} from './courses.mjs';
 const mix=(a,b,t)=>a+(b-a)*t,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-export function createRunScene(container,{onError=()=>{},onEvent=()=>{},onReady=()=>{},course=resolveRunCourse(null)}={}){
+export function createRunScene(container,{onError=()=>{},onEvent=()=>{},onReady=()=>{},onFrame=()=>{},course=resolveRunCourse(null)}={}){
  const assetController=new AbortController(),cleanups=[],cleanupErrors=[];let renderer,disposed=false,raf=0;
  const defer=fn=>{let pending=true;const run=()=>{if(pending){pending=false;fn();}};cleanups.push(run);return run;};
  function dispose(){if(disposed)return;disposed=true;assetController.abort();cancelAnimationFrame(raf);for(const cleanup of cleanups.reverse())try{cleanup();}catch(error){cleanupErrors.push(error);}cleanups.length=0;}
@@ -118,7 +118,7 @@ export function createRunScene(container,{onError=()=>{},onEvent=()=>{},onReady=
   }
   return;
  }
- renderer.render(scene,camera);if(mine&&!readyAnnounced){readyAnnounced=true;container.dataset.rendered='true';container.dataset.ready='true';onReady();}}catch(error){fail(error);}}
+ renderer.render(scene,camera);onFrame(time);if(mine&&!readyAnnounced){readyAnnounced=true;container.dataset.rendered='true';container.dataset.ready='true';onReady();}}catch(error){fail(error);}}
  const resize=()=>{const {width,height}=container.getBoundingClientRect();renderer.setSize(width,Math.max(1,height));camera.aspect=width/Math.max(1,height);camera.updateProjectionMatrix();};const observer=new ResizeObserver(()=>{if(disposed)return;try{resize();}catch(error){fail(error);}});defer(()=>observer.disconnect());observer.observe(container);resize();
  const lost=e=>{e.preventDefault();fail(new Error('WebGL context lost'));};renderer.domElement.addEventListener('webglcontextlost',lost);defer(()=>renderer.domElement.removeEventListener('webglcontextlost',lost));
  const visibility=()=>{cancelAnimationFrame(raf);if(!document.hidden&&!disposed){last=performance.now();raf=requestAnimationFrame(render);}};document.addEventListener('visibilitychange',visibility);defer(()=>document.removeEventListener('visibilitychange',visibility));if(!document.hidden)raf=requestAnimationFrame(render);

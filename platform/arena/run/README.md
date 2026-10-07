@@ -5,7 +5,7 @@ A Three.js desert race for 2, 3 or 4 players. Current rendering uses illustrated
 ## Entry points
 
 - `RunGame.jsx` — default `RunGame({room, me, onAction, audio, onExit, locale='zh'})`.
-- `engine.mjs` — authoritative JSON-persistable rules, new-game version `pvp-run-v2.0.0`; complete `engine-v1.mjs` dispatch preserves old rooms.
+- `engine.mjs` — authoritative JSON-persistable rules, new-room version `pvp-run-v2.1.0` with server-armed scene readiness; pinned `pvp-run-v2.0.0` and complete `engine-v1.mjs` dispatch preserve old rooms.
 - `courses.mjs` — immutable six-course catalogue, seed selection and pinned shared geometry resolver.
 - `level.mjs` — preserved legacy public course `dune-oasis-480-v1.0.0`; physics `run-60hz-v1.0.0`.
 - `scene.mjs` — Three scene, bounded snapshot extrapolation and effects.

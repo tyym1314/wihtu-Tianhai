@@ -18,6 +18,7 @@ import {enginePoolStats,closeEnginePool} from './pvp/engine-pool.mjs';
 import {runtime,preflightRuntime,migrateRuntime,assertProductionAppReady} from './runtime-mode.mjs';
 import {migrateCredentials,routeCredentials} from './credentials.mjs';
 import {ApiRateLimits} from './rate-limit.mjs';
+import {activityTimeZone,migrateOverviewActivity,overviewActivity} from './overview-activity.mjs';
 import {clientAddress,adminSessionCookie} from './proxy-context.mjs';
 const PORT=Number(process.env.OASIS_API_PORT||8797),WALLET_PORT=Number(process.env.OASIS_WALLET_PORT||8798);
 const limiter=new ApiRateLimits();
@@ -54,6 +55,7 @@ async function adminRoutes(req,res,path,b){
     const p=(await pool.query("SELECT count(*)::int n,count(*) FILTER(WHERE status NOT IN ('settled','cancelled','voided'))::int pending,COALESCE(sum((result->>'fee_minor')::bigint) FILTER(WHERE status='settled' AND NOT practice),0)::text fee FROM pvp_rooms")).rows[0];
     return send(res,200,{apps_count:a,games_count:RELEASED_IDS.length,cycles_count:c.n+p.n,pending_count:c.pending+p.pending,fee_minor:p.fee,environment:runtime.environment,wallet_status:runtime.production?'external_wallet_required':'reference_wallet',released_games:RELEASED_IDS.length});
   }
+  if(path==='/api/admin/overview-activity'&&req.method==='GET')return send(res,200,await overviewActivity(activityTimeZone(req)));
   if(path==='/api/admin/rounds'&&req.method==='GET')return send(res,200,{rounds:(await pool.query(`
     SELECT id,app_id,game_id,external_user_id,status,stake_minor,payout_minor,math_version,created_at,result_hash,'settle_'||id operation_id,'probability' category,false practice FROM gp_cycles
     UNION ALL SELECT id,app_id,game_id,(SELECT string_agg(p->>'external_user_id',', ') FROM jsonb_array_elements(players) p),upper(status),entry_minor,
@@ -111,7 +113,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{try{
   }
   fail(404,'NOT_FOUND');
 }catch(e){if(res.headersSent||res.destroyed)return;const status=e.status||500;if(status===429)res.setHeader('retry-after',String(e.retryAfterSeconds||60));if(status>=500&&!(e instanceof ApiError))console.error('[platform]',e.code||e.message);const message=(e.status?e.message:'服务暂时不可用，请保留原请求重试').slice(0,512);if((req.url||'').startsWith('/v1/')){const allowed=['INVALID_REQUEST','AMOUNT_MISMATCH','SIGNATURE_INVALID','TIMESTAMP_EXPIRED','NONCE_REPLAY','LAUNCH_CODE_INVALID','SCOPE_FORBIDDEN','GAME_DISABLED','NOT_FOUND','IDEMPOTENCY_CONFLICT','INVALID_STATE','RATE_LIMITED','INTERNAL_ERROR'];const code=allowed.includes(e.code)?e.code:status>=500?'INTERNAL_ERROR':status===403?'SCOPE_FORBIDDEN':status===409?'INVALID_STATE':'INVALID_REQUEST';send(res,status,{code,message,trace_id:id('trace'),retryable:status>=500||status===429});}else send(res,status,{error:{code:e.code||'INTERNAL_ERROR',message}});}});}
-await preflightRuntime(pool);await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateWalletBindings(pool);await migrateIntegrationChecks();await upgradeArenaSandbox();
+await preflightRuntime(pool);await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateIntegrationChecks();await upgradeArenaSandbox();
 // Fail before listening if persisted credentials cannot be decrypted with this instance key.
 for(const key of (await pool.query('SELECT secret_enc FROM gp_keys')).rows)unseal(key.secret_enc);
 const wallet=process.env.OASIS_START_WALLET==='0'?null:createWalletServer(walletPool);if(wallet)await new Promise(r=>wallet.listen(WALLET_PORT,'127.0.0.1',r));

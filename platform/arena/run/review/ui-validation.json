@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-09-19T16:35:46.473Z",
+  "checkedAt": "2026-10-07T11:55:44.712Z",
   "scope": "Isolated real authoritative engine + HTTP polling + Three WebGL. Midcourse item/screenshots use declared fixture positions; no wallet acceptance claimed.",
   "checks": [
     "touch left server accepted",
@@ -10,8 +10,9 @@
     "held boost activated on server",
     "real touch horizontal swipe",
     "rapid simultaneous inputs single request",
-    "390 layout and touch targets",
-    "360 layout and touch targets",
+    "390x844 layout and touch targets",
+    "360x844 layout and touch targets",
+    "402x623 layout and touch targets",
     "Arabic layout, sound and exit"
   ],
   "pageErrors": [],

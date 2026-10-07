@@ -14,18 +14,18 @@ async function fixture(selectedFiles=files){
 }
 const flush=()=>new Promise(setImmediate);
 
-test('Tower uses shared same-origin images and retains the deadline through decode',async()=>{
- const f=await fixture(),loading=f.module.preloadTowerAssets();assert.equal(f.images.length,5);assert([...f.timers.values()].every(ms=>ms===20000));
+test('Tower publishes decoded images progressively without making the remaining art a barrier',async()=>{
+ const f=await fixture(),updates=[],unsubscribe=f.module.subscribeTowerAssets(value=>updates.push(value)),loading=f.module.preloadTowerAssets();assert.equal(f.images.length,5);assert([...f.timers.values()].every(ms=>ms===20000));
  let release;f.images[0].decoded=new Promise(resolve=>release=resolve);
  for(const image of f.images){assert.equal(image.crossOrigin,undefined);image.onload();}
- await flush();assert.equal(f.timers.size,1);assert.equal(f.module.getTowerImage('sky.webp'),undefined,'no partially prepared set is published');
- release();const result=await loading;assert.equal(result.images.size,5);assert.equal(f.module.getTowerImage('sky.webp'),f.images[0]);assert.equal(f.timers.size,0);
+ await flush();assert.equal(f.timers.size,1);assert.equal(f.module.getTowerImage('sky.webp'),undefined);assert.equal(f.module.towerAssetStatus().loaded,4);assert.ok(updates.some(value=>value.loaded===4&&value.loading),'the four prepared images are available while sky is still decoding');
+ release();const result=await loading;assert.equal(result.images.size,5);assert.equal(f.module.getTowerImage('sky.webp'),f.images[0]);assert.equal(f.timers.size,0);unsubscribe();
 });
 
 test('Tower decode timeout permits a new image while late old decode cannot replace it',async()=>{
  const f=await fixture(),loading=f.module.preloadTowerAssets();let releaseOld;f.images[0].decoded=new Promise(resolve=>releaseOld=resolve);
  const rejected=assert.rejects(loading,error=>error.code==='TOWER_ASSETS_FAILED'&&error.failures.includes('sky:sky.webp'));
- for(const image of f.images)image.onload();await flush();assert.equal(f.timers.size,1);[...f.timers.keys()][0]();await rejected;assert.equal(f.images[0].src,'');
+ for(const image of f.images)image.onload();await flush();assert.equal(f.timers.size,1);assert.equal(f.module.towerAssetStatus().loaded,4);[...f.timers.keys()][0]();await rejected;assert.equal(f.images[0].src,'');
  const retry=f.module.preloadTowerAssets({retry:true});assert.equal(f.images.length,6,'four successful images remain cached');f.images[5].onload();await retry;
  const prepared=f.module.getTowerImage('sky.webp');assert.equal(prepared,f.images[5]);releaseOld();await flush();assert.equal(f.module.getTowerImage('sky.webp'),prepared);assert.equal(f.timers.size,0);
 });
@@ -36,7 +36,7 @@ test('Tower failed cache retries without a flag and shares a pending or complete
  const retry=f.module.preloadTowerAssets();assert.notEqual(retry,loading);assert.equal(f.images.length,6);f.images[5].onload();await retry;assert.equal(f.module.preloadTowerAssets({retry:true}),retry);assert.equal(f.timers.size,0);
 });
 
-test('Tower incomplete core manifest stays unavailable after valid listed images finish',async()=>{
- const f=await fixture(Object.fromEntries(Object.entries(files).slice(0,4))),loading=f.module.preloadTowerAssets(),rejected=assert.rejects(loading,error=>error.code==='TOWER_ASSETS_FAILED'&&error.failures.includes('manifest:missing-core-assets'));
- for(const image of f.images)image.onload();await rejected;assert.equal(f.module.getTowerImage('sky.webp'),undefined);assert.equal(f.timers.size,0);
+test('Tower missing manifest entry reports failure while keeping decoded fallback upgrades',async()=>{
+ const f=await fixture(Object.fromEntries(Object.entries(files).slice(0,4))),loading=f.module.preloadTowerAssets(),rejected=assert.rejects(loading,error=>error.code==='TOWER_ASSETS_FAILED'&&error.failures.includes('soldiers:missing'));
+ for(const image of f.images)image.onload();await rejected;assert.equal(f.module.getTowerImage('sky.webp'),f.images[0]);assert.equal(f.module.towerAssetStatus().failed,1);assert.equal(f.timers.size,0);
 });

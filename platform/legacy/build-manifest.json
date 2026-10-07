@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-04T12:36:51.976Z",
+  "generatedAt": "2026-10-07T13:06:43.651Z",
   "status": "PLATFORM_PRESENTATION_BUILD",
-  "sourceFilesVerifiedUnchanged": 23,
+  "sourceFilesVerifiedUnchanged": 24,
   "outputDirectory": "platform/legacy/dist",
   "htmlRoutes": [
     "/play/thunder",
@@ -29,6 +29,10 @@
     {
       "path": "src/style.css",
       "sha256": "f79db89cd0e74ff1010aecd5f6edccd5bc58fc4e5003d6d5f0950060b517f776"
+    },
+    {
+      "path": "src/tiger/PERFORMANCE-20261007.md",
+      "sha256": "f7333908e03d045080323d7696b3c809de461f6c5d07c17170a2b302c29a04fa"
     },
     {
       "path": "src/tiger/audio.ts",

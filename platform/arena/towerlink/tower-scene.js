@@ -1,5 +1,5 @@
 /** Tower Link presentation only. All troops, paths and results come from the server. */
-import {TOWER_ART,TOWER_MANIFEST,artURL,getTowerImage,atlasCell} from './tower-assets.mjs';
+import {TOWER_ART,TOWER_MANIFEST,artURL,subscribeTowerAssets,atlasCell} from './tower-assets.mjs';
 import {createTroopProjection,createBattleEffectGate,roadBattleEffectKey,pointOnRoad} from './troop-presentation.mjs';
 import {towerMetrics,towerPoint,layoutTowerPoints} from './tower-layout.mjs';
 export {artURL,TOWER_ART};
@@ -44,15 +44,18 @@ function soldier(ctx,x,y,color,heading,phase,scale=1){
 export function createTowerScene(canvas, read, onAssets){
  const ctx=canvas.getContext('2d',{alpha:true,desynchronized:true});if(!ctx)return()=>{};
  let width=0,height=0,dpr=1,frame=0,disposed=false,staticKey='',background=null,lastDraw=0,layoutKey='',layoutPoints=[];
- const images={}, pendingImages=new Set(), effectCache=new Map(), seenEvents=new Set(), battleEffects=createBattleEffectGate();
+ const images={}, queuedImages=new Map(), effectCache=new Map(), seenEvents=new Set(), battleEffects=createBattleEffectGate();
  let projection=null,projectionGame=null,roundId=null,lastVisualAt=-Infinity;
- let loaded=0,failed=0;const names=[...new Set(Object.values(TOWER_MANIFEST.files||{}))].filter(name=>TOWER_ART[name]);
- for(const name of names){const cached=getTowerImage(name);if(cached){images[name]=cached;loaded++;continue;}const im=new Image();pendingImages.add(im);const complete=()=>{pendingImages.delete(im);im.onload=null;im.onerror=null;};im.onload=()=>{complete();if(disposed)return;images[name]=im;loaded++;staticKey='';onAssets?.({loaded,failed,total:names.length});};im.onerror=()=>{complete();if(disposed)return;failed++;onAssets?.({loaded,failed,total:names.length});};im.src=TOWER_ART[name];}
- if(!names.length)onAssets?.({loaded:0,failed:0,total:0});
+ let lastImageCommit=-Infinity;
+ const unsubscribeAssets=subscribeTowerAssets(({name,image,...status})=>{
+  if(disposed)return;
+  if(name&&image&&!images[name])queuedImages.set(name,image);
+  onAssets?.(status);
+ });
  const img=(...keys)=>keys.map(k=>images[k]).find(Boolean);
  const observer=new ResizeObserver(entries=>{const r=entries[0].contentRect;width=Math.max(1,r.width);height=Math.max(1,r.height);dpr=Math.min(2,window.devicePixelRatio||1);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);staticKey='';});observer.observe(canvas);
  function terrain(g,points,rotation,roomId){
-  const key=`${roomId}:${width}:${height}:${g.level?.id}:${g.towers?.length}:${g.training?.lessonId||''}:${loaded}:${rotation}`;
+  const key=`${roomId}:${width}:${height}:${g.level?.id}:${g.towers?.length}:${g.training?.lessonId||''}:${rotation}`;
   if(key===staticKey&&background)return;staticKey=key;background=document.createElement('canvas');background.width=canvas.width;background.height=canvas.height;const c=background.getContext('2d');c.scale(dpr,dpr);
   const island=img(TOWER_MANIFEST.files?.terrain,'battlefield.webp','battlefield.png','terrain.webp','terrain.png');
   if(island)c.drawImage(island,0,-height*.05,width,height*1.33);
@@ -67,6 +70,9 @@ export function createTowerScene(canvas, read, onAssets){
  }
  function render(ts){
   frame=0;if(disposed||document.hidden)return;frame=requestAnimationFrame(render);const s=read();if(!s||!width||!height)return;
+  // Adopt one decoded texture at a time, leaving fallback art usable while the
+  // network is slow and avoiding five canvas changes in the same frame.
+  if(queuedImages.size&&ts-lastImageCommit>=100){const [name,image]=queuedImages.entries().next().value;queuedImages.delete(name);images[name]=image;lastImageCommit=ts;if(name===TOWER_MANIFEST.files?.terrain)staticKey='';}
   const fps=s.reduced?30:60;if(ts-lastDraw<1000/fps-2)return;lastDraw=ts;
   const g=s.game,towers=g.towers||[],players=g.players||[],nextLayoutKey=`${s.roomId??g.startedAt}:${width}:${height}:${g.level?.id}:${towers.length}:${s.rotation}`;
   if(nextLayoutKey!==layoutKey){layoutKey=nextLayoutKey;layoutPoints=layoutTowerPoints(towers,width,height,s.rotation);}
@@ -112,5 +118,5 @@ export function createTowerScene(canvas, read, onAssets){
  }
  function visibility(){if(disposed)return;cancelAnimationFrame(frame);frame=0;if(!document.hidden){lastDraw=0;frame=requestAnimationFrame(render);}}
  document.addEventListener('visibilitychange',visibility);visibility();
- return()=>{disposed=true;cancelAnimationFrame(frame);frame=0;document.removeEventListener('visibilitychange',visibility);observer.disconnect();for(const im of pendingImages){im.onload=null;im.onerror=null;im.src='';}pendingImages.clear();effectCache.clear();seenEvents.clear();battleEffects.clear();background=null;};
+ return()=>{disposed=true;cancelAnimationFrame(frame);frame=0;document.removeEventListener('visibilitychange',visibility);observer.disconnect();unsubscribeAssets();queuedImages.clear();effectCache.clear();seenEvents.clear();battleEffects.clear();background=null;};
 }
