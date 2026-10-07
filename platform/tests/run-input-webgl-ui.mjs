@@ -13,7 +13,7 @@ import {makeRunActionReceipt} from '../shared/run-action-receipt.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const out=resolve(root,'review/deployment',`run-input-webgl-${Date.now()}-${Math.random().toString(16).slice(2,8)}`);
 await mkdir(out,{recursive:true});console.log(JSON.stringify({report_directory:out}));
-const sourceFiles=['arena/run/RunGame.jsx','arena/run/scene.mjs','arena/run/input-presentation.mjs','arena/run/presentation.mjs','arena/run/atlas-characters.mjs','arena/run/characters.mjs','arena/run/engine.mjs','shared/run-action-receipt.mjs'];
+const sourceFiles=['arena/run/RunGame.jsx','arena/run/scene.mjs','arena/run/input-presentation.mjs','arena/run/frame-trace.mjs','arena/run/presentation.mjs','arena/run/atlas-characters.mjs','arena/run/characters.mjs','arena/run/engine.mjs','shared/run-action-receipt.mjs'];
 const hashes=async()=>Object.fromEntries(await Promise.all(sourceFiles.map(async file=>[file,createHash('sha256').update(await readFile(resolve(root,file))).digest('hex')])));
 const report={scope:'Local Chrome with actual RunGame, scene, GLB/WebP assets and WebGL renderer. Isolated real HTTP wrapper and pinned engine; controlled ACK/publication delays, not Arena backend, device, public-host, FPS or full-round acceptance.',harness_sha256:createHash('sha256').update(await readFile(fileURLToPath(import.meta.url))).digest('hex'),cases:[],errors:[],source_hashes:await hashes(),passed:false};
 const source=`
@@ -89,7 +89,9 @@ try{
  const cases=[{name:'jump-ack300-publish450',type:'jump',ack:300,publish:450},{name:'left-ack450-publish200',type:'left',ack:450,publish:200},{name:'jump-ack450-publish450',type:'jump',ack:450,publish:450},{name:'left-ack300-publish200',type:'left',ack:300,publish:200},{name:'left-rejected-ack450',type:'left',ack:450,publish:0,reject:true}];
  for(const current of cases){
   reset(current);const row={...current,errors:[],resources:[],passed:false};report.cases.push(row);
+  row.trace_enabled=report.cases.length>1;
   context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2});
+  if(row.trace_enabled)await context.addInitScript(()=>{try{sessionStorage.setItem('oasis:run:frame-trace:v1','1');}catch{}});
   await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){row.errors.push({kind:'nonlocal-request',url:route.request().url()});return route.abort();}return route.continue();});
   const page=await context.newPage();let closing=false;
   page.on('pageerror',error=>row.errors.push({kind:'javascript',message:error.message}));
@@ -98,24 +100,36 @@ try{
   page.on('response',response=>{const path=new URL(response.url()).pathname;if(assets.has(path))row.resources.push({path,status:response.status()});if(response.status()>=400&&!(current.reject&&path==='/action'&&response.status()===409))row.errors.push({kind:'http',path,status:response.status()});});
   await page.goto(origin,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('[data-testid=run-jump]')?.disabled===false,{},{timeout:30000});
   row.gpu=await page.evaluate(()=>{const canvas=document.querySelector('[data-testid=run-track] canvas'),gl=canvas.getContext('webgl2'),ext=gl.getExtension('WEBGL_debug_renderer_info');return{renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),canvas:{width:canvas.width,height:canvas.height},loadedModels:document.querySelector('[data-testid=run-track]').dataset.modelsReady};});
-  await page.evaluate(()=>{window.inputWebgl.frames=[];window.inputWebgl.requests=[];});
+  assert.equal(await page.evaluate(()=>!!document.querySelector('[data-testid=run-track]').__oasisRunFrameTrace),row.trace_enabled,'trace is exposed only after explicit session opt-in');
+  await page.evaluate(()=>{window.inputWebgl.frames=[];window.inputWebgl.requests=[];document.querySelector('[data-testid=run-track]').__oasisRunFrameTrace?.reset();});
   await page.getByTestId(`run-${current.type}`).tap();
   await page.waitForFunction(type=>window.inputWebgl.frames.some(f=>f.feedback_state==='predicted'&&(type==='jump'?f.actual.y>0&&f.actual.clip==='jump':f.actual.x<-.001)&&f.applied_input_no===0),current.type,{timeout:1500});
   await page.screenshot({path:resolve(out,`${current.name}-immediate.png`)});
   await page.waitForFunction(()=>window.inputWebgl.requests[0]?.ack_at!==undefined,{},{timeout:4000});
   if(!current.reject)await page.waitForFunction(()=>window.inputWebgl.frames.some(f=>f.applied_input_no===1),{},{timeout:4000});
   await page.waitForTimeout(180);
-  row.observation=await page.evaluate(()=>{const {dispose,...observation}=window.inputWebgl;return structuredClone(observation);});
+  row.observation=await page.evaluate(()=>{const {dispose,...observation}=window.inputWebgl;return structuredClone({...observation,frame_trace:document.querySelector('[data-testid=run-track]').__oasisRunFrameTrace?.read()??null});});
   const request=row.observation.requests[0],frames=row.observation.frames,first=frames.find(f=>f.at>=request.dispatch_at&&f.feedback_state==='predicted'&&(current.type==='jump'?f.actual.y>0&&f.actual.clip==='jump':f.actual.x<-.001)&&f.applied_input_no===0),applied=frames.find(f=>f.applied_input_no===1);
   assert.equal(row.observation.requests.length,1);assert.ok(first,'real renderer must draw the predicted character before authority');assert.ok(first.at<request.ack_at);assert.ok(Number(first.feedback_at)>=request.dispatch_at&&Number(first.feedback_at)<request.ack_at);
   assert.ok(first.at-request.dispatch_at<=100,'local visible character feedback must meet the existing 100ms target');
   assert.ok(frames.every(f=>Math.abs(f.actual.z+f.authority.distance)<1e-8&&Math.abs(f.camera_distance-f.authority.distance)<1e-8&&Math.abs(f.camera_z-(-f.authority.distance+8.8))<1e-8),'prediction must not change forward distance or camera');
+  if(row.trace_enabled){
+   const trace=row.observation.frame_trace,field=Object.fromEntries(trace.fields.map((name,i)=>[name,i]));
+   assert.equal(trace.stored,frames.length);assert.equal(trace.rejected,0);assert.equal(trace.overwritten,0);
+   for(let i=0;i<frames.length;i++){
+    const sample=trace.samples[i],frame=frames[i];assert.equal(sample[field.frameAtMs],frame.raf_at);assert.equal(sample[field.snapshotTick],frame.snapshot_tick);
+    assert.equal(sample[field.runnerZ],frame.actual.z);assert.equal(sample[field.cameraZ],frame.camera_z);assert.equal(sample[field.projectedDistance],frame.camera_distance);
+    assert.ok(Number.isSafeInteger(sample[field.roomVersion])&&sample[field.roomVersion]>=0);assert.ok(sample[field.renderReturnedAtMs]>=sample[field.frameAtMs]);
+   }
+  }else assert.equal(row.observation.frame_trace,null);
   row.timing={dispatch_at:request.dispatch_at,first_render_at:first.at,diagnostic_feedback_at:Number(first.feedback_at),ack_at:request.ack_at,first_applied_at:applied?.at??null,visible_feedback_ms:first.at-request.dispatch_at,ack_ms:request.ack_at-request.dispatch_at};
   if(current.reject){assert.equal(request.status,409);assert.equal(request.valid_receipt,undefined);assert.equal(sequence,0);assert.equal(state.players[0].inputNo,0);const restored=frames.find(f=>f.at>request.ack_at&&Math.abs(f.actual.x-f.authority.x)<1e-8);assert.ok(restored,'rejection must roll back lateral prediction');row.timing.rollback_ms=restored.at-request.ack_at;assert.ok(row.timing.rollback_ms<=100);}
   else{assert.equal(request.status,200);assert.ok(request.valid_receipt);assert.ok(first.at<applied.at);const settled=frames.find(f=>f.at>=applied.at+100&&Math.abs(f.actual.x-f.authority.x)<1e-8&&Math.abs(f.actual.y-f.authority.y)<1e-8);assert.ok(settled,'applied authority must take over after the bounded 100ms correction');assert.ok(settled.at-applied.at<=150,'authority reconciliation is bounded to 100ms plus at most 50ms frame-observation margin');row.timing.reconciled_at=settled.at;row.timing.reconciliation_ms=settled.at-applied.at;}
   assert.equal(row.observation.droppedFrames,0);assert.equal(row.observation.pollError,undefined);assert.deepEqual(row.errors,[]);
   await page.screenshot({path:resolve(out,`${current.name}-authority.png`)});
-  closing=true;await page.evaluate(()=>window.inputWebgl.dispose());await page.waitForSelector('[data-testid=run-scene]',{state:'detached'});await context.close();context=null;
+  closing=true;await page.evaluate(()=>{window.retiredTraceContainer=document.querySelector('[data-testid=run-track]');window.retiredTraceAccess=window.retiredTraceContainer.__oasisRunFrameTrace;window.inputWebgl.dispose();});await page.waitForSelector('[data-testid=run-scene]',{state:'detached'});
+  row.trace_disposal=await page.evaluate(()=>({propertyRemoved:!Object.hasOwn(window.retiredTraceContainer,'__oasisRunFrameTrace'),stored:window.retiredTraceAccess?.read().stored??0}));assert.deepEqual(row.trace_disposal,{propertyRemoved:true,stored:0});
+  await context.close();context=null;
   row.passed=true;console.log(JSON.stringify({case:current.name,timing:row.timing,passed:true}));await writeFile(resolve(out,'webgl-input.json'),JSON.stringify({...report,http_events:httpEvents},null,2));
  }
  report.source_hashes_after=await hashes();assert.deepEqual(report.source_hashes_after,report.source_hashes,'tested production sources must remain frozen throughout observation');assert.ok(httpEvents.every(event=>!event.server_error));report.passed=true;
