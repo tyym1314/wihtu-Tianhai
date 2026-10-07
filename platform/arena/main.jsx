@@ -36,6 +36,7 @@ const terminal=s=>['settled','cancelled','voided'].includes(s);
 // in-scene; keeping the global alert open would cover the touch controls after
 // the recovery window has ended.
 const RUN_RECOVERABLE_ACTION_ERRORS=new Set(['STALE_INPUT','BUSY','RATE_LIMIT','INPUT_PENDING','ALREADY_JUMPING','SLIDING','AIRBORNE','CHANGING_LANE','TRACK_EDGE','NO_ITEM','WRONG_ITEM','BOOST_ACTIVE','SHIELD_ACTIVE']);
+const RUN_PENDING_MESSAGES=new Set(['上一项操作仍待确认，可重试原请求核对结果。','上一动作仍待确认，请重试原请求核对结果。','上一局动作仍待确认，请重试原请求核对结果。']);
 const TOWER_RECOVERABLE_ACTION_ERRORS=new Set(['GAME_NOT_STARTED','BUSY','DEADLINE_PASSED','NOT_ACTIVE','INVALID_LINK','NOT_YOUR_TOWER','ALREADY_UPGRADING','INSUFFICIENT_TROOPS','MAX_LEVEL','NOT_UPGRADABLE','INVALID_SEQUENCE']);
 const unwrap=r=>r.room||r;
 // An active Run GET can carry a fresher wall clock without a new committed
@@ -59,6 +60,7 @@ function Arena(){
  const [gameAssets,setGameAssets]=useState(PRELOAD_GAME?'loading':'ready'),[assetAttempt,setAssetAttempt]=useState(0);
  const [towerArt,setTowerArt]=useState('loading'),[towerArtAttempt,setTowerArtAttempt]=useState(0);
  const [preparedRunKinds,setPreparedRunKinds]=useState('');
+ const runInFlightIntent=useRef(null);
  const [trainingOpen,setTrainingOpen]=useState(false),[trainingDone,setTrainingDone]=useState([]);
  const [context,setContext]=useState(null),[boot,setBoot]=useState('正在连接游戏…'),[room,setRoom]=useState(null),[error,setError]=useState(''),[network,setNetwork]=useState(false),[busy,setBusy]=useState(false),[muted,setMuted]=useState(!audio.enabled),[capacity,setCapacity]=useState(META.players[0]),[entry,setEntry]=useState('10000'),[joinCode,setJoinCode]=useState(''),[copied,setCopied]=useState(false),[exitOpen,setExitOpen]=useState(false),[showRules,setShowRules]=useState(false),[balance,setBalance]=useState(null),[recovering,setRecovering]=useState(null);
  const contextRef=useRef(null),roomRef=useRef(null),pending=useRef(null),mounted=useRef(true),inFlight=useRef(false),celebrated=useRef(null),hostBackPending=useRef(false),runSceneReadyRequest=useRef(null);
@@ -78,8 +80,31 @@ function Arena(){
  useEffect(()=>{if(!hostBackPending.current||!room)return;const own=room.players.find(p=>p.external_user_id===context?.external_user_id);if(terminal(room.status)||own?.forfeited){hostBackPending.current=false;completeHostReturn({reason:'left',room_id:room.id,status:room.status});}},[room,context?.external_user_id]);
  useEffect(()=>{if(!room?.id||terminal(room.status))return;const interval=createRoomPollCadence({game:GAME,readRoom:()=>roomRef.current});const initialDelay=room.status==='funding'?interval():250;return startRoomPolling({read:signal=>api(`/api/pvp/rooms/${room.id}`,undefined,{signal}),onRoom:data=>{accept(data,{poll:true});setNetwork(false);},onError:e=>{setNetwork(true);if(e.status===401)setError('会话已到期。请从应用重新打开，后台保留原对局与结算。');},interval,initialDelay});},[room?.id,terminal(room?.status),room?.status==='funding']);
  useEffect(()=>{if(!room||!terminal(room.status))return;api('/api/arena/session').then(c=>setBalance(c.balance?.balance?.available_minor??null)).catch(()=>{});if(!presenting&&celebrated.current!==room.id){celebrated.current=room.id;const mine=room.players.find(p=>p.external_user_id===context?.external_user_id);audio.play(room.status==='settled'&&mine?.rank===1?'victory':'finish');}},[room?.id,room?.status,presenting]);
- async function perform(intent){if(intent.owner!==sessionOwner(contextRef.current)){pending.current=null;setBusy(false);throw new Error('会话已切换，请先同步当前账号的房间。');}if(inFlight.current)throw new Error('正在确认上一项操作');inFlight.current=true;pending.current=intent;setBusy(true);setError('');try{const raw=await api(intent.path,intent.body);const r=accept(raw);pending.current=null;setNetwork(false);return{room:r,event:r.game?.lastEvent};}catch(e){if(e.status&&e.status<500&&e.status!==429){pending.current=null;if(e.code==='INVALID_SEQUENCE'&&roomRef.current)try{accept(await api(`/api/pvp/rooms/${roomRef.current.id}`));}catch{}}if(intent.body?.action&&(GAME==='run'&&RUN_RECOVERABLE_ACTION_ERRORS.has(e.code)||IS_TOWER&&TOWER_RECOVERABLE_ACTION_ERRORS.has(e.code))){setError('');if(roomRef.current)try{accept(await api(`/api/pvp/rooms/${roomRef.current.id}`));}catch{setNetwork(true);}}else setError(e.code==='SESSION_CHANGED'?'会话已更新；上一项操作可能已受理，请同步房间或重试原请求核对结果。':e.message);throw e;}finally{inFlight.current=false;setBusy(!!pending.current);}}
- const command=(path,body={})=>perform({path,owner:sessionOwner(contextRef.current),body:{request_id:requestId(),...body}});
+ async function perform(intent){
+  const runAction=IS_RUN&&!!intent.body?.action;
+  const ownsRoom=()=>!runAction||intent.owner===sessionOwner(contextRef.current)&&intent.roomId===roomRef.current?.id;
+  const clearIntent=()=>{if(!runAction||pending.current===intent){pending.current=null;if(runAction)setError(message=>RUN_PENDING_MESSAGES.has(message)?'':message);}};
+  const refreshRoom=async()=>{if(!roomRef.current||!ownsRoom())return;const next=await api(`/api/pvp/rooms/${roomRef.current.id}`);if(ownsRoom())accept(next);};
+  if(intent.owner!==sessionOwner(contextRef.current)){clearIntent();setBusy(runAction?!!pending.current:false);throw new Error('会话已切换，请先同步当前账号的房间。');}
+  if(inFlight.current)throw new Error('正在确认上一项操作');
+  inFlight.current=true;pending.current=intent;if(runAction)runInFlightIntent.current=intent;setBusy(true);setError('');
+  try{
+   const raw=await api(intent.path,intent.body),r=ownsRoom()?accept(raw):roomRef.current;
+   clearIntent();if(ownsRoom())setNetwork(false);return{room:r,event:r?.game?.lastEvent};
+  }catch(e){
+   if(e.status&&e.status<500&&e.status!==429){clearIntent();if(e.code==='INVALID_SEQUENCE')try{await refreshRoom();}catch{}}
+   if(intent.body?.action&&(GAME==='run'&&RUN_RECOVERABLE_ACTION_ERRORS.has(e.code)||IS_TOWER&&TOWER_RECOVERABLE_ACTION_ERRORS.has(e.code))){
+    if(ownsRoom()){setError('');try{await refreshRoom();}catch{if(ownsRoom())setNetwork(true);}}
+   }else if(ownsRoom())setError(e.code==='SESSION_CHANGED'?'会话已更新；上一项操作可能已受理，请同步房间或重试原请求核对结果。':e.message);
+   // A retained Run intent must keep its explicit retry available, including
+   // rate-limit recovery and an ACK crossing into another restored room.
+   if(runAction&&pending.current===intent)setError(ownsRoom()?'上一动作仍待确认，请重试原请求核对结果。':'上一局动作仍待确认，请重试原请求核对结果。');
+   throw e;
+  }finally{
+   if(!runAction||runInFlightIntent.current===intent){if(runAction)runInFlightIntent.current=null;inFlight.current=false;setBusy(!!pending.current);}
+  }
+ }
+ const command=(path,body={})=>perform({path,owner:sessionOwner(contextRef.current),...(IS_RUN&&body.action?{roomId:roomRef.current?.id}:{}),body:{request_id:requestId(),...body}});
  const attempt=fn=>fn().catch(()=>{});
  function create(practice){audio.play('click');attempt(()=>command('/api/pvp/rooms',{game_id:GAME,capacity,entry_minor:practice||IS_TOWER&&capacity>2?'0':entry,practice}));}
  async function startTraining(lessonId){const lesson=getTrainingLesson(lessonId);if(!IS_TOWER||!lesson||gameAssets!=='ready'||inFlight.current||pending.current)return;setTrainingOpen(false);const response=await command('/api/pvp/rooms',{game_id:GAME,capacity:lesson.playerCount,entry_minor:'0',practice:true,training_lesson_id:lesson.id});await command(`/api/pvp/rooms/${response.room.id}/ready`);}
@@ -107,7 +132,7 @@ function Arena(){
  const active=room?.status==='active'||presenting;
  return <main className={`arena-app ${'theme-'+META.theme}`}>
  {!active&&<div className="ambient-sparkles" aria-hidden="true">{Array.from({length:14},(_,i)=><i key={i} style={{'--i':i}}/>)}</div>}
- {!context?<div className="arena-loading"><div className="brand-star">{META.icon}</div><h1>{META.en}</h1><LoaderCircle className="spinning"/><p>{boot}</p></div>:active&&assetsLoading?<section className="arena-loading" data-testid="active-assets-gate"><div className="brand-star">{META.icon}</div><h1>加载对局画面</h1>{gameAssets!=='failed'&&<LoaderCircle className="spinning"/>}<p role="status">{gameAssets==='failed'?'游戏资源加载失败，可以重试。':'正在恢复游戏资源，比赛时钟仍由服务器继续计时。'}</p>{gameAssets==='failed'&&<button className="arena-gold" onClick={()=>setAssetAttempt(n=>n+1)}>重新加载资源</button>}<button className="arena-text-button" onClick={()=>presenting?reveal():requestHostExit()}>返回或离开房间</button></section>:active?<><Suspense fallback={<div className="arena-loading"><LoaderCircle className="spinning"/><p>正在准备游戏画面…</p></div>}><ActiveGame room={presentationRoom} me={context.external_user_id} onAction={onAction} onSceneReady={IS_RUN?onRunSceneReady:undefined} audio={audio} onExit={()=>presenting?reveal():requestHostExit()} locale={IS_RUN?RUN_LOCALE:'zh'}/></Suspense></>:<div className={`arena-shell ${room&&(room.result||terminal(room.status))?'has-themed-result':''}`}>
+ {!context?<div className="arena-loading"><div className="brand-star">{META.icon}</div><h1>{META.en}</h1><LoaderCircle className="spinning"/><p>{boot}</p></div>:active&&assetsLoading?<section className="arena-loading" data-testid="active-assets-gate"><div className="brand-star">{META.icon}</div><h1>加载对局画面</h1>{gameAssets!=='failed'&&<LoaderCircle className="spinning"/>}<p role="status">{gameAssets==='failed'?'游戏资源加载失败，可以重试。':'正在恢复游戏资源，比赛时钟仍由服务器继续计时。'}</p>{gameAssets==='failed'&&<button className="arena-gold" onClick={()=>setAssetAttempt(n=>n+1)}>重新加载资源</button>}<button className="arena-text-button" onClick={()=>presenting?reveal():requestHostExit()}>返回或离开房间</button></section>:active?<><Suspense fallback={<div className="arena-loading"><LoaderCircle className="spinning"/><p>正在准备游戏画面…</p></div>}><ActiveGame key={IS_RUN?JSON.stringify([room?.id,context.external_user_id]):undefined} room={presentationRoom} me={context.external_user_id} onAction={onAction} onSceneReady={IS_RUN?onRunSceneReady:undefined} audio={audio} onExit={()=>presenting?reveal():requestHostExit()} locale={IS_RUN?RUN_LOCALE:'zh'} requestState={IS_RUN?(inFlight.current?'sending':pending.current?'unresolved':'idle'):undefined}/></Suspense></>:<div className={`arena-shell ${room&&(room.result||terminal(room.status))?'has-themed-result':''}`}>
  <header className="arena-top"><button className="arena-circle" aria-label="返回" onClick={requestHostExit}><ArrowLeft size={19}/></button><span className="oasis-wordmark">OASIS<span>PLAY TOGETHER</span></span>{sounds}</header>
  {recovering?<section className="arena-loading in-room"><LoaderCircle className="spinning"/><h1>恢复原房间</h1><p>正在读取你的对局状态，金币与结果继续由后台保留。</p></section>:!room?<>
  <section className="arena-hero"><div className="game-edition">{META.tag}</div><h1><><span>{META.brand[0]}</span>{META.brand[1]}</></h1><div className="hero-game-art">{IS_MATCH?<><div className="crystal-halo"/><img className="hero-fox" src="/arena/assets/fox-mascot-mobile-7d3781fba5.webp" alt="耳廓狐伙伴"/><span className="hero-jewel jewel-one">◆</span><span className="hero-jewel jewel-two">◆</span><span className="hero-jewel jewel-three">◆</span></>:GAME==='golf'?<GolfArt/>:<LobbyArt game={GAME}/>}</div><div className="hero-strap"><Sparkles size={13}/>{META.name} · {META.players.join(' / ')} 人对战</div></section>

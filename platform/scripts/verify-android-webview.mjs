@@ -1,32 +1,37 @@
 /** Android WebView smoke on an explicitly selected USB or remote device. Own test APK and sandbox wallets only. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import {basename} from 'node:path';
+import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {chromium} from 'playwright';
 import {RELEASED_IDS} from '../shared/games.mjs';
 import {playOneArenaAction} from './android-game-actions.mjs';
-const run=promisify(execFile),serial=process.env.OASIS_ANDROID_SERIAL||'46dcfd25';
-const origin='https://game.tianyahuyu.com',pkg='com.tianyahuyu.oasis.smoke',port=19220;
+import {readAndroidArtifact,androidVerificationTarget,androidAdbArgs,androidReleaseCommand,verifyAndroidReleaseState,verifyInstalledAndroidArtifact} from './android-artifact.mjs';
+assert.ok(process.env.OASIS_ANDROID_ARTIFACT,'OASIS_ANDROID_ARTIFACT_REQUIRED');
+const artifact=await readAndroidArtifact(process.env.OASIS_ANDROID_ARTIFACT);
+const target=androidVerificationTarget(process.env,artifact);
+const run=promisify(execFile),serial=target.serial;
+const origin=target.origin,pkg=target.packageName,port=19220;
 const remoteDevice=process.env.OASIS_ANDROID_ALLOW_REMOTE==='1';
-const expectedApkVersion=JSON.parse(await fs.readFile(new URL('../public/downloads/android-smoke-build.json',import.meta.url),'utf8')).version;
+const expectedApkVersion=artifact.version;
 const catalog=RELEASED_IDS;
 const selected=process.env.OASIS_ANDROID_GAMES?process.env.OASIS_ANDROID_GAMES.split(','):catalog;
 assert.ok(selected.length&&selected.every(g=>catalog.includes(g))&&new Set(selected).size===selected.length);
 const lifecycle=process.env.OASIS_ANDROID_LIFECYCLE!=='0';
-const out=new URL('../review/android/',import.meta.url);await fs.mkdir(out,{recursive:true});
+const outputRoot=new URL('../review/android/',import.meta.url);await fs.mkdir(outputRoot,{recursive:true});
+const outputPath=await fs.mkdtemp(resolve(outputRoot.pathname,`${artifact.variant}-${target.release}-`));
+const out=pathToFileURL(outputPath+'/');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const adb=async(...args)=>(await run('adb',['-s',serial,...args],{timeout:45000,maxBuffer:4*1024*1024})).stdout.trim();
+const adb=async(...args)=>(await run('adb',androidAdbArgs(target,args),{timeout:45000,maxBuffer:4*1024*1024})).stdout.trim();
 async function deployedRelease(){
- const {stdout}=await run('ssh',['-i','/Users/tyym/Downloads/server-rsa(2).pem','-o','BatchMode=yes','root@43.98.202.236','cat /opt/oasis/private/last-release.json'],{timeout:30000,maxBuffer:16384});
- const state=JSON.parse(stdout),version=basename(state.current||'');
- assert.match(version,/^[A-Za-z0-9_-]{1,64}$/);assert.equal(state.health,'passed');
- if(process.env.OASIS_ANDROID_RELEASE)assert.equal(version,process.env.OASIS_ANDROID_RELEASE,'Unexpected deployed release');
- return{version,activated_at:state.activated_at};
+ const {stdout}=await run('ssh',['-i',target.sshKey,'-o','BatchMode=yes','-o','IdentitiesOnly=yes','-o','StrictHostKeyChecking=yes',target.sshHost,androidReleaseCommand(target)],{timeout:60000,maxBuffer:16384});
+ return verifyAndroidReleaseState(JSON.parse(stdout),target);
 }
 const until=async(fn,label,timeout=45000)=>{const end=Date.now()+timeout;while(Date.now()<end){if(await fn())return;await sleep(120);}throw Error('Timeout: '+label);};
-const report={started_at:new Date().toISOString(),origin,requested_games:selected,full_catalog:selected.length===catalog.length,scope:remoteDevice?'Remote Android WebView native game buttons and fullscreen single-game flow; not physical USB proof. Existing sandbox/test wallets.':'Physical USB Android native game buttons and fullscreen single-game WebView; existing sandbox/test wallets.',physical_device:!remoteDevice,mock_app_service:true,network_origins:[],external_asset_origins:[],games:[],lifecycle:{},negative_checks:[],page_errors:[],asset_failures:[],expected_network_failures:[],passed:false};
+const {apkPath,...artifactEvidence}=artifact;
+const report={started_at:new Date().toISOString(),origin,artifact:artifactEvidence,adb_server:{host:'127.0.0.1',port:target.adbPort},requested_games:selected,full_catalog:selected.length===catalog.length,scope:remoteDevice?'Remote Android WebView native game buttons and fullscreen single-game flow; not physical USB proof. Existing sandbox/test wallets.':'Physical USB Android native game buttons and fullscreen single-game WebView; existing sandbox/test wallets.',physical_device:!remoteDevice,mock_app_service:true,network_origins:[],external_asset_origins:[],games:[],lifecycle:{},negative_checks:[],page_errors:[],asset_failures:[],expected_network_failures:[],passed:false};
 let browser,context,page,current,cdp,injectingOffline=false;
 const tokens=new Map(),tasks=new Set();
 function watch(p){
@@ -208,12 +213,13 @@ async function arenaAction(frame,game){
 }
 try{
  const releaseBefore=await deployedRelease();report.tested_release=releaseBefore.version;
- const devices=(await run('adb',['devices','-l'])).stdout;assert.ok(devices.split('\n').some(line=>line.startsWith(serial+' ')&&line.includes(' device')&&(remoteDevice||line.includes('usb:'))),remoteDevice?'Expected explicitly selected remote device':'Expected explicitly selected USB device');
+ const devices=(await run('adb',androidAdbArgs(target,['devices','-l'],{device:false}))).stdout;assert.ok(devices.split('\n').some(line=>line.split(/\s+/)[0]===serial&&line.split(/\s+/)[1]==='device'&&(remoteDevice||line.includes('usb:'))),remoteDevice?'Expected explicitly selected remote device':'Expected explicitly selected USB device');
+ report.installed_artifact=await verifyInstalledAndroidArtifact(target,artifact,run);
  report.device={model:await adb('shell','getprop','ro.product.model'),android:await adb('shell','getprop','ro.build.version.release'),api:await adb('shell','getprop','ro.build.version.sdk')};
  // A previous failed smoke run may have left the APK on a single-game page;
  // start each independent report from the native card lobby.
- await adb('shell','am','force-stop',pkg);await sleep(400);await adb('shell','am','start','-n',pkg+'/.MainActivity');await lobby();report.native_lobby_without_webview=true;
- await run('adb',['-s',serial,'exec-out','screencap','-p'],{encoding:'buffer',maxBuffer:20*1024*1024}).then(r=>fs.writeFile(new URL('lobby-device.png',out),r.stdout));
+ await adb('shell','am','force-stop',pkg);await sleep(400);await adb('shell','am','start','-n',target.component);await lobby();report.native_lobby_without_webview=true;
+ await run('adb',androidAdbArgs(target,['exec-out','screencap','-p']),{encoding:'buffer',maxBuffer:20*1024*1024}).then(r=>fs.writeFile(new URL('lobby-device.png',out),r.stdout));
   {
   const frame=await openGame('match');await frame.locator('.lobby-settings').waitFor();
   await frame.getByRole('button',{name:'返回',exact:true}).click();
@@ -249,7 +255,7 @@ try{
   assert.ok(result.viewport.scroll_width<=result.viewport.width+1,'Game overflows WebView horizontally');
   assert.ok(result.viewport.scroll_height<=result.viewport.height+1&&result.viewport.body_height<=result.viewport.height+1,'Active game does not fit in one screen');
   result.single_screen=true;
-  if(['carrom','run','tiger'].includes(game))await run('adb',['-s',serial,'exec-out','screencap','-p'],{encoding:'buffer',maxBuffer:20*1024*1024}).then(r=>fs.writeFile(new URL(`${game}-device.png`,out),r.stdout));
+  if(['carrom','run','tiger'].includes(game))await run('adb',androidAdbArgs(target,['exec-out','screencap','-p']),{encoding:'buffer',maxBuffer:20*1024*1024}).then(r=>fs.writeFile(new URL(`${game}-device.png`,out),r.stdout));
   if(game==='run'){
    result.scene_ready=await frame.locator('[data-testid="run-track"]').evaluate(el=>({...el.dataset}));
    assert.equal(result.scene_ready.ready,'true');assert.equal(result.scene_ready.rendered,'true');
@@ -278,10 +284,10 @@ try{
  await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
  await until(async()=>current.room.id===original.room&&current.room.version>before&&!await frame.locator('.arena-network').isVisible(),'network recovery');injectingOffline=false;
  report.lifecycle.network_recovery={same_room:true,mode:'CDP network outage in this WebView only'};
- await adb('shell','input','keyevent','3');await sleep(2200);const resumeAt=Date.now();await adb('shell','am','start','-n',pkg+'/.MainActivity');
+ await adb('shell','input','keyevent','3');await sleep(2200);const resumeAt=Date.now();await adb('shell','am','start','-n',target.component);
  await until(()=>page.evaluate(()=>!document.hidden),'foreground');await until(()=>current.room.id===original.room&&current.room.status==='active'&&current.lastRoomResponseAt>resumeAt,'fresh foreground room response');
  report.lifecycle.background_foreground={same_room:true,fresh_response_after_resume:true};
- await browser.close();browser=null;await adb('shell','am','force-stop',pkg);await sleep(500);await adb('shell','am','start','-n',pkg+'/.MainActivity');
+ await browser.close();browser=null;await adb('shell','am','force-stop',pkg);await sleep(500);await adb('shell','am','start','-n',target.component);
  await lobby();frame=await openGame('match');
  await until(()=>current.room?.id===original.room&&current.room.status==='active','persisted room after process restart');assert.equal(current.guest,original.guest);
  report.lifecycle.process_restart={same_guest:true,same_room:true,new_session:current.session_id!==original.session};
@@ -291,6 +297,7 @@ try{
  assert.deepEqual(report.network_origins.filter(value=>value===origin),[origin],'Android game WebView must reach the configured platform origin');
  assert.deepEqual(report.network_origins.filter(value=>value!==origin).sort(),report.external_asset_origins.slice().sort(),'All non-platform requests must be classified static external assets');
  const releaseAfter=await deployedRelease();assert.deepEqual(releaseAfter,releaseBefore,'Deployment changed during device test');
+ assert.deepEqual(await verifyInstalledAndroidArtifact(target,artifact,run),report.installed_artifact,'Installed APK changed during device test');
  report.release_verification={before:releaseBefore,after:releaseAfter,unchanged:true};report.passed=true;
 }catch(error){
  report.failure=error.stack;report.failed_game=current?.game;report.action_rejections=current?.action_rejections;
@@ -310,4 +317,4 @@ finally{
  }
  report.finished_at=new Date().toISOString();await fs.writeFile(new URL('device-smoke.json',out),JSON.stringify(report,null,2));await browser?.close();
 }
-console.log(JSON.stringify({passed:report.passed,games:report.games.length,lifecycle:report.lifecycle,failure:report.failure?.split('\n')[0]}));
+console.log(JSON.stringify({passed:report.passed,variant:artifact.variant,games:report.games.length,lifecycle:report.lifecycle,report:outputPath,failure:report.failure?.split('\n')[0]}));

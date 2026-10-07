@@ -2,6 +2,7 @@
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
+import {RELEASED_IDS} from '../shared/games.mjs';
 const origin=process.env.OASIS_VERIFY_ORIGIN||'https://game.tianyahuyu.com';
 const expectedRelease=process.env.OASIS_VERIFY_RELEASE||'20260920-03';
 const credentials=JSON.parse(await fs.readFile(process.env.OASIS_VERIFY_ADMIN_CREDENTIALS||new URL('../.local/development-credentials.json',import.meta.url),'utf8'));
@@ -15,7 +16,7 @@ try{
  await page.getByRole('button',{name:'登录工作台',exact:true}).click();await page.getByRole('heading',{name:'发布与运行状态',exact:true}).waitFor();
  const status=await page.evaluate(()=>fetch('/api/admin/operations-status').then(async r=>({status:r.status,body:await r.json()})));
  assert.equal(status.status,200);assert.equal(status.body.release?.version,expectedRelease);assert.equal(status.body.monitor.status,'ok');assert.equal(status.body.production_admission_enabled,false);
- if(process.env.OASIS_VERIFY_ANDROID==='passed'){assert.equal(status.body.android?.status,'passed');assert.equal(status.body.android?.games_passed,12);}
+ if(process.env.OASIS_VERIFY_ANDROID==='passed'){assert.equal(status.body.android?.status,'passed');assert.equal(status.body.android?.games_passed,RELEASED_IDS.length);}
  const cookies=await context.cookies(origin+'/api/admin/session');assert.ok(cookies.some(c=>c.name==='oasis_admin'&&c.secure&&c.httpOnly));
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:new URL('release-operations-live-390.png',out).pathname,fullPage:true});
  await page.goto(origin+'/#/security');await page.locator('input[autocomplete="current-password"]').waitFor();

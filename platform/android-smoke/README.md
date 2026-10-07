@@ -33,6 +33,8 @@ OASIS_ANDROID_MOCK_ORIGIN=https://YOUR_VERIFIED_MOCK_HOST ./build-mock.sh
 
 ## 构建
 
+网页发布命令 `npm run build:release` 校验并原样保留公开 APK，不再调用 Android 重打包。下载元数据记录 APK 哈希、包名、版本、精确 Origin 和 Android 源码指纹；任何源码或包字节变化会阻断发布，需明确构建、核验并更新待发布产物。历史 1.2 下载 URL 不代表独立 Mock 版本。设备验收必须显式选择相应产物、ADB 端口、手机、Origin 与发布 pin，命令见 [Android 接入说明](../specs/android-webview-integration.md)。
+
 本项目不使用 Gradle、不下载依赖。使用本机已有 Android SDK 和 Android Studio JBR：
 
 ```sh

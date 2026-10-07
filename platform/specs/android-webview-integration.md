@@ -2,13 +2,17 @@
 
 推荐结构是「App 原生游戏列表 → 单款游戏 WebView → 返回原生 App」。游戏图标、用户信息和业务入口由 App 自己实现，不需要把 OASIS 网页试玩大厅嵌入 App。
 
-## 当前接入测试 APK
+## 历史公网试玩 APK 与独立 Mock 候选
 
-[下载 Android 测试包 1.2.0](/downloads/oasis-android-smoke-1.2.0-debug.apk)。此版本已完成构建与签名校验；本轮 `adb devices -l` 仍未列出手机，因此尚无这版的真机验收结论。
+[下载历史公网试玩包 1.2.0](/downloads/oasis-android-smoke-1.2.0-debug.apk)。这是明确标为 `historical-live` 的旧 QA 包，连接公网试玩沙箱；不是独立 Mock 候选，也不代表当前实体手机验收通过。保留原文件 URL 供历史记录核对，不将其标为最新版。
 
 `OASIS 接入测试 1.2.0` 使用原生 Android 卡片展示 13 款游戏。原生大厅的固定用户、资料、展示余额和游戏选择由 APK 内的 `MockPartnerApi` 返回。点击卡片后打开对应的 `https://game.tianyahuyu.com/demo/native/<game_id>`，游戏期间没有网页大厅和宿主工具栏。游戏内账号、操作、余额、对局和结算仍使用平台的真实沙箱接口与测试钱包；原生大厅展示余额不会同步到游戏。
 
-当前 APK 的 Mock 范围只覆盖合作方原生 App 层，**未覆盖 13 款游戏的全部接口模拟**。该路径仅用于沙箱测试，不能代表合作方正式登录、用户映射或主钱包已经接通。正式 App 应由自己的服务端完成签名授权；长期 API 密钥不得打包进 APK 或 H5。正式启动、签名和钱包流程见平台标准接入文档与合作方接入包。
+历史包的包名为 `com.tianyahuyu.oasis.smoke`。独立 Mock 候选 `1.3.0 (6)` 的包名为 `com.tianyahuyu.oasis.mock`，固定访问 `https://oasis-mock.43.98.202.236.sslip.io`，可与历史包共存。候选已安装实体 Android，13 款完整验收尚未闭合；目前仅限内部 QA，不提供默认公开下载。它与 1.2 的身份、测试钱包和验收报告必须分开，详见 [Android 测试说明](../android-smoke/README.md)。
+
+`build:release` 只校验并原样保留已经审核的公开 APK，不运行 Android 重打包，不复制本地候选，也不改写公开元数据。`/downloads/android-smoke-build.json` 保留 `version`、`version_code`、`apk`、`sha256`、`game_count` 等旧字段，并明确版别、包名、Origin 与源码指纹。原生源码或构建输入变化时，发布构建以 `ANDROID_REVIEWED_APK_STALE` 阻断；需要显式构建、审核并登记新产物，不能只改摘要绕过审核。后续分发必须使用验收过的同一 APK 字节，不能在验收后重新打包同一版本覆盖原 URL。
+
+历史 APK 的 Mock 范围只覆盖合作方原生 App 层，**未覆盖 13 款游戏的全部接口模拟**。该路径仅用于沙箱测试，不能代表合作方正式登录、用户映射或主钱包已经接通。正式 App 应由自己的服务端完成签名授权；长期 API 密钥不得打包进 APK 或 H5。正式启动、签名和钱包流程见平台标准接入文档与合作方接入包。
 
 ## 宿主实现要点
 
@@ -25,3 +29,22 @@
 逐款检查原生点击、授权兑换、一个合法操作的实际 HTTP 返回、系统返回、横纵向溢出和按钮位置。另外检查断网恢复、前后台恢复、进程重启、无效会话与跨游戏会话拒绝。
 
 单台 Android 通过只能证明该设备和对应已部署版本的基础接入。它不替代真实合作方钱包、多人整局结算、全机型/iPhone、声音听感和持续帧率验收。完整 13 款真机报告必须与当前发布版本一致，并逐款记录。
+
+## 显式选择验收目标
+
+`scripts/verify-android-webview.mjs` 不再默认选择手机、5037 ADB server、历史包或 live 发布。操作者必须显式提供 APK 元数据、设备序列号、ADB server 端口、Origin、包名、APK SHA-256、发布版本与只读发布核验的 SSH 主机/密钥路径。脚本先核对本地产物，再读取指定手机上已安装 APK 的 SHA-256、versionName 和 versionCode，全部一致后才启动界面；不会安装或重建 APK。结束时再次核对 APK 和服务器版本。
+
+独立 Mock 使用自己的 `android-mock-current` pin 和安装器 `status` 的隔离/健康证据，历史包仅在明确选择后读取 live 发布记录；两者不互相代替。每轮报告新建独立目录，包含版别、包名、Origin、安装包摘要和发布读回，不覆盖以前的报告。当前内部 QA 的示例参数如下，设备操作只能由持有该设备的验收者执行：
+
+```sh
+OASIS_ANDROID_ARTIFACT=/absolute/path/platform/android-smoke/dist/mock-build-checks.json \
+OASIS_ANDROID_SERIAL=EXPLICIT_DEVICE_SERIAL \
+OASIS_ANDROID_ADB_PORT=5038 \
+OASIS_ANDROID_ORIGIN=https://oasis-mock.43.98.202.236.sslip.io \
+OASIS_ANDROID_PACKAGE=com.tianyahuyu.oasis.mock \
+OASIS_ANDROID_APK_SHA256=8e283af9ccbd7d336c18d1a4259ac2c2d4694cea0647a4ef009555174b290cee \
+OASIS_ANDROID_RELEASE=20261007-04 \
+OASIS_ANDROID_RELEASE_SSH_HOST=root@43.98.202.236 \
+OASIS_ANDROID_RELEASE_SSH_KEY=/absolute/path/to/ssh-key \
+node scripts/verify-android-webview.mjs
+```

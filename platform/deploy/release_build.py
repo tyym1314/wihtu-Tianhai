@@ -14,6 +14,7 @@ SOURCE_FILES = ('index.html', 'tiger.html', 'package.json', 'package-lock.json',
                 'platform/index.html', 'platform/package.json', 'platform/package-lock.json',
                 'platform/vite.config.js', 'platform/scripts/build-legacy.mjs',
                 'platform/scripts/build-partner-kit.mjs', 'platform/scripts/build-release.mjs',
+                'platform/scripts/android-artifact.mjs', 'platform/android-smoke/prepare-mock-build.mjs',
                 'platform/android-smoke/build.sh', 'platform/android-smoke/build-metadata.mjs',
                 'platform/deploy/release_build.py', 'platform/mobile-assets.json')
 OUTPUT_TREES = ('platform/dist', 'platform/arena/dist', 'platform/legacy/dist')
