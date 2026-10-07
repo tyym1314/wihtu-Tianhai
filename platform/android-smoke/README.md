@@ -2,7 +2,7 @@
 
 这是用于 USB 真机验收的合作方 App Mock：大厅由原生 ScrollView、TextView、ImageView 和可点击卡片组成，不加载 HTML。APK 内的 `MockPartnerApi` 以确定性的本地方法提供用户身份、资料、展示余额和游戏选择，不发网络请求、不存密钥。点击游戏后才创建该游戏的全屏 WebView，13 款完整可玩流程由游戏平台的 HTTPS 单游戏宿主、真实游戏服务和独立沙箱测试钱包提供。大厅展示余额不会参与游戏或与平台钱包同步，不能把整款 APK 说成离线版或所有游戏接口都是 Mock。
 
-## 1.3 独立在线 Mock 版本（待部署与真机验收）
+## 1.3 独立在线 Mock 版本（内部真机验收中）
 
 `1.3.0` 是新的构建目标：原生大厅仍由 `MockPartnerApi` 提供固定测试身份；游戏 WebView 必须访问[独立在线 Mock 栈](../deploy/mock-sandbox/README.md)的 HTTPS 域名，在独立 PostgreSQL、独立密钥和独立参考测试钱包中完成 13 款游戏的权威对局。该栈复用游戏规则与服务端引擎代码，但与当前公网试玩和未来真实三方数据隔离。它需要网络，不能宣称离线可玩。
 
@@ -14,7 +14,9 @@ OASIS_ANDROID_MOCK_ORIGIN=https://YOUR_VERIFIED_MOCK_HOST ./build-mock.sh
 
 缺少 `OASIS_ANDROID_MOCK_ORIGIN` 时，构建在打包前直接失败；HTTP、路径、查询参数、凭据、已知公网试玩域名以及另行给出的 `OASIS_LIVE_PUBLIC_ORIGIN` 均被拒绝。构建期生成 `MockOrigin` 常量，原生 WebView 导航白名单、返回脚本和包内宿主入口只使用该 Origin，不接受运行时 URL 覆盖。生成包名为 `com.tianyahuyu.oasis.mock`，版本 `1.3.0 (6)`，与历史 `1.2.0` 包可并存。签名私钥单独保存在被忽略的 `.local/signing/mock-debug.jks`；产物只写本地 `dist/oasis-android-mock-1.3.0-debug.apk`、`dist/mock-build-checks.json` 和 `dist/mock-SHA256SUMS`，不会自动复制到公开下载目录。
 
-仅能在独立域名、TLS 证书、数据库、两把独立密钥、API/钱包/宿主服务都实际就绪后，把该 Origin 构建的 APK 安装到实体 Android 手机验收。需要逐款检查启动、触控、规则、完成/结算、返回、恢复、性能与加载速度。使用占位域名成功编译只证明源码、DEX、签名和元数据正确；占位域名 APK 无法联网试玩，不能发布。当前没有独立 Mock 域名及真机验收记录，因此 `1.3.0` 不能作为对外可用包。
+仅能在独立域名、TLS 证书、数据库、两把独立密钥、API/钱包/宿主服务都实际就绪后，把该 Origin 构建的 APK 安装到实体 Android 手机验收。需要逐款检查启动、触控、规则、完成/结算、返回、恢复、性能与加载速度。使用占位域名成功编译只证明源码、DEX、签名和元数据正确；占位域名 APK 无法联网试玩，不能发布。
+
+2026-10-07 独立内部 QA Origin `https://oasis-mock.43.98.202.236.sslip.io` 已就绪并固定在 `20261007-04`，严格 TLS、独立数据/密钥、到 live 端口的拒绝、停止/重启恢复均已验证。它与 live 同机但有独立 UID、网络策略和资源限额，只供单人内部 QA，不能视为正式容量环境。绑定该 Origin 的 `1.3.0 (6)` 已安装到实体 Xiaomi / Android 16；从手机读回的 APK SHA-256 为 `8e283af9ccbd7d336c18d1a4259ac2c2d4694cea0647a4ef009555174b290cee`，与本地候选一致。13 款均已有原生进入、受信任触控单次操作/概率周期、返回和原会话清理成功记录，首轮脚本失败及复验边界详见[本轮验收记录](../specs/third-party-launch-readiness-2026-10-07.md)。完整局与性能验收尚未完成，公开下载仍为历史 `1.2.0`；不要把它的公网试玩连接或旧验收结果当成 1.3 的证据。
 
 ## 1.2 历史公网试玩包
 

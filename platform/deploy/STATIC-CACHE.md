@@ -1,5 +1,7 @@
 # 试玩站静态缓存边界
 
+平台 SPA 的 `/index.html`（包括内部回退到此文件的页面）与可变下载描述 `/downloads/android-smoke-build.json` 由 Nginx 明确返回 `no-store`。避免浏览器启发式缓存旧入口或旧 APK 选择；同一 location 保留 `nosniff` 和 `no-referrer`。发布 APK 原字节必须经过版本/哈希校验，不能在网页重构建时悄悄覆盖同一下载 URL。
+
 `/demo/`、`/demo/native/<game>`、`/demo/native-return` 和 `/api/demo/*` 均返回 `Cache-Control: no-store`。它们承载会话入口、访客身份或动态配置，不能使用公开长缓存。
 
 试玩大厅与 Android WebView 宿主引用的六个公开文件（大厅 JS/CSS、H5 SDK、原生宿主模块/启动模块/CSS）使用 `/demo/static/<完整 SHA-256>/<文件名>`。持久归档可用时，响应对实际字节再次计算 SHA-256，并在返回 200 或 304 **之前**更新最后服务时间，随后返回 30 天 `public, immutable`、强 ETag 和正确的 JS/CSS MIME 类型。旧版未加指纹的 `/demo/host.mjs` 等 URL 仍可读取，但必须重新验证，不使用 immutable。没有配置持久归档的内存宿主仅返回需重新验证的缓存策略，不承诺 immutable。
