@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {randomUUID} from 'node:crypto';
+import {createRunSnapshotObserver,runSnapshotRequest} from './run-snapshot-observer.mjs';
 
 const terminal=status=>['cancelled','settled','voided'].includes(status);
 const apiPath=path=>/^\/(?:api|v1)\//.test(path);
@@ -193,6 +194,9 @@ export async function reserveNativeReportDirectory(out,report){
 
 export function observeNativeBrowser(page,{origin,state,result,clean=String,remember=()=>{},drainTimeoutMs=10000,fetchProbe=null}){
  const tasks=new Set(),requests=new WeakMap(),requestEntries=[],failedEntries=[],recordedFailures=new Set(),recordedProbeErrors=new Set(),recordedUnmatchedRejections=new Set();
+ const runSnapshots=createRunSnapshotObserver();
+ if(state.game==='run'&&state.token&&state.sessionId&&state.playerId&&state.appId)runSnapshots.authorize({token:state.token,sessionId:state.sessionId,playerId:state.playerId,appId:state.appId});
+ result.run_snapshot_duplicates??=[];
  for(const key of ['js_errors','resource_errors','observer_errors','http_errors','network_errors'])result[key]??=[];
  result.network_observations??=[];result.fetch_observations??=[];result.lifecycle_cancellations??=[];result.pending_network_observations=0;
  result.unmatched_fetch_rejections??=[];
@@ -210,6 +214,7 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
  page.on('console',item=>{if(item.type()==='error')result.js_errors.push(clean(item.text()));});
  page.on('request',request=>{let entry;try{
   entry=address(request);entry.request_observed=true;requests.set(request,entry);requestEntries.push(entry);
+  if(entry.origin===origin&&(entry.path.startsWith('/api/pvp/rooms')||entry.path==='/v1/launch/exchange'))entry.runSnapshotTicket=runSnapshotRequest(runSnapshots,request,entry.path);
   if(entry.origin!==origin||entry.method!=='POST')return;
   if(entry.path==='/api/pvp/rooms'){
    const body=request.postDataJSON();
@@ -251,26 +256,34 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
    if(entry.origin!==origin)return;
    if(!response.ok())return;
    if(['/api/demo/config','/api/demo/launch','/v1/launch/exchange'].includes(path)){
-    const body=await response.json();remember(body);
-    if(path==='/v1/launch/exchange'){
-     assert.equal(body.game_id,state.game,'Exchange game differs');
-     assert.ok(body.session_id&&body.external_user_id&&body.access_token,'Incomplete launch exchange');
-     if(state.sessionId)assert.equal(body.session_id,state.sessionId,'Reauthorization replaced the original session');
-     if(state.playerId)assert.equal(body.external_user_id,state.playerId,'Reauthorization replaced the original player');
-     state.token=body.access_token;state.sessionId=body.session_id;state.playerId=body.external_user_id;result.launch_exchange=true;
-    }
+    const decoded=response.json().then(body=>{remember(body);
+     if(path==='/v1/launch/exchange'){
+      assert.equal(body.game_id,state.game,'Exchange game differs');
+      assert.ok(body.session_id&&body.external_user_id&&body.access_token,'Incomplete launch exchange');
+      if(state.sessionId)assert.equal(body.session_id,state.sessionId,'Reauthorization replaced the original session');
+      if(state.playerId)assert.equal(body.external_user_id,state.playerId,'Reauthorization replaced the original player');
+      if(state.game==='run')runSnapshots.authorize({token:body.access_token,sessionId:body.session_id,playerId:body.external_user_id,appId:body.scope?.app_id},entry.runSnapshotTicket);
+      state.token=body.access_token;state.sessionId=body.session_id;state.playerId=body.external_user_id;result.launch_exchange=true;
+     }
+     return body;
+    });
+    await runSnapshots.enqueue(decoded,()=>{});
    }
    if(path.startsWith('/api/pvp/rooms')){
-    const body=await response.json(),room=body.room||body;
-    if(room.id){
-     assert.equal(room.game_id,state.game,'Observed room belongs to another game');
-     assert.equal(room.me,state.playerId,'Observed room belongs to another player');
-     if(!state.room||state.room.id!==room.id||room.version>=state.room.version)state.room=room;
-     if(entry.creation){
-      assert.equal(room.practice,true);assert.equal(room.entry_minor,'0');
-      entry.creation.room_id=room.id;state.ownedRooms.add(room.id);
+    await runSnapshots.enqueue(response.json(),body=>{const room=body.room||body;
+     if(!room.id&&(Object.hasOwn(room,'run_game_transfer')||entry.method==='GET'&&/^\/api\/pvp\/rooms\/[^/]+$/.test(path)))runSnapshots.inspect(entry.runSnapshotTicket,room);
+     if(room.id){
+      assert.equal(room.game_id,state.game,'Observed room belongs to another game');
+      assert.equal(room.me,state.playerId,'Observed room belongs to another player');
+      if(entry.creation){
+       assert.equal(room.practice,true);assert.equal(room.entry_minor,'0');
+       entry.creation.room_id=room.id;state.ownedRooms.add(room.id);
+      }
+      const observed=runSnapshots.inspect(entry.runSnapshotTicket,room);
+      if(observed.kind==='duplicate')result.run_snapshot_duplicates.push({...row(entry),...observed.evidence});
+      else if(!state.room||state.room.id!==room.id||room.version>=state.room.version)state.room=room;
      }
-    }
+    });
    }
    if(path===`/api/play/${state.game}/spin`){
     const body=await response.json();

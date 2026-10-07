@@ -10,6 +10,7 @@ import {ARENA_IDS,LEGACY_IDS,RELEASED_IDS} from '../shared/games.mjs';
 import {playOneArenaAction} from '../scripts/android-game-actions.mjs';
 import {createSnapshotTransfer} from '../arena/shared/snapshot-transfer.mjs';
 import {classifyReturningRoomBodyLoss,proveReturningRoomBodyLoss} from './public-smoke-observer.mjs';
+import {createRunSnapshotObserver,runSnapshotRequest} from './run-snapshot-observer.mjs';
 
 const origin=new URL(process.env.OASIS_VERIFY_ORIGIN||'https://game.tianyahuyu.com').origin;
 assert.equal(new URL(origin).protocol,'https:','Public verification requires HTTPS');
@@ -33,12 +34,17 @@ const isAsset=request=>{const u=new URL(request.url());return /^https?:$/.test(u
 async function until(fn,label,timeout=45000){const end=Date.now()+timeout;while(Date.now()<end){if(await fn())return;await pause(100);}throw Error('Timeout: '+label);}
 async function drainObservers(){await until(()=>pendingObservers.size===0,'response observer drain',10000);}
 async function flush(){await fs.writeFile(new URL('public-browser.json',out),JSON.stringify(report,null,2)+'\n');}
-function rememberRoom(attempt,room,source){
+function registerRoom(attempt,room,source){
  assert.equal(room.game_id,attempt.game,'Room belongs to another game');assert.equal(room.me,guestId,'Room belongs to another guest');
+ const key=attempt.game+':'+room.id,old=ownedRooms.get(key);
+ if(!old)ownedRooms.set(key,{attempt,room,source});
+ if(!attempt.roomIds.includes(room.id))attempt.roomIds.push(room.id);
+}
+function rememberRoom(attempt,room,source){
+ registerRoom(attempt,room,source);
  const key=attempt.game+':'+room.id,old=ownedRooms.get(key);
  if(!old||Number(room.version)>=Number(old.room.version))ownedRooms.set(key,{attempt,room,source:old?.source||source});
  if(!attempt.room||attempt.room.id!==room.id||Number(room.version)>=Number(attempt.room.version))attempt.room=room;
- if(!attempt.roomIds.includes(room.id))attempt.roomIds.push(room.id);
 }
 function reconcileReadBodyLosses(){
  for(const loss of report.lifecycleReadBodyLosses){
@@ -53,6 +59,7 @@ function observe(target){
   const u=new URL(request.url()),attempt=current,internal=internals.get(attempt),entry={attempt,phase:attempt?.phase||'lobby'};requests.set(request,entry);
   if(isAsset(request)&&u.origin!==origin)report.externalAssets.push({...address(request),game:attempt?.game||null});
   if(u.origin!==origin||!attempt)return;
+  if(u.pathname.startsWith('/api/pvp/rooms')||u.pathname==='/v1/launch/exchange')entry.runSnapshotTicket=runSnapshotRequest(internal.runSnapshots,request,u.pathname);
   if(u.pathname.startsWith('/api/pvp/rooms')){entry.snapshotTicket=internal.transfer.begin(u.pathname,request.method()==='GET');entry.frame=request.frame();}
   if(request.method()==='POST'&&new RegExp(`^/api/play/${attempt.game}/(spin|ack)$`).test(u.pathname)){
    const body=request.postDataJSON();entry.probability={type:u.pathname.endsWith('/spin')?'spin':'ack',phase:entry.phase,requestId:body.requestId||null,roundId:body.roundId||null,status:null};attempt.probabilityRequests.push(entry.probability);
@@ -82,16 +89,24 @@ function observe(target){
   const task=(async()=>{
    const internal=internals.get(attempt);
    if(u.pathname==='/v1/launch/exchange'){
-    const d=await response.json();assert.equal(d.game_id,attempt.game);assert.equal(d.external_user_id,guestId,'Exchange must use this fresh demo wallet');
-    if(attempt.sessionId)assert.equal(d.session_id,attempt.sessionId,'Reauthorization replaced the session');
-    if(internal.token!==d.access_token)internal.transfer.clear();internal.token=d.access_token;attempt.sessionId=d.session_id;attempt.guest=d.external_user_id;
+    const decoded=response.json().then(d=>{assert.equal(d.game_id,attempt.game);assert.equal(d.external_user_id,guestId,'Exchange must use this fresh demo wallet');
+     if(attempt.sessionId)assert.equal(d.session_id,attempt.sessionId,'Reauthorization replaced the session');
+     if(attempt.game==='run')internal.runSnapshots.authorize({token:d.access_token,sessionId:d.session_id,playerId:d.external_user_id,appId:d.scope?.app_id},entry.runSnapshotTicket);
+     if(internal.token!==d.access_token)internal.transfer.clear();internal.token=d.access_token;attempt.sessionId=d.session_id;attempt.guest=d.external_user_id;
+     return d;
+    });
+    await internal.runSnapshots.enqueue(decoded,()=>{});
    }
    if(u.pathname.startsWith('/api/pvp/rooms')){
-    const body=await response.json(),raw=body.room||body;if(!raw.id)return;
-    // Record every observed room, even if cache reconstruction fails afterwards.
-    rememberRoom(attempt,raw,entry.creation?'create-response':'public-response');if(entry.creation)entry.creation.roomId=raw.id;
-    try{const restored=internal.transfer.restore(entry.snapshotTicket||internal.transfer.begin(u.pathname,request.method()==='GET'),raw);rememberRoom(attempt,restored,'public-response');}
-    catch(e){if(!['SESSION_CHANGED','SNAPSHOT_REFRESH_REQUIRED'].includes(e.code))throw e;attempt.snapshotNotes.push({code:e.code,path:u.pathname});}
+    await internal.runSnapshots.enqueue(response.json(),body=>{const raw=body.room||body;
+     if(!raw.id&&(Object.hasOwn(raw,'run_game_transfer')||request.method()==='GET'&&/^\/api\/pvp\/rooms\/[^/]+$/.test(u.pathname)))internal.runSnapshots.inspect(entry.runSnapshotTicket,raw);
+     if(!raw.id)return;
+     registerRoom(attempt,raw,entry.creation?'create-response':'public-response');if(entry.creation)entry.creation.roomId=raw.id;
+     const observed=internal.runSnapshots.inspect(entry.runSnapshotTicket,raw);
+     if(observed.kind==='duplicate'){attempt.runSnapshotDuplicates.push(observed.evidence);return;}
+     try{const restored=internal.transfer.restore(entry.snapshotTicket||internal.transfer.begin(u.pathname,request.method()==='GET'),raw);rememberRoom(attempt,restored,'public-response');}
+     catch(e){if(!['SESSION_CHANGED','SNAPSHOT_REFRESH_REQUIRED'].includes(e.code))throw e;attempt.snapshotNotes.push({code:e.code,path:u.pathname});}
+    });
    }
    if(entry.phase==='cleanup')return;
    if(u.pathname===`/api/play/${attempt.game}/spin`){const d=await response.json();attempt.spins.push({round:d.round.id,cycle:d.round.cycleId,status:d.round.settlementStatus,isFreeSpin:d.round.isFreeSpin===true,requestId:request.postDataJSON()?.requestId});}
@@ -185,7 +200,7 @@ try{
  const firstConfig=await page.evaluate(()=>fetch('/api/demo/config').then(r=>r.json()));
  const second=await browser.newContext();try{const secondPage=await second.newPage();observe(secondPage);const secondConfig=await secondPage.goto(origin+'/api/demo/config').then(r=>r.json());assert.notEqual(firstConfig.csrf,secondConfig.csrf);assert.notEqual(firstConfig.profile.name,secondConfig.profile.name);report.distinctGuests=true;}finally{await second.close();}
  for(const game of RELEASED_IDS){
-  const attempt=current={game,phase:'entry',spins:[],acknowledged:[],creations:[],roomIds:[],actionRequests:[],probabilityRequests:[],snapshotNotes:[],launched:false,returned:false,cleanupComplete:false};report.games.push(attempt);internals.set(attempt,{token:null,transfer:createSnapshotTransfer(),terminalReads:[],gameFrame:null,returnStarted:false});await flush();
+  const attempt=current={game,phase:'entry',spins:[],acknowledged:[],creations:[],roomIds:[],actionRequests:[],probabilityRequests:[],snapshotNotes:[],runSnapshotDuplicates:[],launched:false,returned:false,cleanupComplete:false};report.games.push(attempt);internals.set(attempt,{token:null,transfer:createSnapshotTransfer(),runSnapshots:createRunSnapshotObserver(),terminalReads:[],gameFrame:null,returnStarted:false});await flush();
   await page.locator(`[data-game="${game}"]`).tap();await page.locator('#connection').filter({hasText:'已连接'}).waitFor();
   const frame=page.frames().find(f=>f.url()===origin+'/play/'+game);assert.ok(frame);internals.get(attempt).gameFrame=frame;await until(()=>!!attempt.sessionId,'session exchange '+game);attempt.launched=true;
   if(ARENA_IDS.includes(game)){

@@ -18,7 +18,7 @@ function response(fixture,req,{status=200,json=async()=>({})}={}){
  fixture.page.emit('request',req);
  fixture.page.emit('response',{url:req.url,request:()=>req,status:()=>status,ok:()=>status>=200&&status<300,json});
 }
-const room=(overrides={})=>({id:'owned',game_id:'run',me:'owned_player',entry_minor:'0',practice:true,status:'cancelled',version:1,...overrides});
+const room=(overrides={})=>({id:'owned',game_id:'run',me:'owned_player',entry_minor:'0',practice:true,status:'cancelled',version:1,game:{gameId:'run',me:'owned_player',ruleVersion:'run-fixture',physicsVersion:'physics-fixture',snapshotTick:1},...overrides});
 const arenaSession=(overrides={})=>({session_id:'original_session',external_user_id:'owned_player',game_id:'run',active_room_id:null,other_active_game:null,...overrides});
 const probability=(overrides={})=>({sessionId:'original_session',pendingRound:null,freeSpins:0,...overrides});
 function cleanupFixture(current,steps){

@@ -9,7 +9,7 @@ import {installNativeFetchProbe,observeNativeBrowser,nativeErrorsEmpty,reserveNa
 
 const out=resolve(process.env.OASIS_NATIVE_FETCH_FIXTURE_OUT||fileURLToPath(new URL(`../review/deployment/native-fetch-fixture-${Date.now()}-${randomUUID().slice(0,8)}/`,import.meta.url)));
 const report={schema:'native-fetch-local-fixture-v1',started_at:new Date().toISOString(),scope:'Loopback HTTP and desktop Chrome only; no public service, device or build',cases:[],passed:false};
-const room={id:'owned',game_id:'run',me:'fixture_player',entry_minor:'0',practice:true,status:'active',version:1};
+const room={id:'owned',game_id:'run',me:'fixture_player',entry_minor:'0',practice:true,status:'active',version:1,game:{gameId:'run',me:'fixture_player',ruleVersion:'run-fixture',physicsVersion:'physics-fixture',snapshotTick:1}};
 let active,browser;
 const server=http.createServer((req,res)=>{
  if(req.url==='/favicon.ico'){res.writeHead(204);res.end();return;}
