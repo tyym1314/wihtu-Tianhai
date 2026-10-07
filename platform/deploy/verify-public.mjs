@@ -118,7 +118,18 @@ async function back(attempt,frame){
  attempt.phase='returning';internals.get(attempt).returnStarted=true;await page.locator('#back').tap();
  await until(async()=>{
   if(await page.locator('#home').isVisible()){assert(frame.isDetached(),'Host returned but game iframe remains');return true;}
-  if(!frame.isDetached())for(const button of [frame.getByRole('button',{name:'确认离开',exact:true}),frame.locator('[data-return="confirm"]')])if(await button.isVisible())await button.tap();
+  for(const button of [frame.getByRole('button',{name:'确认离开',exact:true}),frame.locator('[data-return="confirm"]')]){
+   if(frame.isDetached())return false;
+   try{if(await button.isVisible())await button.tap();}
+   catch(error){
+    // Returning can remove this iframe between the detached check and locator
+    // execution. Keep that control observation; only a later visible #home plus
+    // verified detach can complete the return. Transport/API errors are separate.
+    if(!frame.isDetached()||!/^locator\.(?:isVisible|tap): Frame was detached(?:\n|$)/.test(String(error.message)))throw error;
+    (attempt.hostReturnControlRaces??=[]).push({error:errorInfo(error),frameDetached:true,awaitingHostHome:true});
+    return false;
+   }
+  }
   return false;
  },'host return '+attempt.game);attempt.returned=true;await drainObservers();
 }
