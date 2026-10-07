@@ -79,6 +79,12 @@ try{
   await start({retry:true});await waitFor(()=>active.held.length===2,'retry reached server');await abort();await waitFor(()=>result.network_observations.length===1,'retry cancelled');await drain();
   assert.equal(result.lifecycle_cancellations.length,1,JSON.stringify(result));assert.equal(nativeErrorsEmpty(result),true);assert.equal(result.fetch_observations.filter(event=>event.kind==='start').length,2);assert.equal(result.lifecycle_cancellations[0].fetch_attempt_id,2);
  });
+ await run('302 successful room polls before one zero-timing cancellation',{mode:'normal'},async({frame,start,abort,result,drain})=>{
+  await frame.evaluate(async()=>{for(let index=0;index<302;index++){const response=await fetch('/api/pvp/rooms/owned',{cache:'no-store'});await response.json();}});
+  active.mode='hold';await start();await waitFor(()=>active.held.length===303,'final GET after polling history');await abort();await waitFor(()=>result.network_observations.length===1,'final cancellation');await drain();
+  assert.equal(result.lifecycle_cancellations.length,1,JSON.stringify(result));assert.equal(result.fetch_observations.filter(event=>event.kind==='start').length,303);
+  assert.equal(result.lifecycle_cancellations[0].network_timing_source,'cdp');assert.ok(result.lifecycle_cancellations[0].network_session_id);assert.equal(nativeErrorsEmpty(result),true);
+ });
  await run('two sequential identical cancellations remain ambiguous',{},async({start,abort,result,drain})=>{
   await start();await waitFor(()=>active.held.length===1,'first sequential GET');await abort();await waitFor(()=>result.network_observations.length===1,'first sequential failure');await drain();assert.equal(result.lifecycle_cancellations.length,1);
   const original=result.network_observations[0];await start();await waitFor(()=>active.held.length===2,'second sequential GET');await abort('OASIS_ROOM_POLL_STOPPED','AbortError',1);await waitFor(()=>result.network_observations.length===2,'second sequential failure');await drain();

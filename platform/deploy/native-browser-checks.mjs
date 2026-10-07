@@ -62,8 +62,12 @@ export function createNativeFetchEvidence({clean=String}={}){
    if(!related.length&&knownTime)continue;
    const candidates=related.filter(record=>{
     if(knownTime)return !Number.isFinite(record.started_at_ms)||Math.abs(record.started_at_ms-knownTime)<=fetchClockUncertaintyMs;
-    const otherResponses=requests.filter(other=>other!==entry&&other.response_seen&&same(record,other)&&other.network_started_at_ms>0&&Math.abs(other.network_started_at_ms-record.started_at_ms)<=fetchClockUncertaintyMs&&related.filter(candidate=>Math.abs(candidate.started_at_ms-other.network_started_at_ms)<=fetchClockUncertaintyMs).length===1);
-    return otherResponses.length!==1;
+    // A zero Playwright start time cannot be compared with CDP wallTime. Match
+    // explicit protocol failures, not historical successes by a 1ms clock join.
+    // Header/body failures remain candidates; incomplete requests also remain
+    // ambiguous until their protocol outcome arrives. Nothing is exempted here:
+    // classify() still requires one exact document/frame fetch and its abort chain.
+    return Boolean(record.error)||record.response_seen!==true;
    });
    if(knownTime&&related.length&&!candidates.length){entry.network_proof_error='CONFLICTING_NETWORK_CLOCKS';continue;}
    if(candidates.length!==1){entry.network_proof_error=candidates.length?'AMBIGUOUS_CDP_NETWORK_FAILURE':'MISSING_CDP_NETWORK_PROOF';continue;}
@@ -72,7 +76,7 @@ export function createNativeFetchEvidence({clean=String}={}){
    if(record.error!==observation.error){entry.network_proof_error='CONFLICTING_NETWORK_FAILURE';continue;}
    if(failed.filter(other=>same(record,other.entry)&&other.observation.error===record.error&&(!(other.entry.network_started_at_ms>0)||Math.abs(other.entry.network_started_at_ms-record.started_at_ms)<=fetchClockUncertaintyMs)).length!==1){entry.network_proof_error='AMBIGUOUS_PLAYWRIGHT_NETWORK_FAILURE';continue;}
    if(record.error!=='net::ERR_ABORTED'||record.cancelled!==true||!Number.isFinite(record.failed_at_ms)||record.failed_at_ms<record.started_at_ms){entry.network_proof_error='NOT_ABORTED_CDP_FAILURE';continue;}
-   entry.network_started_at_ms=record.started_at_ms;entry.network_failed_at_ms=record.failed_at_ms;entry.network_protocol_id=record.id;entry.network_timing_source='cdp';entry.response_seen||=record.response_seen;entry.redirected||=record.redirected;entry.network_proof_error=null;
+   entry.network_started_at_ms=record.started_at_ms;entry.network_failed_at_ms=record.failed_at_ms;entry.network_protocol_id=record.id;entry.network_session_id=record.session_id??null;entry.network_document_id=networkDocument(record).id;entry.network_timing_source='cdp';entry.response_seen||=record.response_seen;entry.redirected||=record.redirected;entry.network_proof_error=null;
   }
  };
  const classify=(entry,requests)=>{
@@ -88,13 +92,14 @@ export function createNativeFetchEvidence({clean=String}={}){
   const candidates=allAttempts.filter(attempt=>overlap(attempt,entry));
   if(candidates.length!==1)return deny(candidates.length?'AMBIGUOUS_FETCH_ATTEMPT':'MISSING_FETCH_ATTEMPT');
   const attempt=candidates[0],{start,abort,end}=attempt;
+  if(entry.network_document_id&&attempt.documentId!==entry.network_document_id)return deny('CONFLICTING_NETWORK_DOCUMENT');
   if(requests.filter(other=>overlap(attempt,other)).length!==1)return deny('AMBIGUOUS_NETWORK_REQUEST');
   if(!attempt.valid||!start.supported||start.body_present!==false||!Number.isSafeInteger(start.attempt_id)||start.attempt_id<1)return deny('INCOMPLETE_FETCH_PROOF');
   if(!abort||abort.already_aborted||!end||end.kind!=='rejected'||end.sync_throw||!end.signal_aborted||!end.reject_is_signal_reason)return deny('FETCH_DID_NOT_REJECT_FROM_OBSERVED_ABORT');
   const reason=abort.reason;
   if(reason?.name!=='AbortError'||!pollCancellationReasons.has(reason.message)||end.reason?.name!==reason.name||end.reason?.message!==reason.message||end.error?.name!==reason.name||end.error?.message!==reason.message)return deny('NOT_LIFECYCLE_ABORT_REASON');
   if(!(start.event_seq<abort.event_seq&&abort.event_seq<end.event_seq&&start.at_ms<=abort.at_ms&&start.at_ms-fetchClockUncertaintyMs<=entry.network_started_at_ms&&entry.network_started_at_ms<=abort.at_ms+fetchClockUncertaintyMs&&abort.at_ms<=end.at_ms))return deny('INVALID_ABORT_ORDER');
-  return{eligible:true,proof:{document_id:attempt.documentId,frame_id:attempt.frameId,fetch_attempt_id:start.attempt_id,clock_uncertainty_ms:fetchClockUncertaintyMs,fetch_started_at_ms:start.at_ms,network_started_at_ms:entry.network_started_at_ms,network_failed_at_ms:entry.network_failed_at_ms??null,network_protocol_id:entry.network_protocol_id??null,network_timing_source:entry.network_timing_source||'playwright',aborted_at_ms:abort.at_ms,rejected_at_ms:end.at_ms,reason:{...reason},error:{...end.error},trace_event_seqs:[start.event_seq,abort.event_seq,end.event_seq]}};
+  return{eligible:true,proof:{document_id:attempt.documentId,frame_id:attempt.frameId,fetch_attempt_id:start.attempt_id,clock_uncertainty_ms:fetchClockUncertaintyMs,fetch_started_at_ms:start.at_ms,network_started_at_ms:entry.network_started_at_ms,network_failed_at_ms:entry.network_failed_at_ms??null,network_protocol_id:entry.network_protocol_id??null,network_session_id:entry.network_session_id??null,network_timing_source:entry.network_timing_source||'playwright',aborted_at_ms:abort.at_ms,rejected_at_ms:end.at_ms,reason:{...reason},error:{...end.error},trace_event_seqs:[start.event_seq,abort.event_seq,end.event_seq]}};
  };
  const observations=()=>events.map(event=>{
   const value={...event};for(const key of ['url','frame_url'])if(value[key])value[key]=clean(value[key]);
@@ -159,22 +164,26 @@ function nativeFetchProbe({bindingName,flushName,networkBindingName}){
 
 export async function installNativeFetchProbe(context,{clean=String}={}){
  const evidence=createNativeFetchEvidence({clean}),suffix=randomUUID().replaceAll('-',''),bindingName=`__oasisNativeFetch_${suffix}`,flushName=`__oasisNativeFlush_${suffix}`,networkBindingName=`__oasisNativeNetwork_${suffix}`;
+ const attachedPages=new WeakSet(),networkFlushes=[];let sessionSequence=0;
  await context.exposeBinding(bindingName,({frame},event)=>evidence.receive(frame,event));
  await context.addInitScript(nativeFetchProbe,{bindingName,flushName,networkBindingName});
  evidence.attach=async page=>{
-  const session=await context.newCDPSession(page),contexts=new Map();
+  if(attachedPages.has(page)){evidence.errors.push('DUPLICATE_NETWORK_PAGE_ATTACHMENT');throw new Error('DUPLICATE_NETWORK_PAGE_ATTACHMENT');}
+  attachedPages.add(page);
+  const session=await context.newCDPSession(page),contexts=new Map(),sessionId=`cdp-session-${++sessionSequence}`,key=id=>`${sessionId}:${id}`;
   session.on('Runtime.executionContextCreated',({context})=>{if(context.auxData?.isDefault)contexts.set(context.id,context.auxData.frameId);});
   session.on('Runtime.executionContextDestroyed',({executionContextId})=>contexts.delete(executionContextId));
-  session.on('Runtime.bindingCalled',event=>{if(event.name===networkBindingName){try{evidence.receiveNetworkDocument(contexts.get(event.executionContextId),JSON.parse(event.payload));}catch{evidence.errors.push('INVALID_NETWORK_BINDING');}}});
+  session.on('Runtime.bindingCalled',event=>{if(event.name===networkBindingName){try{const frame=contexts.get(event.executionContextId);evidence.receiveNetworkDocument(frame?key(frame):null,JSON.parse(event.payload));}catch{evidence.errors.push('INVALID_NETWORK_BINDING');}}});
   session.on('Network.requestWillBeSent',event=>{
-   const previous=evidence.network.get(event.requestId);
-   evidence.network.set(event.requestId,{id:event.requestId,frame:event.frameId,url:event.request.url,method:event.request.method,started_at_ms:event.wallTime*1000,monotonic_start:event.timestamp,response_seen:false,redirected:Boolean(previous||event.redirectResponse),type:event.type});
+   const previous=evidence.network.get(key(event.requestId));
+   evidence.network.set(key(event.requestId),{id:event.requestId,session_id:sessionId,frame:key(event.frameId),url:event.request.url,method:event.request.method,started_at_ms:event.wallTime*1000,monotonic_start:event.timestamp,response_seen:false,redirected:Boolean(previous||event.redirectResponse),type:event.type});
   });
-  session.on('Network.responseReceived',event=>{const record=evidence.network.get(event.requestId);if(record)record.response_seen=true;});
-  session.on('Network.loadingFailed',event=>{const record=evidence.network.get(event.requestId);if(record){record.error=event.errorText;record.cancelled=event.canceled===true;record.failed_at_ms=record.started_at_ms+(event.timestamp-record.monotonic_start)*1000;}});
+  session.on('Network.responseReceived',event=>{const record=evidence.network.get(key(event.requestId));if(record)record.response_seen=true;});
+  session.on('Network.loadingFailed',event=>{const record=evidence.network.get(key(event.requestId));if(record){record.error=event.errorText;record.cancelled=event.canceled===true;record.failed_at_ms=record.started_at_ms+(event.timestamp-record.monotonic_start)*1000;}});
   await session.send('Runtime.enable');await session.send('Runtime.addBinding',{name:networkBindingName});await session.send('Network.enable');
-  evidence.networkFlush=async()=>{if(!page.isClosed())await session.send('Runtime.evaluate',{expression:'void 0'});};
+  networkFlushes.push(async()=>{if(!page.isClosed())await session.send('Runtime.evaluate',{expression:'void 0'});});
  };
+ evidence.networkFlush=async()=>{await Promise.all(networkFlushes.map(flush=>flush()));};
  evidence.flush=async page=>{
   if(page.isClosed())return;
   await Promise.all(page.frames().map(async frame=>{

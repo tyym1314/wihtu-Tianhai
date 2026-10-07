@@ -4,7 +4,8 @@ import {EventEmitter} from 'node:events';
 import fs from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {observeNativeBrowser,createNativeFetchEvidence,cleanupNativeSession,createNativeCleanupApi,runNativeActionOnce,nativeErrorsEmpty,reserveNativeReportDirectory} from '../deploy/native-browser-checks.mjs';
+import {observeNativeBrowser,createNativeFetchEvidence,installNativeFetchProbe,cleanupNativeSession,createNativeCleanupApi,runNativeActionOnce,nativeErrorsEmpty,reserveNativeReportDirectory} from '../deploy/native-browser-checks.mjs';
+import {replayNativeFetchReport} from './native-fetch-cancellation-replay.mjs';
 
 const origin='https://fixture.invalid';
 const knownLoss='response.json: Protocol error (Network.getResponseBody): No data found for resource with given identifier';
@@ -314,6 +315,93 @@ test('CDP document identity must match the independent Playwright binding exactl
 
 test('multiple CDP failures with the same URL and frame cannot be guessed by arrival order',async()=>{
  const fixture=cancellationFixture({timing:0});fixture.deliver();networkProof(fixture);fixture.probe.network.set('another',{...fixture.probe.network.get('protocol-request'),id:'another',started_at_ms:120});fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors[0].classification_failure,'AMBIGUOUS_CDP_NETWORK_FAILURE');
+});
+
+test('302 successful polls with displaced Playwright clocks cannot become CDP failure candidates',async()=>{
+ const fixture=cancellationFixture({timing:0}),trace=[fixture.trace[0]];
+ for(let index=0;index<302;index++){
+  const start=200+index*20,id=`successful-${index}`;
+  trace.push({...fixture.trace[1],event_seq:trace.length+1,at_ms:start,attempt_id:index+2});
+  trace.push({...fixture.trace[3],event_seq:trace.length+1,at_ms:start+10,attempt_id:index+2,kind:'fulfilled',signal_aborted:false,reason:null});
+  const previous={...fixture.req,timing:()=>({startTime:start+1.646})};
+  response(fixture,previous,{json:async()=>room()});
+  fixture.probe.network.set(id,{id,frame:'protocol-frame',url:fixture.req.url(),method:'GET',type:'Fetch',started_at_ms:start,response_seen:true,redirected:false});
+ }
+ for(const event of fixture.trace.slice(1))trace.push({...event,event_seq:trace.length+1,at_ms:event.at_ms+10000});
+ fixture.deliver(trace);networkProof(fixture,{started_at_ms:10115,failed_at_ms:10132});fixture.fail();await fixture.drain();
+ assert.equal(fixture.result.network_protocol_observations.length,303);
+ assert.equal(fixture.result.lifecycle_cancellations.length,1);assert.equal(fixture.result.lifecycle_cancellations[0].network_protocol_id,'protocol-request');
+ assert.equal(fixture.result.unmatched_fetch_rejections.length,0);assert.equal(nativeErrorsEmpty(fixture.result),true);
+});
+
+for(const [name,override] of [
+ ['unfinished earlier request',{started_at_ms:105}],
+ ['second explicit non-abort failure',{error:'net::ERR_CONNECTION_RESET',cancelled:false}],
+ ['headers followed by body failure',{response_seen:true,error:'net::ERR_ABORTED',cancelled:true}],
+])test(`zero timing retains ambiguity for ${name}`,async()=>{
+ const fixture=cancellationFixture({timing:0});fixture.deliver();networkProof(fixture);
+ fixture.probe.network.set('competitor',{id:'competitor',frame:'protocol-frame',url:fixture.req.url(),method:'GET',type:'Fetch',started_at_ms:112,response_seen:false,redirected:false,...override});
+ fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors[0].classification_failure,'AMBIGUOUS_CDP_NETWORK_FAILURE');
+});
+
+for(const [name,options] of [
+ ['POST',{requestOptions:{method:'POST',path:'/api/pvp/rooms/owned/action'}}],
+ ['timeout',{traceOptions:{abort:{reason:{name:'TimeoutError',message:'OASIS_ROOM_POLL_TIMEOUT'}},end:{reason:{name:'TimeoutError',message:'OASIS_ROOM_POLL_TIMEOUT'},error:{name:'TimeoutError',message:'OASIS_ROOM_POLL_TIMEOUT'}}}}],
+ ['unknown reason',{traceOptions:{abort:{reason:{name:'AbortError',message:'UNKNOWN'}},end:{reason:{name:'AbortError',message:'UNKNOWN'},error:{name:'AbortError',message:'UNKNOWN'}}}}],
+])test(`unique zero-timing CDP failure does not exempt ${name}`,async()=>{
+ const fixture=cancellationFixture({timing:0,...options});fixture.deliver();networkProof(fixture);fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,1);
+});
+
+test('zero timing with only successful CDP records remains missing proof',async()=>{
+ const fixture=cancellationFixture({timing:0});fixture.deliver();networkProof(fixture,{response_seen:true,error:undefined});fixture.fail();await fixture.drain();
+ assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors[0].classification_failure,'MISSING_CDP_NETWORK_PROOF');
+});
+
+test('zero-timing failure with response headers and JSON loss cannot become a lifecycle cancellation',async()=>{
+ const fixture=cancellationFixture({timing:0});fixture.deliver();networkProof(fixture,{response_seen:true});
+ response(fixture,fixture.req,{json:async()=>{throw new Error(knownLoss);}});fixture.page.emit('requestfailed',fixture.req);await fixture.drain();
+ assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors[0].classification_failure,'RESPONSE_HEADERS_OBSERVED');assert.equal(fixture.result.observer_errors.length,1);
+});
+
+test('CDP document cannot borrow a different document abort in the same frame',async()=>{
+ const fixture=cancellationFixture({timing:0});fixture.deliver();networkProof(fixture);
+ const replacement={...fixture.trace[0],document_id:'replacement-document',at_ms:108};
+ fixture.deliver([replacement]);fixture.probe.receiveNetworkDocument('protocol-frame',replacement);
+ fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors[0].classification_failure,'CONFLICTING_NETWORK_DOCUMENT');
+});
+
+function attachmentFixture(){
+ const sessions=[],context={exposeBinding:async()=>{},addInitScript:async()=>{},newCDPSession:async()=>{const session=new EventEmitter();session.commands=[];session.send=async(method,args)=>session.commands.push({method,args});sessions.push(session);return session;}};
+ return{context,sessions};
+}
+test('CDP request/frame identities are isolated across attachment sessions',async()=>{
+ const {context,sessions}=attachmentFixture(),probe=await installNativeFetchProbe(context),page=()=>({isClosed:()=>false});
+ await probe.attach(page());await probe.attach(page());
+ for(const session of sessions)session.emit('Network.requestWillBeSent',{requestId:'shared-id',frameId:'shared-frame',request:{url:origin+'/api/pvp/rooms/owned',method:'GET'},wallTime:1,timestamp:1,type:'Fetch'});
+ sessions[0].emit('Network.loadingFailed',{requestId:'shared-id',timestamp:1.01,errorText:'net::ERR_ABORTED',canceled:true});sessions[1].emit('Network.responseReceived',{requestId:'shared-id'});
+ const rows=[...probe.network.values()];assert.equal(rows.length,2);assert.notEqual(rows[0].session_id,rows[1].session_id);assert.notEqual(rows[0].frame,rows[1].frame);
+ assert.equal(rows[0].error,'net::ERR_ABORTED');assert.equal(rows[1].error,undefined);assert.equal(rows[0].response_seen,false);assert.equal(rows[1].response_seen,true);
+ await probe.networkFlush();assert.ok(sessions.every(session=>session.commands.some(value=>value.method==='Runtime.evaluate')));
+});
+
+test('duplicate concurrent attachment fails closed before creating a second observer',async()=>{
+ const {context,sessions}=attachmentFixture(),probe=await installNativeFetchProbe(context),page={isClosed:()=>false};
+ const first=probe.attach(page);await assert.rejects(probe.attach(page),/DUPLICATE_NETWORK_PAGE_ATTACHMENT/);await first;
+ assert.equal(sessions.length,1);assert.deepEqual(probe.errors,['DUPLICATE_NETWORK_PAGE_ATTACHMENT']);
+});
+
+test('one document observed from two CDP sessions cannot acquire a guessed owner',()=>{
+ const fixture=cancellationFixture({timing:0});fixture.deliver();fixture.probe.receiveNetworkDocument('session-one:frame',fixture.trace[0]);fixture.probe.receiveNetworkDocument('session-two:frame',fixture.trace[0]);
+ assert.deepEqual(fixture.probe.errors,['CONFLICTING_NETWORK_DOCUMENT']);
+ assert.deepEqual(fixture.probe.classify({},[]),{eligible:false,reason:'FETCH_PROBE_PROTOCOL_ERROR'});
+});
+
+test('offline replay normalizes origin without changing the source verdict or evidence',()=>{
+ const fixture=cancellationFixture({timing:0});networkProof(fixture);
+ const report={origin:origin+'/',passed:false,initial_session:{game_id:'run',session_id:'original_session',external_user_id:'owned_player'},room:{id:'owned'},requests:[{id:1,url:fixture.req.url(),method:'GET',type:'fetch',frame_url:origin+'/play/run',transport_error:'net::ERR_ABORTED',timing:{startTime:0}}],network:{fetch_observations:fixture.trace.map(event=>({...event,frame_id:'frame-1'})),network_protocol_observations:[{...fixture.probe.network.get('protocol-request'),frame_id:'frame-1',document_id:'fixture-document'}],network_observations:[{observation_id:'network-1',path:'/api/pvp/rooms/owned',method:'GET',frame_id:'frame-1',session_id:'original_session',player_id:'owned_player',game_frame_request:true,error:'net::ERR_ABORTED'}]}};
+ const before=JSON.stringify(report),replay=replayNativeFetchReport(report);
+ assert.equal(replay.original_report_passed,false);assert.equal(replay.associations[0].classification.eligible,true);assert.equal(replay.associations[0].classification.proof.network_session_id,null);assert.equal(replay.unmatched_fetch_rejections.length,0);assert.equal(JSON.stringify(report),before);
+ report.origin='https://unrelated.invalid';assert.equal(replayNativeFetchReport(report).associations[0].classification.eligible,false);
 });
 
 test('one CDP failure cannot explain multiple Playwright failures',async()=>{
