@@ -14,6 +14,7 @@ import {getTrainingLesson} from '../../arena/towerlink/training.mjs';
 import {PRACTICE_RULE_VERSION as RUN_PRACTICE_RULE_VERSION,RUN_SCENE_READY_POLICY} from '../../arena/run/engine.mjs';
 import {runRequiresSceneReady} from '../../arena/run/start-policy.mjs';
 import {newTowerPracticeStartOptions,roomStartDelayMs} from './tower-start-policy.mjs';
+import {makeRunActionReceipt} from '../../shared/run-action-receipt.mjs';
 const terminal=new Set(['settled','voided','cancelled']);
 const RUN_SCENE_READY_PRESENCE_MS=2000;
 function runSceneReadyFresh(p,now,heartbeatKey){
@@ -263,6 +264,7 @@ export async function routePvp(session,method,path,body={},options={}){
   if(verb==='leave'&&r.status==='active'&&!r.practice){await advance(r,now,{skipGap:options.skipGap,forfeitKeys:[s.external_user_id],ignorePresence:options.now!==undefined});member.forfeited=true;}
   // A request lock prevents a client from reusing one ID across two room locks.
   return transaction(async c=>{await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`pvpreq:${s.app_id}:${s.external_user_id}:${body.request_id}`]);const repeated=await replay(c,s,body,digest);if(repeated)return repeated;
+   let actionReceipt;
    if(verb==='join'){
     checkNew(app,s.game_id);await assertProductionAppReady(c,app);if(r.status!=='waiting')fail(409,'ROOM_NOT_JOINABLE');if(now>=r.expires_at||r.ready_deadline_at&&now>=r.ready_deadline_at)fail(409,'READY_TIMEOUT');
     if(!member){if(r.players.length>=r.capacity)fail(409,'ROOM_FULL');if((await c.query('SELECT 1 FROM pvp_active_users WHERE app_id=$1 AND external_user_id=$2',[s.app_id,s.external_user_id])).rowCount)fail(409,'ALREADY_IN_ROOM');
@@ -298,11 +300,17 @@ export async function routePvp(session,method,path,body={},options={}){
     }else if(verb==='action'){
      if(r.status!=='active')fail(409,'NOT_ACTIVE');if(!Number.isSafeInteger(body.seq)||body.seq!==member.last_seq+1)fail(409,'INVALID_SEQUENCE','Expected seq '+(member.last_seq+1));
      const result=computedAction;r.game_state=result.state;member.last_seq=body.seq;member.last_event=memberEvent(r.game_id,result.event);
+     if(r.game_id==='run')actionReceipt=makeRunActionReceipt({roomId:r.id,playerKey:s.external_user_id,request_id:body.request_id,
+      seq:body.seq,type:body.action.type,ruleVersion:r.rule_version,event:result.event});
      await c.query('INSERT INTO pvp_actions(room_id,external_user_id,seq,action,event,accepted_at) VALUES($1,$2,$3,$4,$5,$6)',[r.id,s.external_user_id,body.seq,body.action,result.event||null,now]);
      if(r.game_state.phase==='fault'){r.status='fault';r.fault_at=now;r.error=r.game_state.fault;}else if(r.game_state.status==='finished')fixResult(r,now);
     }
    }
-   await save(r,c);return remember(c,s,body,digest,r,{status:200,body:personal(r,s,now)});
+   await save(r,c);const response=personal(r,s,now);
+   // The request ledger stores this exact POST receipt. Snapshot GETs never
+   // republish it, and replay never derives it from a newer room or member event.
+   if(actionReceipt)response.action_receipt=actionReceipt;
+   return remember(c,s,body,digest,r,{status:200,body:response});
   });
  });}finally{bowlingPreparations.release(preparation);}
 }

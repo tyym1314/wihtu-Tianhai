@@ -1,4 +1,5 @@
 import {createIllustratedRunner} from './atlas-characters.mjs';
+import {readRunVisualAction} from './input-presentation.mjs';
 import * as T from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {clone} from 'three/examples/jsm/utils/SkeletonUtils.js';
@@ -37,11 +38,12 @@ export function createRigRunner(kind='fox',ghost=false,{onError=()=>{}}={}){
  function animate(p,tick,time){
   const previous=lastState?.[0];if(previous&&previous.fallUntilTick!==null&&p.fallUntilTick===null)recoveredAt=tick;lastState=[{...p},tick,time];
   const jumping=p.jumpStartTick!==null&&tick>=p.jumpStartTick&&tick<p.jumpStartTick+48,sliding=tick<p.slideUntilTick,stunned=tick<p.stunUntilTick,falling=p.fallUntilTick!==null,finished=p.finishTick!==null;
-  let clip='run',elapsed=p.distance/10;
+  const visual=readRunVisualAction(p.visualAction);let clip='run',elapsed=p.distance/10;
   if(finished){if(finishVisualAt===null)finishVisualAt=time-Math.max(0,(tick-p.finishTick)/60);const t=time-finishVisualAt;clip=t<1.2?'finish':p.visualWinner===false?'idle':'celebrate';elapsed=clip==='finish'?t:t-1.2;}
   else if(falling){clip='fall';elapsed=(tick-p.fallStartTick)/60;}
   else if(stunned){clip='hit';elapsed=(tick-(p.stunUntilTick-48))/60;}
   else if(tick-recoveredAt<36&&recoveredAt>=0){clip='recover';elapsed=(tick-recoveredAt)/60;}
+  else if(visual){clip=visual.type;if(clip!=='run')elapsed=visual.elapsedMs/1000;}
   else if(sliding){clip='slide';elapsed=(tick-(p.slideUntilTick-36))/60;}
   else if(jumping){clip='jump';elapsed=(tick-p.jumpStartTick)/60;}
   else if(p.jumpStartTick!==null&&tick-p.jumpStartTick<58&&tick>=p.jumpStartTick+48){clip='land';elapsed=(tick-p.jumpStartTick-48)/60;}

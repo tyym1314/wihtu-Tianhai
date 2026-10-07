@@ -112,6 +112,10 @@ journalctl -u oasis-backup.service -n 30 --no-pager
 
 服务器可用 `stage_delta.py <新版本目录名> <增量包路径> <SHA256>` 完成上述独立复制、逐文件校验和暂存；新目录名格式为 `YYYYMMDD-NN`。它不切换流量。随后用新版本中的 `activate-release.py /opt/oasis/releases/<新版本> --check-only` 检查未决局和依赖，确认可回滚的增量迁移后才执行带 `--compatible-schema` 的激活。若前置条件不满足，保留当前链接和服务，不得以删除未决局绕过检查。
 
+`stage_delta.py` 自行持有 `private/release.lock`，不要再在外层持有同一锁调用。新构建可以省去上一版独有且未列入 retained lock 的指纹 chunk，但必须先验证旧 release 清单声明、稳定静态仓库全部内容以及 registry/head 收据，证明原 URL 的原字节仍可读取。同 URL 改字节、旧文件未列清单、仓库缺失或损坏、发布未完成均拒绝；既有 retained lock 的条目仍必须保留在新清单。暂存不删除原 release，也不删除静态库内容。
+
+因此“最新完整发布包”不等于“完整历史 URL 灾备包”。恢复所有历史 URL 需要一致保存 `static-assets/`（包含 `.registry/`）与 `private/static-assets-head.json`，或保留能重建它们的原 release 和登记材料。现有每日 `backup.sh` 只备份数据库与私有配置，尚未自动备份静态仓库；不要据此宣称历史静态资源的自动异地恢复已经完成。全新部署没有这些历史材料时，只能证明新包及其中 retained lock 覆盖的资源，不能绕过暂存或回滚的覆盖门禁。
+
 ### 历史版本归档
 
 `archive-releases.py` 只允许处理代码中列出的九个历史版本，每次修改一个目录。先在服务器上对已核对来源的工具执行 `python3 archive-releases.py --check-only`；检查不写文件。实际归档还会持有与发布相同的锁，再次排除当前、Mock、上一版、最近三份未 pin 版本及进程使用中的版本。所有旧指纹资源必须仍在当前目录且哈希一致，不满足时保留旧目录。

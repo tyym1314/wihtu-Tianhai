@@ -23,6 +23,7 @@ import ThemeResult from './shared/ThemeResult.jsx';
 import useResultPresentation from './shared/useResultPresentation.jsx';
 import {startRoomPolling,createRoomPollCadence} from './shared/room-poller.mjs';
 import {runRequiresSceneReady} from './run/start-policy.mjs';
+import {readRunActionReceipt} from '../shared/run-action-receipt.mjs';
 import './shell.css';
 const GAME_LOADERS={match:loadMatchGame,golf:loadGolfGame,towerlink:loadTowerGame,carrom:()=>import('./carrom/CarromGame.jsx'),darts:()=>import('./darts/DartsGame.jsx'),ludo:()=>import('./ludo/LudoGame.jsx'),jackaroo:()=>import('./jackaroo/JackarooGame.jsx'),domino:()=>import('./domino/DominoGame.jsx'),pool:()=>import('./pool/PoolGame.jsx'),bowling:loadBowlingGame,run:loadRunGame};
 const GAME_COMPONENTS=Object.fromEntries(Object.entries(GAME_LOADERS).map(([game,load])=>[game,lazy(load)]));
@@ -103,8 +104,12 @@ function Arena(){
   if(inFlight.current)throw new Error('正在确认上一项操作');
   inFlight.current=true;pending.current=intent;if(runAction)runInFlightIntent.current=intent;setBusy(true);setError('');
   try{
+   // Presentation starts only after this exact intent owns the dispatch slot.
+   // Retrying an uncertain request must not replay its local animation.
+   if(runAction&&!intent.dispatchNotified){intent.dispatchNotified=true;try{intent.onDispatch?.(intent.runInput);}catch(e){console.error('Run input presentation failed',e);}}
    const raw=await api(intent.path,intent.body),r=ownsRoom()?accept(raw):roomRef.current;
-   clearIntent();if(ownsRoom())setNetwork(false);return{room:r,event:r?.game?.lastEvent};
+   const inputReceipt=runAction&&ownsRoom()?readRunActionReceipt(unwrap(raw),intent.runInput):null;
+   clearIntent();if(ownsRoom())setNetwork(false);return{room:r,event:r?.game?.lastEvent,...(runAction?{inputReceipt}: {})};
   }catch(e){
    if(e.status&&e.status<500&&e.status!==429){clearIntent();if(e.code==='INVALID_SEQUENCE')try{await refreshRoom();}catch{}}
    if(intent.body?.action&&(GAME==='run'&&RUN_RECOVERABLE_ACTION_ERRORS.has(e.code)||IS_TOWER&&TOWER_RECOVERABLE_ACTION_ERRORS.has(e.code))){
@@ -118,11 +123,11 @@ function Arena(){
    if(!runAction||runInFlightIntent.current===intent){if(runAction)runInFlightIntent.current=null;inFlight.current=false;setBusy(!!pending.current);}
   }
  }
- const command=(path,body={})=>perform({path,owner:sessionOwner(contextRef.current),...(IS_RUN&&body.action?{roomId:roomRef.current?.id}:{}),body:{request_id:requestId(),...body}});
+ const command=(path,body={},options={})=>{const payload={request_id:requestId(),...body},runAction=IS_RUN&&!!body.action;return perform({path,owner:sessionOwner(contextRef.current),...(runAction?{roomId:roomRef.current?.id,onDispatch:options.onDispatch,runInput:{roomId:roomRef.current?.id,playerKey:contextRef.current?.external_user_id,ruleVersion:roomRef.current?.game?.ruleVersion,request_id:payload.request_id,seq:payload.seq,type:payload.action.type}}:{}),body:payload});};
  const attempt=fn=>fn().catch(()=>{});
  function create(practice){audio.play('click');attempt(()=>command('/api/pvp/rooms',{game_id:GAME,capacity,entry_minor:practice||IS_TOWER&&capacity>2?'0':entry,practice}));}
  async function startTraining(lessonId){const lesson=getTrainingLesson(lessonId);if(!IS_TOWER||!lesson||gameAssets!=='ready'||inFlight.current||pending.current)return;setTrainingOpen(false);const response=await command('/api/pvp/rooms',{game_id:GAME,capacity:lesson.playerCount,entry_minor:'0',practice:true,training_lesson_id:lesson.id});await command(`/api/pvp/rooms/${response.room.id}/ready`);}
- async function onAction(action){if(assetsLoading)throw new Error('游戏资源尚未准备好，请稍候。');if(pending.current||inFlight.current)throw new Error('上一动作仍待确认，请稍候');const r=roomRef.current;if(r?.status!=='active')throw new Error('本局已结束');return command(`/api/pvp/rooms/${r.id}/action`,{seq:Number(r.me_last_seq)+1,action});}
+ async function onAction(action,options){if(assetsLoading)throw new Error('游戏资源尚未准备好，请稍候。');if(pending.current||inFlight.current)throw new Error('上一动作仍待确认，请稍候');const r=roomRef.current;if(r?.status!=='active')throw new Error('本局已结束');return command(`/api/pvp/rooms/${r.id}/action`,{seq:Number(r.me_last_seq)+1,action},options);}
  async function onRunSceneReady(roomId,refreshGeneration=0){
   const r=roomRef.current,owner=sessionOwner(contextRef.current);
   if(!IS_RUN||r?.id!==roomId||!runRequiresSceneReady(r?.game?.ruleVersion)||r.game.phase!=='arming'||!owner) return null;

@@ -6,6 +6,7 @@ files immutable when a changed file is written into the candidate directory.
 """
 import argparse
 import hashlib
+import importlib.util
 import json
 from pathlib import Path, PurePosixPath
 import re
@@ -14,6 +15,9 @@ import tarfile
 from release_build import FINGERPRINT, OUTPUT_TREES, RETAINED_LOCK, verify_retained_assets
 
 BASE = Path('/opt/oasis')
+_static_spec = importlib.util.spec_from_file_location('stage_static_assets', Path(__file__).with_name('publish-static-assets.py'))
+static_assets = importlib.util.module_from_spec(_static_spec)
+_static_spec.loader.exec_module(static_assets)
 
 
 def digest(path):
@@ -66,20 +70,37 @@ def static_fingerprints(root):
     return result
 
 
-def require_retained_coverage(base, new):
+def require_retained_coverage(base, new, static_base=None):
     required = static_fingerprints(base)
     previous_assets = {}
     if (base / RETAINED_LOCK).exists() or (base / RETAINED_LOCK).is_symlink():
         previous = verify_retained_assets(base)
         previous_assets = {asset['path']: asset['sha256'] for asset in previous['assets']}
         required.update(previous_assets)
+    missing = {}
     for name, sha256 in required.items():
-        if new.get(name) != sha256:
+        if name in new and new[name] != sha256:
             raise ValueError('IMMUTABLE_ASSET_NOT_RETAINED: ' + name)
-    return required, previous_assets
+        if name not in new:
+            if name in previous_assets or static_base is None:
+                raise ValueError('IMMUTABLE_ASSET_NOT_RETAINED: ' + name)
+            missing[name] = sha256
+    coverage = None
+    if missing:
+        # New builds need not embed every previous build's unique chunk. A
+        # published, hash-verified stable store can own those exact URLs. The
+        # release lock still covers this check and staging; an unlisted old
+        # file, changed URL, missing receipt or corrupt store fails closed.
+        declared, _ = static_assets.manifest_assets(base)
+        by_source = {item['source']: item['sha256'] for item in declared.values()}
+        for name, sha256 in missing.items():
+            if by_source.get(name) != sha256:
+                raise ValueError('IMMUTABLE_ASSET_NOT_REGISTERED: ' + name)
+        coverage = static_assets.verify_coverage(base, static_base)
+    return required, previous_assets, missing, coverage
 
 
-def stage(base, candidate, archive, expected_sha256):
+def stage(base, candidate, archive, expected_sha256, static_base=None):
     if not re.fullmatch(r'[a-f0-9]{64}', expected_sha256):
         raise ValueError('INVALID_DELTA_SHA256')
     if not base.is_dir() or candidate.exists() or candidate.is_symlink():
@@ -100,7 +121,7 @@ def stage(base, candidate, archive, expected_sha256):
         new = files_in(json.load(bundle.extractfile('RELEASE-MANIFEST.json')))
         if RETAINED_LOCK not in new:
             raise ValueError('RETAINED_ASSET_MISSING_FROM_RELEASE_MANIFEST')
-        retained, previous_locked = require_retained_coverage(base, new)
+        retained, previous_locked, stored, coverage = require_retained_coverage(base, new, static_base)
         changed = {name for name, expected in new.items() if old.get(name) != expected}
         removed = set(old) - set(new)
         if set(names) - {'RELEASE-MANIFEST.json'} != changed:
@@ -155,6 +176,8 @@ def stage(base, candidate, archive, expected_sha256):
             'verified_files': len(new), 'changed_files': len(changed),
             'removed_files': len(removed),
             'retained_static_files': len(retained),
+            'retained_in_static_store': sorted(stored),
+            'static_store_coverage': coverage,
             'delta_sha256': expected_sha256}
 
 
@@ -166,11 +189,12 @@ def main():
     args = parser.parse_args()
     if not re.fullmatch(r'[0-9]{8}-[0-9]{2}', args.release_name):
         raise ValueError('INVALID_RELEASE_NAME')
-    base = (BASE / 'current').resolve(strict=True)
-    if base.parent != BASE / 'releases':
-        raise ValueError('INVALID_CURRENT_RELEASE')
-    candidate = BASE / 'releases' / args.release_name
-    print(json.dumps(stage(base, candidate, args.archive, args.sha256)))
+    with static_assets.deployment_lock(BASE):
+        base = (BASE / 'current').resolve(strict=True)
+        if base.parent != BASE / 'releases':
+            raise ValueError('INVALID_CURRENT_RELEASE')
+        candidate = BASE / 'releases' / args.release_name
+        print(json.dumps(stage(base, candidate, args.archive, args.sha256, static_base=BASE)))
 
 
 if __name__ == '__main__':

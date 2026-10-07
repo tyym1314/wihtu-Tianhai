@@ -7,6 +7,7 @@ import actionUrl from './assets/atlases/action-back-mobile-81e5c62e42.webp?url';
 import frontUrl from './assets/atlases/front-win-mobile-902055527a.webp?url';
 import {createRunSourceCache,loadRunTexture,prepareRunAssets} from './asset-loading.mjs';
 import {selectRunPreloadKinds} from './asset-selection.mjs';
+import {readRunVisualAction} from './input-presentation.mjs';
 export const RUN_CYCLE_URLS={fox:foxRun,cat:catRun,bear:bearRun,rabbit:rabbitRun};
 export const RUN_ATLAS_URLS={run:foxRun,action:actionUrl,front:frontUrl};
 export const RUN_CYCLE_FRAMES=8;
@@ -109,13 +110,14 @@ export function createIllustratedRunner(kind='fox',ghost=false,{onError=()=>{}}=
  }
  function animate(p,tick,time){
   if(lastFall!==null&&p.fallUntilTick===null)recoverTick=tick;
-  lastFall=p.fallUntilTick;let clip='run',elapsed=Math.max(0,p.visualDistance??p.distance)/4.4;
+  lastFall=p.fallUntilTick;const visual=readRunVisualAction(p.visualAction);let clip='run',elapsed=Math.max(0,p.visualDistance??p.distance)/4.4;
   if(p.finishTick!==null){
    if(finishVisual===null)finishVisual=time-Math.max(0,(tick-p.finishTick)/60);
    const t=time-finishVisual;clip=t<1.2?'finish':p.visualWinner===false?'idle':'celebrate';elapsed=t<1.2?t:t-1.2;
   }else if(p.fallUntilTick!==null){clip='fall';elapsed=(tick-p.fallStartTick)/60;}
   else if(tick<p.stunUntilTick){clip='hit';elapsed=(tick-(p.stunUntilTick-48))/60;}
   else if(tick-recoverTick<36&&recoverTick>=0){clip='recover';elapsed=(tick-recoverTick)/60;}
+  else if(visual){clip=visual.type;if(clip!=='run')elapsed=visual.elapsedMs/1000;}
   else if(tick<p.slideUntilTick){clip='slide';elapsed=(tick-(p.slideUntilTick-36))/60;}
   else if(p.jumpStartTick!==null&&tick>=p.jumpStartTick&&tick-p.jumpStartTick<48){clip='jump';elapsed=(tick-p.jumpStartTick)/60;}
   else if(p.jumpStartTick!==null&&tick-p.jumpStartTick>=48&&tick-p.jumpStartTick<58){clip='land';elapsed=(tick-p.jumpStartTick-48)/60;}

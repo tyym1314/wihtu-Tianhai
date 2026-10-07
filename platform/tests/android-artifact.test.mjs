@@ -19,26 +19,51 @@ const mock=androidArtifactMetadata(candidate);
 const config=artifact=>({OASIS_ANDROID_SERIAL:'fixture-device',OASIS_ANDROID_ADB_PORT:'5038',OASIS_ANDROID_ORIGIN:artifact.origin,OASIS_ANDROID_PACKAGE:artifact.package_name,OASIS_ANDROID_APK_SHA256:artifact.sha256,OASIS_ANDROID_RELEASE:'20261007-04',OASIS_ANDROID_RELEASE_SSH_HOST:'root@43.98.202.236',OASIS_ANDROID_RELEASE_SSH_KEY:'/fixture/key'});
 
 async function fixture(t){
- const root=await mkdtemp(join(tmpdir(),'oasis-android-artifact-'));t.after(()=>rm(root,{recursive:true,force:true}));
- const paths=['scripts/build-release.mjs','scripts/android-artifact.mjs','android-smoke/prepare-mock-build.mjs','shared/games.mjs','android-smoke/build.sh','android-smoke/build-metadata.mjs','android-smoke/app/AndroidManifest.xml'];
+ const repository=await mkdtemp(join(tmpdir(),'oasis-android-artifact-')),root=join(repository,'platform');t.after(()=>rm(repository,{recursive:true,force:true}));
+ const paths=['scripts/build-release.mjs','scripts/android-artifact.mjs','scripts/retained-assets.mjs','deploy/release_build.py','android-smoke/prepare-mock-build.mjs','shared/games.mjs','android-smoke/build.sh','android-smoke/build-metadata.mjs','android-smoke/app/AndroidManifest.xml'];
  for(const name of paths){await mkdir(join(root,name,'..'),{recursive:true});await copyFile(join(platform,name),join(root,name));}
+ const retainedPath='platform/arena/dist/assets/Reviewed-12345678.js',retainedBytes=Buffer.from('export default "reviewed fixture";');
+ const setup=await run('python3',['-c',`
+import hashlib, io, json, pathlib, sys, tarfile
+root=pathlib.Path(sys.argv[1]); name=sys.argv[2]; data=sys.argv[3].encode()
+archive=io.BytesIO()
+with tarfile.open(fileobj=archive,mode='w:gz',format=tarfile.USTAR_FORMAT) as tar:
+ info=tarfile.TarInfo(name); info.size=len(data); tar.addfile(info,io.BytesIO(data))
+payload=archive.getvalue(); digest=hashlib.sha256(payload).hexdigest()
+cache=root/'platform/.local/retained-assets'; cache.mkdir(parents=True)
+(cache/(digest+'.tar.gz')).write_bytes(payload)
+asset={'path':name,'publicPath':'/arena/assets/Reviewed-12345678.js','bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),'contentType':'application/javascript','sources':[{'release':'20261007-04','manifest_sha256':'a'*64}],'dependencies':[]}
+bundle={'url':'https://retained.invalid/fixture.tar.gz','bytes':len(payload),'sha256':digest}
+(root/'platform/retained-assets.lock.json').write_text(json.dumps({'schema':'oasis-retained-static-v1','bundle':bundle,'assets':[asset]}))
+print(sys.executable)
+`,repository,retainedPath,retainedBytes.toString()]);
+ for(const name of ['dist/index.html','arena/dist/index.html','legacy/dist/thunder.html','legacy/dist/tiger.html']){await mkdir(join(root,name,'..'),{recursive:true});await writeFile(join(root,name),'isolated browser output');}
+ const networkGuard=join(root,'no-network.mjs');await writeFile(networkGuard,"import https from 'node:https';https.get=()=>{throw new Error('FIXTURE_UNEXPECTED_NETWORK')};\n");
  await mkdir(join(root,'public/downloads'),{recursive:true});
  const metadata={...historical,source_sha256:await androidSourceFingerprint(root)};
  const manifest=join(root,'public/downloads/android-smoke-build.json');
  await writeFile(manifest,JSON.stringify(metadata));await writeFile(join(root,'public/downloads',historical.apk),apkBytes);
- return{root,manifest,metadata};
+ return{root,manifest,metadata,retainedPath,retainedFile:join(repository,retainedPath),retainedBytes,python:setup.stdout.trim(),buildArgs:['--import',networkGuard,join(root,'scripts/build-release.mjs')]};
 }
 
 test('release build keeps reviewed APK and metadata byte-for-byte without invoking an Android build',async t=>{
- const {root,manifest}=await fixture(t),bin=join(root,'bin'),log=join(root,'commands.log');
+ const {root,manifest,python,buildArgs,retainedPath,retainedFile,retainedBytes}=await fixture(t),bin=join(root,'bin'),log=join(root,'commands.log');
  await mkdir(bin);
- for(const command of ['npm','python3'])await writeFile(join(bin,command),'#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$OASIS_TEST_LOG"\n',{mode:0o755});
+ await writeFile(join(bin,'npm'),'#!/bin/sh\nprintf \'npm %s\\n\' "$*" >> "$OASIS_TEST_LOG"\n',{mode:0o755});
+ await writeFile(join(bin,'python3'),'#!/bin/sh\nprintf \'python3 %s\\n\' "$*" >> "$OASIS_TEST_LOG"\nexec "$OASIS_TEST_PYTHON" "$@"\n',{mode:0o755});
  const before=await readFile(manifest);
- await run(process.execPath,[join(root,'scripts/build-release.mjs')],{env:{...process.env,PATH:bin,OASIS_TEST_LOG:log}});
+ await assert.rejects(readFile(retainedFile),{code:'ENOENT'});
+ const build=await run(process.execPath,buildArgs,{env:{...process.env,PATH:bin,OASIS_TEST_LOG:log,OASIS_TEST_PYTHON:python}});
  assert.deepEqual(await readFile(manifest),before);
  assert.deepEqual(await readFile(join(root,'public/downloads',historical.apk)),apkBytes);
- const commands=await readFile(log,'utf8');
- assert.match(commands,/run build:arena/);assert.match(commands,/deploy\/release_build\.py record/);assert.doesNotMatch(commands,/build:android/);
+ assert.deepEqual(await readFile(retainedFile),retainedBytes);assert.match(build.stdout,/"materialized":1/);
+ const stamp=JSON.parse(await readFile(join(root,'release-build-manifest.json'),'utf8'));
+ assert.equal(stamp.outputs[retainedPath],createHash('sha256').update(retainedBytes).digest('hex'));
+ const commands=(await readFile(log,'utf8')).trim().split('\n');
+ assert.deepEqual(commands.slice(0,5),['check:contracts','build:legacy','build:partner-kit','build:arena','build'].map(name=>'npm run '+name));
+ assert.match(commands[5],/^python3 .*\/deploy\/release_build\.py retained-inspect --root /);
+ assert.match(commands[6],/^python3 .*\/deploy\/release_build\.py retained-materialize --root .* --archive /);
+ assert.equal(commands[7],'python3 deploy/release_build.py record');assert.equal(commands.length,8);assert.doesNotMatch(commands.join('\n'),/build:android/);
 });
 
 test('changed, added, or removed Android inputs invalidate the reviewed artifact',async t=>{
@@ -56,12 +81,14 @@ test('changed, added, or removed Android inputs invalidate the reviewed artifact
 });
 
 test('stale APK fails before release subprocesses or a freshness stamp can run',async t=>{
- const {root}=await fixture(t),bin=join(root,'bin'),log=join(root,'commands.log');await mkdir(bin);
+ const {root,manifest,buildArgs,retainedFile}=await fixture(t),bin=join(root,'bin'),log=join(root,'commands.log');await mkdir(bin);
  for(const command of ['npm','python3'])await writeFile(join(bin,command),'#!/bin/sh\nprintf touched > "$OASIS_TEST_LOG"\n',{mode:0o755});
+ const before=await readFile(manifest);
  await writeFile(join(root,'release-build-manifest.json'),'old stamp');
  await writeFile(join(root,'android-smoke/app/AndroidManifest.xml'),'new source');
- await assert.rejects(run(process.execPath,[join(root,'scripts/build-release.mjs')],{env:{...process.env,PATH:bin,OASIS_TEST_LOG:log}}),/ANDROID_REVIEWED_APK_STALE/);
+ await assert.rejects(run(process.execPath,buildArgs,{env:{...process.env,PATH:bin,OASIS_TEST_LOG:log}}),/ANDROID_REVIEWED_APK_STALE/);
  await assert.rejects(readFile(log),{code:'ENOENT'});await assert.rejects(readFile(join(root,'release-build-manifest.json')),{code:'ENOENT'});
+ await assert.rejects(readFile(retainedFile),{code:'ENOENT'});assert.deepEqual(await readFile(manifest),before);assert.deepEqual(await readFile(join(root,'public/downloads',historical.apk)),apkBytes);
 });
 
 test('APK hash mismatch and accidental mock publication fail closed',async t=>{
