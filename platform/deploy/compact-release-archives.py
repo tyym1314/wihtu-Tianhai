@@ -94,8 +94,8 @@ class Compactor:
         require(archive.digest(self.binary) == BINARY_SHA256, 'RESTIC_BINARY_HASH_MISMATCH')
         secure_file(self.index_path)
         data = json.loads(self.index_path.read_text())
-        require(data.get('format') == 1 and data.get('restic_version') == VERSION
-                and data.get('original_tar_policy') == 'retained', 'INVALID_PILOT_INDEX')
+        require(data.get('restic_version') == VERSION and ((data.get('format') == 1 and data.get('original_tar_policy') == 'retained')
+                or (data.get('format') == 2 and data.get('original_tar_policy') == 'per_release')), 'INVALID_PILOT_INDEX')
         require(re.fullmatch(r'[a-f0-9]{64}', data.get('repository_id', '')) is not None, 'INVALID_REPOSITORY_ID')
         require(isinstance(data.get('entries'), dict) and set(data['entries']).issubset(archive.ALLOW), 'INVALID_PILOT_ENTRIES')
         for name, entry in data['entries'].items():
@@ -103,7 +103,33 @@ class Compactor:
             for key in ('snapshot_id', 'snapshot_sha256', 'receipt_sha256', 'archive_sha256', 'identity_sha256'):
                 require(re.fullmatch(r'[a-f0-9]{64}', entry.get(key, '')) is not None, 'INVALID_PILOT_DIGEST')
             require(isinstance(entry.get('restore_upper_bytes'), int) and entry['restore_upper_bytes'] > 0, 'INVALID_RESTORE_BOUND')
+        if data['format'] == 2:
+            require(set(data['entries']) == set(archive.ALLOW), 'V2_EXACT_NINE_RELEASES_REQUIRED')
+            retirement = data.get('retirement', {})
+            require(retirement.get('format') == 1 and re.fullmatch(r'[a-f0-9]{64}', retirement.get('proof_sha256', '')),
+                    'INVALID_RETIREMENT_BINDING')
+            secure_directory(self.root / 'retirement')
+            capsule = self.root / 'retirement/capsule.json'
+            secure_file(capsule)
+            require(archive.digest(capsule) == retirement['proof_sha256'], 'RETIREMENT_PROOF_CHANGED')
+            for name, entry in data['entries'].items():
+                state = archive.storage_state(self.legacy.archives / name, name)
+                require(state is not None and entry.get('storage_protocol') == 1, 'V2_STORAGE_STATE_MISSING')
+                require(state['repository_id'] == data['repository_id'] and state['proof_sha256'] == retirement['proof_sha256']
+                        and all(state[key] == entry[key] for key in ('snapshot_id', 'archive_sha256', 'snapshot_sha256', 'receipt_sha256', 'identity_sha256')),
+                        'V2_STORAGE_BINDING_MISMATCH')
         return data
+
+    def tar_summary(self, index):
+        states = {name: (archive.storage_state(self.legacy.archives / name, name) or {'state': 'retained'})['state']
+                  for name in index['entries']}
+        present = {}
+        for name, state in states.items():
+            path = self.legacy.archives / name / 'release.tar.gz'
+            present[name] = bool(state == 'retained' and path.is_file() and not path.is_symlink()
+                                 and path.stat().st_nlink == 1 and archive.digest(path) == index['entries'][name]['archive_sha256'])
+        return dict(original_tars_retained=all(present.values()), original_tar_states=states,
+                    verified_original_tar_presence=present)
 
     def restic(self, *args, cwd=None):
         self.space()
@@ -125,14 +151,21 @@ class Compactor:
             require(not any(self.scratch.iterdir()), 'INCOMPLETE_PILOT_REQUIRES_INSPECTION')
         rows = []
         for name in names:
-            folder, data, protection = self.original(name)
+            if index is not None and index['format'] == 2:
+                folder = self.legacy.archives / name
+                protection = self.legacy.eligible(name)
+                data = self.legacy.archive_metadata(folder, name)
+                self.original_matches_entry(folder, index['entries'][name])
+                self.legacy.coverage(data)
+            else:
+                folder, data, protection = self.original(name)
             budget = self.backup_budget(data)
             available = self.space(budget)
             rows.append(dict(release=name, protection=protection, snapshot_sha256=archive.digest(folder / 'snapshot.json'),
                              available_bytes=available, temporary_conservative_upper_bytes=budget,
                              reserve_bytes=self.reserve, indexed=bool(index and name in index['entries'])))
         return dict(mode='check-only', initialized=index is not None, repository_verified=False,
-                    original_tars_retained=True, releases=rows)
+                    **(self.tar_summary(index) if index else dict(original_tars_retained=True)), releases=rows)
 
     def initialize(self, binary_archive):
         binary_archive = Path(binary_archive)
@@ -228,6 +261,15 @@ class Compactor:
         with self.legacy.locked():
             index = self.index()
             self.repository(index)
+            if index['format'] == 2:
+                require(name in index['entries'], 'INDEXED_RELEASE_REQUIRED')
+                self.legacy.eligible(name)
+                self.original_matches_entry(self.legacy.archives / name, index['entries'][name])
+                work = self.new_work(name, 'backup')
+                self.restic('check', '--read-data')
+                result = self.verify_entry(index['entries'][name], work)
+                self.remove_work(work)
+                return dict(result, status='already_verified', **self.tar_summary(index))
             folder, data, _ = self.original(name)
             self.space(self.backup_budget(data))
             work = self.new_work(name, 'backup')
@@ -286,7 +328,7 @@ class Compactor:
                 work = self.new_work(name, 'verify')
                 results.append(self.verify_entry(index['entries'][name], work))
                 self.remove_work(work)
-            return dict(status='verified', releases=results, original_tars_retained=True,
+            return dict(status='verified', releases=results, **self.tar_summary(index),
                         repository_allocated_bytes=archive.allocated_bytes(self.repo), pilot_allocated_bytes=archive.allocated_bytes(self.root))
 
     def restore(self, name):

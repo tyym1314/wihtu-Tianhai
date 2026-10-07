@@ -25,6 +25,7 @@ STATIC = ('platform/dist/', 'platform/arena/dist/', 'platform/legacy/dist/',
           'platform/public/', 'platform/specs/examples/partner-host/public/')
 FINGERPRINT = re.compile(r'[-.][A-Za-z0-9_-]{8,64}\.(?:js|mjs|css|png|webp|jpe?g|svg|glb|woff2?|mp3|ogg|wasm)$')
 RESERVE = 3 * 1024 ** 3
+STORAGE_STATES = ('retained', 'quarantine_prepared', 'quarantined', 'unlink_prepared', 'restic_only')
 
 
 def require(value, code):
@@ -50,6 +51,23 @@ def write_json(path, data):
         stream.write('\n')
         stream.flush()
         os.fsync(stream.fileno())
+
+
+def storage_state(folder, name):
+    """A missing record means legacy v1; callers of v2 must require a record."""
+    path = folder / 'storage.json'
+    if not path.exists() and not path.is_symlink():
+        return None
+    info = path.lstat()
+    require(stat.S_ISREG(info.st_mode) and info.st_nlink == 1 and info.st_uid == os.geteuid()
+            and stat.S_IMODE(info.st_mode) == 0o600, 'UNSAFE_STORAGE_STATE')
+    data = json.loads(path.read_text())
+    require(data.get('format') == 1 and data.get('release') == name and data.get('state') in STORAGE_STATES,
+            'INVALID_STORAGE_STATE')
+    for key in ('proof_sha256', 'repository_id', 'snapshot_id', 'archive_sha256',
+                'snapshot_sha256', 'receipt_sha256', 'identity_sha256'):
+        require(isinstance(data.get(key), str) and re.fullmatch(r'[a-f0-9]{64}', data[key]), 'INVALID_STORAGE_DIGEST')
+    return data
 
 
 def sync_dir(path):
@@ -276,15 +294,24 @@ class Archiver:
         require(path.is_file() and not path.is_symlink(), 'UNSAFE_ARCHIVE_FILE')
         require(json.loads(path.read_text()) == dict(format=1, release=name), 'ARCHIVE_IDENTITY_MISMATCH')
 
-    def archive_data(self, folder, name):
+    def archive_metadata(self, folder, name):
         self.archive_identity(folder, name)
-        for filename in ('identity.json', 'snapshot.json', 'receipt.json', 'release.tar.gz'):
+        for filename in ('identity.json', 'snapshot.json', 'receipt.json'):
             path = folder / filename
             require(path.is_file() and not path.is_symlink(), 'UNSAFE_ARCHIVE_FILE')
         data = json.loads((folder / 'snapshot.json').read_text())
         receipt = json.loads((folder / 'receipt.json').read_text())
         require(receipt.get('release') == name and receipt.get('format') == 1, 'ARCHIVE_RECEIPT_INVALID')
         require(digest(folder / 'snapshot.json') == receipt['snapshot_sha256'], 'ARCHIVE_SNAPSHOT_MISMATCH')
+        return data
+
+    def archive_data(self, folder, name):
+        state = storage_state(folder, name)
+        require(not state or state['state'] == 'retained', 'ARCHIVE_STORAGE_REQUIRES_RESTIC_OR_RECOVERY')
+        data = self.archive_metadata(folder, name)
+        path = folder / 'release.tar.gz'
+        require(path.is_file() and not path.is_symlink(), 'UNSAFE_ARCHIVE_FILE')
+        receipt = json.loads((folder / 'receipt.json').read_text())
         require(digest(folder / 'release.tar.gz') == receipt['archive_sha256'], 'ARCHIVE_HASH_MISMATCH')
         return data
 
@@ -403,6 +430,12 @@ class Archiver:
             require(not (work.exists() and final.exists()), 'AMBIGUOUS_ARCHIVE_STATE')
             folder = work if work.exists() else final
             self.archive_identity(folder, name)
+            state = storage_state(folder, name)
+            if state and state['state'] != 'retained':
+                return dict(status='ARCHIVE_MOVED_TO_RESTIC' if state['state'] == 'restic_only' else 'ARCHIVE_RETIREMENT_IN_PROGRESS',
+                            release=name, storage_state=state['state'], restored=False,
+                            next_command=('python3 compact-release-archives.py --restore ' + name) if state['state'] == 'restic_only'
+                            else ('python3 retire-release-archives.py --recover ' + name))
             marker = folder / 'restore-in-progress.json'
             if folder == work and source.exists() and not (work / 'original').exists() and not marker.exists():
                 sync_tree(source)
