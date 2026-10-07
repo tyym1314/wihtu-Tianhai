@@ -30,6 +30,7 @@ export function createGameHostBridge({game,onLaunch,onState=()=>{},onBack=()=>{}
  window.addEventListener('message',receive);window.addEventListener('pagehide',dispose,{once:true});ready();readyTimer=setInterval(ready,1000);armTimeout();
  return{get state(){return{...state,safeArea:{...state.safeArea}};},get origin(){return pinnedOrigin;},get modern(){return modern;},get phase(){return phase;},dispose,
   requestReauth(){if(phase==='loaded'&&modern){phase='reauth';armTimeout();post('oasis.reauth_required');return true;}return false;},
-  completeReturn(details={}){if(phase!=='loaded')return;post('oasis.return_requested',{reason:['user','completed'].includes(details.reason)?details.reason:'user',...(typeof details.room_id==='string'?{room_id:details.room_id}:{}),...(typeof details.status==='string'?{status:details.status}:{}),presentation_only:true});},
+  // This confirms dispatch to the pinned host, not host navigation or an ACK.
+  completeReturn(details={}){if(disposed||phase!=='loaded'||!pinnedOrigin)return false;try{post('oasis.return_requested',{reason:['user','completed'].includes(details.reason)?details.reason:'user',...(typeof details.room_id==='string'?{room_id:details.room_id}:{}),...(typeof details.status==='string'?{status:details.status}:{}),presentation_only:true});return true;}catch{return false;}},
  };
 }

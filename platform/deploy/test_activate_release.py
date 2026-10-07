@@ -30,6 +30,9 @@ class ReleasePromotionTests(unittest.TestCase):
         (self.base / 'current').symlink_to(self.old)
         self.module = load_script()
         self.module.BASE = self.base
+        (self.base / 'private/release.lock').touch()
+        self.module.static_assets.publish(self.old, self.base, apply=True)
+        self.module.static_assets.publish(self.candidate, self.base, apply=True)
         self.commands = []
         self.output = io.StringIO()
         self.stack = contextlib.ExitStack()
@@ -47,6 +50,7 @@ class ReleasePromotionTests(unittest.TestCase):
         files = {f'platform/dist/asset-{i}.js': f'// {name} asset {i}\n' for i in range(10)}
         files['platform/server/index.mjs'] = '// test release source\n'
         files['platform/deploy/backup.sh'] = '# test only, never executed\n'
+        files[f'platform/dist/assets/{name}-12345678.js'] = f'// {name} fingerprint\n'
         manifest = {}
         for relative, contents in files.items():
             filename = release / relative
@@ -109,7 +113,33 @@ class ReleasePromotionTests(unittest.TestCase):
         self.assertEqual(self.commands, [])
         health.assert_not_called()
         self.assertEqual((self.base / 'current').resolve(), self.old)
-        self.assertEqual(json.loads(self.output.getvalue())['verified_files'], 12)
+        self.assertEqual(json.loads(self.output.getvalue())['verified_files'], 13)
+
+    def test_missing_registered_static_asset_blocks_activation_before_service_changes(self):
+        required, _ = self.module.static_assets.manifest_assets(self.candidate)
+        public = next(iter(required))
+        (self.base / 'static-assets' / public.lstrip('/')).unlink()
+        with mock.patch.object(self.module, 'pending', return_value=0), mock.patch.object(self.module, 'health') as health:
+            with self.assertRaisesRegex(ValueError, 'STATIC_ASSET_MISSING'):
+                self.promote('--compatible-schema')
+        self.assertEqual(self.commands, [])
+        health.assert_not_called()
+        self.assertEqual((self.base / 'current').resolve(), self.old)
+
+    def test_rollback_to_old_release_without_lock_keeps_newer_registered_urls(self):
+        newer = self.candidate
+        before = {p.relative_to(self.base / 'static-assets').as_posix(): p.read_bytes()
+                  for p in (self.base / 'static-assets').rglob('*') if p.is_file()}
+        (self.base / 'current').unlink()
+        (self.base / 'current').symlink_to(newer)
+        self.candidate = self.old
+        with mock.patch.object(self.module, 'pending', return_value=0), mock.patch.object(self.module, 'health'):
+            self.promote('--compatible-schema')
+        self.assertEqual((self.base / 'current').resolve(), self.old)
+        self.assertEqual(self.module.static_assets.verify_coverage(newer, self.base)['registered_assets'], 2)
+        after = {p.relative_to(self.base / 'static-assets').as_posix(): p.read_bytes()
+                 for p in (self.base / 'static-assets').rglob('*') if p.is_file()}
+        self.assertEqual(after, before)
 
     def test_schema_compatibility_is_required_before_backup_and_service_stop(self):
         with mock.patch.object(self.module, 'pending', return_value=0):

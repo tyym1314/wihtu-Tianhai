@@ -4,6 +4,7 @@ import argparse
 import fcntl
 import grp
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -13,6 +14,9 @@ import urllib.request
 import urllib.parse
 
 BASE = Path('/opt/oasis')
+_static_spec = importlib.util.spec_from_file_location('oasis_static_assets', Path(__file__).with_name('publish-static-assets.py'))
+static_assets = importlib.util.module_from_spec(_static_spec)
+_static_spec.loader.exec_module(static_assets)
 
 def run(args, **kwargs):
     return subprocess.run(args, check=True, text=True, capture_output=True, **kwargs).stdout.strip()
@@ -77,10 +81,14 @@ def main():
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         old = (BASE / 'current').resolve(strict=True)
         count = verify_release(release)
+        coverage = static_assets.verify_coverage(release, BASE)
+        # Verify the automatic rollback target before stopping either service.
+        rollback_coverage = static_assets.verify_coverage(old, BASE)
         if pending():
             raise RuntimeError('ACTIVE_GAMES_OR_PENDING_SETTLEMENT: finish obligations before promotion')
         if args.check_only:
-            print(json.dumps({'verified_files': count, 'pending': 0, 'current': str(old), 'candidate': str(release)}))
+            print(json.dumps({'verified_files': count, 'pending': 0, 'current': str(old), 'candidate': str(release),
+                              'static_coverage': coverage, 'rollback_static_coverage': rollback_coverage}))
             return
         if not args.compatible_schema:
             raise RuntimeError('SCHEMA_COMPATIBILITY_CONFIRMATION_REQUIRED')
@@ -103,6 +111,7 @@ def main():
             raise
         report = {'activated_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
                   'previous': str(old), 'current': str(release), 'verified_files': count,
+                  'static_coverage': coverage, 'rollback_static_coverage': rollback_coverage,
                   'database_and_private_state_preserved': True, 'health': 'passed'}
         destination = BASE / 'private/last-release.json'
         destination.write_text(json.dumps(report, indent=2) + '\n')

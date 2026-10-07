@@ -61,11 +61,14 @@ function Arena(){
  const [towerArt,setTowerArt]=useState('loading'),[towerArtAttempt,setTowerArtAttempt]=useState(0);
  const [preparedRunKinds,setPreparedRunKinds]=useState('');
  const runInFlightIntent=useRef(null);
+ const hostReturnSent=useRef(null),hostReturnTimer=useRef(null);
  const [trainingOpen,setTrainingOpen]=useState(false),[trainingDone,setTrainingDone]=useState([]);
  const [context,setContext]=useState(null),[boot,setBoot]=useState('正在连接游戏…'),[room,setRoom]=useState(null),[error,setError]=useState(''),[network,setNetwork]=useState(false),[busy,setBusy]=useState(false),[muted,setMuted]=useState(!audio.enabled),[capacity,setCapacity]=useState(META.players[0]),[entry,setEntry]=useState('10000'),[joinCode,setJoinCode]=useState(''),[copied,setCopied]=useState(false),[exitOpen,setExitOpen]=useState(false),[showRules,setShowRules]=useState(false),[balance,setBalance]=useState(null),[recovering,setRecovering]=useState(null);
  const contextRef=useRef(null),roomRef=useRef(null),pending=useRef(null),mounted=useRef(true),inFlight=useRef(false),celebrated=useRef(null),hostBackPending=useRef(false),runSceneReadyRequest=useRef(null);
  const runnerKinds=IS_RUN?[...new Set(room?.game?.players?.length?room.game.players.map(player=>player.character):['fox','cat','bear','rabbit'].slice(0,room?.capacity||capacity))].sort().join(','):'';
  const {presenting,presentationRoom,reveal}=useResultPresentation(room);
+ function clearHostReturn(){hostReturnSent.current=null;clearTimeout(hostReturnTimer.current);hostReturnTimer.current=null;}
+ function sendHostReturn(details){const sent=completeHostReturn(details);hostReturnSent.current=sent?{roomId:details.room_id,owner:contextRef.current,until:performance.now()+1000}:null;return sent;}
  const trainingStorageKey=context?.scope?.app_id?`oasis:tower-training:${TRAINING_VERSION}:${context.scope.app_id}:${context.external_user_id}`:null;
  useEffect(()=>{if(!IS_TOWER||!trainingStorageKey)return;try{const saved=JSON.parse(localStorage.getItem(trainingStorageKey)||'[]');setTrainingDone(Array.isArray(saved)?saved.filter(id=>getTrainingLesson(id)):[]);}catch{setTrainingDone([]);}},[trainingStorageKey]);
  useEffect(()=>{const training=room?.game?.training;if(!IS_TOWER||!trainingStorageKey||room?.status!=='settled'||!training?.completed||!getTrainingLesson(training.lessonId))return;setTrainingDone(old=>{const next=[...new Set([...old,training.lessonId])];try{localStorage.setItem(trainingStorageKey,JSON.stringify(next));}catch{}return next;});},[room?.id,room?.status,room?.game?.training?.completed,trainingStorageKey]);
@@ -75,11 +78,22 @@ function Arena(){
  useEffect(()=>{mounted.current=true;audio.subscribe(()=>setMuted(!audio.enabled));waitForLaunch(GAME,setBoot).then(async c=>{if(!mounted.current)return;contextRef.current=c;setContext(c);setBalance(c.balance?.balance?.available_minor??null);setBoot('');if(c.active_room_id)setRecovering(c.active_room_id);if(c.other_active_game)setError('你在另一款游戏中仍有进行中的房间，请先回到该游戏完成或退出。');}).catch(e=>setBoot(e.message));return()=>{mounted.current=false;audio.dispose();};},[]);
  useEffect(()=>{if(!recovering)return;let stopped=false,timer;const recover=async()=>{try{const r=await api(`/api/pvp/rooms/${recovering}`);if(!stopped){accept(r);setRecovering(null);setError(pending.current?'上一项操作仍待确认，可重试原请求核对结果。':'');}}catch(e){if(!stopped){setError('原房间正在恢复：'+e.message);timer=setTimeout(recover,2000);}}};recover();return()=>{stopped=true;clearTimeout(timer);};},[recovering]);
  useEffect(()=>{const unlock=()=>audio.unlock();window.addEventListener('pointerdown',unlock,{passive:true});return()=>window.removeEventListener('pointerdown',unlock);},[]);
- useEffect(()=>registerHostControls({onBack:()=>{const r=roomRef.current;if(r&&!terminal(r.status)){hostBackPending.current=true;setExitOpen(true);}else completeHostReturn({reason:'user',room_id:r?.id||null,status:r?.status||'lobby'});}}),[]);
- useEffect(()=>{const authorized=e=>{const c=e.detail?.context;if(c?.game_id!==GAME)return;const changed=sessionOwner(contextRef.current)!==sessionOwner(c);contextRef.current=c;if(changed){pending.current=null;roomRef.current=null;setRoom(null);setBusy(inFlight.current);setExitOpen(false);hostBackPending.current=false;}setNetwork(false);setError(pending.current?'上一项操作仍待确认，可重试原请求核对结果。':'');setContext(c);setBalance(c.balance?.balance?.available_minor??null);setRecovering(c.active_room_id??null);};window.addEventListener('oasis:authorized',authorized);return()=>window.removeEventListener('oasis:authorized',authorized);},[]);
- useEffect(()=>{if(!hostBackPending.current||!room)return;const own=room.players.find(p=>p.external_user_id===context?.external_user_id);if(terminal(room.status)||own?.forfeited){hostBackPending.current=false;completeHostReturn({reason:'left',room_id:room.id,status:room.status});}},[room,context?.external_user_id]);
+ useEffect(()=>registerHostControls({onBack:()=>{const r=roomRef.current;if(r&&!terminal(r.status)){hostBackPending.current=true;setExitOpen(true);}else sendHostReturn({reason:'user',room_id:r?.id||null,status:r?.status||'lobby'});}}),[]);
+ useEffect(()=>{const authorized=e=>{const c=e.detail?.context;if(c?.game_id!==GAME)return;clearHostReturn();const changed=sessionOwner(contextRef.current)!==sessionOwner(c);if(changed||c.active_room_id!==roomRef.current?.id){hostBackPending.current=false;setExitOpen(false);}contextRef.current=c;if(changed){pending.current=null;roomRef.current=null;setRoom(null);setBusy(inFlight.current);setExitOpen(false);hostBackPending.current=false;}setNetwork(false);setError(pending.current?'上一项操作仍待确认，可重试原请求核对结果。':'');setContext(c);setBalance(c.balance?.balance?.available_minor??null);setRecovering(c.active_room_id??null);};window.addEventListener('oasis:authorized',authorized);return()=>window.removeEventListener('oasis:authorized',authorized);},[]);
+ useEffect(()=>{if(!hostBackPending.current||!room)return;const own=room.players.find(p=>p.external_user_id===context?.external_user_id);if(terminal(room.status)||own?.forfeited){hostBackPending.current=false;sendHostReturn({reason:'left',room_id:room.id,status:room.status});}},[room,context?.external_user_id]);
  useEffect(()=>{if(!room?.id||terminal(room.status))return;const interval=createRoomPollCadence({game:GAME,readRoom:()=>roomRef.current});const initialDelay=room.status==='funding'?interval():250;return startRoomPolling({read:signal=>api(`/api/pvp/rooms/${room.id}`,undefined,{signal}),onRoom:data=>{accept(data,{poll:true});setNetwork(false);},onError:e=>{setNetwork(true);if(e.status===401)setError('会话已到期。请从应用重新打开，后台保留原对局与结算。');},interval,initialDelay});},[room?.id,terminal(room?.status),room?.status==='funding']);
- useEffect(()=>{if(!room||!terminal(room.status))return;api('/api/arena/session').then(c=>setBalance(c.balance?.balance?.available_minor??null)).catch(()=>{});if(!presenting&&celebrated.current!==room.id){celebrated.current=room.id;const mine=room.players.find(p=>p.external_user_id===context?.external_user_id);audio.play(room.status==='settled'&&mine?.rank===1?'victory':'finish');}},[room?.id,room?.status,presenting]);
+ useEffect(()=>{
+  if(!room||!terminal(room.status)||recovering)return;
+  const owner=contextRef.current;let stopped=false;
+  const refresh=()=>{hostReturnTimer.current=null;if(stopped||!mounted.current||contextRef.current!==owner||roomRef.current?.id!==room.id||!terminal(roomRef.current?.status))return;api('/api/arena/session').then(c=>{if(!stopped&&contextRef.current===owner&&roomRef.current?.id===room.id)setBalance(c.balance?.balance?.available_minor??null);}).catch(()=>{});};
+  // postMessage confirms dispatch only. Avoid starting a GET during navigation,
+  // but refresh normally if this same page remains after the host return request.
+  const sent=hostReturnSent.current,delay=sent?.owner===owner&&sent.roomId===room.id?Math.max(0,sent.until-performance.now()):0;
+  if(delay>0)hostReturnTimer.current=setTimeout(refresh,delay);else refresh();
+  const stop=()=>{stopped=true;clearHostReturn();};window.addEventListener('pagehide',stop,{once:true});
+  if(!presenting&&celebrated.current!==room.id){celebrated.current=room.id;const mine=room.players.find(p=>p.external_user_id===context?.external_user_id);audio.play(room.status==='settled'&&mine?.rank===1?'victory':'finish');}
+  return()=>{stopped=true;clearTimeout(hostReturnTimer.current);hostReturnTimer.current=null;window.removeEventListener('pagehide',stop);};
+ },[room?.id,room?.status,presenting,context,recovering]);
  async function perform(intent){
   const runAction=IS_RUN&&!!intent.body?.action;
   const ownsRoom=()=>!runAction||intent.owner===sessionOwner(contextRef.current)&&intent.roomId===roomRef.current?.id;
@@ -119,8 +133,8 @@ function Arena(){
   if(roomRef.current?.id===roomId&&sessionOwner(contextRef.current)===owner)accept(response);
   return response;
  }
- function requestHostExit(){const r=roomRef.current;if(r&&!terminal(r.status)){hostBackPending.current=true;setExitOpen(true);}else completeHostReturn({reason:'user',room_id:r?.id||null,status:r?.status||'lobby'});}
- function newGame(){if(inFlight.current)return;pending.current=null;setBusy(false);roomRef.current=null;setRoom(null);setError('');setExitOpen(false);audio.play('click');}
+ function requestHostExit(){const r=roomRef.current;if(r&&!terminal(r.status)){hostBackPending.current=true;setExitOpen(true);}else sendHostReturn({reason:'user',room_id:r?.id||null,status:r?.status||'lobby'});}
+ function newGame(){if(inFlight.current)return;clearHostReturn();hostBackPending.current=false;pending.current=null;setBusy(false);roomRef.current=null;setRoom(null);setError('');setExitOpen(false);audio.play('click');}
  const me=room?.players.find(p=>p.external_user_id===context?.external_user_id),fee=room?.fee_bps??context?.competitive_fee_bps??500;
  const isTeam=room?room.team_size===2:teamSizeFor(GAME,capacity)===2;
  const social=IS_TOWER&&(capacity>2||entry==='0'),roomSocial=IS_TOWER&&!room?.practice&&room?.entry_minor==='0';

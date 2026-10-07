@@ -1,35 +1,68 @@
 """Package an immutable runtime release without local databases or credentials."""
 import hashlib
+import io
 import json
 from pathlib import Path
 import tarfile
 import sys
-from release_build import verify
+from release_build import RETAINED_LOCK, verify, verify_retained_assets
 
-repo = Path(__file__).resolve().parents[2]
-out = Path(sys.argv[1]).resolve()
-verify(repo)
-files = set()
-for relative in ['src', 'platform/server', 'platform/shared', 'platform/specs',
-                 'platform/dist', 'platform/arena/dist', 'platform/legacy/dist',
-                 'platform/deploy', 'platform/public/sdk',
-                 'platform/specs/examples/partner-host/public']:
-    files.update(p for p in (repo / relative).rglob('*') if p.is_file())
-for name in ['package.json', 'package-lock.json', 'release-build-manifest.json', 'legacy/build-manifest.json', 'scripts/benchmark-release.mjs', 'scripts/benchmark-workload.mjs', 'scripts/benchmark-observer.mjs', 'scripts/benchmark-evaluation.mjs', 'scripts/android-game-actions.mjs']:
-    files.add(repo / 'platform' / name)
-# Engine code is loaded by Node. Media is already inside the prebuilt dist.
-for directory in (repo / 'platform/arena').iterdir():
-    if directory.is_dir() and directory.name != 'dist':
-        files.update(directory.glob('*.mjs'))
-        files.update(directory.glob('*.json'))
-files = {p for p in files if not any(s in p.parts for s in ['.local', 'node_modules', '__pycache__'])
-         and p.suffix not in ['.pem', '.key', '.pyc'] and not p.name.startswith('.env')}
-manifest = {str(p.relative_to(repo)): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted(files)}
-out.parent.mkdir(parents=True, exist_ok=True)
-with tarfile.open(out, 'w:gz') as archive:
-    for p in sorted(files):
-        archive.add(p, arcname=str(p.relative_to(repo)), recursive=False)
-out.with_suffix(out.suffix + '.manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
-print(json.dumps({'archive': str(out), 'files': len(files), 'bytes': out.stat().st_size,
-                  'sha256': hashlib.sha256(out.read_bytes()).hexdigest()}))
+def package(repo, out):
+    verify(repo)
+    retained = verify_retained_assets(repo)
+    files = set()
+    for relative in ['src', 'platform/server', 'platform/shared', 'platform/specs',
+                     'platform/dist', 'platform/arena/dist', 'platform/legacy/dist',
+                     'platform/deploy', 'platform/public/sdk',
+                     'platform/specs/examples/partner-host/public']:
+        files.update(p for p in (repo / relative).rglob('*') if p.is_file())
+    for name in ['package.json', 'package-lock.json', 'release-build-manifest.json',
+                 'legacy/build-manifest.json', 'scripts/benchmark-release.mjs',
+                 'scripts/benchmark-workload.mjs', 'scripts/benchmark-observer.mjs',
+                 'scripts/benchmark-evaluation.mjs', 'scripts/android-game-actions.mjs']:
+        files.add(repo / 'platform' / name)
+    # Engine code is loaded by Node. Media is already inside the prebuilt dist.
+    for directory in (repo / 'platform/arena').iterdir():
+        if directory.is_dir() and directory.name != 'dist':
+            files.update(directory.glob('*.mjs'))
+            files.update(directory.glob('*.json'))
+    files = {p for p in files if not any(s in p.parts for s in ['.local', 'node_modules', '__pycache__', 'private', 'secrets'])
+             and p.suffix not in ['.pem', '.key', '.pyc'] and not p.name.startswith('.env')}
+    files.add(repo / RETAINED_LOCK)
+    for path in files:
+        relative = path.relative_to(repo)
+        if (any((repo / parent).is_symlink() for parent in (relative, *relative.parents))
+                or not path.resolve().is_relative_to(repo.resolve())):
+            raise ValueError('UNSAFE_RELEASE_PATH: ' + str(path.relative_to(repo)))
+    manifest = {str(p.relative_to(repo)): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in sorted(files)}
+    for asset in retained['assets']:
+        if manifest.get(asset['path']) != asset['sha256']:
+            raise ValueError('RETAINED_ASSET_MISSING_FROM_RELEASE: ' + asset['path'])
+    manifest_bytes = (json.dumps(manifest, indent=2) + '\n').encode()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with tarfile.open(out, 'w:gz') as archive:
+        for path in sorted(files):
+            name = str(path.relative_to(repo))
+            content = path.read_bytes()
+            if hashlib.sha256(content).hexdigest() != manifest[name]:
+                raise ValueError('SOURCE_CHANGED_AFTER_MANIFEST: ' + name)
+            entry = archive.gettarinfo(str(path), arcname=name)
+            if not entry.isfile():
+                raise ValueError('UNSAFE_RELEASE_PATH: ' + name)
+            entry.size = len(content)
+            archive.addfile(entry, io.BytesIO(content))
+        # The manifest names business files only, avoiding a self-hash recursion.
+        entry = tarfile.TarInfo('RELEASE-MANIFEST.json')
+        entry.size = len(manifest_bytes)
+        entry.mode = 0o644
+        archive.addfile(entry, io.BytesIO(manifest_bytes))
+    out.with_suffix(out.suffix + '.manifest.json').write_bytes(manifest_bytes)
+    return {'archive': str(out), 'files': len(files), 'bytes': out.stat().st_size,
+            'sha256': hashlib.sha256(out.read_bytes()).hexdigest()}
+
+
+if __name__ == '__main__':
+    repo = Path(__file__).resolve().parents[2]
+    out = Path(sys.argv[1]).resolve()
+    print(json.dumps(package(repo, out)))

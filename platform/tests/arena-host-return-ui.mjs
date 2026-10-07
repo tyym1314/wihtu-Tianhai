@@ -1,0 +1,52 @@
+/** Actual Arena React lifecycle with isolated game/API/host fixtures; no public requests. */
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {build} from 'esbuild';
+import {chromium,webkit} from 'playwright';
+
+const root=resolve(new URL('..',import.meta.url).pathname),out=resolve(root,'review/arena-host-return');
+const fixture=`window.returnQA={roomId:'room-a',status:'active',version:1,accepted:true,returns:[],calls:[],balanceReads:[],
+ context:{game_id:'match',session_id:'session-a',external_user_id:'p0',scope:{app_id:'fixture'},active_room_id:'room-a',balance:{balance:{available_minor:'100'}}},
+ snapshot(){return{id:this.roomId,code:'ROOM',game_id:'match',status:this.status,capacity:2,practice:true,team_size:1,me:'p0',me_last_seq:0,version:++this.version,entry_minor:'0',prize_minor:'0',fee_bps:0,players:[{external_user_id:'p0',ready:true}],game:{}}},
+ async api(path,body){this.calls.push({path,body,time:performance.now()});if(path==='/api/arena/session'){this.balanceReads.push(performance.now());return {...this.context,balance:{balance:{available_minor:'250'}}}}if(path.endsWith('/leave')){this.status='cancelled';return{room:this.snapshot()}}if(path.startsWith('/api/pvp/rooms/'))return this.snapshot();throw Error('Unexpected fixture API '+path)},
+ finish(){this.status='settled'},
+ authorize(id,user='p0'){this.roomId=id;this.status='active';this.version=1;this.context={...this.context,session_id:'session-'+id,external_user_id:user,active_room_id:id};window.dispatchEvent(new CustomEvent('oasis:authorized',{detail:{context:this.context}}))}
+};`;
+const game=`import React from 'react';export const preloadRunAssets=async()=>{};export const preloadGolfAssets=async()=>{};export const preloadBowlingAssets=async()=>{};export default function Game({room,onExit}){return <section data-testid="active-room" data-room={room.id}><button onClick={onExit}>Fixture exit</button></section>}`;
+const modules={
+ 'client.mjs':`export const api=(...a)=>window.returnQA.api(...a);let n=0;export const requestId=()=>String(++n);export const coins=String;export const waitForLaunch=async()=>window.returnQA.context;export const registerHostControls=controls=>{window.returnQA.back=controls.onBack;return()=>{window.returnQA.back=null}};export const completeHostReturn=details=>{const q=window.returnQA;q.returns.push({details,time:performance.now()});return q.accepted};`,
+ 'audio.mjs':`export class ArenaAudio{enabled=false;subscribe(){return()=>{}}unlock(){}play(){}dispose(){}toggle(){}setEnabled(){}}`,
+ 'useResultPresentation.jsx':`import{useState}from'react';export default room=>{const[presenting,set]=useState(false);window.returnQA.present=set;return{presenting,presentationRoom:room,reveal:()=>set(false)}}`,
+ 'ThemeResult.jsx':`import React from 'react';export default function Result({room,onAgain,onLobby}){return <section data-testid="terminal-room" data-room={room.id}><button data-testid="again" onClick={onAgain}>Again</button><button onClick={onLobby}>Lobby</button></section>}`,
+};
+const bundle=await build({entryPoints:[resolve(root,'arena/main.jsx')],bundle:true,write:false,outdir:'/virtual-host-return',format:'esm',jsx:'automatic',logLevel:'silent',plugins:[{name:'return-lifecycle-fixtures',setup(b){
+ b.onResolve({filter:/^\/arena\/assets\//},()=>({path:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',external:true}));
+ b.onLoad({filter:/\/arena\/shared\/(audio\.mjs|client\.mjs|useResultPresentation\.jsx|ThemeResult\.jsx)$/},a=>({contents:modules[a.path.split('/').at(-1)],loader:'jsx'}));
+ b.onLoad({filter:/\/arena\/shared\/(PlayerPortrait|LobbyArt)\.jsx$/},()=>({contents:'export default function Empty(){return null}',loader:'jsx'}));
+ b.onLoad({filter:/\/arena\/[^/]+\/.*Game\.jsx$/},()=>({contents:game,loader:'jsx'}));
+ b.onLoad({filter:/\/arena\/match\/assets\.mjs$/},()=>({contents:'export const preloadMatchAssets=async()=>{}',loader:'js'}));
+}}]});
+const files=new Map(bundle.outputFiles.map(file=>['/'+file.path.split('/').at(-1),file.text]));
+const server=createServer((req,res)=>{if(files.has(req.url)){res.setHeader('content-type',req.url.endsWith('.css')?'text/css; charset=utf-8':'text/javascript; charset=utf-8');return res.end(files.get(req.url));}res.setHeader('content-type','text/html; charset=utf-8');res.end(`<meta charset="utf-8"><div id="root"></div><script>${fixture}</script><script type="module" src="/main.js"></script>`);});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+const browserName=process.env.HOST_RETURN_BROWSER||'chromium',browser=await(browserName==='webkit'?webkit.launch({headless:true}):chromium.launch({channel:'chrome',headless:true}));
+const report={scope:'Actual Arena React + room polling with fixture API/game/host; host dispatch contract separately covered by Node tests. Simulated pagehide; no public-host, GPU or device acceptance.',browser:browserName,checks:[],errors:[]};
+const reads=page=>page.evaluate(()=>returnQA.balanceReads.length);
+const ready=page=>page.getByTestId('active-room').waitFor();
+async function page(){const p=await browser.newPage();p.on('pageerror',e=>report.errors.push(e.message));await p.goto(`http://127.0.0.1:${server.address().port}/play/match`);await ready(p);return p;}
+async function leave(p){await p.evaluate(()=>returnQA.back());await p.getByRole('button',{name:'确认离开',exact:true}).click();await p.getByTestId('terminal-room').waitFor();assert.equal(await p.evaluate(()=>returnQA.returns.length),1);}
+try{
+ let p=await page();await p.evaluate(()=>returnQA.back());await p.getByRole('button',{name:'确认离开',exact:true}).waitFor();await p.evaluate(()=>{returnQA.calls=[];returnQA.authorize('room-a')});await p.waitForFunction(()=>returnQA.calls.some(call=>call.path==='/api/pvp/rooms/room-a'));await p.getByRole('button',{name:'确认离开',exact:true}).click();await p.getByTestId('terminal-room').waitFor();await p.waitForFunction(()=>returnQA.returns.length===1);assert.equal(await reads(p),0);report.checks.push('Same-owner same-room reauthorization preserves the pending confirmed host return');await p.close();
+ p=await page();await p.evaluate(()=>returnQA.back());await p.getByRole('button',{name:'确认离开',exact:true}).waitFor();await p.evaluate(()=>returnQA.authorize('room-other'));await p.waitForFunction(()=>document.querySelector('[data-testid="active-room"]')?.dataset.room==='room-other');assert.equal(await p.getByRole('button',{name:'确认离开',exact:true}).count(),0);await p.evaluate(()=>returnQA.finish());await p.getByTestId('terminal-room').waitFor();await p.waitForFunction(()=>returnQA.balanceReads.length===1);assert.equal(await p.evaluate(()=>returnQA.returns.length),0);report.checks.push('Same-owner authorization into another room dismisses the old exit confirmation and never returns the new room automatically');await p.close();
+ p=await page();await leave(p);assert.equal(await reads(p),0);await p.evaluate(()=>window.dispatchEvent(new Event('pagehide')));await p.waitForTimeout(1150);assert.equal(await reads(p),0);report.checks.push('Successful return dispatch starts no terminal balance GET; pagehide cancels fallback');await p.close();
+ p=await page();await leave(p);assert.equal(await reads(p),0);await p.waitForTimeout(250);await p.evaluate(()=>returnQA.present(true));await p.waitForTimeout(150);await p.evaluate(()=>returnQA.present(false));await p.waitForFunction(()=>returnQA.balanceReads.length===1);const elapsed=await p.evaluate(()=>returnQA.balanceReads[0]-returnQA.returns[0].time);assert.ok(elapsed>=900&&elapsed<1500,`Fallback must retain the original one-second deadline: ${elapsed}`);report.checks.push('A host that stays on the page gets one fallback balance refresh at the original deadline despite presentation rerenders');await p.close();
+ p=await page();await p.evaluate(()=>returnQA.accepted=false);await leave(p);await p.waitForFunction(()=>returnQA.balanceReads.length===1);assert.ok(await p.evaluate(()=>returnQA.balanceReads[0]-returnQA.returns[0].time)<250);report.checks.push('Unavailable return bridge refreshes terminal balance immediately and keeps result visible');await p.close();
+ p=await page();await p.evaluate(()=>returnQA.finish());await p.getByTestId('terminal-room').waitFor();await p.waitForFunction(()=>returnQA.balanceReads.length===1);assert.equal(await p.evaluate(()=>returnQA.returns.length),0);report.checks.push('An ordinary completed game refreshes balance and displays its result without requesting host return');await p.close();
+ p=await page();await p.evaluate(()=>returnQA.back());await p.getByRole('button',{name:'继续游戏',exact:true}).click();await p.evaluate(()=>returnQA.finish());await p.getByTestId('terminal-room').waitFor();await p.waitForFunction(()=>returnQA.balanceReads.length===1);assert.equal(await p.evaluate(()=>returnQA.returns.length),0);report.checks.push('Cancelling the leave dialog preserves normal terminal balance refresh');await p.close();
+ p=await page();await leave(p);await p.getByTestId('again').click();await p.waitForTimeout(1100);assert.equal(await reads(p),0);await p.evaluate(()=>returnQA.authorize('room-b'));await ready(p);assert.equal(await p.getByTestId('active-room').getAttribute('data-room'),'room-b');await p.evaluate(()=>returnQA.finish());await p.getByTestId('terminal-room').waitFor();await p.waitForFunction(()=>returnQA.balanceReads.length===1);report.checks.push('A new game cancels old fallback; re-entry has normal terminal balance behavior');await p.close();
+ p=await page();await leave(p);await p.evaluate(()=>returnQA.authorize('room-c','p1'));await ready(p);await p.waitForTimeout(1100);assert.equal(await reads(p),0);await p.evaluate(()=>returnQA.finish());await p.getByTestId('terminal-room').waitFor();await p.waitForFunction(()=>returnQA.balanceReads.length===1);report.checks.push('Reauthorization into another identity/room cannot run the old terminal fallback or suppress the new result refresh');await p.close();
+ assert.deepEqual(report.errors,[]);report.passed=true;
+}catch(error){report.failure=error.stack;process.exitCode=1;}
+finally{await browser.close();await new Promise(resolve=>server.close(resolve));await mkdir(out,{recursive:true});await writeFile(resolve(out,browserName+'.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));}

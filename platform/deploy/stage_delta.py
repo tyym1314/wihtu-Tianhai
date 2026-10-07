@@ -11,6 +11,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import tarfile
+from release_build import FINGERPRINT, OUTPUT_TREES, RETAINED_LOCK, verify_retained_assets
 
 BASE = Path('/opt/oasis')
 
@@ -46,6 +47,38 @@ def verify_tree(root, manifest):
             raise ValueError('RELEASE_HASH_MISMATCH: ' + name)
 
 
+def static_fingerprints(root):
+    """Inspect actual old files, including historic assets omitted by old manifests."""
+    result = {}
+    for prefix in OUTPUT_TREES:
+        directory = root / prefix
+        if directory.is_symlink():
+            raise ValueError('UNSAFE_STATIC_DIRECTORY: ' + prefix)
+        if not directory.exists():
+            continue
+        for path in directory.rglob('*'):
+            if path.is_symlink():
+                raise ValueError('UNSAFE_STATIC_PATH: ' + str(path.relative_to(root)))
+            if path.is_file() and FINGERPRINT.search(path.name):
+                if not path.resolve().is_relative_to(root.resolve()):
+                    raise ValueError('UNSAFE_STATIC_PATH')
+                result[path.relative_to(root).as_posix()] = digest(path)
+    return result
+
+
+def require_retained_coverage(base, new):
+    required = static_fingerprints(base)
+    previous_assets = {}
+    if (base / RETAINED_LOCK).exists() or (base / RETAINED_LOCK).is_symlink():
+        previous = verify_retained_assets(base)
+        previous_assets = {asset['path']: asset['sha256'] for asset in previous['assets']}
+        required.update(previous_assets)
+    for name, sha256 in required.items():
+        if new.get(name) != sha256:
+            raise ValueError('IMMUTABLE_ASSET_NOT_RETAINED: ' + name)
+    return required, previous_assets
+
+
 def stage(base, candidate, archive, expected_sha256):
     if not re.fullmatch(r'[a-f0-9]{64}', expected_sha256):
         raise ValueError('INVALID_DELTA_SHA256')
@@ -65,7 +98,11 @@ def stage(base, candidate, archive, expected_sha256):
                     or path.as_posix() != entry.name):
                 raise ValueError('UNSAFE_DELTA_ENTRY')
         new = files_in(json.load(bundle.extractfile('RELEASE-MANIFEST.json')))
+        if RETAINED_LOCK not in new:
+            raise ValueError('RETAINED_ASSET_MISSING_FROM_RELEASE_MANIFEST')
+        retained, previous_locked = require_retained_coverage(base, new)
         changed = {name for name, expected in new.items() if old.get(name) != expected}
+        removed = set(old) - set(new)
         if set(names) - {'RELEASE-MANIFEST.json'} != changed:
             raise ValueError('DELTA_MANIFEST_MISMATCH')
         for entry in entries:
@@ -74,6 +111,18 @@ def stage(base, candidate, archive, expected_sha256):
                     raise ValueError('DELTA_ENTRY_HASH_MISMATCH: ' + entry.name)
         try:
             shutil.copytree(base, candidate, symlinks=True)
+            # Full and delta releases must agree when a source or mutable URL
+            # is deliberately removed. Only remove previously manifested files;
+            # runtime dependencies and unrelated unlisted files are untouched.
+            for name in sorted(removed):
+                path = candidate / name
+                relative = PurePosixPath(name)
+                if (any((candidate / parent).is_symlink() for parent in (relative, *relative.parents))
+                        or not path.is_file() or not path.resolve().is_relative_to(candidate.resolve())):
+                    raise ValueError('UNSAFE_REMOVED_RELEASE_PATH: ' + name)
+                if digest(path) != old[name]:
+                    raise ValueError('REMOVED_RELEASE_HASH_MISMATCH: ' + name)
+                path.unlink()
             for entry in entries:
                 if entry.name == 'RELEASE-MANIFEST.json':
                     continue
@@ -90,12 +139,22 @@ def stage(base, candidate, archive, expected_sha256):
                 path.chmod(entry.mode & 0o777)
             (candidate / 'RELEASE-MANIFEST.json').write_text(json.dumps(new, indent=2) + '\n')
             verify_tree(candidate, new)
+            lock = verify_retained_assets(candidate)
+            locked = {asset['path']: asset['sha256'] for asset in lock['assets']}
+            if any(locked.get(name) != sha256 for name, sha256 in previous_locked.items()):
+                raise ValueError('PREVIOUS_RETAINED_LOCK_ASSET_DROPPED')
+            if any(new.get(a['path']) != a['sha256'] for a in lock['assets']):
+                raise ValueError('RETAINED_ASSET_MISSING_FROM_RELEASE_MANIFEST')
+            if any(new.get(name) != sha256 for name, sha256 in static_fingerprints(candidate).items()):
+                raise ValueError('UNMANIFESTED_IMMUTABLE_ASSET')
         except Exception:
             if candidate.exists():
                 shutil.rmtree(candidate)
             raise
     return {'previous': str(base), 'candidate': str(candidate),
             'verified_files': len(new), 'changed_files': len(changed),
+            'removed_files': len(removed),
+            'retained_static_files': len(retained),
             'delta_sha256': expected_sha256}
 
 

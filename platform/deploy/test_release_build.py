@@ -1,5 +1,7 @@
 import tempfile
 import unittest
+import hashlib
+import json
 from pathlib import Path
 from release_build import record, verify
 
@@ -15,6 +17,17 @@ class ReleaseBuildGateTest(unittest.TestCase):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text('fixture')
+        asset = self.root / 'platform/arena/dist/assets/Old-12345678.js'
+        asset.parent.mkdir(parents=True, exist_ok=True)
+        asset.write_text('retained fixture')
+        (self.root / 'platform/retained-assets.lock.json').write_text(json.dumps({
+            'schema': 'oasis-retained-static-v1',
+            'bundle': {'url': 'https://example.com/retained.tar.gz', 'sha256': 'a' * 64, 'bytes': 1},
+            'assets': [{'path': asset.relative_to(self.root).as_posix(),
+                        'publicPath': '/arena/assets/Old-12345678.js',
+                        'sha256': hashlib.sha256(asset.read_bytes()).hexdigest(), 'bytes': asset.stat().st_size,
+                        'contentType': 'application/javascript', 'dependencies': [],
+                        'sources': [{'release': '20261007-04', 'manifest_sha256': 'b' * 64}]}]}))
 
     def test_requires_all_three_browser_builds(self):
         (self.root / 'platform/arena/dist/index.html').unlink()

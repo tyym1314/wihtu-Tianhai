@@ -18,17 +18,21 @@ test('first launch reads one session; reauthorization shares one fresh session a
  const dispatch=(data,source=host,origin='https://host.test')=>{const e=new Event('message');Object.assign(e,{data,source,origin});window.dispatchEvent(e);};
  try{
   const client=await import('../arena/shared/client.mjs?launch-test='+Date.now());
+  assert.equal(client.completeHostReturn(),false);
   window.addEventListener('oasis:authorized',e=>authorized.push(e.detail));
   const launched=client.waitForLaunch('run');const ready=posted.find(p=>p.data.type==='oasis.ready').data;
   const body={...ready,type:'oasis.launch',launch_code:'fixture_launch_code'};
   dispatch(body);const first=await launched;await flush(()=>posted.some(p=>p.data.type==='oasis.loaded'));
   assert.equal(first.balance.balance.available_minor,'100');assert.deepEqual(reads,['/v1/launch/exchange','/api/arena/session']);assert.equal(authorized.length,0);
+  assert.equal(client.completeHostReturn(),true);
   await assert.rejects(client.api('/protected'),{status:401});assert(posted.some(p=>p.data.type==='oasis.reauth_required'));
+  assert.equal(client.completeHostReturn(),false,'Reauth must not claim a return was dispatched');
   dispatch({...body,launch_code:'fixture_reauth_code'});await flush(()=>sessionPending);
   const readCount=reads.length;await assert.rejects(client.api('/api/pvp/rooms',{request_id:'old_ui_request'}),{code:'SESSION_CHANGED'});await assert.rejects(client.api('/api/pvp/rooms/old_room'),{code:'SESSION_CHANGED'});assert.equal(reads.length,readCount,'unverified new identity must not receive old UI actions or polls');
   releaseSession();await flush(()=>authorized.length===1);await client.api('/api/pvp/rooms',{request_id:'verified_context_request'});
   assert.equal(authorized[0].context.active_room_id,'restored_room');assert.equal(authorized[0].context.balance.balance.available_minor,'200');
   assert.equal(reads.filter(p=>p==='/api/arena/session').length,2);
   dispatch(body,{},'https://host.test');dispatch(body,host,'https://other.test');await new Promise(setImmediate);assert.equal(round,2);
+  window.dispatchEvent(new Event('pagehide'));assert.equal(client.completeHostReturn(),false);
  }finally{window.dispatchEvent(new Event('pagehide'));for(const[k,v]of Object.entries(saved)){if(v===undefined)delete globalThis[k];else globalThis[k]=v;}}
 });
