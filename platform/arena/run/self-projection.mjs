@@ -111,7 +111,7 @@ function frame(player,tick,boundary=null,authoritativeFinishTick=player.finishTi
   claimedItemCount:player.claimedItems.length,resolvedObstacleCount:player.resolvedObstacles.length,
   // Animation data is an owned, immutable copy. A predicted finish remains a
   // diagnostic above; only a received finish may select the victory clip.
-  visualPlayer:Object.freeze({key:player.key,lane:player.lane,fromLane:player.fromLane,changeStartTick:player.changeStartTick,changeEndTick:player.changeEndTick,jumpStartTick:player.jumpStartTick,slideUntilTick:player.slideUntilTick,stunUntilTick:player.stunUntilTick,immuneUntilTick:player.immuneUntilTick,fallStartTick:player.fallStartTick,fallUntilTick:player.fallUntilTick,shieldUntilTick:player.shieldUntilTick,boostUntilTick:player.boostUntilTick,inventory:player.inventory,forfeited:player.forfeited,finishTick:authoritativeFinishTick,predictionOnly:true})};
+  visualPlayer:Object.freeze({key:player.key,lane:player.lane,fromLane:player.fromLane,changeStartTick:player.changeStartTick,changeEndTick:player.changeEndTick,jumpStartTick:player.jumpStartTick,slideUntilTick:player.slideUntilTick,stunUntilTick:player.stunUntilTick,immuneUntilTick:player.immuneUntilTick,fallStartTick:player.fallStartTick,fallUntilTick:player.fallUntilTick,shieldUntilTick:player.shieldUntilTick,boostUntilTick:player.boostUntilTick,inventory:player.inventory,claimedItems:Object.freeze([...player.claimedItems]),forfeited:player.forfeited,finishTick:authoritativeFinishTick,predictionOnly:true})};
 }
 
 /** Bounded visual projection. This object has no clock, requests, events or authority writes. */

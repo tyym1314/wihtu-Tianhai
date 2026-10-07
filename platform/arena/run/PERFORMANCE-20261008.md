@@ -75,8 +75,8 @@ contract tests nor browser compatibility checks constitute a smoothness or
 launch-readiness pass. Public remains `20261008-07` until a new deployment and
 independent public readback establish otherwise.
 
-The frozen timeline `51fa0f8e08e186971d2b928f1937e278ca4038ce171c22eeeba5407b1f7b4b9f`
-has the following local evidence:
+The earlier timeline `51fa0f8e08e186971d2b928f1937e278ca4038ce171c22eeeba5407b1f7b4b9f`
+had the following local evidence (before the animation/event fixes below):
 
 - Isolated backend suite: **1,896 passed, no skips**, owned database removed.
 - Controller boundaries: 24 passed. Independent complete-race and mid-race
@@ -92,14 +92,51 @@ has the following local evidence:
 - A remaining legal combination—lane change or jump followed by boost—can
   require explicit `accepted-boost-unsafe-boundary` resync because preserving
   distance alone would rewind lateral/vertical animation. The measured
-  correction is **0.053333 m**. This is retained as an unresolved flow defect,
-  not counted among the smooth scenarios above. Item visibility and event audio
-  also still follow the newest authority rather than the delayed visual tick.
+  correction is **0.053333 m**. This was retained as a flow defect,
+  not counted among the smooth scenarios above. In that version item visibility
+  and event audio also followed newest authority rather than the visual tick.
 
 Evidence is retained under ignored `review/release/run-timeline-boost-retime-20261008-v2/`,
 `review/deployment/run-input-webgl-1791413470595-72f21f/` and
 `review/run-timeline-release-suite-20261008.tap`. These desktop/engine results
 do not replace Android, iPhone, GPU presentation or full launch acceptance.
+
+## Animation and event synchronization candidate
+
+Accepted boost reconciliation now preserves the phase of an already accepted
+lane change, jump or slide until it naturally ends. The runner's animation clip
+uses that retained phase; distance, collisions, timers, results and the original
+650 ms authority lease keep their own simulation tick. Physical state changes
+clear the retained phase at actual impact, including shield contacts. A
+projection's look-ahead boundary marker alone must not end an animation before
+contact. A rejected linear X/Y correction experiment is retained: it overshot
+a lane and briefly sank a landing below the track.
+
+Item visibility uses the selected visual player's immutable claimed-item IDs.
+Received event effects wait for their displayed tick and play once per event ID.
+A phase retreat or a shared-pause wall-clock shift must not replay an event.
+Background/resynchronization discards old movement sounds while preserving a
+newly authoritative finish exactly once. Loading drains obsolete effects without
+playing them; particles start at the rendered local runner position.
+
+The actual WebGL regression now exercises a legal jump followed by a naturally
+collected boost, with a controlled stale GET window and delayed item ACK. It
+observes the real animation method's tick, effects, item visibility, local root
+and camera, and independently replays all controller commands. The test also
+bounds ordinary frame displacement to actual boost speed; message arrival must
+not pull presentation time ahead of the animation-frame clock. Reports preserve
+failed attempts as well as subsequent passes. These are local fixture and
+renderer checks; the production server and physical-phone gate remain separate.
+
+The final local candidate timeline
+`b32f05a9f8f6dc03fc5b4cd3ecef4d8b47676e42c3948e7db45c99baa71e08fc`
+passed **1,917 isolated backend tests, no skips**, with its database removed.
+Its actual WebGL suite passed **10/10**, including the legal jump/boost sequence
+with measured 460.1 ms item ACK. Source hashes before and after the complete
+rendering run matched. The reported measurements remain local; no public or
+physical-device acceptance is inferred. Raw evidence is retained in
+`review/run-animation-fx-release-suite-20261008-v3.tap` and
+`review/deployment/run-input-webgl-1791415006118-c03768/webgl-input.json`.
 
 ## Historical 05 transfer evidence
 

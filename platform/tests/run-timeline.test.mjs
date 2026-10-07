@@ -160,7 +160,7 @@ test('the tick-zero startup buffer occurs once and never extends the first autho
 });
 
 
-for(const animation of ['right','jump'])test(`accepted boost during a legal ${animation} cannot silently rewind x/y animation`,t=>{
+for(const animation of ['right','jump'])test(`accepted boost during a legal ${animation} preserves its visible phase without forward correction`,t=>{
  const {state:s}=createRunHeldBoostFixture();const originalTick=s.tick;
  // Both inputs go through normal engine admission, including the six-tick rate
  // limit. The source already contains the first animation, not a local guess.
@@ -169,7 +169,7 @@ for(const animation of ['right','jump'])test(`accepted boost during a legal ${an
  Engine.tick(s,at(s,originalTick+6));const accepted=Engine.act(s,KEY,{type:'item'},s.now);assert.equal(s.players[0].pendingInput.item,'boost');
  const before=timeline.sample(100);assert.equal(before.mode,'project');near(before.displayTick,originalTick+8);
  assert.equal(timeline.resolveInput({token:d.token,receipt:receipt(d,accepted.event.inputNo,accepted.event.acceptedTick),resolvedAtMs:100}),true);
- const after=timeline.sample(100);assert.equal(after.mode,'resync');assert.equal(after.reason,'accepted-boost-unsafe-boundary');assert.equal(after.reconciliation,undefined);
+ const after=timeline.sample(100);assert.equal(after.mode,'project');assert.equal(after.reason,'accepted-boost-retime');for(const field of ['distance','x','y'])near(after.pose[field],before.pose[field]);assert.equal(after.reconciliation.preservedAnimation[animation==='jump'?'jump':'lane'],true);if(animation==='jump')near(after.pose.animationTick,before.pose.tick);
  t.diagnostic(JSON.stringify({animation,baseTick:g.snapshotTick,acceptedTick:accepted.event.acceptedTick,displayTick:after.displayTick,distanceCorrection:after.pose.distance-before.pose.distance,xBefore:before.pose.x,xAfter:after.pose.x,yBefore:before.pose.y,yAfter:after.pose.y}));
  assert.equal(after.pose.appliedInputNo,accepted.event.inputNo);assert.equal(after.pose.hits,0);
 });
@@ -194,4 +194,75 @@ test('accepted boost correction keeps position exactly continuous and cannot ren
  assert.ok(after.reconciliation.rewindMs>0&&after.reconciliation.rewindMs<=100);assert.ok(after.displayTick<before.displayTick);assert.equal(after.reconciliation.observedAtMs,150);
  const moving=timeline.sample(250);near(moving.displayTick-after.displayTick,6);near(moving.pose.distance-after.pose.distance,.96);
  const expired=timeline.sample(650);assert.equal(expired.reason,'projection-expired');const stopped=expired.pose.distance;near(timeline.sample(900).pose.distance,stopped);
+});
+
+function airborneBoost({acceptedOffset=4,ackMs=100,dispatchMs=0}={}){
+ const {state:s}=createRunHeldBoostFixture(),origin=s.tick;
+ Engine.act(s,KEY,{type:'jump'},s.now);const game=viewAt(s,origin+2),timeline=createRunTimeline();receive(timeline,game,1,0);timeline.sample(0);
+ const d=dispatch('airborne-phase','item',dispatchMs);timeline.noteInput(d);Engine.tick(s,at(s,game.snapshotTick+acceptedOffset));const accepted=Engine.act(s,KEY,{type:'item'},s.now);
+ timeline.sample(ackMs);timeline.resolveInput({token:d.token,receipt:receipt(d,accepted.event.inputNo,accepted.event.acceptedTick),resolvedAtMs:ackMs});const corrected=timeline.sample(ackMs);
+ assert.equal(corrected.mode,'project');assert.ok(corrected.pose.animationTick>corrected.pose.tick);return{s,timeline,game,corrected};
+}
+
+test('an expired retained jump phase stays frozen and continues safely from compatible new authority',()=>{
+ const {s,timeline,game}=airborneBoost({acceptedOffset:30,ackMs:640,dispatchMs:500});
+ const expired=timeline.sample(650);assert.equal(expired.reason,'projection-expired');assert.deepEqual(timeline.sample(900).pose,expired.pose);
+ const newest=viewAt(s,game.snapshotTick+39);assert.equal(receive(timeline,newest,2,900),true);const restored=timeline.sample(900);assert.equal(restored.mode,'project');
+ for(const field of ['x','y','distance','animationTick'])near(restored.pose[field],expired.pose[field]);
+ let previous=restored,last;
+ for(let elapsed=1000/60;elapsed<=400+1e-7;elapsed+=1000/60){
+  last=timeline.sample(900+elapsed);assert.equal(last.mode,'project');assert.ok(last.pose.distance>=previous.pose.distance);assert.ok(last.pose.distance-previous.pose.distance<=.16+1e-7);assert.ok(last.pose.y>=0);
+  assert.ok((last.pose.animationTick??last.pose.tick)>=(previous.pose.animationTick??previous.pose.tick));previous=last;
+ }
+ assert.equal(last.pose.y,0);assert.equal(last.pose.animationTick,undefined,'the old jump/land phase is removed only once its raw timeline reaches the natural end');
+});
+
+test('a newly accepted jump has its own animation identity and does not inherit the previous jump phase',()=>{
+ const {s,timeline}=airborneBoost();let version=1;
+ for(const [tick,ms]of [[1367,250],[1382,500]]){receive(timeline,viewAt(s,tick),++version,ms);assert.equal(timeline.sample(ms).mode,'project');}
+ Engine.tick(s,at(s,1398));const next=Engine.act(s,KEY,{type:'jump'},s.now);assert.equal(next.event.acceptedTick,1399);
+ receive(timeline,clone(Engine.view(s,KEY)),++version,750);assert.equal(timeline.sample(750).mode,'project');
+ const newJump=timeline.sample(800);assert.equal(newJump.mode,'project');assert.equal(newJump.pose.visualPlayer.jumpStartTick,1399);assert.equal(newJump.pose.animationTick,undefined);assert.ok(newJump.pose.y>0);
+});
+
+test('authoritative forfeiture clears retained visual animation immediately',()=>{
+ const {s,timeline}=airborneBoost();Engine.forfeit(s,[KEY],s.now+1);receive(timeline,Engine.view(s,KEY),2,110);
+ const ended=timeline.sample(110);assert.equal(ended.reason,'authoritative-terminal');assert.equal(ended.pose.animationTick,undefined);assert.equal(ended.pose.visualPlayer?.forfeited??true,true);
+});
+
+
+test('a real beam clears retained jump phase at impact, never at its fractional lookahead boundary',()=>{
+ const {state:s}=createRunHeldBoostFixture();Engine.tick(s,at(s,1617));assert.equal(s.players[0].hits,0);assert.equal(s.players[0].inventory,'boost');
+ // Continue normally in the safe left lane to the next beam, then admit jump
+ // and boost through the real engine. No position, inventory or timer is set.
+ Engine.act(s,KEY,{type:'jump'},s.now);const initial=viewAt(s,1619),timeline=createRunTimeline();receive(timeline,initial,1,0);timeline.sample(0);
+ const d=dispatch('beam-phase','item',0);timeline.noteInput(d);Engine.tick(s,at(s,1623));const accepted=Engine.act(s,KEY,{type:'item'},s.now);
+ timeline.sample(100);timeline.resolveInput({token:d.token,receipt:receipt(d,accepted.event.inputNo,accepted.event.acceptedTick),resolvedAtMs:100});const corrected=timeline.sample(100);assert.ok(corrected.pose.animationTick);
+ let hitTick=null;for(let tick=s.tick+1;tick<=initial.snapshotTick+39;tick++){Engine.tick(s,at(s,tick));if(s.players[0].hits){hitTick=tick;break;}}
+ assert.equal(hitTick,1630);assert.equal(s.players[0].lastEvent.type,'hit');assert.equal(s.players[0].lastEvent.tick,hitTick);
+ const offset=corrected.reconciliation.preservedAnimation.offsetTicks,toMs=tick=>(tick-initial.snapshotTick+offset)*1000/60;
+ const before=timeline.sample(toMs(hitTick-1));assert.ok(before.pose.animationTick);
+ for(const fraction of [.006,.25,.5,.99]){
+  const frame=timeline.sample(toMs(hitTick-1+fraction));assert.equal(frame.pose.boundary,'hit');assert.equal(frame.pose.hits,0);assert.equal(frame.pose.stunUntilTick,0);
+  near(frame.pose.animationTick,frame.pose.tick+offset);assert.ok(frame.pose.y>=before.pose.y,'the future collision must not rewind the still-rising jump');
+ }
+ const impact=timeline.sample(toMs(hitTick));assert.equal(impact.pose.hits,1);assert.ok(impact.pose.stunUntilTick>impact.pose.tick);assert.equal(impact.pose.animationTick,undefined);
+ near(impact.pose.y,Engine.pose(s.players[0],hitTick).y);const after=timeline.sample(toMs(hitTick+1));assert.equal(after.pose.animationTick,undefined);assert.equal(after.pose.hits,1);
+});
+
+
+test('ordinary receive, dispatch and accepted ACK after a RAF timestamp never accelerate its presentation clock',()=>{
+ const {state:s}=createRunHeldBoostFixture();Engine.act(s,KEY,{type:'item'},s.now);const base=viewAt(s,s.tick+2),timeline=createRunTimeline();receive(timeline,base,1,0);timeline.sample(0);
+ let previous=timeline.sample(16.7),previousAt=16.7;
+ function frame(now){const next=timeline.sample(now);assert.equal(next.mode,'project');near(next.pose.distance-previous.pose.distance,9.6*(now-previousAt)/1000);near(next.displayTick-previous.displayTick,(now-previousAt)*.06);previous=next;previousAt=now;return next;}
+ // Actual callback time is 1.6ms later than this RAF's timestamp. A fresh
+ // authority still gets reconciled, without donating those 1.6ms to motion.
+ const newer=viewAt(s,base.snapshotTick+1);receive(timeline,newer,2,35);frame(33.4);frame(50.1);
+ const d=dispatch('future-raf-input','right',52);assert.equal(timeline.noteInput(d),true);frame(51);
+ Engine.tick(s,at(s,base.snapshotTick+4));const accepted=Engine.act(s,KEY,{type:'right'},s.now);
+ assert.equal(timeline.resolveInput({token:d.token,receipt:receipt(d,accepted.event.inputNo,accepted.event.acceptedTick),resolvedAtMs:70}),true);frame(66.8);frame(83.5);
+ // A backdated callback cannot rewind time; same-tick authority cannot renew
+ // the second basis's original35+650ms lease either.
+ const held=timeline.sample(80);near(held.displayTick,previous.displayTick);const expired=timeline.sample(750);assert.equal(expired.reason,'projection-expired');assert.ok(expired.displayTick<=newer.snapshotTick+39);
+ receive(timeline,newer,3,850);const refreshed=timeline.sample(900);assert.equal(refreshed.reason,'projection-expired');near(refreshed.displayTick,expired.displayTick);near(refreshed.pose.distance,expired.pose.distance);
 });

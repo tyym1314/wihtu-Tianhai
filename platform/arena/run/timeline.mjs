@@ -3,6 +3,7 @@ import {projectedPose,RUN_PROJECTION_LIMIT_MS} from './presentation.mjs';
 import {runRequiresSceneReady} from './start-policy.mjs';
 import {resolveRunCourse} from './courses.mjs';
 import {COLLIDER} from './level.mjs';
+import {runnerPose} from './runner-physics.mjs';
 
 const HZ=60,MS_PER_TICK=1000/HZ,HORIZON=39,MAX_BASES=16,MAX_HISTORY=256,MAX_INPUTS=128;
 // One small startup buffer lets accepted history arrive before its display tick.
@@ -32,9 +33,9 @@ function acceptedInput(value){
  * Neither local dispatch nor this controller completes an HTTP request. */
 export function createRunTimeline(){
  let scope=null,key=null,room=null,latest=null,latestVersion=-1,latestTick=-1,mapping=null,tickFirstObservedAt=null;
- let bases=[],history=new Map(),appliedTicks=new Map(),inputs=new Map(),seenTokens=new Set(),retimedInputs=new Set(),pendingReconciliation=null;
+ let bases=[],history=new Map(),appliedTicks=new Map(),inputs=new Map(),seenTokens=new Set(),retimedInputs=new Set(),pendingReconciliation=null,animationPhase=null,lastPresentedPose=null;
  let displayTick=null,lastAt=null,lastObservedAt=-Infinity,lastPose=null,pendingResync=null,invalidReason=null,suspended=null,terminal=false,startupUntil=null;
- function clear(){scope=null;key=null;room=null;latest=null;latestVersion=-1;latestTick=-1;mapping=null;tickFirstObservedAt=null;bases=[];history=new Map();appliedTicks=new Map();inputs=new Map();seenTokens=new Set();retimedInputs=new Set();pendingReconciliation=null;displayTick=null;lastAt=null;lastObservedAt=-Infinity;lastPose=null;pendingResync=null;invalidReason=null;suspended=null;terminal=false;startupUntil=null;}
+ function clear(){scope=null;key=null;room=null;latest=null;latestVersion=-1;latestTick=-1;mapping=null;tickFirstObservedAt=null;bases=[];history=new Map();appliedTicks=new Map();inputs=new Map();seenTokens=new Set();retimedInputs=new Set();pendingReconciliation=null;animationPhase=null;lastPresentedPose=null;displayTick=null;lastAt=null;lastObservedAt=-Infinity;lastPose=null;pendingResync=null;invalidReason=null;suspended=null;terminal=false;startupUntil=null;}
  function build(game,version,receivedAtMs,firstReceivedAtMs=receivedAtMs,accepted=history){
   const projection=createRunSelfProjection(),source=own(game,key);
   const acceptedInputs=[...accepted.values()].filter(input=>input.tick>game.snapshotTick&&input.tick<=game.snapshotTick+HORIZON&&input.no>source.appliedInputNo).sort((a,b)=>a.tick-b.tick||a.no-b.no);
@@ -43,7 +44,7 @@ export function createRunTimeline(){
  }
  function sourcePose(entry,tick){return entry.projection.sample((tick-entry.tick)*MS_PER_TICK);}
  function rebase(entry,at,reason){
-  startupUntil=null;pendingReconciliation=null;
+  startupUntil=null;pendingReconciliation=null;animationPhase=null;
   bases=entry?[entry]:[];invalidReason=entry?null:reason;
   displayTick=entry?Math.max(entry.tick,Math.min(displayTick??entry.tick,entry.tick+HORIZON)):Math.max(displayTick??0,latest?.snapshotTick??0);
   lastAt=at;lastPose=entry?sourcePose(entry,displayTick):authorityPose();pendingResync=reason;
@@ -85,7 +86,7 @@ export function createRunTimeline(){
  function uncertain(){return [...inputs.values()].filter(record=>record.state!=='rejected'&&!history.has(record.expectedInputNo));}
  function retimeAcceptedBoost(prior,replacement){
   const tick=Math.floor(displayTick),oldState=prior.projection.stateAtTick(tick),newState=replacement.projection.stateAtTick(tick);
-  const oldPose=lastPose,newPose=sourcePose(replacement,displayTick);
+  const oldPose=lastPresentedPose??lastPose,newPose=sourcePose(replacement,displayTick);
   if(!oldState||!newState||!oldPose||!newPose||newPose.distance<=oldPose.distance+1e-7)return null;
   const boost=[...history.values()].find(input=>input.type==='item'&&input.item==='boost'&&input.no>oldState.appliedInputNo&&input.no<=newState.appliedInputNo&&input.tick<=tick&&newState.boostUntilTick===input.tick+180&&!retimedInputs.has(input.no));
   if(!boost)return null;
@@ -103,11 +104,17 @@ export function createRunTimeline(){
   let low=lower,high=displayTick;
   for(let step=0;step<40;step++){const middle=(low+high)/2;if(sourcePose(replacement,middle).distance<oldPose.distance)low=middle;else high=middle;}
   const nextTick=(low+high)/2,nextPose=sourcePose(replacement,nextTick);
-  if(!nextPose||!['distance','scale','x','y'].every(field=>close(nextPose[field],oldPose[field])))return unsafe;
+  if(!nextPose||!['distance','scale'].every(field=>close(nextPose[field],oldPose[field])))return unsafe;
   const animationBoundaries=[newState.jumpStartTick,newState.jumpStartTick===null?null:newState.jumpStartTick+48,newState.jumpStartTick===null?null:newState.jumpStartTick+58,newState.slideUntilTick-36,newState.slideUntilTick,newState.changeStartTick,newState.changeEndTick];
   if(animationBoundaries.some(boundary=>Number.isFinite(boundary)&&boundary>nextTick&&boundary<=displayTick))return unsafe;
   const fromTick=displayTick;
-  pendingReconciliation=Object.freeze({reason:'accepted-boost-retime',inputNo:boost.no,fromTick,toTick:nextTick,rewindMs:(fromTick-nextTick)*MS_PER_TICK,correctionDistanceMeters:newPose.distance-oldPose.distance,observedAtMs:lastObservedAt});
+  const animationFields=['lane','fromLane','changeStartTick','changeEndTick','jumpStartTick','slideUntilTick'];
+  if(animationFields.some(field=>oldState[field]!==newState[field])||animationPhase)return unsafe;
+  const player=Object.fromEntries(animationFields.map(field=>[field,newState[field]]));
+  const lane=fromTick<player.changeEndTick,jump=player.jumpStartTick!==null&&fromTick<player.jumpStartTick+58,slide=fromTick<player.slideUntilTick;
+  const phase=lane||jump||slide?{player,offsetTicks:fromTick-nextTick,lane,jump,slide,hits:newState.hits,resolvedObstacleCount:newState.resolvedObstacles.length}:null;
+  pendingReconciliation=Object.freeze({reason:'accepted-boost-retime',inputNo:boost.no,fromTick,toTick:nextTick,rewindMs:(fromTick-nextTick)*MS_PER_TICK,correctionDistanceMeters:newPose.distance-oldPose.distance,observedAtMs:lastObservedAt,...(phase?{preservedAnimation:Object.freeze({offsetTicks:phase.offsetTicks,lane,jump,slide})}:{})});
+  animationPhase=phase;
   retimedInputs.add(boost.no);displayTick=nextTick;lastPose=nextPose;
   return{ok:true};
  }
@@ -204,10 +211,32 @@ export function createRunTimeline(){
   return entry.course.obstacles.some(o=>high>=o.z-o.depth/2-COLLIDER.radius&&low<=o.z+o.depth/2+COLLIDER.radius)
    ||entry.course.gaps.some(g=>high+COLLIDER.radius*.35>g.start&&low-COLLIDER.radius*.35<g.end);
  }
- function result(mode,reason,entry=bases[0]){const reconciliation=pendingReconciliation;pendingReconciliation=null;return{mode,pose:lastPose,reason:reason??reconciliation?.reason??null,displayTick,baseTick:entry?.tick??latest?.snapshotTick??null,baseVersion:entry?.version??latestVersion,...(reconciliation?{reconciliation}:{})};}
+ function displayedPose(mode){
+  const pose=lastPose,phase=animationPhase,p=pose?.visualPlayer;
+  if(!phase||!p)return pose;
+  // boundary may name the next integer frame while interpolation still uses
+  // the pre-impact state. Clear only when the displayed own state has changed.
+  if(mode==='resync'||terminal||pose.hits!==phase.hits||pose.resolvedObstacleCount!==phase.resolvedObstacleCount||pose.fallUntilTick!==null||pose.finishTick!==null||pose.tick<pose.stunUntilTick){animationPhase=null;return pose;}
+  const previous=phase.player;
+  phase.lane=phase.lane&&pose.tick<previous.changeEndTick&&['lane','fromLane','changeStartTick','changeEndTick'].every(field=>p[field]===previous[field]);
+  phase.jump=phase.jump&&pose.tick<previous.jumpStartTick+58&&p.jumpStartTick===previous.jumpStartTick&&p.slideUntilTick===previous.slideUntilTick;
+  phase.slide=phase.slide&&pose.tick<previous.slideUntilTick&&p.slideUntilTick===previous.slideUntilTick&&p.jumpStartTick===previous.jumpStartTick;
+  if(!phase.lane&&!phase.jump&&!phase.slide){animationPhase=null;return pose;}
+  // This is only the already accepted animation, evaluated at its retained
+  // phase. Integer interpolation matches shared projection; physical timers,
+  // distance, collision decisions and the finite display budget stay intact.
+  const at=pose.tick+phase.offsetTicks,lo=Math.floor(at),a=runnerPose(previous,lo),b=runnerPose(previous,lo+1),fraction=at-lo;
+  const animationTick=phase.jump?Math.min(at,previous.jumpStartTick+58):phase.slide?Math.min(at,previous.slideUntilTick):null;
+  return {...pose,x:phase.lane?a.x+(b.x-a.x)*fraction:pose.x,y:phase.jump?a.y+(b.y-a.y)*fraction:pose.y,...(animationTick!==null?{animationTick}:{}),...(phase.slide?{sliding:at<previous.slideUntilTick}:{})};
+ }
+ function result(mode,reason,entry=bases[0]){const reconciliation=pendingReconciliation;pendingReconciliation=null;const pose=displayedPose(mode);lastPresentedPose=pose;return{mode,pose,reason:reason??reconciliation?.reason??null,displayTick,baseTick:entry?.tick??latest?.snapshotTick??null,baseVersion:entry?.version??latestVersion,...(reconciliation?{reconciliation}:{})};}
+
  function sample(now){
   if(!finite(now))return result('hold','invalid-time');
-  const at=Math.max(now,lastObservedAt,lastAt??now);
+  // HTTP/input callbacks can run after the current RAF timestamp. Their
+  // observation time orders messages, but cannot accelerate display time.
+  // Initial/resync bases already anchor lastAt at their real receive time.
+  const at=Math.max(now,lastAt??now);
   if(terminal){lastAt=at;lastPose=authorityPose();return result('hold','authoritative-terminal');}
   if(suspended){lastAt=at;return result('hold',suspended.reason);}
   if(invalidReason){lastAt=at;return result('resync',invalidReason);}

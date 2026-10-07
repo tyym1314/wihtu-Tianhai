@@ -264,14 +264,19 @@ class Runtime:
             actual_dropins = self.run(['systemctl', 'show', unit, '--property=DropInPaths', '--value']).decode().split()
             require(sorted(actual_dropins) == expected_dropins, 'MOCK_APPLICATION_DROPINS_CHANGED')
             config_hashes[unit] = digest(path)
+        config_hashes['nginx'] = self.route_identity(state)
+        return {'container_id': container['Id'], 'volume': installer.VOLUME, 'configuration_sha256': config_hashes,
+                'postgres_image': state['postgres_image'], 'address': state['postgres_address'],
+                'uid': state['uid'], 'network_fingerprint': state['network_fingerprint']}
+
+    def route_identity(self, state):
+        """Default remains the exact original profile; adapters must verify theirs."""
+        templates = Path(state['release']) / 'platform/deploy/mock-sandbox'
         config = installer.TLS_CONF
         info = regular(config)
         expected = (templates / 'mock.nginx.conf.example').read_text().replace('mock-game.example.invalid', installer.HOST).replace('/live/ANDROID_MOCK/', '/live/oasis-android-mock/')
         require(info.st_uid == 0 and not info.st_mode & 0o022 and config.read_text() == expected, 'MOCK_NGINX_ROUTE_CHANGED')
-        config_hashes['nginx'] = digest(config)
-        return {'container_id': container['Id'], 'volume': installer.VOLUME, 'configuration_sha256': config_hashes,
-                'postgres_image': state['postgres_image'], 'address': state['postgres_address'],
-                'uid': state['uid'], 'network_fingerprint': state['network_fingerprint']}
+        return digest(config)
 
     def preflight(self, release):
         self.run(['node', str(release / 'platform/deploy/mock-sandbox/preflight.mjs'),
@@ -426,15 +431,21 @@ class Upgrade:
     def release_checks(self):
         old, new = manifest(self.old), manifest(self.new)
         require(digest(self.new / 'RELEASE-MANIFEST.json') == NEW_MANIFEST, 'TARGET_MANIFEST_NOT_PINNED')
-        require(old['platform/deploy/mock-sandbox/install.py'] == digest(DEPENDENCY), 'INSTALLER_DEPENDENCY_CHANGED')
+        self.installer_identity(old, new)
         compatibility = compatible(old, new)
         before_dependencies, after_dependencies = dependencies(self.old), dependencies(self.new)
         require(before_dependencies == after_dependencies, 'INSTALLED_DEPENDENCIES_CHANGED')
         compatibility['installed_dependencies'] = before_dependencies
         before, after = static_assets(self.old), static_assets(self.new)
+        forward, rollback = self.asset_coverage(before, after)
         return {'old_manifest': digest(self.old / 'RELEASE-MANIFEST.json'), 'new_manifest': NEW_MANIFEST,
-                'runtime_compatibility': compatibility, 'forward_assets': coverage(before, after),
-                'rollback_assets': coverage(after, before)}
+                'runtime_compatibility': compatibility, 'forward_assets': forward, 'rollback_assets': rollback}
+
+    def installer_identity(self, old, new):
+        require(old['platform/deploy/mock-sandbox/install.py'] == digest(DEPENDENCY), 'INSTALLER_DEPENDENCY_CHANGED')
+
+    def asset_coverage(self, before, after):
+        return coverage(before, after), coverage(after, before)
 
     @staticmethod
     def no_obligations(business):
