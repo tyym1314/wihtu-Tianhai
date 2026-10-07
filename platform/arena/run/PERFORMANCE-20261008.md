@@ -1,6 +1,52 @@
 # Run: October 8 performance evidence and transfer contract
 
-The public `20261008-05` Android trace still contains two ordinary presentation
+## Current acceptance boundary
+
+The sealed public `20261008-07` physical Android run lasted 60.169 seconds and
+accepted all 13 attempted inputs. Their dispatch-to-rendered-feedback times
+were 6.6–18.7 ms. The trace nevertheless contains **10 ordinary forward
+discontinuities**. It contains no ordinary backwards discontinuity or ordinary
+hold of 100 ms or more. Authority collisions still change motion. These are
+separate measures: prompt input feedback does not establish smooth scrolling.
+The original iPhone 15 Pro / Safari / Wi-Fi complaint remains unverified.
+
+The new candidate extracts the existing per-runner simulation into
+`runner-physics.mjs`; the server still owns accepted inputs, events, ranks,
+deadlines, winners and settlement. Tests compare every state against a frozen
+pre-extraction engine, including complete races and collision boundaries.
+V1 and V2.0 views retain their original shape. V2.1/V2.2 views add only the
+requesting player's `selfPrediction` contract: schema, resolved obstacle IDs,
+accepted pending input and last input tick. No other player's pending input
+or hidden seed is exposed. The existing whole-game transfer hash covers it.
+
+`createRunSelfProjection()` reconstructs this contract and precomputes at most
+39 simulation steps per accepted snapshot; `sample(elapsedMs)` samples those
+steps without advancing or mutating authority. Invalid or unsupported state
+returns no projection. Collision/respawn boundaries, the 480 m finish and the
+server deadline are explicit limits. The helper does not guess an unacknowledged
+input's acceptance tick and does not own or extend the 650 ms clock budget.
+**It is not yet connected to the renderer.** Switching the scene to this helper
+alone would not resolve publication-phase jumps and could incorrectly predict
+a collision while a new input is awaiting its response.
+
+`readRoomResponseTiming(room)` supplies four local `performance.now()`
+observations: request start, headers observed, body parsed and restoration
+completed. A private WeakMap binds them to each successfully restored room,
+including action responses. They are absent from JSON and transfer hashes.
+Authorization changes clear them; a GET recovery uses its final request's own
+times, while mutations are never replayed. These observations include real
+browser parsing/restoration work; they do not measure server generation time,
+one-way latency or a valid RTT/2 correction. Chromium and WebKit exercised 18
+real HTTP/WebCrypto cases, including a controlled asynchronous digest wait.
+
+The candidate still needs renderer integration with accepted-input handling,
+deadline-preserving clock reconciliation, complete race regression and fresh
+public physical-device verification. Neither this contract work nor the
+browser checks constitutes a smoothness or launch-readiness pass.
+
+## Historical 05 transfer evidence
+
+The public `20261008-05` Android trace contained two ordinary presentation
 holds (233 ms and 199.7 ms) and eight ordinary position discontinuities. Its
 approximately 59.52 Hz requestAnimationFrame rate does not prove smooth visible
 motion. Neither this transfer change nor local tests certify the original

@@ -1,9 +1,11 @@
 import {createGameHostBridge} from '../../legacy/host-bridge.mjs';
 import {createSnapshotTransfer} from './snapshot-transfer.mjs';
-const snapshotTransfer=createSnapshotTransfer();
+import {createRoomResponseTiming} from './response-timing.mjs';
+const snapshotTransfer=createSnapshotTransfer(),roomResponseTiming=createRoomResponseTiming();
+export const readRoomResponseTiming=room=>roomResponseTiming.read(room);
 let accessToken='',hostBridge=null,sessionId=null,launchPending=false;const controls=new Set();
 export const requestId=()=>crypto.randomUUID().replaceAll('-','');
-export function authorize(token){if(token!==accessToken)snapshotTransfer.clear();accessToken=token;}
+export function authorize(token){if(token!==accessToken){snapshotTransfer.clear();roomResponseTiming.clear();}accessToken=token;}
 export function registerHostControls(callbacks){controls.add(callbacks);return()=>controls.delete(callbacks);}
 export function completeHostReturn(details={}){return hostBridge?.completeReturn(details)===true;}
 export function hostState(){return hostBridge?.state||{muted:false,voiceActive:false,visible:true,safeArea:{top:0,right:0,bottom:0,left:0}};}
@@ -11,21 +13,35 @@ export async function api(path,body,{signal}={}){
  // A new token is not usable by the old UI until its identity is verified.
  if(launchPending&&path!=='/v1/launch/exchange'&&path!=='/api/arena/session'){const e=new Error('The session is changing. Retry after the current room is restored.');e.code='SESSION_CHANGED';throw e;}
  const ticket=snapshotTransfer.begin(path,body===undefined);
- const send=transfer=>fetch(path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(accessToken?{Authorization:`Bearer ${accessToken}`} :{}),...(transfer.entry?{'X-Oasis-Known-Actions':transfer.entry.key}:{}),...(transfer.runEnabled?{'X-Oasis-Known-Run-Game':transfer.runEntry?.key||'full'}:{})},body:body===undefined?undefined:JSON.stringify(body),credentials:'same-origin',signal:signal||AbortSignal.timeout(12000)});
- async function read(response){
+ const send=async transfer=>{
+  const requestSignal=signal||AbortSignal.timeout(12000);
+  const options={method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(accessToken?{Authorization:`Bearer ${accessToken}`} :{}),...(transfer.entry?{'X-Oasis-Known-Actions':transfer.entry.key}:{}),...(transfer.runEnabled?{'X-Oasis-Known-Run-Game':transfer.runEntry?.key||'full'}:{})},body:body===undefined?undefined:JSON.stringify(body),credentials:'same-origin',signal:requestSignal};
+  const requestStartedAtMs=performance.now(),response=await fetch(path,options);
+  const headersObservedAtMs=performance.now();
+  const {data,bodyParsedAtMs}=await read(response,transfer);
+  return {data,requestSignal,timing:{requestStartedAtMs,headersObservedAtMs,bodyParsedAtMs}};
+ };
+ async function read(response,transfer){
   let data;try{data=await response.json();}catch{throw new Error('Connection interrupted. Please reconnect to recover your room.');}
-  snapshotTransfer.assertCurrent(ticket);
+  const bodyParsedAtMs=performance.now();
+  snapshotTransfer.assertCurrent(transfer);
   if(!response.ok){const error=new Error(data.error?.message||data.message||`Request failed (${response.status})`);error.code=data.error?.code||data.code;error.status=response.status;const retry=response.headers.get('retry-after');if(retry){const seconds=Number(retry);error.retryAfterMs=Number.isFinite(seconds)?Math.max(0,seconds*1000):Math.max(0,Date.parse(retry)-Date.now())||0;}if(response.status===401&&path!=='/v1/launch/exchange')hostBridge?.requestReauth();throw error;}
-  return data;
+  return {data,bodyParsedAtMs};
  }
- const data=await read(await send(ticket));
- const restore=(current,value)=>snapshotTransfer.restoreRun(current,snapshotTransfer.restore(current,value));
- try{return await restore(ticket,data);}catch(error){
+ const response=await send(ticket);
+ const restore=async(current,{data,requestSignal,timing})=>{
+  requestSignal.throwIfAborted();
+  const restored=await snapshotTransfer.restoreRun(current,snapshotTransfer.restore(current,data));
+  snapshotTransfer.assertCurrent(current);requestSignal.throwIfAborted();
+  roomResponseTiming.record(restored,{...timing,restoredAtMs:performance.now()});
+  return restored;
+ };
+ try{return await restore(ticket,response);}catch(error){
   // Safe GET-only recovery, without a retained-action hint. Never replay POSTs.
   if(error.code!=='SNAPSHOT_REFRESH_REQUIRED'||body!==undefined)throw error;
-  snapshotTransfer.assertCurrent(ticket);
+  snapshotTransfer.assertCurrent(ticket);response.requestSignal.throwIfAborted();
   const full=snapshotTransfer.begin(path,true,{full:true});
-  return restore(full,await read(await send(full)));
+  return restore(full,await send(full));
  }
 }
 export async function waitForLaunch(game,onStatus){

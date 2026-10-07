@@ -12,9 +12,9 @@ import {compactRoomSnapshot} from '../server/pvp/snapshot-transfer.mjs';
 const root=resolve(new URL('..',import.meta.url).pathname),path='/api/pvp/rooms/run-room';
 const out=resolve(root,'review/run-snapshot-transfer-browser',new Date().toISOString().replaceAll(':','-')+'-'+randomUUID().slice(0,8));
 await mkdir(out,{recursive:true});
-const sources=['tests/run-snapshot-transfer-browser.mjs','arena/shared/client.mjs','arena/shared/snapshot-transfer.mjs','shared/run-snapshot-transfer.mjs','server/pvp/snapshot-transfer.mjs'];
+const sources=['tests/run-snapshot-transfer-browser.mjs','arena/shared/client.mjs','arena/shared/response-timing.mjs','arena/shared/snapshot-transfer.mjs','shared/run-snapshot-transfer.mjs','server/pvp/snapshot-transfer.mjs','arena/run/engine.mjs','arena/run/runner-physics.mjs'];
 const source_hashes=Object.fromEntries(await Promise.all(sources.map(async p=>[p,createHash('sha256').update(await readFile(resolve(root,p))).digest('hex')])));
-const bundle=await build({stdin:{contents:"import {api,authorize} from './arena/shared/client.mjs';window.client={api,authorize};",resolveDir:root},bundle:true,write:false,format:'esm',logLevel:'silent'});
+const bundle=await build({stdin:{contents:"import {api,authorize,readRoomResponseTiming} from './arena/shared/client.mjs';window.client={api,authorize,readRoomResponseTiming};",resolveDir:root},bundle:true,write:false,format:'esm',logLevel:'silent'});
 function room(){const game=Run.view(Run.createState('12'.repeat(32),1000,{players:[{key:'human',seatIndex:0},{key:'bot',seatIndex:1,isBot:true}]}),'human');return {id:'run-room',code:'RUNROOM',game_id:'run',me:'human',version:12,server_now:1000,players:[{external_user_id:'human',connected:true}],game};}
 let current,wire=[],held=[],hold=false,corrupt=0,status=200;
 const session={app_id:'fixture-app',game_id:'run',external_user_id:'human'};
@@ -54,6 +54,37 @@ try{
    const r=await get(page);assert.equal(r.server_now,2000);assert.equal(r.connected,false);assert.equal(r.frozen,true);
    assert.equal(wire[0].hint,'full');assert.match(wire[1].hint,/^[a-f0-9]{64}$/);assert.equal(wire[1].omitted,true);
    current.game.players[0].distance=7;assert.equal((await get(page)).distance,7);assert.equal(wire[2].omitted,false);
+  });
+  await run('real response timing belongs to each restored room and expires on authorization change',async page=>{
+   const result=await page.evaluate(async path=>{
+    const first=await client.api(path),before=JSON.stringify(first),a=client.readRoomResponseTiming(first);
+    const second=await client.api(path),b=client.readRoomResponseTiming(second);
+    const post=await client.api(path+'/action',{seq:1}),c=client.readRoomResponseTiming(post);
+    const valid=t=>Object.isFrozen(t)&&Object.values(t).every((v,i,values)=>Number.isFinite(v)&&v>=0&&(i===0||v>=values[i-1]));
+    const observed={valid:[a,b,c].every(valid),sameGame:first.game===second.game,separate:a!==b&&a.restoredAtMs<=b.requestStartedAtMs,
+     unchanged:before===JSON.stringify(first),gameUnmarked:client.readRoomResponseTiming(first.game)===undefined,
+     copyUnmarked:client.readRoomResponseTiming({...first})===undefined};
+    client.authorize('fixture-token-a');observed.sameTokenPreserved=client.readRoomResponseTiming(first)===a;
+    client.authorize('fixture-token-b');observed.cleared=[first,second,post].every(room=>client.readRoomResponseTiming(room)===undefined);
+    return observed;
+   },path);
+   assert.deepEqual(result,{valid:true,sameGame:true,separate:true,unchanged:true,gameUnmarked:true,copyUnmarked:true,sameTokenPreserved:true,cleared:true});
+   assert.equal(wire.length,3);assert.equal(wire[1].omitted,true);assert.equal(wire[2].method,'POST');
+  });
+  await run('response restoration timing includes a real asynchronous WebCrypto wait',async page=>{
+   await page.evaluate(path=>{
+    const digest=crypto.subtle.digest.bind(crypto.subtle);
+    crypto.subtle.digest=async(...args)=>{window.digestEnteredAt=performance.now();await new Promise(resolve=>window.releaseDigest=resolve);return digest(...args);};
+    window.pendingTimedRoom=client.api(path);
+   },path);
+   await page.waitForFunction(()=>typeof releaseDigest==='function');
+   const result=await page.evaluate(async()=>{
+    const releasedAt=performance.now();releaseDigest();
+    const room=await pendingTimedRoom,timing=client.readRoomResponseTiming(room);
+    return{bodyBeforeDigest:timing.bodyParsedAtMs<=digestEnteredAt,restoredAfterRelease:timing.restoredAtMs>=releasedAt,
+     restorationObserved:timing.restoredAtMs>timing.bodyParsedAtMs,frozen:Object.isFrozen(timing)};
+   });
+   assert.deepEqual(result,{bodyBeforeDigest:true,restoredAfterRelease:true,restorationObserved:true,frozen:true});assert.equal(wire.length,1);
   });
   await run('bad digest retries full once and never retries mutation',async page=>{
    await get(page);corrupt=1;await get(page);assert.equal(wire.length,3);assert.equal(wire[2].hint,'full');
