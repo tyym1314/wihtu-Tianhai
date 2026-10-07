@@ -101,7 +101,7 @@ journalctl -u oasis-backup.service -n 30 --no-pager
 
 ## 升级与回滚
 
-1. 在 `platform/` 执行 `npm run test:release` 和 `npm run build:release`，后者一次构建 Android 测试包、旧游戏、竞技游戏、合作方接入包和管理台（构建机需要 Android SDK/JDK，路径见 android-smoke/README.md；不连接手机）。再使用 `package-release.py` 打包经过构建、测试的发布物，解压到新的 `/opt/oasis/releases/<版本>/`，核对清单并安装该版本依赖。不要直接覆盖正在使用的目录。
+1. 在 `platform/` 执行 `npm run test:release` 和 `npm run build:release`。发布构建先后核验已审核 Android 产物的哈希与来源，再构建旧游戏、竞技游戏、合作方接入包和管理台；它不会重新构建或替换 APK。APK 需独立构建、审核并明确所属 Origin、包名、服务版本和设备验收记录，见 [Android 说明](../android-smoke/README.md)。再使用 `package-release.py` 打包经过构建、测试的发布物，解压到新的 `/opt/oasis/releases/<版本>/`，核对清单并安装该版本依赖。不要直接覆盖正在使用的目录。
 2. 保持 `/opt/oasis/private`、`oasis-postgres-data` 和证书目录不变。部署包不得包含本地 `.local`、数据库、SSH 私钥或运行凭证。
 3. 记录当前符号链接目标并完成备份。暂停新会话、处理完未决对局后，停止试玩和 API 服务，将 `/opt/oasis/current` 原子切换到新版本，再依次启动 API 和试玩服务。
 4. 核验健康接口、管理员登录、独立访客身份、游戏启动／操作／返回与结算记录；有代理配置变更时另做 Nginx 配置检查。
@@ -111,6 +111,14 @@ journalctl -u oasis-backup.service -n 30 --no-pager
 `activate-release.py` 已实现清单校验、未决义务检查、备份、原子切换、健康检查及失败回切。仅在已确认数据库增量迁移兼容时使用 `--compatible-schema`。它会在停止服务后再次检查未决对局，避免检查和停服之间进入的新局被忽略。`package-delta.py` 只生成传输增量；目标必须先独立复制上一版本，再应用增量并验证完整新清单，不能使用会共同修改旧版本文件的硬链接。
 
 服务器可用 `stage_delta.py <新版本目录名> <增量包路径> <SHA256>` 完成上述独立复制、逐文件校验和暂存；新目录名格式为 `YYYYMMDD-NN`。它不切换流量。随后用新版本中的 `activate-release.py /opt/oasis/releases/<新版本> --check-only` 检查未决局和依赖，确认可回滚的增量迁移后才执行带 `--compatible-schema` 的激活。若前置条件不满足，保留当前链接和服务，不得以删除未决局绕过检查。
+
+### 历史版本归档
+
+`archive-releases.py` 只允许处理代码中列出的九个历史版本，每次修改一个目录。先在服务器上对已核对来源的工具执行 `python3 archive-releases.py --check-only`；检查不写文件。实际归档还会持有与发布相同的锁，再次排除当前、Mock、上一版、最近三份未 pin 版本及进程使用中的版本。所有旧指纹资源必须仍在当前目录且哈希一致，不满足时保留旧目录。
+
+对已检查的单个版本执行 `python3 archive-releases.py 20260927-01 --archive`，工具先压缩并真实解压，核对整个目录的文件内容、路径、权限、属主、时间和内部符号链接，再回收原目录。外部链接、扩展属性、特殊文件、来源变动或临时空间不足均拒绝；临时工作之外至少保留 3 GiB 可用空间。归档保存在 `/opt/oasis/release-archives/<版本>/`，不能只按原目录大小报告收益，应读取结果的 `reclaimed_bytes` 并重新检查磁盘。该工具不处理数据库、私有配置、业务备份或其他服务。
+
+中断后先使用 `python3 archive-releases.py <版本> --recover` 收敛该事务；需取回完整已归档代码时使用 `--restore`。恢复核验压缩包和目录清单，不覆盖现有版本，保留归档副本。恢复历史文件不等于回滚流量，激活仍需通过上面的 schema 与未决义务检查。不要手工删除事务目录或归档中的收据和清单，也不要把同机压缩归档当作异地灾备。
 
 ## 对外接入与运行状态
 
