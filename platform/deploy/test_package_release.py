@@ -102,6 +102,74 @@ class PackageRetainedAssetTest(unittest.TestCase):
             package_module.package(self.repo, out)
         self.assertFalse(out.exists())
 
+    def test_real_archive_and_both_manifests_exclude_only_local_metadata(self):
+        excluded = ('src/.DS_Store', 'src/._engine.mjs', 'src/Thumbs.db',
+                    'platform/server/desktop.ini', 'platform/shared/.idea/workspace.xml',
+                    'platform/specs/.vscode/settings.json', 'platform/deploy/.cache/check.json',
+                    'platform/dist/.DS_Store', 'platform/arena/dist/._index.html',
+                    'platform/legacy/dist/.cache/generated.js',
+                    'platform/dist/.idea/workspace.xml', 'platform/arena/.cache/engine.mjs',
+                    'platform/dist/__MACOSX/._index.html')
+        kept = ('src/build/engine.mjs', 'platform/server/build/compiled.mjs',
+                'platform/dist/build/chunk.js', 'platform/arena/dist/assets/Current-12345678.js',
+                'platform/legacy/dist/cache/normal.js', 'platform/dist/.well-known/config.json',
+                'platform/specs/DS_Store.md')
+        for name in (*excluded, *kept):
+            self.write(name, ('fixture ' + name).encode())
+        record(self.repo)
+        out = self.base / 'filtered.tar.gz'
+        package_module.package(self.repo, out)
+        sidecar = out.with_suffix('.gz.manifest.json').read_bytes()
+        manifest = json.loads(sidecar)
+        with tarfile.open(out, 'r:gz') as bundle:
+            self.assertEqual(bundle.extractfile('RELEASE-MANIFEST.json').read(), sidecar)
+            self.assertEqual(set(bundle.getnames()), {*manifest, 'RELEASE-MANIFEST.json'})
+            for name in excluded:
+                self.assertNotIn(name, manifest)
+                self.assertNotIn(name, bundle.getnames())
+                self.assertEqual((self.repo / name).read_bytes(), ('fixture ' + name).encode())
+            for name in (*kept, self.historical['path'], RETAINED_LOCK):
+                content = bundle.extractfile(name).read()
+                self.assertEqual(content, (self.repo / name).read_bytes())
+                self.assertEqual(hashlib.sha256(content).hexdigest(), manifest[name])
+            self.assertEqual(manifest[self.historical['path']], self.historical['sha256'])
+
+    def test_metadata_filter_does_not_weaken_file_symlink_rejection(self):
+        target = self.base / 'outside.mjs'
+        target.write_text('outside')
+        for name in ('src/linked.mjs', 'src/.DS_Store', 'platform/dist/._index.html'):
+            with self.subTest(name=name):
+                path = self.repo / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.symlink_to(target)
+                record(self.repo)
+                out = self.base / 'unsafe.tar.gz'
+                with self.assertRaisesRegex(ValueError, 'UNSAFE_RELEASE_PATH'):
+                    package_module.package(self.repo, out)
+                self.assertFalse(out.exists())
+                path.unlink()
+
+    def test_directory_symlink_remains_rejected(self):
+        target = self.base / 'outside-src'
+        target.mkdir()
+        (target / 'engine.mjs').write_text('outside')
+        (self.repo / 'src').symlink_to(target, target_is_directory=True)
+        record(self.repo)
+        out = self.base / 'unsafe.tar.gz'
+        with self.assertRaisesRegex(ValueError, 'UNSAFE_RELEASE_PATH'):
+            package_module.package(self.repo, out)
+        self.assertFalse(out.exists())
+
+    def test_checkout_ancestor_named_cache_is_not_filtered(self):
+        parent = self.base / '.cache'
+        parent.mkdir()
+        self.repo = self.repo.rename(parent / 'source')
+        out = self.base / 'nested-checkout.tar.gz'
+        package_module.package(self.repo, out)
+        with tarfile.open(out, 'r:gz') as bundle:
+            self.assertEqual(bundle.extractfile(self.historical['path']).read(), b'export default 1;')
+            self.assertIn('platform/dist/index.html', bundle.getnames())
+
 
 if __name__ == '__main__':
     unittest.main()

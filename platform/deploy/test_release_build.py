@@ -74,6 +74,55 @@ class ReleaseBuildGateTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'FULL_RELEASE_BUILD_REQUIRED'):
             verify(self.root)
 
+    def test_local_metadata_changes_do_not_invalidate_inputs_or_outputs(self):
+        names = ('src/.DS_Store', 'platform/public/._banner.png',
+                 'platform/server/Thumbs.db', 'platform/src/Desktop.ini',
+                 'platform/shared/.idea/workspace.xml',
+                 'platform/arena/.vscode/settings.json',
+                 'platform/specs/.cache/index.json',
+                 'platform/arena/dist/.DS_Store',
+                 'platform/dist/.cache/generated.js',
+                 'platform/legacy/dist/.idea/workspace.xml')
+        cache_dirs = ('.AppleDouble', '__MACOSX', '.pytest_cache', '.mypy_cache',
+                      '.ruff_cache', '.gradle', '.parcel-cache', '.vite', '.turbo')
+        names += tuple('platform/src/' + part + '/local-data' for part in cache_dirs)
+        for name in names:
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('local metadata before build')
+        manifest = record(self.root)
+        for name in names:
+            self.assertNotIn(name, manifest['inputs'])
+            self.assertNotIn(name, manifest['outputs'])
+            (self.root / name).write_text('local metadata changed after build')
+        (self.root / 'platform/dist/._new-output').write_text('new metadata')
+        (self.root / 'platform/arena/.DS_Store').write_text('new metadata')
+        self.assertEqual(verify(self.root), manifest)
+        for name in names:
+            self.assertEqual((self.root / name).read_text(), 'local metadata changed after build')
+
+    def test_build_directories_and_similarly_named_files_remain_fingerprinted(self):
+        cases = {'src/build/engine.mjs': 'inputs',
+                 'platform/server/build/compiled.mjs': 'inputs',
+                 'platform/src/cache/data.json': 'inputs',
+                 'platform/public/.well-known/config.json': 'inputs',
+                 'platform/arena/dist/build/generated.js': 'outputs',
+                 'platform/dist/cache/runtime.js': 'outputs',
+                 'platform/legacy/dist/DS_Store.js': 'outputs'}
+        for name in cases:
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('real build content')
+        manifest = record(self.root)
+        for name, group in cases.items():
+            with self.subTest(name=name):
+                self.assertIn(name, manifest[group])
+                (self.root / name).write_text('real content changed')
+                with self.assertRaisesRegex(ValueError, 'STALE_BUILD_' + group.upper()):
+                    verify(self.root)
+                (self.root / name).write_text('real build content')
+        self.assertEqual(verify(self.root), manifest)
+
 
 if __name__ == '__main__':
     unittest.main()

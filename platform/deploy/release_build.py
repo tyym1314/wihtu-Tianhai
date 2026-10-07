@@ -15,6 +15,11 @@ SOURCE_TREES = ('src', 'public', 'platform/src', 'platform/public', 'platform/sp
                 # public math-profile metadata from server code.
                 'platform/server', 'platform/examples/partner-wallet')
 EXCLUDED = {'dist', 'node_modules', '.local', '__pycache__'}
+# Local editor/OS metadata is neither a build input nor a runtime output.
+# Keep this separate from EXCLUDED: release packages must retain dist/build.
+LOCAL_METADATA = {'.DS_Store', '.AppleDouble', '__MACOSX', '.LSOverride',
+                  '.idea', '.vscode', '.cache', '.pytest_cache', '.mypy_cache',
+                  '.ruff_cache', '.gradle', '.parcel-cache', '.vite', '.turbo'}
 SOURCE_FILES = ('index.html', 'tiger.html', 'package.json', 'package-lock.json',
                 'platform/index.html', 'platform/package.json', 'platform/package-lock.json',
                 'platform/vite.config.js', 'platform/scripts/build-legacy.mjs',
@@ -250,9 +255,16 @@ def materialize_retained_assets(root, archive):
     return {'retained_assets': len(expected), 'materialized': written, 'bundle_sha256': bundle['sha256']}
 
 
+def is_local_metadata(relative):
+    return any(part in LOCAL_METADATA or part.startswith('._')
+               or part.lower() in ('thumbs.db', 'desktop.ini')
+               for part in relative.parts)
+
+
 def fingerprint(root, paths):
     return {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted(set(paths)) if p.is_file()}
+            for p in sorted(set(paths))
+            if not is_local_metadata(p.relative_to(root)) and p.is_file()}
 
 
 def inputs(root):

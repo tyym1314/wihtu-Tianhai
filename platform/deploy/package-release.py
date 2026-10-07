@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import tarfile
 import sys
-from release_build import RETAINED_LOCK, verify, verify_retained_assets
+from release_build import RETAINED_LOCK, is_local_metadata, verify, verify_retained_assets
 
 def package(repo, out):
     verify(repo)
@@ -34,6 +34,8 @@ def package(repo, out):
         if (any((repo / parent).is_symlink() for parent in (relative, *relative.parents))
                 or not path.resolve().is_relative_to(repo.resolve())):
             raise ValueError('UNSAFE_RELEASE_PATH: ' + str(path.relative_to(repo)))
+    # Keep the existing symlink rejection even for newly excluded metadata.
+    files = {p for p in files if not is_local_metadata(p.relative_to(repo))}
     manifest = {str(p.relative_to(repo)): hashlib.sha256(p.read_bytes()).hexdigest()
                 for p in sorted(files)}
     for asset in retained['assets']:

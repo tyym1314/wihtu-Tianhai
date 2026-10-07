@@ -31,8 +31,13 @@ class ReleasePromotionTests(unittest.TestCase):
         self.module = load_script()
         self.module.BASE = self.base
         (self.base / 'private/release.lock').touch()
-        self.module.static_assets.publish(self.old, self.base, apply=True)
-        self.module.static_assets.publish(self.candidate, self.base, apply=True)
+        # Fixture publication writes a few bytes; promotion tests must not
+        # depend on the developer disk meeting the server's 3 GiB reserve.
+        # Real reserve failures remain covered by test_publish_static_assets.
+        with mock.patch.object(self.module.static_assets, 'filesystem_space',
+                               return_value=(4096, 20 * 1024 ** 3)):
+            self.module.static_assets.publish(self.old, self.base, apply=True)
+            self.module.static_assets.publish(self.candidate, self.base, apply=True)
         self.commands = []
         self.output = io.StringIO()
         self.stack = contextlib.ExitStack()
