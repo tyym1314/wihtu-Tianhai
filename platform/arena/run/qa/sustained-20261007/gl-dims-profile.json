@@ -1,0 +1,293 @@
+{
+  "label": "gl-dims",
+  "scope": "Isolated RunGame + authoritative engine; Chrome mobile emulation 390x844 DPR3, Metal, CPU4. Not iPhone Safari or public-host acceptance.",
+  "duration_ms": 9063,
+  "phase": "racing",
+  "distance_m": 68.93333333333334,
+  "hits": 1,
+  "actions": 2,
+  "input_ready": "true",
+  "frame_gaps_over_50": [
+    {
+      "at": 3155.2,
+      "ms": 183.39999999999964
+    },
+    {
+      "at": 7288.3,
+      "ms": 66.60000000000036
+    }
+  ],
+  "long_tasks": [
+    {
+      "at": 2977.0999999046326,
+      "ms": 179
+    },
+    {
+      "at": 7222,
+      "ms": 80
+    }
+  ],
+  "loaf": [
+    {
+      "at": 2966.4000000953674,
+      "ms": 188.89999961853027,
+      "scripts": [
+        {
+          "name": "performWorkUntilDeadline",
+          "ms": 9.699999809265137,
+          "invoker": "event-listener"
+        },
+        {
+          "name": "render2",
+          "ms": 175.59999990463257,
+          "invoker": "user-callback"
+        }
+      ]
+    },
+    {
+      "at": 7209.5,
+      "ms": 92.59999990463257,
+      "scripts": [
+        {
+          "name": "performWorkUntilDeadline",
+          "ms": 10,
+          "invoker": "event-listener"
+        },
+        {
+          "name": "render2",
+          "ms": 79.19999980926514,
+          "invoker": "user-callback"
+        }
+      ]
+    }
+  ],
+  "scene_compiles": [
+    {
+      "at": 673.7999997138977,
+      "ms": 44.5
+    }
+  ],
+  "scene_events": [
+    {
+      "at": 7221.900000095367,
+      "kind": "hit"
+    },
+    {
+      "at": 10772.099999904633,
+      "kind": "item_pickup"
+    }
+  ],
+  "slowest_scene_frames": [
+    {
+      "at": 705.3,
+      "distance": 0,
+      "prepMs": 0.09999990463256836,
+      "particlesMs": 0,
+      "renderMs": 187.19999980926514,
+      "frameMs": 187.2999997138977,
+      "calls": 95,
+      "triangles": 130960,
+      "programs": 12,
+      "visibleParticles": 0,
+      "visibleGroups": 15,
+      "visibleDecorations": 16
+    },
+    {
+      "at": 2971.8,
+      "distance": 8.037600000762943,
+      "prepMs": 1,
+      "particlesMs": 0,
+      "renderMs": 174.59999990463257,
+      "frameMs": 175.59999990463257,
+      "calls": 114,
+      "triangles": 151144,
+      "programs": 12,
+      "visibleParticles": 0,
+      "visibleGroups": 18,
+      "visibleDecorations": 17
+    },
+    {
+      "at": 7221.7,
+      "distance": 37.46666666666667,
+      "prepMs": 0.9000000953674316,
+      "particlesMs": 0,
+      "renderMs": 78.2999997138977,
+      "frameMs": 79.19999980926514,
+      "calls": 134,
+      "triangles": 151044,
+      "programs": 12,
+      "visibleParticles": 24,
+      "visibleGroups": 17,
+      "visibleDecorations": 14
+    },
+    {
+      "at": 10004.9,
+      "distance": 57.56026666819253,
+      "prepMs": 0.10000038146972656,
+      "particlesMs": 0,
+      "renderMs": 4.699999809265137,
+      "frameMs": 4.800000190734863,
+      "calls": 115,
+      "triangles": 148028,
+      "programs": 12,
+      "visibleParticles": 0,
+      "visibleGroups": 19,
+      "visibleDecorations": 18
+    },
+    {
+      "at": 8688.3,
+      "distance": 47.027466668192524,
+      "prepMs": 0.09999990463256836,
+      "particlesMs": 0,
+      "renderMs": 4.400000095367432,
+      "frameMs": 4.5,
+      "calls": 113,
+      "triangles": 155116,
+      "programs": 12,
+      "visibleParticles": 0,
+      "visibleGroups": 19,
+      "visibleDecorations": 18
+    },
+    {
+      "at": 955.3,
+      "distance": 0,
+      "prepMs": 0.10000038146972656,
+      "particlesMs": 0,
+      "renderMs": 3.5999999046325684,
+      "frameMs": 3.700000286102295,
+      "calls": 95,
+      "triangles": 130960,
+      "programs": 12,
+      "visibleParticles": 0,
+      "visibleGroups": 15,
+      "visibleDecorations": 16
+    },
+    {
+      "at": 905.3,
+      "distance": 0,
+      "prepMs": 0,
+      "particlesMs": 0,
+      "renderMs": 3.6000003814697266,
+      "frameMs": 3.6000003814697266,
+      "calls": 95,
+      "triangles": 130960,
+      "programs": 12,
+      "visibleParticles": 0,
+      "visibleGroups": 15,
+      "visibleDecorations": 16
+    },
+    {
+      "at": 988.6,
+      "distance": 0,
+      "prepMs": 0,
+      "particlesMs": 0,
+      "renderMs": 3.4000000953674316,
+      "frameMs": 3.4000000953674316,
+      "calls": 95,
+      "triangles": 130960,
+      "programs": 12,
+      "visibleParticles": 0,
+      "visibleGroups": 15,
+      "visibleDecorations": 16
+    },
+    {
+      "at": 4905.1,
+      "distance": 23.0285333348592,
+      "prepMs": 1.8000001907348633,
+      "particlesMs": 0,
+      "renderMs": 1.5,
+      "frameMs": 3.3000001907348633,
+      "calls": 109,
+      "triangles": 150552,
+      "programs": 12,
+      "visibleParticles": 0,
+      "visibleGroups": 16,
+      "visibleDecorations": 13
+    },
+    {
+      "at": 11188.2,
+      "distance": 67.02666666819255,
+      "prepMs": 0.9000000953674316,
+      "particlesMs": 0,
+      "renderMs": 2.3000001907348633,
+      "frameMs": 3.200000286102295,
+      "calls": 132,
+      "triangles": 147056,
+      "programs": 12,
+      "visibleParticles": 24,
+      "visibleGroups": 20,
+      "visibleDecorations": 14
+    },
+    {
+      "at": 9321.6,
+      "distance": 52.09386666819253,
+      "prepMs": 0.09999990463256836,
+      "particlesMs": 0,
+      "renderMs": 3.0999999046325684,
+      "frameMs": 3.1999998092651367,
+      "calls": 114,
+      "triangles": 173152,
+      "programs": 12,
+      "visibleParticles": 0,
+      "visibleGroups": 18,
+      "visibleDecorations": 18
+    },
+    {
+      "at": 11271.6,
+      "distance": 67.69386666819256,
+      "prepMs": 0.09999990463256836,
+      "particlesMs": 0,
+      "renderMs": 3.0999999046325684,
+      "frameMs": 3.1999998092651367,
+      "calls": 132,
+      "triangles": 147056,
+      "programs": 12,
+      "visibleParticles": 24,
+      "visibleGroups": 20,
+      "visibleDecorations": 14
+    },
+    {
+      "at": 938.6,
+      "distance": 0,
+      "prepMs": 0,
+      "particlesMs": 0,
+      "renderMs": 3.1000003814697266,
+      "frameMs": 3.1000003814697266,
+      "calls": 95,
+      "triangles": 130960,
+      "programs": 12,
+      "visibleParticles": 0,
+      "visibleGroups": 15,
+      "visibleDecorations": 16
+    },
+    {
+      "at": 10038.3,
+      "distance": 57.82746666819253,
+      "prepMs": 0,
+      "particlesMs": 0,
+      "renderMs": 3.1000003814697266,
+      "frameMs": 3.1000003814697266,
+      "calls": 115,
+      "triangles": 148028,
+      "programs": 12,
+      "visibleParticles": 0,
+      "visibleGroups": 19,
+      "visibleDecorations": 18
+    },
+    {
+      "at": 921.9,
+      "distance": 0,
+      "prepMs": 0,
+      "particlesMs": 0,
+      "renderMs": 3.0999999046325684,
+      "frameMs": 3.0999999046325684,
+      "calls": 95,
+      "triangles": 130960,
+      "programs": 12,
+      "visibleParticles": 0,
+      "visibleGroups": 15,
+      "visibleDecorations": 16
+    }
+  ],
+  "errors": []
+}

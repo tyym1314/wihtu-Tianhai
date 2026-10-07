@@ -127,5 +127,8 @@ export function createIllustratedRunner(kind='fox',ghost=false,{onError=()=>{}}=
   shadow.scale.setScalar(1-.30*clamp(airborne/1.3,0,1));shadow.material.opacity=.18-.08*clamp(airborne/1.3,0,1);
   root.userData.groundShadowHeight=airborne+shadow.position.y*scale;root.userData.authoritativeTick=tick;
  }
- return{root,ready,pose,animate,getBone(){return null},dispose(){if(dead)return;dead=true;controller.abort();for(const t of Object.values(textures||{}))t.dispose();for(const m of[sprite,ring,shadow,shield]){m.geometry?.dispose();m.material.dispose();}root.clear();}};
+ // WebGLRenderer.initTexture uploads one atlas at a time during scene loading.
+ // Returning the scene-owned clones keeps each runner's independent UV window.
+ function gpuTextures(){return textures?Object.values(textures):[];}
+ return{root,ready,pose,animate,gpuTextures,getBone(){return null},dispose(){if(dead)return;dead=true;controller.abort();for(const t of Object.values(textures||{}))t.dispose();for(const m of[sprite,ring,shadow,shield]){m.geometry?.dispose();m.material.dispose();}root.clear();}};
 }

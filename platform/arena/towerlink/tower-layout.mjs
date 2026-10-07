@@ -1,6 +1,8 @@
 /** Art footprint and interaction footprint deliberately use different sizes. */
 export function towerMetrics(width,height){
- const artWidth=Math.max(34,Math.min(52,width*.122,height*.15));
+ // Keep the 48 × 52 CSS-pixel hit target, but leave more road visible between
+ // the rendered towers on a phone-sized battlefield.
+ const artWidth=Math.max(34,Math.min(46,width*.108,height*.14));
  return{artWidth,hitWidth:48,hitHeight:52};
 }
 export function towerPoint(t,width,height,rotation=0){const dx=t.x-.5,dy=t.y-.5,c=Math.cos(rotation),s=Math.sin(rotation),x=.5+dx*c-dy*s,y=.5+dx*s+dy*c;return{x:20+x*(width-40),y:70+y*(height-112)};}

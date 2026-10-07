@@ -1,13 +1,16 @@
 /** Isolated browser validation; run ui-server.mjs in a separate process first. */
 import {chromium,webkit} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
+import {resolve,sep} from 'node:path';
+import {pathToFileURL} from 'node:url';
 import assert from 'node:assert/strict';
+import {towerMetrics} from '../tower-layout.mjs';
 
 const base='http://127.0.0.1:18126/__tower-ui';
-const out=new URL('./usability/',import.meta.url);
+const out=process.env.TOWER_UI_OUTPUT_DIR?pathToFileURL(resolve(process.env.TOWER_UI_OUTPUT_DIR)+sep):new URL('./usability/',import.meta.url);
 await mkdir(out,{recursive:true});
 const report={at:new Date().toISOString(),scope:'Desktop Chromium/WebKit with mobile viewport emulation; this is not physical iPhone acceptance.',layouts:[],gestures:[],errors:[],failures:[]};
-const cases=[[390,844,'players=2','battle-390'],[320,568,'players=2','battle-320'],[390,844,'players=4','four-390'],[390,844,'lesson=lesson-07','supply-390'],[320,568,'lesson=lesson-06','defense-320']];
+const cases=[[360,800,'players=2','battle-360'],[390,844,'players=2','battle-390'],[412,866,'players=2','battle-412'],[430,932,'players=2','battle-430'],[320,568,'players=2','battle-320'],[390,844,'players=4','four-390'],[390,844,'lesson=lesson-07','supply-390'],[320,568,'lesson=lesson-06','defense-320']];
 const check=(condition,message)=>{if(!condition)report.failures.push(message);};
 async function ready(page,query){
  await page.goto(base+'?'+query);
@@ -23,7 +26,7 @@ async function layout(page,browserName,name){
    if(width>1&&height>1)overlaps.push({a:a.id,b:b.id,width,height});
   }
   const production=document.querySelector('.tl-production'),summary=production.parentElement.getBoundingClientRect().toJSON(),productionLines=[...production.children].map(e=>{const range=document.createRange();range.selectNodeContents(e);return{text:e.innerText,rect:e.getBoundingClientRect().toJSON(),textBounds:range.getBoundingClientRect().toJSON()};}),controls=[...document.querySelectorAll('.tl-header button,.tl-control-panel button')].map(e=>({label:e.innerText||e.getAttribute('aria-label'),rect:e.getBoundingClientRect().toJSON()}));
-  return{width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,stage:document.querySelector('.towerlink-stage').getBoundingClientRect().toJSON(),nodes,overlaps,summary,productionLines,controls};
+  return{width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,stage:document.querySelector('.towerlink-stage').getBoundingClientRect().toJSON(),nodes,overlaps,summary,productionLines,controls,routeButtonText:document.querySelector('[data-action="tower-manage"]').innerText};
  });
  report.layouts.push({browser:browserName,name,...geometry});
  check(geometry.nodes.every(n=>Math.abs(n.width-48)<.1&&Math.abs(n.height-52)<.1),`${browserName}/${name}: expected every tower to be 48 x 52 CSS px`);
@@ -32,6 +35,8 @@ async function layout(page,browserName,name){
  check(geometry.nodes.every(n=>n.left>=0&&n.top>=0&&n.right<=geometry.width&&n.bottom<=geometry.height),`${browserName}/${name}: tower clipped by viewport`);
  check(geometry.controls.every(c=>c.rect.width>=44&&c.rect.height>=44),`${browserName}/${name}: header/footer control target below 44 CSS px`);
  check(geometry.productionLines.every(line=>line.textBounds.top>=geometry.summary.top-1&&line.textBounds.bottom<=geometry.summary.bottom+1),`${browserName}/${name}: production text exceeds selected tower summary`);
+ check(geometry.routeButtonText.includes('管理路线'),`${browserName}/${name}: selected tower route management is not discoverable`);
+ check(towerMetrics(geometry.stage.width,geometry.stage.height).artWidth<=46,`${browserName}/${name}: rendered tower art exceeds the compact mobile limit`);
  await page.screenshot({path:new URL(`${browserName}-${name}.png`,out).pathname});
  // Keep the previous Chromium screenshot filenames for the accompanying review.
  if(browserName==='chromium')await page.screenshot({path:new URL(name+'.png',out).pathname});
@@ -63,6 +68,7 @@ async function gestures(page,context,viewport){
  before=await count();await begin(to);await page.evaluate(()=>{const e=window.towerReviewPointerEvents.findLast(e=>e.type==='pointerdown'&&e.primary),stage=document.querySelector('.towerlink-stage');if(!stage.hasPointerCapture(e.id))throw Error('primary pointer is not captured');stage.releasePointerCapture(e.id);});await touch('touchMove',[to]);await touch('touchEnd',[]);await record('lost pointer capture cancels',before,[]);
  before=await count();await begin(to);await touch('touchEnd',[]);await page.waitForFunction(n=>window.towerReview.actions().length>n,before);await record('route can be created after cancellation',before,[{type:'link',from:graph.from,to:graph.to}]);
  check(await page.locator('[data-action="tower-stop"]').count()===0,'stop-all should not occupy main controls');await page.locator('[data-action="tower-manage"]').click();
+ const remove=page.locator(`[data-unlink="${graph.to}"]`),removeText=(await remove.innerText()).trim(),removeBox=await remove.boundingBox();check(removeText==='撤线','individual route action must be visible as text');check(removeBox.width>=44&&removeBox.height>=44,'individual route removal target should be >= 44 CSS px');
  const stop=page.locator('[data-action="tower-stop"]');await stop.waitFor({state:'visible'});const stopText=(await stop.innerText()).trim(),stopBox=await stop.boundingBox();check(stopText==='撤掉这座塔全部路线','secondary route action must name selected-tower scope');check(stopBox.height>=44,'secondary route clear target should be >= 44 CSS px high');await page.screenshot({path:new URL(`chromium-route-panel-${width}.png`,out).pathname});before=await count();await stop.click();await page.waitForFunction(n=>window.towerReview.actions().length>n,before);await record('secondary action clears selected tower routes',before,[{type:'stop',towerId:graph.from}],{text:stopText,buttonHeight:stopBox.height});
  const events=await page.evaluate(()=>window.towerReviewPointerEvents);check(events.some(e=>e.type==='pointerdown'&&!e.primary),'multitouch test must produce a non-primary pointer');check(events.some(e=>e.type==='lostpointercapture'),'capture test must produce capture loss');(report.pointerEvents||=[]).push({width,height,events});
  await cdp.detach();
@@ -74,7 +80,7 @@ try{
    const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,deviceScaleFactor:1}),page=await context.newPage();
    page.on('pageerror',error=>report.errors.push({browser:browserName,error:error.message}));
    for(const[width,height,query,name]of cases){await page.setViewportSize({width,height});await ready(page,query);await layout(page,browserName,name);}
-   if(browserName==='chromium')for(const viewport of [{width:390,height:844},{width:320,height:568}])await gestures(page,context,viewport);
+   if(browserName==='chromium')for(const viewport of [{width:360,height:800},{width:390,height:844},{width:412,height:866},{width:430,height:932},{width:320,height:568}])await gestures(page,context,viewport);
   }finally{await browser.close();}
  }
 }catch(error){report.failures.push(error.stack||error.message);}

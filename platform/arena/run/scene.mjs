@@ -91,7 +91,7 @@ export function createRunScene(container,{onError=()=>{},onEvent=()=>{},onReady=
  const snapshotClock=createRunSnapshotClock();
  // A new atlas UV array means a real sheet/frame switch. Publish that mutation
  // even when two sheets happen to use the same numeric offset for QA observers.
- let game=null,me=null,received=performance.now(),lastEvent=0,last=performance.now(),cameraDistance=null,shake=0,feedbackAt=0,finishSeenAt=null,readyAnnounced=false,warming=false,warmed=false,lastAtlasUv=null;
+ let game=null,me=null,received=performance.now(),lastEvent=0,last=performance.now(),cameraDistance=null,shake=0,feedbackAt=0,finishSeenAt=null,readyAnnounced=false,warming=false,warmed=false,warmTextures=[],warmTextureIndex=0,lastAtlasUv=null;
  const diagnosticValues=new Map();
  function publishDiagnostic(key,value){
   if(diagnosticValues.has(key)&&diagnosticValues.get(key)===value)return;
@@ -111,10 +111,19 @@ export function createRunScene(container,{onError=()=>{},onEvent=()=>{},onReady=
   const assetsReady=mine&&container.dataset.backgroundReady==='true'&&container.dataset.environmentReady==='true'&&game.players.length>0&&[...runners.values()].every(r=>r.root.userData.loaded);
   if(assetsReady&&!warming){
    warming=true;
-   // Keep compilation inside this guarded loading phase. compileAsync starts
-   // with a synchronous compile and retains polling callbacks that can outlive
-   // renderer disposal. compile has neither unhandled throws nor pending polls.
-   try{renderer.compile(scene,camera);warmed=true;}catch(error){fail(error);}
+   warmTextures=[...runners.values()].flatMap(r=>r.gpuTextures?.()||[]);
+  }
+  if(warming){
+   try{
+    // Three uploads a texture on first draw. The first visible ghost and
+    // collision otherwise block an active frame for tens of milliseconds.
+    // Upload one atlas per loading frame so ready/input remain tied to a fully
+    // prepared scene without one large setup task.
+    if(warmTextureIndex<warmTextures.length){renderer.initTexture(warmTextures[warmTextureIndex++]);return;}
+    // Keep compilation inside this guarded loading phase. compileAsync starts
+    // synchronously and can leave polling callbacks after renderer disposal.
+    renderer.compile(scene,camera);warmed=true;
+   }catch(error){fail(error);}
   }
   return;
  }

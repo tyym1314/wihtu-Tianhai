@@ -1,0 +1,386 @@
+{
+  "label": "after-prewarm-wifi-waterfall",
+  "scope": "Isolated RunGame + authoritative engine; Chrome mobile emulation 390x844 DPR3, Metal, CPU4. Not iPhone Safari or public-host acceptance.",
+  "network_profile": "CDP 20Mbps down / 5Mbps up / 50ms RTT",
+  "duration_ms": 10099,
+  "course_id": "palm-weave",
+  "phase": "racing",
+  "distance_m": 78.53333333333333,
+  "hits": 1,
+  "actions": 2,
+  "scene_rendered_at_ms": 3983.8999996185303,
+  "first_input_ready_at_ms": 5826.299999713898,
+  "input_ready": "true",
+  "gpu_memory": {
+    "first": {
+      "textures": 10,
+      "geometries": 21
+    },
+    "last": {
+      "textures": 10,
+      "geometries": 38
+    },
+    "peakTextures": 10,
+    "peakGeometries": 38
+  },
+  "slowest_resources": [
+    {
+      "name": "/room",
+      "startTime": 15613.799999713898,
+      "responseEnd": 15676.699999809265,
+      "duration": 62.90000009536743,
+      "transferSize": 8142,
+      "decodedBodySize": 7842
+    },
+    {
+      "name": "/room",
+      "startTime": 15394.699999809265,
+      "responseEnd": 15457.599999904633,
+      "duration": 62.90000009536743,
+      "transferSize": 8136,
+      "decodedBodySize": 7836
+    },
+    {
+      "name": "/room",
+      "startTime": 15179.099999904633,
+      "responseEnd": 15242.89999961853,
+      "duration": 63.799999713897705,
+      "transferSize": 8151,
+      "decodedBodySize": 7851
+    },
+    {
+      "name": "/room",
+      "startTime": 14963.89999961853,
+      "responseEnd": 15026.799999713898,
+      "duration": 62.90000009536743,
+      "transferSize": 8101,
+      "decodedBodySize": 7801
+    },
+    {
+      "name": "/room",
+      "startTime": 14742.699999809265,
+      "responseEnd": 14805.5,
+      "duration": 62.80000019073486,
+      "transferSize": 8136,
+      "decodedBodySize": 7836
+    },
+    {
+      "name": "/room",
+      "startTime": 14527.199999809265,
+      "responseEnd": 14589,
+      "duration": 61.80000019073486,
+      "transferSize": 8192,
+      "decodedBodySize": 7892
+    },
+    {
+      "name": "/room",
+      "startTime": 14314.5,
+      "responseEnd": 14376.5,
+      "duration": 62,
+      "transferSize": 8142,
+      "decodedBodySize": 7842
+    },
+    {
+      "name": "/room",
+      "startTime": 14093.39999961853,
+      "responseEnd": 14155.799999713898,
+      "duration": 62.40000009536743,
+      "transferSize": 8177,
+      "decodedBodySize": 7877
+    },
+    {
+      "name": "/room",
+      "startTime": 13878.299999713898,
+      "responseEnd": 13942,
+      "duration": 63.700000286102295,
+      "transferSize": 8193,
+      "decodedBodySize": 7893
+    },
+    {
+      "name": "/room",
+      "startTime": 13664.699999809265,
+      "responseEnd": 13726.699999809265,
+      "duration": 62,
+      "transferSize": 8142,
+      "decodedBodySize": 7842
+    },
+    {
+      "name": "/room",
+      "startTime": 13441.699999809265,
+      "responseEnd": 13505.199999809265,
+      "duration": 63.5,
+      "transferSize": 8064,
+      "decodedBodySize": 7764
+    },
+    {
+      "name": "/room",
+      "startTime": 13227.39999961853,
+      "responseEnd": 13289.299999713898,
+      "duration": 61.90000009536743,
+      "transferSize": 8145,
+      "decodedBodySize": 7845
+    }
+  ],
+  "frame_gaps_over_50": [],
+  "long_tasks": [],
+  "loaf": [],
+  "scene_compiles": [
+    {
+      "at": 3574.5999999046326,
+      "ms": 45.40000009536743
+    }
+  ],
+  "scene_events": [
+    {
+      "at": 10069.89999961853,
+      "kind": "hit"
+    },
+    {
+      "at": 13737.89999961853,
+      "kind": "item_pickup"
+    }
+  ],
+  "slowest_scene_frames": [
+    {
+      "at": 3619.9,
+      "distance": 0,
+      "prepMs": 0.7999997138977051,
+      "particlesMs": 0,
+      "renderMs": 108.60000038146973,
+      "frameMs": 109.40000009536743,
+      "calls": 95,
+      "triangles": 130960,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 21,
+      "visibleParticles": 0,
+      "visibleGroups": 15,
+      "visibleDecorations": 16
+    },
+    {
+      "at": 13086.2,
+      "distance": 59.1258666689555,
+      "prepMs": 0.09999990463256836,
+      "particlesMs": 0,
+      "renderMs": 4,
+      "frameMs": 4.099999904632568,
+      "calls": 113,
+      "triangles": 147440,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 37,
+      "visibleParticles": 0,
+      "visibleGroups": 18,
+      "visibleDecorations": 18
+    },
+    {
+      "at": 3719.9,
+      "distance": 0,
+      "prepMs": 0,
+      "particlesMs": 0,
+      "renderMs": 3.8000001907348633,
+      "frameMs": 3.8000001907348633,
+      "calls": 95,
+      "triangles": 130960,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 21,
+      "visibleParticles": 0,
+      "visibleGroups": 15,
+      "visibleDecorations": 16
+    },
+    {
+      "at": 11586.2,
+      "distance": 47.12586666895548,
+      "prepMs": 0.10000038146972656,
+      "particlesMs": 0,
+      "renderMs": 3.5999999046325684,
+      "frameMs": 3.700000286102295,
+      "calls": 113,
+      "triangles": 155116,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 34,
+      "visibleParticles": 0,
+      "visibleGroups": 19,
+      "visibleDecorations": 18
+    },
+    {
+      "at": 3736.6,
+      "distance": 0,
+      "prepMs": 0.09999990463256836,
+      "particlesMs": 0,
+      "renderMs": 3.4000000953674316,
+      "frameMs": 3.5,
+      "calls": 95,
+      "triangles": 130960,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 21,
+      "visibleParticles": 0,
+      "visibleGroups": 15,
+      "visibleDecorations": 16
+    },
+    {
+      "at": 10069.7,
+      "distance": 37.46666666666667,
+      "prepMs": 0.9000000953674316,
+      "particlesMs": 0,
+      "renderMs": 2.5999999046325684,
+      "frameMs": 3.5,
+      "calls": 134,
+      "triangles": 151044,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 31,
+      "visibleParticles": 24,
+      "visibleGroups": 17,
+      "visibleDecorations": 14
+    },
+    {
+      "at": 5786.5,
+      "distance": 7.069866667429604,
+      "prepMs": 0.10000038146972656,
+      "particlesMs": 0,
+      "renderMs": 3.0999999046325684,
+      "frameMs": 3.200000286102295,
+      "calls": 114,
+      "triangles": 151144,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 30,
+      "visibleParticles": 0,
+      "visibleGroups": 18,
+      "visibleDecorations": 17
+    },
+    {
+      "at": 3769.9,
+      "distance": 0,
+      "prepMs": 1,
+      "particlesMs": 0,
+      "renderMs": 2.0999999046325684,
+      "frameMs": 3.0999999046325684,
+      "calls": 95,
+      "triangles": 130960,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 21,
+      "visibleParticles": 0,
+      "visibleGroups": 15,
+      "visibleDecorations": 16
+    },
+    {
+      "at": 7903.1,
+      "distance": 23.92773333562215,
+      "prepMs": 0.09999990463256836,
+      "particlesMs": 0,
+      "renderMs": 2.8000001907348633,
+      "frameMs": 2.9000000953674316,
+      "calls": 109,
+      "triangles": 150552,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 30,
+      "visibleParticles": 0,
+      "visibleGroups": 16,
+      "visibleDecorations": 13
+    },
+    {
+      "at": 3786.6,
+      "distance": 0,
+      "prepMs": 0,
+      "particlesMs": 0,
+      "renderMs": 2.8000001907348633,
+      "frameMs": 2.8000001907348633,
+      "calls": 95,
+      "triangles": 130960,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 21,
+      "visibleParticles": 0,
+      "visibleGroups": 15,
+      "visibleDecorations": 16
+    },
+    {
+      "at": 5519.9,
+      "distance": 5.333333333333334,
+      "prepMs": 0.8999996185302734,
+      "particlesMs": 0,
+      "renderMs": 1.9000000953674316,
+      "frameMs": 2.799999713897705,
+      "calls": 95,
+      "triangles": 149626,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 21,
+      "visibleParticles": 0,
+      "visibleGroups": 16,
+      "visibleDecorations": 17
+    },
+    {
+      "at": 11103,
+      "distance": 43.260266668955474,
+      "prepMs": 0,
+      "particlesMs": 0,
+      "renderMs": 2.799999713897705,
+      "frameMs": 2.799999713897705,
+      "calls": 119,
+      "triangles": 150616,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 33,
+      "visibleParticles": 0,
+      "visibleGroups": 19,
+      "visibleDecorations": 16
+    },
+    {
+      "at": 12069.6,
+      "distance": 50.99306666895549,
+      "prepMs": 0.7000002861022949,
+      "particlesMs": 0,
+      "renderMs": 2,
+      "frameMs": 2.700000286102295,
+      "calls": 112,
+      "triangles": 151552,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 34,
+      "visibleParticles": 0,
+      "visibleGroups": 18,
+      "visibleDecorations": 17
+    },
+    {
+      "at": 10203,
+      "distance": 37.46666666666667,
+      "prepMs": 0.5,
+      "particlesMs": 0,
+      "renderMs": 2.1999998092651367,
+      "frameMs": 2.6999998092651367,
+      "calls": 134,
+      "triangles": 151044,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 31,
+      "visibleParticles": 24,
+      "visibleGroups": 17,
+      "visibleDecorations": 14
+    },
+    {
+      "at": 5903.2,
+      "distance": 8.003466667429603,
+      "prepMs": 0.9000000953674316,
+      "particlesMs": 0,
+      "renderMs": 1.700000286102295,
+      "frameMs": 2.6000003814697266,
+      "calls": 114,
+      "triangles": 151144,
+      "programs": 12,
+      "gpuTextures": 10,
+      "gpuGeometries": 30,
+      "visibleParticles": 0,
+      "visibleGroups": 18,
+      "visibleDecorations": 17
+    }
+  ],
+  "errors": []
+}
