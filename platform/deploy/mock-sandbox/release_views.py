@@ -292,7 +292,7 @@ def output_mode(mode):
     return 0o755 if mode & 0o111 else 0o644
 
 
-def write_owned(path, raw, mode=0o644):
+def write_owned(path, raw, mode=0o644, mtime_ns=FIXED_MTIME_NS):
     path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, mode)
     with os.fdopen(fd, 'wb') as stream:
@@ -300,10 +300,10 @@ def write_owned(path, raw, mode=0o644):
         stream.flush()
         os.fsync(stream.fileno())
     path.chmod(mode)
-    os.utime(path, ns=(FIXED_MTIME_NS, FIXED_MTIME_NS))
+    os.utime(path, ns=(mtime_ns, mtime_ns))
 
 
-def copy_body(source, target, expected, identity):
+def copy_body(source, target, expected, identity, mtime_ns):
     target.parent.mkdir(parents=True, exist_ok=True)
     with regular(source) as (stream, info):
         require(fingerprint(info) == identity, 'SOURCE_CHANGED_BEFORE_COPY')
@@ -314,19 +314,19 @@ def copy_body(source, target, expected, identity):
             os.fsync(output.fileno())
     require(hashed == expected['sha256'] and size == expected['bytes'], 'SOURCE_CHANGED_WHILE_COPYING')
     target.chmod(output_mode(expected['mode']))
-    os.utime(target, ns=(FIXED_MTIME_NS, FIXED_MTIME_NS))
+    os.utime(target, ns=(mtime_ns, mtime_ns))
 
 
-def finish_directories(root):
+def finish_directories(root, mtime_ns=FIXED_MTIME_NS):
     for path in sorted((p for p in root.rglob('*') if p.is_dir()), key=lambda p: len(p.parts), reverse=True):
         path.chmod(0o755)
-        os.utime(path, ns=(FIXED_MTIME_NS, FIXED_MTIME_NS))
+        os.utime(path, ns=(mtime_ns, mtime_ns))
     root.chmod(0o755)
-    os.utime(root, ns=(FIXED_MTIME_NS, FIXED_MTIME_NS))
+    os.utime(root, ns=(mtime_ns, mtime_ns))
 
 
 def build_views(*, old_root, new_root, old_manifest_sha256, new_manifest_sha256,
-                old_inventory, old_inventory_sha256, output):
+                old_inventory, old_inventory_sha256, publication_epoch, output):
     old_root, new_root, output = map(safe_local, (old_root, new_root, output))
     require(old_root != new_root and not old_root.is_relative_to(new_root) and not new_root.is_relative_to(old_root), 'OVERLAPPING_SOURCES')
     require(not any(output == p or output.is_relative_to(p) or p.is_relative_to(output) for p in (old_root, new_root)), 'OUTPUT_OVERLAPS_SOURCE')
@@ -334,12 +334,21 @@ def build_views(*, old_root, new_root, old_manifest_sha256, new_manifest_sha256,
     inventory = validate_inventory(old_inventory, old_inventory_sha256, old_manifest_sha256)
     old = verify_source(old_root, old_manifest_sha256, inventory=inventory)
     new = verify_source(new_root, new_manifest_sha256)
+    require(type(publication_epoch) is int and 0 < publication_epoch < 2147483646,
+            'INVALID_PUBLICATION_EPOCH')
+    # Nginx derives static validators from mtime/size. Same-size changed HTML
+    # must have a newer second on forward AND rollback, including IMS-only clients.
+    maximum_mtime = max(identity[5] for source in (old, new)
+                        for identity in source['observed']['identities'].values())
+    require(publication_epoch * 1000000000 > maximum_mtime,
+            'PUBLICATION_MUST_FOLLOW_SOURCE_MTIMES')
     plans, versioned = make_plan(old, new, new_manifest_sha256)
     roots, sources = {'old': old_root, 'new': new_root}, {'old': old, 'new': new}
     common = {
         'schema': SCHEMA, 'derived_view': True, 'original_release_identity': False,
         'source_manifests': {'old': old_manifest_sha256, 'new': new_manifest_sha256},
         'old_installed_inventory_sha256': old_inventory_sha256,
+        'publication_epoch': publication_epoch,
         'static_prefixes': list(STATIC), 'html_excluded_from_static_union': True,
         'historical_urls_preserved': list(MUTABLE), 'new_versioned_files': versioned,
         'old_extras': old['extras'], 'excluded_caches': old['excluded_caches'],
@@ -354,20 +363,22 @@ def build_views(*, old_root, new_root, old_manifest_sha256, new_manifest_sha256,
     result = {'schema': SCHEMA, 'output': str(output), 'views': {}, 'static_coverage_equal': True}
     try:
         for role, plan in plans.items():
+            mtime_ns = (publication_epoch + (role == 'rollback')) * 1000000000
             view = stage / role
             view.mkdir(mode=0o700)
             for name, item in sorted(plan.items()):
                 copy_body(roots[item['source']] / item['path'], view / name, item,
-                          sources[item['source']]['observed']['identities'][item['path']])
+                          sources[item['source']]['observed']['identities'][item['path']], mtime_ns)
             receipt = dict(common, role=role, business_and_html_source='new' if role == 'forward' else 'old',
+                           output_mtime_ns=mtime_ns,
                            files={name: {**item, 'output_mode': output_mode(item['mode'])} for name, item in sorted(plan.items())})
             raw_receipt = encoded(receipt)
-            write_owned(view / RECEIPT, raw_receipt)
+            write_owned(view / RECEIPT, raw_receipt, mtime_ns=mtime_ns)
             manifest = {name: item['sha256'] for name, item in sorted(plan.items())}
             manifest[RECEIPT] = sha(raw_receipt)
             raw_manifest = encoded(manifest)
-            write_owned(view / MANIFEST, raw_manifest)
-            finish_directories(view)
+            write_owned(view / MANIFEST, raw_manifest, mtime_ns=mtime_ns)
+            finish_directories(view, mtime_ns)
             checked = scan_tree(view)
             require(set(checked['files']) == set(manifest) | {MANIFEST}, 'OUTPUT_MANIFEST_COVERAGE')
             require(all(checked['files'][name]['sha256'] == hashed for name, hashed in manifest.items()), 'OUTPUT_BODY_VERIFY_FAILED')
@@ -378,7 +389,9 @@ def build_views(*, old_root, new_root, old_manifest_sha256, new_manifest_sha256,
         # Recapture full sources, including excluded cache bytes, before success.
         for source, root in roots.items():
             require(scan_tree(root) == sources[source]['observed'], 'SOURCE_CHANGED_DURING_BUILD')
-        finish_directories(stage)
+        # Do not reset role-specific directory timestamps when finishing the pair.
+        stage.chmod(0o755)
+        os.utime(stage, ns=(publication_epoch * 1000000000,) * 2)
         # This is a trusted, writer-free local parent directory. Do not overwrite
         # a destination that appeared while building; same-UID malicious rename
         # races are outside this offline builder's contract.
@@ -456,6 +469,7 @@ def main(argv=None):
     build = modes.add_parser('build')
     for name in ('old-root', 'new-root', 'old-manifest-sha256', 'new-manifest-sha256', 'old-inventory', 'old-inventory-sha256', 'output'):
         build.add_argument('--' + name, required=True)
+    build.add_argument('--publication-epoch', type=int, required=True)
     unpack = modes.add_parser('unpack')
     for name in ('archive', 'expected-archive-sha256', 'expected-manifest-sha256', 'output'):
         unpack.add_argument('--' + name, required=True)

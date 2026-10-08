@@ -20,6 +20,7 @@ build_views(
     new_manifest_sha256='...',
     old_inventory=b'... canonical inventory JSON ...',
     old_inventory_sha256='...',
+    publication_epoch=1791438422,  # independently checked, after every source mtime
     output=Path(...),
 )
 ```
@@ -113,8 +114,13 @@ The new manifest includes every output body and the new receipt, excluding only
 itself to avoid recursive hashing. It does not reuse either original identity.
 
 Files are copied independently (no hardlinks), with deterministic `0644` or
-`0755` according to the source executable bits. Directories use `0755`; all output
-mtime values are fixed. Source file identities and full bytes are checked again
+`0755` according to the source executable bits. Directories use `0755`. The required integer `publication_epoch` must be later
+than every authenticated source file's modification time. All forward file and
+directory mtimes use that second; rollback uses the following second. Both values
+are bound into the receipt, and activation additionally rejects future timestamps.
+This prevents same-size changed HTML from inheriting the same Nginx ETag or an
+older Last-Modified value during either switch. Identical inputs and the same
+explicit epoch remain reproducible. Source file identities and full bytes are checked again
 before success. The builder creates a unique sibling
 `.OUTPUT.mock-view-staging-*` directory, private `0700` while incomplete. Both
 views and complete manifests are verified there before one rename publishes the
@@ -135,6 +141,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 -B platform/deploy/mock-sandbox/release_views.
   --new-manifest-sha256 <original15manifest> \
   --old-inventory /absolute/old-installed-inventory.json \
   --old-inventory-sha256 <exactInventoryDigest> \
+  --publication-epoch <verifiedSecondAfterAllSourceMtimes> \
   --output /absolute/new-owned-staging-directory
 ```
 
@@ -179,15 +186,29 @@ The locally built views are bound to these new manifests:
 
 | View | Manifest SHA-256 | Manifest bodies | Static bodies |
 | --- | --- | ---: | ---: |
-| Forward | `2788db4eeb6d81b4c9940b5f8ac14d584d8a4cac01eb689c65af5bb3918ea6d8` | 1,073 | 711 |
-| Rollback | `5b5cf7a837fec7024fedc38c63571e1c62e46401bacda5cc945e7bc829133e33` | 995 | 711 |
+| Forward | `91e8796604c13db1d676ec51a9deb3f6095d6bd9793e5bb754b4d738a23367a4` | 1,073 | 711 |
+| Rollback | `a08f03687efa36a16454513e31d72de6bd4e0d35eb8d929c91c72703cfa8c61b` | 995 | 711 |
 
-The builder passed 27 local tests. The explicit
+These corrected views use publication epoch `1791438422`; rollback uses
+`1791438423`. Earlier equal-mtime artifacts were superseded before installation,
+with their manifests, receipts and test records retained as historical evidence.
+
+The builder passed 29 local tests. The explicit
 `node --test tests/mock-view-assets.mjs` fixture verified complete view manifests
 and made 988 loopback HTTP requests against each view's actual game-asset module:
 86 new API-served assets, GET/HEAD/ETag revalidation across rollback→forward→rollback,
 and all 13 HTML entry routes. Three new platform assets were checked by hash
 only. This did not run Nginx/TLS or a game session.
+
+An isolated Docker fixture copied the host's Nginx 1.18.0 ELF and required
+libraries, with no network, UID 2345, no capabilities and a read-only filesystem.
+It reproduced incorrect 304 responses for the real same-size (483-byte) changed
+HTML with equal timestamps, then passed forward and rollback checks using ordered
+epochs. ETag-only, If-Modified-Since-only and combined revalidation returned the
+correct new body; four historical URLs retained their bytes. The 36 recorded
+cases also include a synthetic same-size example. Both owned container and image
+were removed; public/Mock pins, marker, Nginx configuration and service states
+were unchanged. This validates static HTTP behavior, not phone gameplay.
 
 The separate explicit command
 `node --import tsx --test tests/mock-view-migration.mjs` passed 10 checks with
@@ -205,9 +226,15 @@ but has no V2.3 game view (`game: null`). **Do not automatically roll back after
 new business has been accepted**, including rejected-command receipts or newly
 completed rooms. Static URL coverage does not make runtime protocols compatible.
 
-Remaining work is a view-specific, schema-aware pin/marker transaction with
-verified backup and interruption recovery, actual deployed HTTP checks and APK
-phone acceptance. No view was uploaded, installed or activated by these tests.
+The view-specific transaction is implemented in `view_upgrade.py`, with a frozen
+host adapter and database helper. Local fault-injection and real PostgreSQL tests
+cover interrupted journal writes, schema commits, identity switches and newly
+accepted business. The two DDL statements run under the existing restricted table
+owner; the administrative session identity is restored before post-validation.
+The initial schema must be old; recovery separately permits a verified empty
+additive schema with the original runtime. A successful local test is not host
+activation evidence. Actual staged-host checks, deployed HTTP checks and APK
+phone acceptance remain required. No view was uploaded, installed or activated by these tests.
 Existing human download buttons still use the historical URLs and old content;
 new copies are available only at the explicit versioned paths in the receipt.
 The copied public Android metadata describes its original public artifact, not
@@ -215,3 +242,55 @@ the Mock APK. No compiled UI was rewritten to imply otherwise.
 
 Raw local evidence is retained under `platform/review/mock-release-views-20261008/`
 and `platform/review/mock-view-migration-20261008/20261008T053154Z-67d879/`.
+Native HTTP evidence is in
+`platform/review/mock-view-http-validators-20261008/native-result.json`.
+
+## Fixed-host activation contract
+
+The reviewed adapter binds original04, forward16 and rollback17 to exact manifest
+and receipt hashes. It authenticates every body, provenance, publication mtime,
+installed dependency and the unchanged service/route templates. Its helper source
+hashes are fixed before import. Only the two Mock application units may stop or
+start; existing database/network infrastructure and shared Nginx stay in place.
+
+Use an independently verified, root-owned operator capsule containing
+`view_upgrade.py`, `view_runtime.py`, `view_database.py`, the pinned `upgrade.py`,
+`install.py`, `release_views.py`, and `view-origin-inventory.json`. Staging also
+requires the exact two manifest/receipt pairs under `forward/` and `rollback/`.
+The capsule belongs outside immutable release trees. Existing legacy installer
+and upgrade entry points are not substitutes for this controller.
+
+Run `python3 -B stage_views.py` in that capsule to check source bodies,
+dependencies and disk budget. `--apply` copies the frozen recipes into independent
+16/17 directories, fsyncs the files and directories, verifies both complete views,
+and publishes their names. It retains at least 15% of filesystem capacity (and
+at least 3 GiB), plus the estimated pending backup and growth budget. It performs
+no activation; an interrupted partial publication is preserved for inspection,
+never removed or silently overwritten by a retry.
+
+Run `python3 -B view_upgrade.py check-only` in that capsule after both views and
+dependencies are staged. It obtains existing release/Mock locks and validates
+capacity, current owner/schema, unfinished obligations, original pin/marker,
+resources, process identity and HTTPS response bodies. It does not create an
+upgrade journal or stop services. A successful check is a point-in-time result;
+`apply` repeats the checks.
+
+`python3 -B view_upgrade.py apply` records a durable private journal, stops only
+Mock API/demo, captures a quiet old-schema baseline and a verified custom database
+backup, then performs the additive migration in one locked transaction. Both
+runtime pin and installation marker must identify the same view before startup.
+Process cwd/UID/argv/cgroup and actual served bodies establish which version is
+running; a healthy status alone is insufficient.
+
+After interruption, use the same frozen capsule's
+`python3 -B view_upgrade.py recover`. Recovery inspects the durable journal,
+backup, fixed resources, both identities and current database before deciding.
+It never restores the database automatically. An unchanged quiet database can
+use rollback17; newly accepted business keeps its matching compatible runtime.
+Mixed identity with new business, unknown schema, damaged evidence or V2.3 data
+under an old runtime is refused. A terminal journal is read back without service
+or state mutations.
+
+Once forward16 accepts a Run V2.3 session, old04 and rollback17 are no longer an
+automatic recovery option, even when that session is terminal. Fix forward and
+preserve its records. Browser smoke tests themselves cross this boundary.

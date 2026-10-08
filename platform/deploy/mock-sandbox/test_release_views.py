@@ -52,6 +52,7 @@ class ReleaseViewsTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(body)
         path.chmod(0o644)
+        os.utime(path, ns=(views.FIXED_MTIME_NS,) * 2)
 
     def tree(self, root, files):
         for name, body in files.items():
@@ -69,6 +70,7 @@ class ReleaseViewsTests(unittest.TestCase):
     def args(self, output=None):
         return dict(old_root=self.old, new_root=self.new, old_manifest_sha256=self.old_sha,
                     new_manifest_sha256=self.new_sha, old_inventory=self.inv,
+                    publication_epoch=views.FIXED_MTIME_NS // 1000000000 + 2,
                     old_inventory_sha256=views.sha(self.inv), output=output or self.root / 'result')
 
     def build(self, output=None):
@@ -137,12 +139,34 @@ class ReleaseViewsTests(unittest.TestCase):
         seen = set()
         for source in (self.root / 'one', self.root / 'two'):
             for path in source.rglob('*'):
-                self.assertEqual(path.stat().st_mtime_ns, views.FIXED_MTIME_NS)
+                role = path.relative_to(source).parts[0]
+                expected = (self.args()['publication_epoch'] + (role == 'rollback')) * 1000000000
+                self.assertEqual(path.stat().st_mtime_ns, expected)
                 if path.is_file():
                     self.assertEqual(path.stat().st_nlink, 1)
                     identity = path.stat().st_dev, path.stat().st_ino
                     self.assertNotIn(identity, seen)
                     seen.add(identity)
+
+    def test_changed_same_size_html_has_increasing_publication_seconds_in_both_directions(self):
+        self.build()
+        paths = [self.old / 'platform/dist/index.html',
+                 self.root / 'result/forward/platform/dist/index.html',
+                 self.root / 'result/rollback/platform/dist/index.html']
+        self.assertEqual(len({p.stat().st_size for p in paths}), 1)
+        self.assertEqual([p.read_bytes() for p in paths], [b'old HTML', b'new HTML', b'old HTML'])
+        seconds = [p.stat().st_mtime_ns // 1000000000 for p in paths]
+        self.assertTrue(seconds[0] < seconds[1] < seconds[2])
+        for role, timestamp in zip(('forward', 'rollback'), seconds[1:]):
+            receipt = json.loads((self.root / 'result' / role / views.RECEIPT).read_bytes())
+            self.assertEqual(receipt['output_mtime_ns'], timestamp * 1000000000)
+            self.assertEqual(receipt['publication_epoch'], seconds[1])
+
+    def test_publication_epoch_must_be_explicit_integral_and_newer_than_source(self):
+        for epoch in [True, 1.5, -1, 2147483646, views.FIXED_MTIME_NS // 1000000000]:
+            with self.subTest(epoch=epoch), self.assertRaises(ValueError):
+                views.build_views(**{**self.args(), 'publication_epoch': epoch})
+            self.assertFalse((self.root / 'result').exists())
 
     def test_missing_declared_resource_and_missing_extra_both_refuse(self):
         path = self.old / self.extra
