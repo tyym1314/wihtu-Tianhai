@@ -104,7 +104,19 @@ def main():
             health()
         except Exception:
             if switched:
-                run(['systemctl', 'stop', 'oasis-demo', 'oasis-api'])
+                # A failed health check can follow successful admission under
+                # the candidate's rules. The old release must not inherit any
+                # such obligation, even when the migration itself is additive.
+                try:
+                    run(['systemctl', 'stop', 'oasis-demo', 'oasis-api'])
+                except Exception:
+                    raise RuntimeError('ROLLBACK_BLOCKED_STOP_FAILED: current remains candidate; service state unverified; inspect restricted service logs') from None
+                try:
+                    obligations = pending()
+                except Exception:
+                    raise RuntimeError('ROLLBACK_BLOCKED_PENDING_CHECK_FAILED: current remains candidate; API/demo stopped; recover with candidate-compatible code') from None
+                if obligations:
+                    raise RuntimeError('ROLLBACK_BLOCKED_PENDING_OBLIGATIONS: current remains candidate; API/demo stopped; resolve obligations with candidate-compatible code')
                 switch(old)
             run(['systemctl', 'start', 'oasis-api', 'oasis-demo'])
             health()

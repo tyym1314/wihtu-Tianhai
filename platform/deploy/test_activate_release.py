@@ -171,6 +171,13 @@ class ReleasePromotionTests(unittest.TestCase):
 
     def test_failed_candidate_health_restores_actual_symlink_and_rechecks_old_release(self):
         observed = []
+        pending_checks = []
+
+        def pending():
+            pending_checks.append((self.base / 'current').resolve())
+            if len(pending_checks) > 1:
+                self.assertEqual(self.commands[-1], ['systemctl', 'stop', 'oasis-demo', 'oasis-api'])
+            return 0
 
         def health():
             current = (self.base / 'current').resolve()
@@ -179,10 +186,11 @@ class ReleasePromotionTests(unittest.TestCase):
                 raise RuntimeError('RELEASE_HEALTH_FAILED')
             self.assertEqual(current, self.old)
 
-        with mock.patch.object(self.module, 'pending', side_effect=[0, 0]), mock.patch.object(self.module, 'health', side_effect=health):
+        with mock.patch.object(self.module, 'pending', side_effect=pending), mock.patch.object(self.module, 'health', side_effect=health):
             with self.assertRaisesRegex(RuntimeError, 'RELEASE_HEALTH_FAILED'):
                 self.promote('--compatible-schema')
         self.assertEqual(observed, [self.candidate, self.old])
+        self.assertEqual(pending_checks, [self.old, self.old, self.candidate])
         self.assertEqual(self.commands, [
             ['sh', str(self.old / 'platform/deploy/backup.sh')],
             ['systemctl', 'stop', 'oasis-demo', 'oasis-api'],
@@ -193,6 +201,116 @@ class ReleasePromotionTests(unittest.TestCase):
         self.assertEqual((self.base / 'current').resolve(), self.old)
         self.assertFalse((self.base / 'private/last-release.json').exists())
         self.assertEqual(list(self.base.glob('.current-*')), [])
+
+    def fail_health_after_new_obligation(self, *, rooms=0, cycles=0):
+        # Exercise the real pending() SQL dispatch: neither type may be omitted
+        # from the post-start guard, even when the initial two checks were zero.
+        created = False
+        serving = True
+        queries = []
+        previous_report = self.base / 'private/last-release.json'
+        previous_report.write_bytes(b'{"previous_success":"unchanged"}\n')
+
+        def command(args, **kwargs):
+            nonlocal serving
+            self.record_command(args)
+            if args[:2] == ['systemctl', 'stop']:
+                serving = False
+            elif args[:2] == ['systemctl', 'start']:
+                serving = True
+            elif args[:3] == ['docker', 'exec', 'oasis-postgres']:
+                self.assertEqual(args[3:-1], ['psql', '-U', 'oasis', '-d', 'oasis_platform', '-At', '-c'])
+                self.assertIn("gp_cycles WHERE status NOT IN ('SETTLED','REJECTED')", args[-1])
+                self.assertIn("pvp_rooms WHERE status NOT IN ('settled','cancelled','voided')", args[-1])
+                queries.append((created, serving, (self.base / 'current').resolve()))
+                if created:
+                    self.assertFalse(serving, 'pending must be read only after stopping candidate admission')
+                return str(rooms + cycles if created else 0)
+            return ''
+
+        def health():
+            nonlocal created
+            self.assertTrue(serving)
+            self.assertEqual((self.base / 'current').resolve(), self.candidate)
+            created = True
+            raise RuntimeError('RELEASE_HEALTH_FAILED')
+
+        self.run.side_effect = command
+        with mock.patch.object(self.module, 'health', side_effect=health) as health_check:
+            with self.assertRaisesRegex(RuntimeError, 'ROLLBACK_BLOCKED_PENDING_OBLIGATIONS'):
+                self.promote('--compatible-schema')
+        self.assertEqual(queries, [(False, True, self.old), (False, False, self.old), (True, False, self.candidate)])
+        self.assertFalse(serving)
+        health_check.assert_called_once()
+        self.assertEqual((self.base / 'current').resolve(), self.candidate)
+        self.assertEqual(sum(command[:2] == ['systemctl', 'start'] for command in self.commands), 1)
+        self.assertEqual(previous_report.read_bytes(), b'{"previous_success":"unchanged"}\n')
+        self.assertEqual(self.output.getvalue(), '')
+
+    def test_new_room_blocks_rollback_to_release_without_its_rules(self):
+        self.fail_health_after_new_obligation(rooms=1)
+
+    def test_new_wallet_obligation_blocks_rollback(self):
+        self.fail_health_after_new_obligation(cycles=1)
+
+    def test_rollback_database_read_failure_keeps_candidate_stopped_and_diagnostic_fixed(self):
+        with mock.patch.object(self.module, 'pending', side_effect=[0, 0, RuntimeError('private DB diagnostic')]) as pending, \
+                mock.patch.object(self.module, 'health', side_effect=RuntimeError('RELEASE_HEALTH_FAILED')) as health:
+            with self.assertRaisesRegex(RuntimeError, 'ROLLBACK_BLOCKED_PENDING_CHECK_FAILED') as error:
+                self.promote('--compatible-schema')
+        self.assertNotIn('private DB diagnostic', str(error.exception))
+        self.assertIn('API/demo stopped', str(error.exception))
+        self.assertEqual(pending.call_count, 3)
+        health.assert_called_once()
+        self.assertEqual((self.base / 'current').resolve(), self.candidate)
+        self.assertEqual(self.commands[-1], ['systemctl', 'stop', 'oasis-demo', 'oasis-api'])
+        self.assertEqual(sum(command[:2] == ['systemctl', 'start'] for command in self.commands), 1)
+        self.assertFalse((self.base / 'private/last-release.json').exists())
+        self.assertEqual(self.output.getvalue(), '')
+
+    def test_rollback_stop_failure_never_checks_database_or_switches_to_old(self):
+        stops = 0
+
+        def command(args, **kwargs):
+            nonlocal stops
+            self.record_command(args)
+            if args[:2] == ['systemctl', 'stop']:
+                stops += 1
+                if stops == 2:
+                    raise self.module.subprocess.CalledProcessError(1, args, stderr='private service diagnostic')
+            return ''
+
+        self.run.side_effect = command
+        with mock.patch.object(self.module, 'pending', side_effect=[0, 0]) as pending, \
+                mock.patch.object(self.module, 'health', side_effect=RuntimeError('RELEASE_HEALTH_FAILED')) as health:
+            with self.assertRaisesRegex(RuntimeError, 'ROLLBACK_BLOCKED_STOP_FAILED') as error:
+                self.promote('--compatible-schema')
+        self.assertNotIn('private service diagnostic', str(error.exception))
+        self.assertIn('service state unverified', str(error.exception))
+        self.assertEqual(pending.call_count, 2)
+        health.assert_called_once()
+        self.assertEqual((self.base / 'current').resolve(), self.candidate)
+        self.assertEqual(self.commands[-1], ['systemctl', 'stop', 'oasis-demo', 'oasis-api'])
+        self.assertEqual(sum(command[:2] == ['systemctl', 'start'] for command in self.commands), 1)
+        self.assertFalse((self.base / 'private/last-release.json').exists())
+
+    def test_partially_failed_candidate_start_also_requires_post_stop_pending_guard(self):
+        def command(args, **kwargs):
+            self.record_command(args)
+            if args[:2] == ['systemctl', 'start']:
+                raise self.module.subprocess.CalledProcessError(1, args)
+            return ''
+
+        self.run.side_effect = command
+        with mock.patch.object(self.module, 'pending', side_effect=[0, 0, 1]) as pending, \
+                mock.patch.object(self.module, 'health') as health:
+            with self.assertRaisesRegex(RuntimeError, 'ROLLBACK_BLOCKED_PENDING_OBLIGATIONS'):
+                self.promote('--compatible-schema')
+        self.assertEqual(pending.call_count, 3)
+        health.assert_not_called()
+        self.assertEqual((self.base / 'current').resolve(), self.candidate)
+        self.assertEqual(self.commands[-1], ['systemctl', 'stop', 'oasis-demo', 'oasis-api'])
+        self.assertEqual(sum(command[:2] == ['systemctl', 'start'] for command in self.commands), 1)
 
     def test_success_records_verified_promotion_and_keeps_private_state(self):
         sentinel = self.base / 'private/state-sentinel'

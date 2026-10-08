@@ -1,8 +1,9 @@
 # Run practice input protocol (V2.3)
 
-This is an explicit, free one-human/BOT protocol. Existing clients still create
-V2.2 rooms. The browser has not yet integrated the new presentation controller;
-these server and queue tests do not establish mobile performance acceptance.
+This is an explicit, free one-human/BOT protocol. The browser opts in only when
+the authenticated session advertises `run_practice_input_protocol`. Older
+servers and clients continue creating V2.2 rooms. The browser now integrates the
+controller and transport; local tests do not establish mobile performance acceptance.
 Paid rooms, human multiplayer and historical pinned rooms retain their rules.
 
 ## Admission and clocks
@@ -61,12 +62,44 @@ before the new head can be reconciled at its actual tick. This proof never
 includes BOT anchors, room-private state or integrity hashes.
 GET provides a snapshot and cursors; it is not a substitute for a batch receipt.
 
+## Client presentation and transport
+
+One controller belongs to the authenticated owner, room and clock epoch. It
+replays only the local runner with the shared physics, retains at most 241
+frames, and performs at most 360 steps per authority update (120 to verify the
+accepted history plus 240 for the own trajectory). RAF alone advances its
+presentation clock; the HUD reads the last immutable `peek()` result.
+
+The original 650 ms authority diagnostic remains visible. Longer simulation is
+provisional, with a separate hard 120-tick / 2-second monotonic budget. Only a
+strictly advancing validated head renews it. Visibility recovery requires a new
+head; same-tick snapshots, ACKs and retries cannot renew the budget. Individual
+finish feedback waits for its committed tick, and winners require final result
+authorization. Revised events use physical identities, not mutable event IDs.
+
+At most two physical input requests can coexist. They bypass the old global
+action lock. Lost replies retry the immutable original batch, up to eight total
+attempts. Successful exact receipts are resolved before their room snapshot is
+published. A GET cannot acknowledge the outbox. A verified same-owner login
+renewal resumes the original request; changing owner/room/epoch disposes it.
+Explicit work-budget errors shrink new batches down to one command without
+changing their sequence, type or execution tick. Other structural errors stop
+and expose a retry control; they do not silently discard inputs.
+
+The browser fixture uses the built Arena, actual WebGL/resources, room routes,
+engine workers and an isolated PostgreSQL database. It covers scene-ready
+startup, overlapping gestures before a delayed ACK, lost-ACK idempotency, login
+renewal and input blocking under the exit dialog. Its host authentication is a
+fixture and its GPU is software: it is not public or physical-phone acceptance.
+
+```sh
+npm run build:arena
+env -u NODE_TLS_REJECT_UNAUTHORIZED node_modules/.bin/tsx tests/run-practice-browser.mjs
+```
+
 ## Remaining acceptance
 
-Integrate the immutable outbox with a causal client controller, revision-aware
-events and committed-result presentation. Preserve the original 650 ms authority
-freshness diagnostic; any longer local simulation is explicitly provisional,
-with a separate hard 120-tick / 2-second monotonic budget. Same-tick snapshots,
-ACKs and retries must not renew that budget. Validate delayed/reordered/lost
-responses, six complete courses and actual phones before enabling this profile
-in the public UI. Existing failed real-device evidence remains failed.
+Verify six complete courses, long runs, slow networks and actual Android/iOS
+devices against the deployed candidate before declaring launch readiness.
+Existing failed real-device evidence remains failed. The new profile does not
+change the paid multiplayer rules or prove their performance acceptance.

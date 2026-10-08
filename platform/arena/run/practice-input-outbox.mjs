@@ -2,8 +2,9 @@
 // No clocks, HTTP, physics admission, prediction lease or result authority live
 // here. The caller supplies executeTick once and must enforce both its authority
 // freshness and provisional-simulation budgets before enqueueing/sending.
-export const RUN_PRACTICE_OUTBOX_PROTOCOL='run-practice-inputs-v1';
-export const RUN_PRACTICE_OUTBOX_RULE_VERSION='pvp-run-v2.3.0';
+import {RUN_PRACTICE_INPUT_PROTOCOL,RUN_PRACTICE_INPUT_RULE_VERSION} from './start-policy.mjs';
+export const RUN_PRACTICE_OUTBOX_PROTOCOL=RUN_PRACTICE_INPUT_PROTOCOL;
+export const RUN_PRACTICE_OUTBOX_RULE_VERSION=RUN_PRACTICE_INPUT_RULE_VERSION;
 export const RUN_PRACTICE_OUTBOX_LIMITS=Object.freeze({pendingCommands:32,batchCommands:8,inFlight:2,retainedBatches:32,attemptsPerBatch:8});
 const L=RUN_PRACTICE_OUTBOX_LIMITS;
 const types=new Set(['left','right','jump','slide','item']);
@@ -75,9 +76,10 @@ export function createRunPracticeInputOutbox({scope,makeRequestId,initial={lastC
   const owned=Object.freeze({commandSeq:++lastCommandSeq,type:command.type,executeTick:command.executeTick});
   pending.set(owned.commandSeq,owned);return Object.freeze({ok:true,command:owned});
  }
- function beginBatch({baseRevision}={}){
+ function beginBatch({baseRevision,maxCommands=L.batchCommands}={}){
   const error=sendingGuard();if(error)return fail(error);
   if(!int(baseRevision,baseline.revision))return fail('INVALID_BASE_REVISION');
+  if(!int(maxCommands,1,L.batchCommands))return fail('INVALID_BATCH_SIZE');
   if(!pending.size)return fail('EMPTY');
   if(retained.size>=L.retainedBatches)return fail('BATCH_LIMIT');
   if(batchCount===Number.MAX_SAFE_INTEGER)return fail('COUNTER_EXHAUSTED');
@@ -87,7 +89,7 @@ export function createRunPracticeInputOutbox({scope,makeRequestId,initial={lastC
   // instance, without retaining every historical ID forever.
   const requestId=`${prefix}-${(batchCount+1).toString(36)}`;
   if(requestId.length<8)return fail('INVALID_REQUEST_ID');
-  const commands=[...pending.values()].slice(0,L.batchCommands);
+  const commands=[...pending.values()].slice(0,maxCommands);
   const token=Object.freeze({});
   const payload=freeze({roomId:bound.roomId,playerKey:bound.playerKey,clockEpoch:bound.clockEpoch,baseRevision,commands});
   const handle=Object.freeze({ok:true,token,requestId,payload});

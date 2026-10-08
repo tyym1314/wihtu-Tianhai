@@ -45,6 +45,18 @@ test('500ms ACK latency does not serialize two gestures 120ms apart',()=>{
  assert.equal(o.state().inFlight,0);assert.equal(o.state().retainedDecisions,0);
 });
 
+test('explicit smaller batches preserve fixed commands without consuming rejected batch identities',()=>{
+ const o=create();for(let i=0;i<8;i++)enqueue(o,'jump',1+i*60);
+ for(const maxCommands of [0,9,1.5,NaN])assert.equal(o.beginBatch({baseRevision:0,maxCommands}).reason,'INVALID_BATCH_SIZE');
+ const original=begin(o);o.release({token:original.token});o.retire({token:original.token});
+ const first=o.beginBatch({baseRevision:0,maxCommands:4});assert.equal(first.ok,true);
+ assert.notEqual(first.requestId,original.requestId);assert.deepEqual(first.payload.commands,original.payload.commands.slice(0,4));
+ assert.equal(resolve(o,first).ok,true);
+ const tail=o.beginBatch({baseRevision:1,maxCommands:4});assert.deepEqual(tail.payload.commands,original.payload.commands.slice(4));
+ assert.equal(resolve(o,tail,receipt(tail,{revision:2,inputNoBefore:4})).ok,true);assert.equal(o.state().pendingCommands.length,0);
+ assert.equal(resolve(o,original).reason,'RETIRED_TOKEN');
+});
+
 test('later overlapping response can contain an older duplicate decision revision',()=>{
  const o=create();enqueue(o,'right',1);const a=begin(o);enqueue(o,'jump',8);const b=begin(o);
  const ra=receipt(a,{revision:1});assert.equal(resolve(o,a,ra).ok,true);
