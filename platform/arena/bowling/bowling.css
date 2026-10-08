@@ -12,3 +12,47 @@
 .nb-shot-hint{font-size:8px;color:#b2a8cd;text-align:center;letter-spacing:.3px;margin:1px 0 5px}.nb-shot-controls input[type=range]{height:22px;background:transparent;border:0;margin:0;touch-action:none}.nb-shot-controls input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:3px;border:1px solid #b1a4cc55;background:linear-gradient(90deg,#303561,#7777c4,#303561)}.nb-shot-controls input[type=range]::-webkit-slider-thumb{width:18px;height:18px;margin-top:-8px}.nb-shot-controls input[type=range]::-moz-range-track{height:4px;background:#7777c4}.nb-shot-controls input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%}
 
 .nb-preparing{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#080b24eF;color:#f2e4ff;text-align:center;padding:24px}.nb-preparing button{min-width:120px;min-height:44px;border:1px solid #a8a2d5;border-radius:12px;background:#272049;color:#fff}
+
+/* The lane shares the remaining viewport with the HUD and touch controls.
+   This also applies inside a host WebView whose toolbar has reduced its height. */
+.bowling-game{height:calc(100dvh - var(--oasis-extra-top,0px) - var(--oasis-extra-bottom,0px));min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;--bowling-safe-top:env(safe-area-inset-top,0px);--bowling-safe-bottom:env(safe-area-inset-bottom,0px)}
+.bowling-game .nb-top{grid-area:1/1;padding-top:max(8px,var(--bowling-safe-top))}
+.bowling-game .nb-header{height:44px}
+.bowling-game .nb-header>button,.bowling-game .nb-help-button{width:44px;height:44px;min-width:44px;min-height:44px;flex-basis:44px}
+.bowling-game .nb-canvas{grid-area:2/1;position:relative;inset:auto;min-height:0}
+.bowling-game .nb-lane-caption{grid-area:2/1;position:relative;inset:auto;align-self:start;margin-top:10px}
+.bowling-game .nb-bottom{grid-area:3/1;position:relative;inset:auto;min-width:0;margin:0 12px max(8px,var(--bowling-safe-bottom));display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.bowling-game .nb-score-details{grid-area:1/1;margin:0;z-index:5}
+.bowling-game .nb-score-details>summary{display:flex;justify-content:center;align-items:center;gap:4px;min-height:44px;font-size:10px;padding:4px 8px}
+.bowling-game .nb-score-details[open]>.nb-scorecard{width:calc(200% + 4px);bottom:44px;left:auto;right:auto;inset-inline-start:0}
+.bowling-game .nb-status{grid-column:1/-1;height:auto;min-height:13px;margin:0;font-size:9px}
+.bowling-game .nb-controls{grid-column:1/-1;padding:8px 12px}
+.bowling-game .nb-shot-controls{gap:16px;margin:0}
+.bowling-game .nb-shot-controls label>span{font-size:10px;line-height:13px}
+.bowling-game .nb-controls input[type=range]{display:block;width:100%;height:44px;min-height:44px;margin:0;border:0;background:transparent;touch-action:none}
+.bowling-game .nb-controls input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:3px;border:1px solid #b1a4cc55;background:linear-gradient(90deg,#303561,#7777c4,#303561)}
+.bowling-game .nb-controls input[type=range]::-webkit-slider-thumb{width:22px;height:22px;margin-top:-10px}
+.bowling-game .nb-controls input[type=range]::-moz-range-track{height:4px;border-radius:3px;background:#7777c4}
+.bowling-game .nb-controls input[type=range]::-moz-range-thumb{width:22px;height:22px}
+.bowling-game .nb-shot-hint{font-size:9px;line-height:12px;margin:0 0 2px}
+.bowling-game .nb-primary-spin{height:56px;gap:12px}
+.bowling-game .nb-primary-spin label{gap:0;min-width:0}
+.bowling-game .nb-primary-spin b{font-size:10px;line-height:12px}
+.bowling-game .nb-action-row{gap:12px;margin-top:4px}
+.bowling-game .nb-roll-button{min-height:44px}
+.bowling-game .nb-advanced{top:-48px;left:auto;right:auto;inset-inline-end:0;width:calc(50% - 2px);font-size:10px;letter-spacing:0;z-index:5}
+.bowling-game .nb-advanced>summary{min-height:44px;padding:4px 8px;display:flex;align-items:center;justify-content:center;background:#0b0b1fc9;border:1px solid #7c678642;border-radius:10px}
+.bowling-game .nb-advanced[open]{top:auto;bottom:58px;left:0;right:0;width:auto;font-size:10px;padding:8px}
+.bowling-game .nb-advanced-grid{padding:0 4px}
+.bowling-game .nb-advanced-grid label{width:100%;font-size:10px;gap:0}
+@media(max-height:700px){
+ .bowling-game .nb-top{padding-top:max(6px,var(--bowling-safe-top));padding-inline:12px}
+ .bowling-game .nb-scoreboard,.bowling-game .nb-players-3,.bowling-game .nb-players-4{height:50px;padding:4px 0}
+ .bowling-game .nb-avatar{width:40px;height:40px}
+ .bowling-game .nb-player{grid-template-columns:42px auto;column-gap:7px}
+ .bowling-game .nb-player>strong{font-size:23px}
+ .bowling-game .nb-players-3 .nb-player,.bowling-game .nb-players-4 .nb-player{grid-template-columns:34px auto;column-gap:4px}
+ .bowling-game .nb-players-3 .nb-avatar,.bowling-game .nb-players-4 .nb-avatar{width:32px;height:32px}
+ .bowling-game .nb-players-3 .nb-player>strong,.bowling-game .nb-players-4 .nb-player>strong{font-size:19px}
+ .bowling-game .nb-roll-button{height:44px}
+}
