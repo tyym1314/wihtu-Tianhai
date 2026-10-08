@@ -453,6 +453,75 @@ test('a Playwright clock alone cannot exclude an adjacent fulfilled candidate',a
  assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(f.result.unmatched_fetch_rejections.length,1);
 });
 
+function concurrentFulfilledCancellation(){
+ // Public25's preserved failure: a 350ms hedge starts before the earlier GET
+ // returns headers. These are the actual observed clocks, with fixture scope.
+ const f=cancellationFixture({timing:0}),doc=f.trace[0].document_id;
+ f.trace[0].at_ms=1791473380776.4;
+ const events=[f.trace[0],
+  {...f.trace[1],event_seq:2,attempt_id:22,at_ms:1791473392520.5999},
+  {...f.trace[1],event_seq:3,attempt_id:24,at_ms:1791473392870.5999},
+  {document_id:doc,event_seq:4,at_ms:1791473392907,kind:'fulfilled',attempt_id:22,signal_aborted:false,reason:null},
+  {...f.trace[2],event_seq:5,attempt_id:24,at_ms:1791473392908.9},
+  {...f.trace[3],event_seq:6,attempt_id:24,at_ms:1791473392909.3}];
+ networkProof(f,{id:'81095.61',session_id:'fixture-session',started_at_ms:1791473392870.769,failed_at_ms:1791473392909.472});
+ f.probe.network.set('successful',{id:'81095.59',session_id:'fixture-session',frame:'protocol-frame',url:f.req.url(),method:'GET',type:'Fetch',started_at_ms:1791473392520.642,response_seen:true,response_status:200,redirected:false});
+ return{...f,events,deliver:(input=events)=>f.deliver(input)};
+}
+
+test('Public25 Run concurrent fulfilled GET has an independent unique CDP start',async()=>{
+ const f=concurrentFulfilledCancellation();f.deliver();f.fail();await f.drain();
+ assert.equal(nativeErrorsEmpty(f.result),true);assert.equal(f.result.unmatched_fetch_rejections.length,0);
+ const cancellation=f.result.lifecycle_cancellations[0];
+ assert.equal(cancellation.fetch_attempt_id,24);assert.equal(cancellation.network_protocol_id,'81095.61');
+ assert.equal(cancellation.clock_uncertainty_ms,1);assert.equal(f.result.network_observations[0].error,'net::ERR_ABORTED');
+ assert.deepEqual(cancellation.concurrent_fulfilled_exclusions,[{fetch_attempt_id:22,fetch_started_at_ms:1791473392520.5999,fulfilled_at_ms:1791473392907,network_protocol_id:'81095.59',network_session_id:'fixture-session',network_started_at_ms:1791473392520.642,response_status:200}]);
+});
+
+for(const [name,change] of [
+ ['missing successful CDP',f=>f.probe.network.delete('successful')],
+ ['missing successful response headers',f=>f.probe.network.get('successful').response_seen=false],
+ ['missing successful status',f=>delete f.probe.network.get('successful').response_status],
+ ['failed successful response',f=>f.probe.network.get('successful').response_status=500],
+ ['successful request later failed',f=>f.probe.network.get('successful').error='net::ERR_FAILED'],
+ ['successful request redirected',f=>f.probe.network.get('successful').redirected=true],
+ ['successful request wrong frame',f=>f.probe.network.get('successful').frame='other-frame'],
+ ['successful request wrong method',f=>f.probe.network.get('successful').method='POST'],
+ ['successful request outside 1ms',f=>f.probe.network.get('successful').started_at_ms=f.events[1].at_ms+1.1],
+ ['two successful CDP starts in window',f=>f.probe.network.set('duplicate',{...f.probe.network.get('successful'),id:'duplicate',started_at_ms:f.events[1].at_ms+.8})],
+ ['unknown competing CDP clock',f=>f.probe.network.set('unknown',{...f.probe.network.get('successful'),id:'unknown',started_at_ms:NaN})],
+ ['two Fetch starts for the successful CDP',f=>{f.events.splice(2,0,{...f.events[1],attempt_id:25,at_ms:f.events[1].at_ms+.1});f.events.forEach((e,i)=>e.event_seq=i+1);}],
+ ['two Fetch starts for the cancelled CDP',f=>{f.events.splice(3,0,{...f.events[2],attempt_id:25,at_ms:f.events[2].at_ms+.1});f.events.forEach((e,i)=>e.event_seq=i+1);}],
+ ['missing fulfilled terminal',f=>{f.events.splice(3,1);f.events.forEach((e,i)=>e.event_seq=i+1);}],
+ ['aborted fulfilled Fetch',f=>f.events[3].signal_aborted=true],
+ ['nonmonotonic event sequence',f=>f.events[3].at_ms=f.events[2].at_ms-1],
+])test(`concurrent fulfilled exclusion refuses ${name}`,async()=>{
+ const f=concurrentFulfilledCancellation();change(f);f.deliver();f.fail();await f.drain();
+ assert.equal(nativeErrorsEmpty(f.result),false);assert.equal(f.result.lifecycle_cancellations.length,0);
+ assert.equal(f.result.network_errors.length,1);assert.equal(f.result.unmatched_fetch_rejections.length,1);
+});
+
+test('late competing CDP evidence revokes a concurrent fulfilled exclusion',async()=>{
+ const f=concurrentFulfilledCancellation();f.deliver();f.fail();await f.drain({final:false});assert.equal(f.result.lifecycle_cancellations.length,1);
+ f.probe.network.set('late',{...f.probe.network.get('successful'),id:'late',started_at_ms:f.events[1].at_ms+.8});
+ await f.drain({final:true});assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(f.result.network_errors.length,1);
+ assert.equal(f.result.network_errors[0].classification_failure,'LATE_COMPETING_CDP_EVIDENCE');assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+test('late successful-request failure revokes a concurrent fulfilled exclusion',async()=>{
+ const f=concurrentFulfilledCancellation();f.deliver();f.fail();await f.drain({final:false});assert.equal(f.result.lifecycle_cancellations.length,1);
+ f.probe.network.get('successful').error='net::ERR_FAILED';await f.drain({final:true});
+ assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(f.result.network_errors.length,1);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+test('concurrent fulfilled headers never suppress a later response body failure',async()=>{
+ const f=concurrentFulfilledCancellation();f.deliver();f.fail();await f.drain({final:false});assert.equal(f.result.lifecycle_cancellations.length,1);
+ const previous={...f.req,timing:()=>({startTime:1791473392520.642})};
+ response(f,previous,{json:async()=>{throw new Error(knownLoss);}});await f.drain({final:true});
+ assert.equal(f.result.lifecycle_cancellations.length,1);assert.equal(f.result.observer_errors.length,1);
+ assert.equal(f.result.observer_errors[0].message,knownLoss);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
 test('excluding a fulfilled predecessor does not suppress its separate response body failure',async()=>{
  const f=adjacentFulfilledCancellation();f.deliver();
  const previous={...f.req,timing:()=>({startTime:110.3})};response(f,previous,{json:async()=>{throw new Error(knownLoss);}});

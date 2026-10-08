@@ -46,17 +46,38 @@ export function createNativeFetchEvidence({clean=String}={}){
  };
  const timeOverlap=(attempt,entry)=>Number.isFinite(entry.network_started_at_ms)&&entry.network_started_at_ms>0&&attempt.start.at_ms-fetchClockUncertaintyMs<=entry.network_started_at_ms&&entry.network_started_at_ms<(attempt.end?.at_ms??Infinity)+fetchClockUncertaintyMs;
  const overlap=(attempt,entry)=>attempt.frame===entry.frame_object&&attempt.start.frame_url===entry.frame_url_raw&&attempt.start.url===entry.full_url&&attempt.start.method===entry.method&&timeOverlap(attempt,entry);
- const cancellationCandidates=(all,entry)=>{
+ const cancellationCandidates=(all,entry,exclusions=[])=>{
   const candidates=all.filter(attempt=>overlap(attempt,entry));
   if(entry.network_timing_source!=='cdp'||!entry.network_document_id||!entry.network_protocol_id||entry.network_proof_error||entry.response_seen!==false||entry.failure_error!=='net::ERR_ABORTED')return candidates;
-  // Keep the 1ms clock bound. Only a complete, same-document event sequence can
-  // prove a prior fetch fulfilled before the cancelled fetch even began. A
-  // concurrent, incomplete, different-document or contradictory fetch remains
-  // a candidate; no nearest-time association is inferred.
+  const uniqueStart=attempt=>{
+   const document=networkDocuments.get(attempt.documentId);
+   if(!document)return null;
+   const records=[...network.values()].filter(record=>record.frame===document.frame&&record.type==='Fetch'&&record.url===attempt.start.url&&record.method===attempt.start.method&&(!Number.isFinite(record.started_at_ms)||Math.abs(record.started_at_ms-attempt.start.at_ms)<=fetchClockUncertaintyMs));
+   if(records.length!==1)return null;
+   const record=records[0],owner=networkDocument(record);
+   if(owner?.id!==attempt.documentId||owner.frame!==attempt.frame||owner.url!==attempt.start.frame_url)return null;
+   const starts=all.filter(other=>other.frame===attempt.frame&&Math.abs(other.start.at_ms-record.started_at_ms)<=fetchClockUncertaintyMs&&(!other.start.supported||other.start.frame_url===owner.url&&other.start.url===record.url&&other.start.method===record.method));
+   return starts.length===1&&starts[0]===attempt?record:null;
+  };
+  // A concurrent success needs its own bidirectionally unique CDP start, plus
+  // the cancelled fetch's independent unique start. Fulfilled means headers,
+  // not a verified body; response-body observer failures remain fatal. Never
+  // choose the nearest timestamp or remove a success merely because it ended.
   return candidates.filter(attempt=>{
    const {start,end}=attempt;
    const completed=attempt.documentId===entry.network_document_id&&attempt.valid&&start.supported===true&&start.body_present===false&&!attempt.abort&&end?.kind==='fulfilled'&&end.signal_aborted===false&&end.reason===null&&!['error','sync_throw','reject_is_signal_reason'].some(key=>Object.hasOwn(end,key));
-   return !completed||!candidates.some(next=>next!==attempt&&next.documentId===attempt.documentId&&next.valid&&next.end?.kind==='rejected'&&next.start.event_seq>end.event_seq&&next.start.at_ms>=end.at_ms);
+   if(!completed)return true;
+   if(candidates.some(next=>next!==attempt&&next.documentId===attempt.documentId&&next.valid&&next.end?.kind==='rejected'&&next.start.event_seq>end.event_seq&&next.start.at_ms>=end.at_ms))return false;
+   const success=uniqueStart(attempt);
+   if(!success||success.response_seen!==true||success.response_status!==200||success.error||success.cancelled||success.redirected!==false)return true;
+   const cancelled=candidates.filter(next=>{
+    if(next===attempt||next.documentId!==attempt.documentId||!next.valid||next.start.supported!==true||next.start.body_present!==false||next.end?.kind!=='rejected')return false;
+    const record=uniqueStart(next);
+    return record?.id===entry.network_protocol_id&&(record.session_id??null)===entry.network_session_id&&record.started_at_ms===entry.network_started_at_ms;
+   });
+   if(cancelled.length!==1)return true;
+   exclusions.push({fetch_attempt_id:start.attempt_id,fetch_started_at_ms:start.at_ms,fulfilled_at_ms:end.at_ms,network_protocol_id:success.id,network_session_id:success.session_id??null,network_started_at_ms:success.started_at_ms,response_status:success.response_status});
+   return false;
   });
  };
  const receiveNetworkDocument=(frame,event)=>{
@@ -127,7 +148,7 @@ export function createNativeFetchEvidence({clean=String}={}){
   if(requests.some(other=>other!==entry&&other.frame_object===entry.frame_object&&other.full_url===entry.full_url&&other.method===entry.method&&!(other.network_started_at_ms>0)))return deny('UNKNOWN_COMPETING_NETWORK_REQUEST');
   const allAttempts=attempts();
   if(allAttempts.some(attempt=>!attempt.start.supported&&attempt.frame===entry.frame_object&&timeOverlap(attempt,entry)))return deny('UNSUPPORTED_COMPETING_FETCH');
-  const candidates=cancellationCandidates(allAttempts,entry);
+  const exclusions=[],candidates=cancellationCandidates(allAttempts,entry,exclusions);
   if(candidates.length!==1)return deny(candidates.length?'AMBIGUOUS_FETCH_ATTEMPT':'MISSING_FETCH_ATTEMPT');
   const attempt=candidates[0],{start,abort,end}=attempt;
   if(entry.network_document_id&&attempt.documentId!==entry.network_document_id)return deny('CONFLICTING_NETWORK_DOCUMENT');
@@ -144,7 +165,7 @@ export function createNativeFetchEvidence({clean=String}={}){
    entry.network_binding_identity=Object.freeze({...entry.network_candidate_identity});
    entry.network_binding_anchor=Object.freeze({document_id:attempt.documentId,event_seq:watermark.event_seq,at_ms:watermark.at_ms,protocol_keys:Object.freeze([...entry.network_candidate_keys])});
   }
-  return{eligible:true,proof:{document_id:attempt.documentId,frame_id:attempt.frameId,fetch_attempt_id:start.attempt_id,clock_uncertainty_ms:fetchClockUncertaintyMs,fetch_started_at_ms:start.at_ms,network_started_at_ms:entry.network_started_at_ms,network_failed_at_ms:entry.network_failed_at_ms??null,network_protocol_id:entry.network_protocol_id??null,network_session_id:entry.network_session_id??null,network_timing_source:entry.network_timing_source||'playwright',aborted_at_ms:abort.at_ms,rejected_at_ms:end.at_ms,reason:{...reason},error:{...end.error},trace_event_seqs:[start.event_seq,abort.event_seq,end.event_seq]}};
+  return{eligible:true,proof:{document_id:attempt.documentId,frame_id:attempt.frameId,fetch_attempt_id:start.attempt_id,clock_uncertainty_ms:fetchClockUncertaintyMs,fetch_started_at_ms:start.at_ms,network_started_at_ms:entry.network_started_at_ms,network_failed_at_ms:entry.network_failed_at_ms??null,network_protocol_id:entry.network_protocol_id??null,network_session_id:entry.network_session_id??null,network_timing_source:entry.network_timing_source||'playwright',aborted_at_ms:abort.at_ms,rejected_at_ms:end.at_ms,reason:{...reason},error:{...end.error},trace_event_seqs:[start.event_seq,abort.event_seq,end.event_seq],...(exclusions.length?{concurrent_fulfilled_exclusions:exclusions}:{})}};
  };
  const observations=()=>events.map(event=>{
   const value={...event};for(const key of ['url','frame_url'])if(value[key])value[key]=clean(value[key]);

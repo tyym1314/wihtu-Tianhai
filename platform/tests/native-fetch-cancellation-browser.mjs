@@ -115,6 +115,23 @@ try{
   const polls=result.fetch_observations.filter(event=>event.kind==='start'&&event.url===origin+'/api/pvp/rooms/owned');
   assert.equal(result.lifecycle_cancellations.length,1,JSON.stringify(result));assert.equal(nativeErrorsEmpty(result),true);assert.equal(polls.length,2);assert.equal(result.lifecycle_cancellations[0].fetch_attempt_id,polls[1].attempt_id);
  });
+ await run('350ms concurrent hedge separates fulfilled headers from STOPPED cancellation',{},async({start,abort,frame,result,drain})=>{
+  await start();await frame.evaluate(()=>new Promise(resolve=>setTimeout(resolve,350)));await start();
+  await waitFor(()=>active.held.length===2,'both overlapping GETs reached server');
+  active.held[0].writeHead(200,{'content-type':'application/json'});active.held[0].end(JSON.stringify(room));
+  await waitFor(()=>frame.evaluate(()=>window.fixture.headers===1&&window.fixture.done[0]==='ok'),'first GET headers and body');
+  await abort('OASIS_ROOM_POLL_STOPPED','AbortError',1);await waitFor(()=>result.network_observations.length===1,'hedged GET cancelled');await drain();
+  const polls=result.fetch_observations.filter(event=>event.kind==='start'&&event.url===origin+'/api/pvp/rooms/owned');
+  assert.equal(polls.length,2);assert.ok(polls[1].at_ms-polls[0].at_ms>=349);
+  const fulfilled=result.fetch_observations.find(event=>event.kind==='fulfilled'&&event.document_id===polls[0].document_id&&event.attempt_id===polls[0].attempt_id);
+  assert.ok(fulfilled&&fulfilled.event_seq>polls[1].event_seq,'First fetch must still be pending when the hedge starts');
+  assert.equal(result.lifecycle_cancellations.length,1,JSON.stringify(result));assert.equal(result.unmatched_fetch_rejections.length,0);assert.equal(nativeErrorsEmpty(result),true);
+  const cancelled=result.lifecycle_cancellations[0],excluded=cancelled.concurrent_fulfilled_exclusions;
+  assert.equal(cancelled.fetch_attempt_id,polls[1].attempt_id);assert.equal(cancelled.reason.message,'OASIS_ROOM_POLL_STOPPED');
+  assert.equal(excluded.length,1);assert.equal(excluded[0].fetch_attempt_id,polls[0].attempt_id);assert.equal(excluded[0].response_status,200);
+  assert.ok(cancelled.network_session_id);assert.equal(excluded[0].network_session_id,cancelled.network_session_id);assert.notEqual(excluded[0].network_protocol_id,cancelled.network_protocol_id);
+  result.concurrent_fixture={requested_hedge_delay_ms:350,observed_start_separation_ms:polls[1].at_ms-polls[0].at_ms,fulfilled_after_hedge_start:true};
+ });
  await run('302 successful room polls before one zero-timing cancellation',{mode:'normal'},async({frame,start,abort,result,drain})=>{
   await frame.evaluate(async()=>{for(let index=0;index<302;index++){const response=await fetch('/api/pvp/rooms/owned',{cache:'no-store'});await response.json();}});
   // This case tests settled history, not adjacent sub-millisecond fetches. The
@@ -132,19 +149,45 @@ try{
   assert.equal(result.lifecycle_cancellations[0].network_protocol_id,identity);assert.equal(new Set(result.lifecycle_cancellations.map(row=>row.network_protocol_id)).size,2);
   assert.ok(result.network_binding_decisions.some(row=>row.binding?.retained_identity?.id===identity));assert.equal(nativeErrorsEmpty(result),true);
  });
- await run('two sequential zero-clock cancellations without an earlier binding remain ambiguous',{},async({start,abort,result,drain})=>{
+ await run('sequential cancellations automatically bind before any manual drain',{},async({start,abort,result,drain})=>{
+  const automatic=id=>result.early_binding_observations.flatMap(row=>row.decisions).find(row=>row.observation_id===id&&row.verdict==='anchored'&&row.previous_anchor===false);
   await start();await waitFor(()=>active.held.length===1,'first GET');await abort();await waitFor(()=>result.network_observations.length===1,'first failure');
-  await start();await waitFor(()=>active.held.length===2,'second GET');await abort('OASIS_ROOM_POLL_STOPPED','AbortError',1);await waitFor(()=>result.network_observations.length===2,'second failure');await drain({final:true});
-  assert.equal(result.lifecycle_cancellations.length,0);assert.equal(result.network_errors.length,2);assert.ok(result.network_errors.every(row=>row.classification_failure==='AMBIGUOUS_CDP_NETWORK_FAILURE'));assert.equal(nativeErrorsEmpty(result),false);
+  const firstId=result.network_observations[0].observation_id;await waitFor(()=>automatic(firstId),'first automatic binding before second request');
+  const first=structuredClone(automatic(firstId));assert.ok(first.identity.id&&first.identity.session_id&&first.anchor.document_id);assert.equal(first.anchor.protocol_count,1);
+  assert.equal(result.network_binding_decisions.length,0,'No manual drain may establish the first binding');
+  await start();await waitFor(()=>active.held.length===2,'second GET');await abort('OASIS_ROOM_POLL_STOPPED','AbortError',1);await waitFor(()=>result.network_observations.length===2,'second failure');
+  const secondId=result.network_observations[1].observation_id;await waitFor(()=>automatic(secondId),'second automatic binding before final drain');
+  const second=structuredClone(automatic(secondId));assert.notEqual(first.identity.id,second.identity.id);assert.equal(first.identity.session_id,second.identity.session_id);
+  assert.equal(first.anchor.document_id,second.anchor.document_id);assert.ok(second.anchor.event_seq>first.anchor.event_seq&&second.anchor.at_ms>=first.anchor.at_ms);assert.equal(second.anchor.protocol_count,2);
+  assert.equal(result.network_binding_decisions.length,0,'Both bindings must precede manual drain');await drain({final:true});
+  assert.equal(result.lifecycle_cancellations.length,2);assert.equal(result.network_errors.length,0);assert.equal(result.pending_network_observations,0);
+  assert.equal(result.pending_fetch_rejections.length,0);assert.equal(result.unmatched_fetch_rejections.length,0);assert.equal(nativeErrorsEmpty(result),true);
+  for(const original of [first,second]){
+   const classification=result.lifecycle_cancellations.find(row=>row.observation_id===original.observation_id),decision=result.network_binding_decisions.find(row=>row.observation_id===original.observation_id);
+   assert.equal(classification.network_protocol_id,original.identity.id);assert.equal(classification.network_session_id,original.identity.session_id);assert.equal(classification.network_started_at_ms,original.identity.started_at_ms);
+   assert.deepEqual(decision.binding.retained_identity,original.identity);for(const key of ['document_id','event_seq','at_ms'])assert.equal(decision.binding_anchor[key],original.anchor[key]);
+  }
+  result.automatic_binding_fixture={both_bound_before_manual_drain:true,bindings:[first,second]};
  });
  await run('later pending GET cannot permanently condemn an earlier observed abort',{},async({start,abort,frame,result,drain})=>{
   await start();await waitFor(()=>active.held.length===1,'first GET');await abort();await waitFor(()=>result.network_observations.length===1,'first failure');
+  const observedId=result.network_observations[0].observation_id;
+  const automatic=()=>result.early_binding_observations.flatMap(row=>row.decisions).find(row=>row.observation_id===observedId&&row.verdict==='anchored'&&row.previous_anchor===false);
+  await waitFor(automatic,'first automatic binding before later pending GET');const original=structuredClone(automatic());
+  assert.ok(original.identity.id&&original.identity.session_id&&original.anchor.document_id);assert.equal(result.network_binding_decisions.length,0);
   await start();await waitFor(()=>active.held.length===2,'later GET held');await drain({final:false});
-  assert.equal(result.pending_network_observations,1);assert.equal(result.network_errors.length,0);assert.equal(result.pending_fetch_rejections.length,1);assert.equal(nativeErrorsEmpty(result),false);
+  assert.equal(result.pending_network_observations,1);assert.equal(result.network_errors.length,0);assert.equal(result.lifecycle_cancellations.length,0);
+  assert.equal(result.pending_fetch_rejections.length,0);assert.equal(result.unmatched_fetch_rejections.length,0);assert.equal(nativeErrorsEmpty(result),false);
+  const pending=result.network_binding_decisions.find(row=>row.observation_id===observedId&&row.final===false&&row.verdict==='pending');
+  assert.ok(pending);assert.equal(pending.classification_failure,'UNKNOWN_COMPETING_NETWORK_REQUEST');assert.deepEqual(pending.binding.retained_identity,original.identity);
+  for(const key of ['document_id','event_seq','at_ms'])assert.equal(pending.binding_anchor[key],original.anchor[key]);
   active.held[1].writeHead(200,{'content-type':'application/json'});active.held[1].end(JSON.stringify(room));
   await waitFor(()=>frame.evaluate(()=>window.fixture.done.length===2),'later GET completed');await drain({final:true});
-  assert.equal(result.lifecycle_cancellations.length,1);assert.equal(result.unmatched_fetch_rejections.length,0);assert.equal(nativeErrorsEmpty(result),true);
-  assert.deepEqual(result.network_binding_decisions.slice(0,2).map(row=>row.verdict),['pending','lifecycle']);
+  assert.equal(result.lifecycle_cancellations.length,1);assert.equal(result.pending_network_observations,0);assert.equal(result.pending_fetch_rejections.length,0);assert.equal(result.unmatched_fetch_rejections.length,0);assert.equal(nativeErrorsEmpty(result),true);
+  const final=result.network_binding_decisions.find(row=>row.observation_id===observedId&&row.final===true&&row.drain_id>pending.drain_id&&row.verdict==='lifecycle');
+  assert.ok(final);assert.deepEqual(final.binding.retained_identity,original.identity);
+  for(const key of ['document_id','event_seq','at_ms'])assert.equal(final.binding_anchor[key],original.anchor[key]);
+  assert.equal(result.lifecycle_cancellations[0].network_protocol_id,original.identity.id);
  });
  await run('concurrent identical GETs cannot borrow proof',{},async({start,abort,result,drain})=>{
   await start();await start();await waitFor(()=>active.held.length===2,'both GETs received');await abort();active.held[1].destroy();await waitFor(()=>result.network_observations.length===2,'both GETs failed');await drain();
