@@ -25,8 +25,13 @@ import {clientAddress,adminSessionCookie} from './proxy-context.mjs';
 import {beginRoomReadTiming} from './request-timing.mjs';
 import {startRequestTimingSink} from './request-timing-sink.mjs';
 import {checkWalletDependencies} from './dependency-health.mjs';
+import {createTransferService,migrateTransfers,TRANSFER_PUBLIC_CODES} from './transfers/index.mjs';
+import {routeTransfers} from './transfers/routes.mjs';
 const PORT=Number(process.env.OASIS_API_PORT||8797),WALLET_PORT=Number(process.env.OASIS_WALLET_PORT||8798);
 const limiter=new ApiRateLimits();
+// No third-party financial protocol is registered until independently configured
+// and reviewed. Ordinary App HMAC cannot enable or manufacture an adapter.
+const transfers=createTransferService({pool:walletPool,environment:runtime.environment});
 let roomTimingSink=null;
 function rate(req,key,limit){limiter.ip(clientAddress(req),key,limit);}
 const authenticated=(req,fn)=>limiter.authenticate(clientAddress(req),fn);
@@ -99,6 +104,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
   if(path==='/v1/launch/exchange'&&req.method==='POST'){checkOrigin(req);rate(req,'exchange',limiter.config.EXCHANGE_IP);return send(res,200,await authenticated(req,()=>exchange(body)));}
   if(path.startsWith('/v1/')){
     const app=await authenticated(req,()=>authenticatePartner(req,raw,body));limiter.partner(app,req.method);
+    const transfer=await routeTransfers(transfers,app,req,path,{raw});if(transfer)return send(res,transfer.status,transfer.body);
     if(path==='/v1/sessions'&&req.method==='POST')return send(res,201,await createSession(app,body,raw));
     if(path==='/v1/games'&&req.method==='GET')return send(res,200,gamesFor(app));
     const matchQuery=path.match(/^\/v1\/matches\/([A-Za-z0-9_-]+)$/);
@@ -130,8 +136,8 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
     fail(405,'METHOD_NOT_ALLOWED');
   }
   fail(404,'NOT_FOUND');
-}catch(e){if(res.headersSent||res.destroyed)return;const status=e.status||500;if(status===429)res.setHeader('retry-after',String(e.retryAfterSeconds||60));if(status>=500&&!(e instanceof ApiError))console.error('[platform]',e.code||e.message);const message=(e.status?e.message:'服务暂时不可用，请保留原请求重试').slice(0,512);if((req.url||'').startsWith('/v1/')){const allowed=['INVALID_REQUEST','AMOUNT_MISMATCH','SIGNATURE_INVALID','TIMESTAMP_EXPIRED','NONCE_REPLAY','LAUNCH_CODE_INVALID','SCOPE_FORBIDDEN','GAME_DISABLED','NOT_FOUND','IDEMPOTENCY_CONFLICT','INVALID_STATE','RATE_LIMITED','INTERNAL_ERROR'];const code=allowed.includes(e.code)?e.code:status>=500?'INTERNAL_ERROR':status===403?'SCOPE_FORBIDDEN':status===409?'INVALID_STATE':'INVALID_REQUEST';send(res,status,{code,message,trace_id:id('trace'),retryable:status>=500||status===429});}else send(res,status,{error:{code:e.code||'INTERNAL_ERROR',message}});}});}
-await preflightRuntime(pool);await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateIntegrationChecks();await upgradeArenaSandbox();
+}catch(e){if(res.headersSent||res.destroyed)return;const status=e.status||500;if(status===429)res.setHeader('retry-after',String(e.retryAfterSeconds||60));if(status>=500&&!(e instanceof ApiError))console.error('[platform]',e.code||e.message);const message=(e.status?e.message:'服务暂时不可用，请保留原请求重试').slice(0,512);if((req.url||'').startsWith('/v1/')){const allowed=['INVALID_REQUEST','AMOUNT_MISMATCH','SIGNATURE_INVALID','TIMESTAMP_EXPIRED','NONCE_REPLAY','LAUNCH_CODE_INVALID','SCOPE_FORBIDDEN','GAME_DISABLED','NOT_FOUND','IDEMPOTENCY_CONFLICT','INVALID_STATE','RATE_LIMITED','INTERNAL_ERROR'];const code=(allowed.includes(e.code)||TRANSFER_PUBLIC_CODES.includes(e.code))?e.code:status>=500?'INTERNAL_ERROR':status===403?'SCOPE_FORBIDDEN':status===409?'INVALID_STATE':'INVALID_REQUEST';send(res,status,{code,message,trace_id:id('trace'),retryable:status>=500||status===429});}else send(res,status,{error:{code:e.code||'INTERNAL_ERROR',message}});}});}
+await preflightRuntime(pool);await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateIntegrationChecks();await upgradeArenaSandbox();await migrateTransfers(pool);
 // Fail before listening if persisted credentials cannot be decrypted with this instance key.
 for(const key of (await pool.query('SELECT secret_enc FROM gp_keys')).rows)unseal(key.secret_enc);
 const wallet=process.env.OASIS_START_WALLET==='0'?null:createWalletServer(walletPool);if(wallet)await new Promise(r=>wallet.listen(WALLET_PORT,'127.0.0.1',r));
@@ -143,13 +149,14 @@ const server=createPlatformServer();await new Promise(r=>server.listen(PORT,'127
 const timer=setInterval(()=>recoverPending().catch(e=>console.error('[recovery]',e.code||e.message)),3000);timer.unref();
 const pvpTimer=setInterval(()=>tickPvp().catch(e=>console.error('[arena recovery]',e.code||e.message)),250);pvpTimer.unref();
 const integrationTimer=setInterval(()=>recoverIntegrationChecks().catch(e=>console.error('[integration recovery]',e.code||e.message)),3000);integrationTimer.unref();
+const transferTimer=setInterval(()=>transfers.recoverPending().catch(e=>console.error('[transfer recovery]',e.code||e.name)),3000);transferTimer.unref();
 console.log(`OASIS ${runtime.environment} API http://127.0.0.1:${PORT}; reference wallet http://127.0.0.1:${WALLET_PORT}`);
 console.log('Local admin credentials: platform/.local/development-credentials.json');
 let stopping=false;
 async function stop(){
  if(stopping)return;stopping=true;
- clearInterval(timer);clearInterval(pvpTimer);clearInterval(integrationTimer);
+ clearInterval(timer);clearInterval(pvpTimer);clearInterval(integrationTimer);clearInterval(transferTimer);
  await Promise.all([new Promise(r=>server.close(r)),wallet?new Promise(r=>wallet.close(r)):Promise.resolve()]);
  await roomTimingSink?.close({reason:'shutdown'}).catch(()=>{});
- await closeEnginePool();await closePools();process.exit(0);
+ await transfers.close();await closeEnginePool();await closePools();process.exit(0);
 }process.on('SIGTERM',stop);process.on('SIGINT',stop);

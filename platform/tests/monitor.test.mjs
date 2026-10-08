@@ -4,13 +4,14 @@ import {createServer} from 'node:http';
 import {mkdtemp,readFile,readdir,rm,stat} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
-import {atomicReport,collectHealth,monitorConfig,requestHealth,runMonitor} from '../deploy/monitor.mjs';
+import {atomicReport,collectHealth,monitorConfig,readTransferMonitor,requestHealth,runMonitor} from '../deploy/monitor.mjs';
+import {TRANSFER_TABLES,TRANSFER_AUDIT_SQL,TRANSFER_OBLIGATIONS_SQL} from '../server/transfers/audit.mjs';
 
 const NOW=1900000000000,SECRET='never-show-this-password-or-token';
 const config=monitorConfig({OASIS_DATABASE_URL:`postgres://user:${SECRET}@localhost/platform`,OASIS_PUBLIC_ORIGIN:'https://game.tianyahuyu.com'});
 function healthy(){
  return {
-  database:async()=>({cycles_pending:'0',cycles_overdue:'0',probability_operations_pending:'0',probability_operations_overdue:'0',pvp_operations_pending:'0',pvp_operations_overdue:'0',rooms_faulted:'0',rooms_overdue:'0'}),
+  database:async()=>({cycles_pending:'0',cycles_overdue:'0',probability_operations_pending:'0',probability_operations_overdue:'0',pvp_operations_pending:'0',pvp_operations_overdue:'0',rooms_faulted:'0',rooms_overdue:'0',transfer_schema:'present',pending_transfers:'0',transfers_overdue:'0',clearing_mismatches:'0',transfer_order_mismatches:'0',wallet_hold_mismatches:'0'}),
   api:async()=>({reachable:true}),wallet:async()=>({reachable:true}),ingress:async()=>({reachable:true}),demo:async()=>({reachable:true}),
   systemd:async()=>Object.fromEntries(['oasis-api.service','oasis-demo.service','nginx.service','oasis-backup.timer','oasis-certificate.timer','oasis-backup.service','oasis-certificate.service'].map(unit=>[unit,{
    LoadState:'loaded',ActiveState:['oasis-backup.service','oasis-certificate.service'].includes(unit)?'inactive':'active',Result:'success',ExecMainStatus:'0',
@@ -58,6 +59,51 @@ test('pending backlog, faulted rooms and malformed SQL metrics cannot report hea
  assert.deepEqual(result.report.checks.find(item=>item.name==='database').codes,['ROOM_FAULT','BACKLOG_LIMIT_EXCEEDED']);
  probes.database=async()=>({password:SECRET});const invalid=await run(probes);
  assert.deepEqual(invalid.report.checks.find(item=>item.name==='database').codes,['METRICS_INVALID']);assert.equal(JSON.stringify(invalid).includes(SECRET),false);
+});
+
+test('transfer overdue and integrity failures are unhealthy independently of backlog size',async()=>{
+ const probes=healthy();probes.database=async()=>({...await healthy().database(),pending_transfers:'1',transfers_overdue:'1'});
+ assert.deepEqual((await run(probes)).report.checks.find(c=>c.name==='database').codes,['TRANSFER_OVERDUE']);
+ for(const field of ['clearing_mismatches','transfer_order_mismatches','wallet_hold_mismatches']){
+  probes.database=async()=>({...await healthy().database(),[field]:'1'});
+  assert.deepEqual((await run(probes)).report.checks.find(c=>c.name==='database').codes,['TRANSFER_LEDGER_INCONSISTENT']);
+ }
+ probes.database=async()=>({...await healthy().database(),pending_transfers:'101'});
+ assert.deepEqual((await run(probes)).report.checks.find(c=>c.name==='database').codes,['BACKLOG_LIMIT_EXCEEDED']);
+});
+
+test('missing audit/schema and contradictory legacy transfer metrics never default to healthy zero',async()=>{
+ for(const damage of [v=>delete v.transfer_schema,v=>delete v.clearing_mismatches,v=>v.wallet_hold_mismatches=null,
+  v=>v.transfer_schema='partial',v=>{v.transfer_schema='absent';v.pending_transfers='1';}]){
+  const probes=healthy(),v=await probes.database();damage(v);probes.database=async()=>v;
+  assert.deepEqual((await run(probes)).report.checks.find(c=>c.name==='database').codes,['METRICS_INVALID']);
+ }
+ const probes=healthy();probes.database=async()=>({...await healthy().database(),transfer_schema:'absent'});
+ assert.equal((await run(probes)).exitCode,0);
+});
+
+test('transfer monitor reuses the caller snapshot and ages all PENDING outcomes from creation, without provider details',async()=>{
+ const calls=[],db={query:async(sql,values)=>{
+  calls.push({sql,values});
+  if(sql.includes('FROM pg_class'))return{rows:TRANSFER_TABLES.map(relname=>({relname,relkind:'r'}))};
+  if(sql===TRANSFER_AUDIT_SQL)return{rows:[{audit:{clearing_mismatches:0,transfer_order_mismatches:0,wallet_hold_mismatches:0}}]};
+  if(sql===TRANSFER_OBLIGATIONS_SQL)return{rows:[{pending_transfers:'2',pending_inbound_minor:'999999999999999999999',pending_outbound_minor:'0',secret:SECRET}]};
+  assert.match(sql,/state='PENDING' AND created_at < now\(\)/);assert.doesNotMatch(sql,/updated_at|lease|observation|next_attempt/);
+  assert.deepEqual(values,[120]);return{rows:[{transfers_overdue:'1'}]};
+ }};
+ const result=await readTransferMonitor(db,120);
+ assert.deepEqual(result,{transfer_schema:'present',clearing_mismatches:0,transfer_order_mismatches:0,wallet_hold_mismatches:0,pending_transfers:'2',transfers_overdue:'1'});
+ assert.equal(calls.length,4);assert.equal(JSON.stringify(result).includes(SECRET),false);
+ assert.equal(calls.some(c=>/BEGIN|COMMIT|UPDATE|INSERT/i.test(c.sql)),false);
+});
+
+test('transfer feature is absent only with all tables and transfer ledger traces absent; partial/view fails',async()=>{
+ const absent={query:async sql=>({rows:sql.includes('FROM pg_class')?[]:[{found:false}]})};
+ const result=await readTransferMonitor(absent,120);assert.equal(result.transfer_schema,'absent');assert.equal(result.pending_transfers,'0');
+ for(const rows of [[{relname:'gp_transfers',relkind:'r'}],TRANSFER_TABLES.map(relname=>({relname,relkind:relname==='gp_transfers'?'v':'r'}))]){
+  await assert.rejects(readTransferMonitor({query:async()=>({rows})},120),/TRANSFER_SCHEMA_INCOMPLETE/);
+ }
+ await assert.rejects(readTransferMonitor({query:async sql=>({rows:sql.includes('FROM pg_class')?[]:[{found:true}]})},120),/TRANSFER_SCHEMA_INCOMPLETE/);
 });
 
 test('failed backup job and stopped renewal timer are flagged independently of API health',async()=>{

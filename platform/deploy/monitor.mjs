@@ -9,6 +9,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import pg from 'pg';
 import {readWalletDependencies,referenceWalletHealth} from '../server/dependency-health.mjs';
+import {transferSchema,transferAudit,transferObligations} from '../server/transfers/audit.mjs';
 
 const exec=promisify(execFile),DAY=86400000;
 const number=(env,key,fallback,min=1,max=Number.MAX_SAFE_INTEGER)=>{
@@ -69,6 +70,17 @@ export const BACKLOG_SQL=`SELECT
    (status IN ('waiting','funding','cancelling') AND LEAST(expires_at,COALESCE(ready_deadline_at,expires_at)) < extract(epoch FROM now())*1000-$1*1000)
  ) AS rooms_overdue`;
 const metricNames=['cycles_pending','cycles_overdue','probability_operations_pending','probability_operations_overdue','pvp_operations_pending','pvp_operations_overdue','rooms_faulted','rooms_overdue'];
+const transferMetricNames=['pending_transfers','transfers_overdue','clearing_mismatches','transfer_order_mismatches','wallet_hold_mismatches'];
+export async function readTransferMonitor(db,overdueSeconds){
+ const transfer_schema=await transferSchema(db);
+ if(transfer_schema==='absent'){
+  return {transfer_schema,...Object.fromEntries(transferMetricNames.map(name=>[name,'0']))};
+ }
+ const audit=await transferAudit(db),obligations=await transferObligations(db);
+ // A retry, lease renewal or unknown provider result must never reset age.
+ const overdue=(await db.query("SELECT count(*)::text AS transfers_overdue FROM gp_transfers WHERE state='PENDING' AND created_at < now()-($1::double precision*interval '1 second')",[overdueSeconds])).rows[0];
+ return {transfer_schema,...audit,pending_transfers:obligations?.pending_transfers,transfers_overdue:overdue?.transfers_overdue};
+}
 
 export function requestHealth(url,{host,timeoutMs=5000,maxBytes=131072}={}){
  return new Promise((resolve,reject)=>{
@@ -101,8 +113,10 @@ export function createProbes(config){
   client.on('error',()=>{});
   try{
    await client.connect();await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+   await client.query('SET LOCAL search_path=pg_catalog,public');
    const dependencies=await readWalletDependencies(client,config);
    const backlog=(await client.query(BACKLOG_SQL,[config.overdueSeconds,config.roomStaleSeconds])).rows[0];
+   Object.assign(backlog,await readTransferMonitor(client,config.overdueSeconds));
    const identity=(await client.query('SELECT current_database() AS database')).rows[0];
    await client.query('COMMIT');return {dependencies,backlog,database:identity.database};
   }finally{await client.end();}
@@ -165,6 +179,7 @@ function bounded(probe,timeoutMs){
 }
 const check=(name,codes=[],metrics={})=>({name,status:codes.length?'failed':'ok',codes,metrics});
 const validNumber=value=>Number.isFinite(Number(value))&&Number(value)>=0;
+const validCount=value=>(typeof value==='number'||typeof value==='string'&&/^(0|[1-9][0-9]*)$/.test(value))&&Number.isSafeInteger(Number(value))&&Number(value)>=0;
 const round=value=>Math.round(value*100)/100;
 export async function collectHealth(config,probes,{now=Date.now()}={}){
  const names=['database','api','wallet','ingress',...(!config.production?['demo']:[]),'systemd','backup','disks','certificate'];
@@ -175,13 +190,16 @@ export async function collectHealth(config,probes,{now=Date.now()}={}){
  for(const {name,value,failed} of results){
   if(failed){checks.push(check(name,['PROBE_FAILED']));continue;}
   if(name==='database'){
-   if(!metricNames.every(key=>validNumber(value?.[key])&&Number.isSafeInteger(Number(value[key])))){
+   if(!['present','absent'].includes(value?.transfer_schema)||![...metricNames,...transferMetricNames].every(key=>validCount(value?.[key]))||
+     (value.transfer_schema==='absent'&&transferMetricNames.some(key=>Number(value[key])!==0))){
     checks.push(check(name,['METRICS_INVALID']));continue;
    }
-   const metrics=Object.fromEntries(metricNames.map(key=>[key,Number(value[key])])),codes=[];
+   const metrics={...Object.fromEntries([...metricNames,...transferMetricNames].map(key=>[key,Number(value[key])])),transfer_schema:value.transfer_schema},codes=[];
    if(['cycles_overdue','probability_operations_overdue','pvp_operations_overdue','rooms_overdue'].some(key=>metrics[key]>0))codes.push('SETTLEMENT_OR_ROOM_OVERDUE');
    if(metrics.rooms_faulted>0)codes.push('ROOM_FAULT');
-   if(['cycles_pending','probability_operations_pending','pvp_operations_pending'].some(key=>metrics[key]>config.backlogLimit))codes.push('BACKLOG_LIMIT_EXCEEDED');
+   if(metrics.transfers_overdue>0)codes.push('TRANSFER_OVERDUE');
+   if(['clearing_mismatches','transfer_order_mismatches','wallet_hold_mismatches'].some(key=>metrics[key]>0))codes.push('TRANSFER_LEDGER_INCONSISTENT');
+   if(['cycles_pending','probability_operations_pending','pvp_operations_pending','pending_transfers'].some(key=>metrics[key]>config.backlogLimit))codes.push('BACKLOG_LIMIT_EXCEEDED');
    checks.push(check(name,codes,metrics));
   }else if(name==='wallet'&&value?.providers){
    const providers=value.providers;

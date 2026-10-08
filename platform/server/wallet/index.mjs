@@ -56,6 +56,30 @@ async function ledger(c,account,available=0n,reserved=0n,meta={},operationId=c.o
  await c.db.query('INSERT INTO wallet_ledger(scope_id,operation_id,transaction_id,account,delta_available,delta_reserved,meta) VALUES($1,$2,$3,$4,$5,$6,$7)',[c.id,operationId,c.transactionId,account,available.toString(),reserved.toString(),JSON.stringify(meta)]);
  change(c.s,'ledger_version',1n);c.dirty=true;
 }
+/** Internal transfer adapter only. Uses the very same lock and transaction as
+ * game spending; it is never exposed as a generic HTTP balance mutation. */
+export async function withTransferLedger(pool,scope,operationId,fn){
+ for(const field of fields)if(typeof scope?.[field]!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(scope[field]))fail('INVALID_REQUEST','Invalid transfer scope',400);
+ return withScope(pool,scopeId(scope),async c=>{
+  c.operationId=operationId;
+  return fn({db:c.db,scope:c.s,scopeId:c.id,transactionId:c.transactionId,
+   async hold(userId,direction,value){
+    const n=amount(value,true),u=await user(c,userId);
+    if(direction==='IN'){creditRoom(u,n);change(u,'credit_pending',n);await ledger(c,'user:'+userId,0n,0n,{kind:'transfer_capacity_hold',credit_pending_delta:value});}
+    else if(direction==='OUT'){if(BigInt(u.available)<n)fail('INSUFFICIENT_FUNDS','Insufficient available balance',422);change(u,'available',-n);change(u,'reserved',n);await ledger(c,'user:'+userId,-n,n,{kind:'transfer_hold'});}
+    else fail('INVALID_REQUEST','Invalid transfer direction',400);
+    await saveUser(c,u);
+   },
+   async finish(userId,direction,value,succeeded,clearingAccount){
+    const n=amount(value,true),u=await user(c,userId);
+    if(direction==='IN'){change(u,'credit_pending',-n);if(succeeded){change(u,'available',n);await ledger(c,'user:'+userId,n,0n,{kind:'transfer_in',credit_pending_delta:(-n).toString()});await ledger(c,clearingAccount,-n,0n,{kind:'transfer_in'});}else await ledger(c,'user:'+userId,0n,0n,{kind:'transfer_capacity_released',credit_pending_delta:(-n).toString()});}
+    else if(direction==='OUT'){change(u,'reserved',-n);if(!succeeded)change(u,'available',n);await ledger(c,'user:'+userId,succeeded?0n:n,-n,{kind:succeeded?'transfer_out':'transfer_rejected'});if(succeeded)await ledger(c,clearingAccount,n,0n,{kind:'transfer_out'});}
+    else fail('INVALID_REQUEST','Invalid transfer direction',400);
+    await saveUser(c,u);
+   }
+  });
+ },{expire:false});
+}
 async function match(c,id){return (await c.db.query('SELECT * FROM wallet_matches WHERE scope_id=$1 AND match_id=$2',[c.id,id])).rows[0];}
 async function auth(c,id){return (await c.db.query('SELECT * FROM wallet_probability WHERE scope_id=$1 AND authorization_id=$2',[c.id,id])).rows[0];}
 function reservationResource(s,r){return {...scopeOf(s),reservation_id:r.reservation_id,match_id:r.match_id,external_user_id:r.external_user_id,seat_index:r.seat_index,amount_minor:r.amount_minor,terms:r.terms,state:r.state,expires_at:iso(r.expires_at),updated_at:iso(r.updated_at)};}

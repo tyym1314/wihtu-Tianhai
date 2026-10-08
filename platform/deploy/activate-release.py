@@ -8,6 +8,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import time
 import urllib.request
@@ -37,9 +38,75 @@ def verify_release(release):
         raise ValueError('RELEASE_DEPENDENCIES_MISSING')
     return len(manifest)
 
+TRANSFER_TABLES = ('gp_transfer_bindings', 'gp_transfer_accounts', 'gp_transfers',
+                   'gp_transfer_outbox', 'wallet_transfer_clearing')
+TRANSFER_AUDIT_FIELDS = ('clearing_mismatches', 'transfer_order_mismatches', 'wallet_hold_mismatches')
+
+def transfer_audit_sql():
+    # Reuse the exact audit shipped with this tool, not code under the changing
+    # current symlink. Only the deliberately literal, non-interpolated interface
+    # is supported: a changed/missing interface must stop release activation.
+    source = (Path(__file__).resolve().parent.parent / 'server/transfers/audit.mjs').read_text()
+    matches = re.findall(r'export const TRANSFER_AUDIT_SQL=`([^`]*)`;', source)
+    if len(matches) != 1 or '${' in matches[0] or '\\' in matches[0] or '\x00' in matches[0] or len(matches[0]) > 131072:
+        raise RuntimeError('TRANSFER_AUDIT_INTERFACE_INVALID')
+    sql = matches[0].strip().removesuffix(';')
+    if not sql.startswith('WITH ') or ';' in sql:
+        raise RuntimeError('TRANSFER_AUDIT_INTERFACE_INVALID')
+    return sql
+
+def pending_sql():
+    games = "(SELECT count(*) FROM gp_cycles WHERE status NOT IN ('SETTLED','REJECTED')) + (SELECT count(*) FROM pvp_rooms WHERE status NOT IN ('settled','cancelled','voided'))"
+    values = ','.join("('%s')" % name for name in TRANSFER_TABLES)
+    # psql conditionals avoid parsing references to new tables in an old DB.
+    # All predicates and audits run in one consistent read-only transaction.
+    return f"""BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
+SET LOCAL search_path=pg_catalog,public;
+SET LOCAL statement_timeout='15s';
+SET LOCAL lock_timeout='5s';
+SELECT count(c.oid)=0 AS transfer_absent, count(c.oid)=5 AND bool_and(c.relkind='r') AS transfer_present
+ FROM (VALUES {values}) t(name) LEFT JOIN pg_namespace n ON n.nspname='public'
+ LEFT JOIN pg_class c ON c.relnamespace=n.oid AND c.relname=t.name
+\\gset
+\\if :transfer_absent
+SELECT NOT EXISTS(SELECT 1 FROM wallet_ledger WHERE account LIKE 'transfer:%' OR meta->>'kind' LIKE 'transfer_%') AS transfer_legacy_clean
+\\gset
+\\if :transfer_legacy_clean
+SELECT json_build_object('transfer_schema','absent','pending_games',{games},'pending_transfers',0,'audit',NULL);
+\\else
+DO $transfer_guard$ BEGIN RAISE EXCEPTION 'TRANSFER_SCHEMA_INCOMPLETE'; END $transfer_guard$;
+\\endif
+\\else
+\\if :transfer_present
+SELECT json_build_object('transfer_schema','present','pending_games',{games},
+ 'pending_transfers',(SELECT count(*) FROM gp_transfers WHERE state='PENDING'),
+ 'audit',(SELECT audit FROM ({transfer_audit_sql()}) transfer_audit));
+\\else
+DO $transfer_guard$ BEGIN RAISE EXCEPTION 'TRANSFER_SCHEMA_INCOMPLETE'; END $transfer_guard$;
+\\endif
+\\endif
+COMMIT;"""
+
 def pending():
-    query = "SELECT (SELECT count(*) FROM gp_cycles WHERE status NOT IN ('SETTLED','REJECTED')) + (SELECT count(*) FROM pvp_rooms WHERE status NOT IN ('settled','cancelled','voided'))"
-    return int(run(['docker', 'exec', 'oasis-postgres', 'psql', '-U', 'oasis', '-d', 'oasis_platform', '-At', '-c', query]))
+    try:
+        result = json.loads(run(['docker', 'exec', '-i', 'oasis-postgres', 'psql', '-X', '-qAt',
+                                 '-v', 'ON_ERROR_STOP=1', '-U', 'oasis', '-d', 'oasis_platform'],
+                                input=pending_sql(), timeout=30))
+        if (not isinstance(result, dict) or set(result) != {'transfer_schema', 'pending_games', 'pending_transfers', 'audit'}
+                or result['transfer_schema'] not in ('present', 'absent')
+                or any(type(result[key]) is not int or result[key] < 0 for key in ('pending_games', 'pending_transfers'))):
+            raise ValueError('INVALID_OBLIGATION_REPORT')
+        if result['transfer_schema'] == 'present':
+            audit = result['audit']
+            if (not isinstance(audit, dict) or set(audit) != set(TRANSFER_AUDIT_FIELDS)
+                    or any(type(audit[key]) is not int or audit[key] != 0 for key in TRANSFER_AUDIT_FIELDS)):
+                raise ValueError('TRANSFER_LEDGER_INCONSISTENT')
+        elif result['audit'] is not None or result['pending_transfers'] != 0:
+            raise ValueError('INVALID_LEGACY_REPORT')
+        return result['pending_games'] + result['pending_transfers']
+    except Exception:
+        # Driver errors/rows may carry provider identifiers or credentials.
+        raise RuntimeError('OBLIGATIONS_CHECK_FAILED') from None
 
 def switch(release):
     temp = BASE / ('.current-' + str(os.getpid()))

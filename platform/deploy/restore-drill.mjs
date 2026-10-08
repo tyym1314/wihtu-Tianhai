@@ -5,6 +5,7 @@ import {copyFile,lstat,mkdir,mkdtemp,open,readFile,realpath,rm,stat,link,unlink}
 import {createHash,createDecipheriv,randomBytes} from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {TRANSFER_AUDIT_SQL,TRANSFER_TABLES} from '../server/transfers/audit.mjs';
 
 const fail=code=>{throw Object.assign(new Error(code),{code});};
 const hashes=['database.dump','private-config.tar.gz','release.txt'];
@@ -79,7 +80,12 @@ function command(program,args,{input,file,timeoutMs=120000,maxOutput=16*1024*102
   else child.stdin.end(input||'');
  });
 }
-export const REQUIRED_TABLES=['gp_admins','gp_apps','gp_keys','gp_sessions','gp_cycles','gp_operations','gp_plays','gp_audit','gp_partner_accounts','pvp_rooms','pvp_operations','pvp_actions','wallet_scopes','wallet_keys','wallet_users','wallet_operations','wallet_ledger','wallet_matches','wallet_reservations','wallet_probability','wallet_operation_ids'];
+export const LEGACY_REQUIRED_TABLES=['gp_admins','gp_apps','gp_keys','gp_sessions','gp_cycles','gp_operations','gp_plays','gp_audit','gp_partner_accounts','pvp_rooms','pvp_operations','pvp_actions','wallet_scopes','wallet_keys','wallet_users','wallet_operations','wallet_ledger','wallet_matches','wallet_reservations','wallet_probability','wallet_operation_ids'];
+export const TRANSFER_REQUIRED_TABLES=TRANSFER_TABLES;
+export const REQUIRED_TABLES=[...LEGACY_REQUIRED_TABLES,...TRANSFER_REQUIRED_TABLES];
+const legacyIntegrity=['balance_mismatches','scope_mismatches','unbalanced_transactions','ledger_version_mismatches','orphan_records','invalid_constraints'];
+const transferIntegrity=['clearing_mismatches','transfer_order_mismatches','wallet_hold_mismatches'];
+const legacyPending=['pending_cycles','pending_probability_operations','pending_pvp_operations','active_rooms','pending_wallet_operations'];
 export const RESTORE_AUDIT_SQL=`WITH ledger AS (
  SELECT scope_id,account,sum(delta_available) available,sum(delta_reserved) reserved FROM wallet_ledger GROUP BY scope_id,account
 ), accounts AS (
@@ -122,23 +128,61 @@ SELECT json_build_object(
  'pending_wallet_operations',(SELECT count(*) FROM wallet_operations WHERE state='PENDING')
 );`;
 
-export function dockerAdapter(){
+// Keep the legacy literal usable for pre-transfer backups. New databases must
+// project the signed clearing account into the ledger, never exempt it.
+export function restoreAuditSQL(transfers=true){
+ if(!transfers)return RESTORE_AUDIT_SQL;
+ return RESTORE_AUDIT_SQL.replace('), mismatches AS (',
+  " UNION ALL SELECT scope_id,account,net_minor,0 FROM wallet_transfer_clearing\n), mismatches AS (")
+  .replace(/\);\s*$/,`)::jsonb || (SELECT audit::jsonb FROM (${TRANSFER_AUDIT_SQL.trim().replace(/;$/,'')}) transfer_audit)
+ || jsonb_build_object('pending_transfers',(SELECT count(*) FROM gp_transfers WHERE state='PENDING'));`);
+}
+export const TRANSFERS_RESTORE_AUDIT_SQL=restoreAuditSQL();
+// psql conditionals select a statement only after checking the whole feature.
+// A SQL CASE cannot guard references to absent relations at parse time.
+export function restoreInspectSQL(){
+ const values=TRANSFER_REQUIRED_TABLES.map(name=>`('${name}')`).join(',');
+ const result=(tables,transfers)=>`SELECT json_build_object('transfer_schema','${transfers?'present':'absent'}',
+ 'rows',json_build_object(${tables.map(name=>`'${name}',(SELECT count(*) FROM ${name})`).join(',')}),
+ 'audit',(${restoreAuditSQL(transfers).trim().replace(/;$/,'')}),
+ 'keys',(SELECT COALESCE(json_agg(secret_enc),'[]'::json) FROM gp_keys));`;
+ return `BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
+SET LOCAL search_path=pg_catalog,public;
+SET LOCAL statement_timeout='30s';
+SELECT count(c.oid)=0 AS transfer_absent, count(c.oid)=5 AND bool_and(c.relkind='r') AS transfer_present
+ FROM (VALUES ${values}) t(name) LEFT JOIN pg_namespace n ON n.nspname='public'
+ LEFT JOIN pg_class c ON c.relnamespace=n.oid AND c.relname=t.name
+\\gset
+\\if :transfer_absent
+SELECT NOT EXISTS(SELECT 1 FROM wallet_ledger WHERE account LIKE 'transfer:%' OR meta->>'kind' LIKE 'transfer_%') AS transfer_legacy_clean
+\\gset
+\\if :transfer_legacy_clean
+${result(LEGACY_REQUIRED_TABLES,false)}
+\\else
+DO $transfer_guard$ BEGIN RAISE EXCEPTION 'TRANSFER_SCHEMA_INCOMPLETE'; END $transfer_guard$;
+\\endif
+\\else
+\\if :transfer_present
+${result(REQUIRED_TABLES,true)}
+\\else
+DO $transfer_guard$ BEGIN RAISE EXCEPTION 'TRANSFER_SCHEMA_INCOMPLETE'; END $transfer_guard$;
+\\endif
+\\endif
+COMMIT;`;
+}
+
+export function dockerAdapter({execute=command}={}){
  const sql=async(database,query)=>{
   if(database!=='postgres')validateDatabaseName(database);
-  return command('docker',['exec','-i','oasis-postgres','psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','oasis','-d',database],{input:query});
+  return execute('docker',['exec','-i','oasis-postgres','psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','oasis','-d',database],{input:query});
  };
  return {
   exists:async name=>{validateDatabaseName(name);return (await sql('postgres',`SELECT count(*) FROM pg_database WHERE datname='${name}';`)).trim()!=='0';},
   create:async name=>{validateDatabaseName(name);await sql('postgres',`CREATE DATABASE "${name}" WITH TEMPLATE template0;`);},
   restore:async(name,file)=>{validateDatabaseName(name);await command('docker',['exec','-i','oasis-postgres','pg_restore','-U','oasis','--dbname',name,'--no-owner','--no-acl','--exit-on-error','--single-transaction'],{file,timeoutMs:300000});},
   inspect:async name=>{
-   const tableValues=REQUIRED_TABLES.map(table=>`('${table}')`).join(',');
-   const missing=Number((await sql(name,`SELECT count(*) FROM (VALUES ${tableValues}) t(name) WHERE to_regclass('public.'||name) IS NULL;`)).trim());
-   if(missing!==0)fail('SCHEMA_INVALID');
-   const rows=JSON.parse((await sql(name,`SELECT json_build_object(${REQUIRED_TABLES.map(table=>`'${table}',(SELECT count(*) FROM ${table})`).join(',')});`)).trim());
-   const audit=JSON.parse((await sql(name,RESTORE_AUDIT_SQL)).trim());
-   const keys=JSON.parse((await sql(name,"SELECT COALESCE(json_agg(secret_enc),'[]'::json) FROM gp_keys;")).trim());
-   return {rows,audit,keys};
+   try{return JSON.parse((await sql(name,restoreInspectSQL())).trim());}
+   catch{fail('SCHEMA_INVALID');}
   },
   drop:async name=>{validateDatabaseName(name);await sql('postgres',`DROP DATABASE "${name}" WITH (FORCE);`);},
  };
@@ -190,14 +234,17 @@ export async function runRestoreDrill({backup,report,databaseName=`oasis_restore
   master=await extract(temporary);result.checks.private_config_restored=true;
   createAttempted=true;await adapter.create(databaseName);created=true;result.cleanup.database_created=true;
   await adapter.restore(databaseName,path.join(temporary,'database.dump'));result.checks.pg_restore=true;
-  const {rows,audit,keys}=await adapter.inspect(databaseName);
-  if(!REQUIRED_TABLES.every(table=>numberCount(rows?.[table]))||!Array.isArray(keys)||keys.length===0||rows.gp_keys!==keys.length)fail('SCHEMA_INVALID');
+  const {rows,audit,keys,transfer_schema}=await adapter.inspect(databaseName);
+  if(!['present','absent'].includes(transfer_schema))fail('SCHEMA_INVALID');
+  const tables=transfer_schema==='present'?REQUIRED_TABLES:LEGACY_REQUIRED_TABLES;
+  if(!tables.every(table=>numberCount(rows?.[table]))||Object.keys(rows??{}).length!==tables.length||!Array.isArray(keys)||keys.length===0||rows.gp_keys!==keys.length)fail('SCHEMA_INVALID');
   for(const key of keys)decryptCheck(master,key);
-  result.checks.master_key_decrypts=keys.length;result.row_counts=Object.fromEntries(REQUIRED_TABLES.map(table=>[table,rows[table]]));
-  const auditNames=['balance_mismatches','scope_mismatches','unbalanced_transactions','ledger_version_mismatches','orphan_records','invalid_constraints','pending_cycles','pending_probability_operations','pending_pvp_operations','active_rooms','pending_wallet_operations'];
-  if(!auditNames.every(name=>numberCount(audit?.[name])))fail('SCHEMA_INVALID');
+  result.checks.master_key_decrypts=keys.length;result.row_counts=Object.fromEntries(tables.map(table=>[table,rows[table]]));result.transfer_schema=transfer_schema;
+  const integrity=transfer_schema==='present'?[...legacyIntegrity,...transferIntegrity]:legacyIntegrity;
+  const auditNames=[...integrity,...legacyPending,...(transfer_schema==='present'?['pending_transfers']:[])];
+  if(!auditNames.every(name=>numberCount(audit?.[name]))||Object.keys(audit??{}).length!==auditNames.length)fail('SCHEMA_INVALID');
   result.ledger_audit=Object.fromEntries(auditNames.map(name=>[name,audit[name]]));
-  if(auditNames.slice(0,6).some(name=>audit[name]!==0))fail('LEDGER_INCONSISTENT');
+  if(integrity.some(name=>audit[name]!==0))fail('LEDGER_INCONSISTENT');
   result.checks.schema_and_ledger=true;result.status='ok';
  }catch(error){result.error=codeOf(error);}
  finally{

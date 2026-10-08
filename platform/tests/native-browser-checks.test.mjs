@@ -914,9 +914,55 @@ test('late pre-watermark CDP evidence revokes a retained binding instead of pret
 test('already observed competing zero-clock request prevents initial binding before its late failure',async()=>{
  const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();const other={...f.req};f.page.emit('request',other);
  await f.drain({final:false});assert.equal(f.result.lifecycle_cancellations.length,0);
- assert.equal(f.result.network_errors[0].classification_failure,'UNKNOWN_COMPETING_NETWORK_REQUEST');assert.equal(f.result.network_binding_decisions[0].binding_anchor,null);
+ assert.equal(f.result.network_errors.length,0);assert.equal(f.result.pending_network_observations,1);
+ assert.equal(f.result.network_binding_decisions[0].classification_failure,'UNKNOWN_COMPETING_NETWORK_REQUEST');assert.equal(f.result.network_binding_decisions[0].binding_anchor,null);
  f.probe.network.set('late',{...f.probe.network.get('protocol-request'),id:'late',started_at_ms:120});f.page.emit('requestfailed',other);
  await f.drain({final:true});assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(f.result.network_errors.length,2);
+});
+
+async function anchoredWithLaterUnknownPoll(){
+ const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();await earlyBindingTurn();
+ assert.equal(lastEarlyDecision(f).verdict,'anchored');
+ let startTime=0;const other={...f.req,timing:()=>({startTime})},doc=f.trace[0].document_id;
+ f.deliver([{...f.trace[1],event_seq:5,at_ms:210,attempt_id:2}]);
+ f.probe.network.set('later-live',{id:'later-live',frame:'protocol-frame',url:f.req.url(),method:'GET',type:'Fetch',started_at_ms:215,response_seen:false,redirected:false});
+ f.page.emit('request',other);
+ const finish=()=>{
+  startTime=215;f.deliver([{document_id:doc,event_seq:6,at_ms:230,kind:'fulfilled',attempt_id:2,signal_aborted:false,reason:null}]);
+  Object.assign(f.probe.network.get('later-live'),{response_seen:true,response_status:200});
+  f.page.emit('response',{url:other.url,request:()=>other,status:()=>200,ok:()=>true,json:async()=>room()});
+  f.page.emit('requestfinished',other);
+ };
+ return{f,finish};
+}
+
+test('an active-drain unknown competitor stays pending until complete later evidence proves the existing anchor',async()=>{
+ const {f,finish}=await anchoredWithLaterUnknownPoll(),raw=f.result.network_observations[0];
+ await f.drain({final:false});
+ assert.equal(f.result.network_errors.length,0);assert.equal(f.result.pending_network_observations,1);assert.equal(nativeErrorsEmpty(f.result),false);
+ const pending=f.result.network_binding_decisions.at(-1);assert.equal(pending.verdict,'pending');
+ assert.equal(pending.classification_failure,'UNKNOWN_COMPETING_NETWORK_REQUEST');assert.ok(pending.binding_anchor);
+ finish();await f.drain({final:true});
+ assert.equal(nativeErrorsEmpty(f.result),true);assert.equal(f.result.lifecycle_cancellations.length,1);
+ assert.equal(f.result.network_binding_decisions.at(-1).verdict,'lifecycle');assert.equal(f.result.network_binding_decisions.at(-1).classification_failure,null);
+ assert.equal(f.result.network_observations[0],raw);assert.equal(Object.isFrozen(raw),true);assert.equal(f.result.unmatched_fetch_rejections.length,0);
+});
+
+test('an unresolved competitor fails at final drain and a subsequent drain cannot erase that final failure',async()=>{
+ const {f,finish}=await anchoredWithLaterUnknownPoll();await f.drain({final:false});await f.drain({final:true});
+ assert.equal(f.result.network_errors.length,1);assert.equal(f.result.network_errors[0].classification_failure,'UNKNOWN_COMPETING_NETWORK_REQUEST');
+ assert.equal(nativeErrorsEmpty(f.result),false);const original=f.result.network_errors[0];
+ finish();await f.drain({final:true});
+ assert.equal(f.result.network_errors[0],original);assert.equal(f.result.network_binding_decisions.at(-1).verdict,'failure-retained');
+ assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+test('deferring an unknown competitor never hides late contradictory evidence from before the retained anchor',async()=>{
+ const {f,finish}=await anchoredWithLaterUnknownPoll();await f.drain({final:false});finish();
+ f.probe.network.set('late-old',{...f.probe.network.get('protocol-request'),id:'late-old',started_at_ms:120,failed_at_ms:134});
+ await f.drain({final:true});
+ assert.equal(f.result.network_errors.length,1);assert.equal(f.result.network_errors[0].classification_failure,'LATE_COMPETING_CDP_EVIDENCE');
+ assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(nativeErrorsEmpty(f.result),false);
 });
 
 for(const variant of ['valid','missing-start','missing-end','wrong-status','two-network-requests','wrong-frame','wrong-method','lost-prefix'])test(`installation challenge requires complete exact evidence: ${variant}`,()=>{

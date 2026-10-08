@@ -202,7 +202,7 @@ class ReleasePromotionTests(unittest.TestCase):
         self.assertFalse((self.base / 'private/last-release.json').exists())
         self.assertEqual(list(self.base.glob('.current-*')), [])
 
-    def fail_health_after_new_obligation(self, *, rooms=0, cycles=0):
+    def fail_health_after_new_obligation(self, *, rooms=0, cycles=0, transfers=0):
         # Exercise the real pending() SQL dispatch: neither type may be omitted
         # from the post-start guard, even when the initial two checks were zero.
         created = False
@@ -218,14 +218,17 @@ class ReleasePromotionTests(unittest.TestCase):
                 serving = False
             elif args[:2] == ['systemctl', 'start']:
                 serving = True
-            elif args[:3] == ['docker', 'exec', 'oasis-postgres']:
-                self.assertEqual(args[3:-1], ['psql', '-U', 'oasis', '-d', 'oasis_platform', '-At', '-c'])
-                self.assertIn("gp_cycles WHERE status NOT IN ('SETTLED','REJECTED')", args[-1])
-                self.assertIn("pvp_rooms WHERE status NOT IN ('settled','cancelled','voided')", args[-1])
+            elif args[:4] == ['docker', 'exec', '-i', 'oasis-postgres']:
+                self.assertEqual(args[4:], ['psql', '-X', '-qAt', '-v', 'ON_ERROR_STOP=1', '-U', 'oasis', '-d', 'oasis_platform'])
+                self.assertIn("gp_cycles WHERE status NOT IN ('SETTLED','REJECTED')", kwargs['input'])
+                self.assertIn("pvp_rooms WHERE status NOT IN ('settled','cancelled','voided')", kwargs['input'])
+                self.assertIn("gp_transfers WHERE state='PENDING'", kwargs['input'])
                 queries.append((created, serving, (self.base / 'current').resolve()))
                 if created:
                     self.assertFalse(serving, 'pending must be read only after stopping candidate admission')
-                return str(rooms + cycles if created else 0)
+                return json.dumps({'transfer_schema': 'present', 'pending_games': rooms + cycles if created else 0,
+                                   'pending_transfers': transfers if created else 0,
+                                   'audit': dict.fromkeys(self.module.TRANSFER_AUDIT_FIELDS, 0)})
             return ''
 
         def health():
@@ -252,6 +255,9 @@ class ReleasePromotionTests(unittest.TestCase):
 
     def test_new_wallet_obligation_blocks_rollback(self):
         self.fail_health_after_new_obligation(cycles=1)
+
+    def test_new_unknown_transfer_blocks_rollback_even_with_no_game_obligation(self):
+        self.fail_health_after_new_obligation(transfers=1)
 
     def test_rollback_database_read_failure_keeps_candidate_stopped_and_diagnostic_fixed(self):
         with mock.patch.object(self.module, 'pending', side_effect=[0, 0, RuntimeError('private DB diagnostic')]) as pending, \
@@ -358,6 +364,68 @@ class ReleasePromotionTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'DATABASE_UNHEALTHY'):
                 self.module.health()
         urlopen.assert_not_called()
+
+
+class TransferObligationChecks(unittest.TestCase):
+    def setUp(self):
+        self.module = load_script()
+
+    def report(self, schema='present', transfers=0, games=0):
+        return {'transfer_schema': schema, 'pending_games': games, 'pending_transfers': transfers,
+                'audit': dict.fromkeys(self.module.TRANSFER_AUDIT_FIELDS, 0) if schema == 'present' else None}
+
+    def test_full_feature_checks_games_pending_transfers_and_shared_audit_in_one_read_only_session(self):
+        with mock.patch.object(self.module, 'run', return_value=json.dumps(self.report(transfers=3, games=2))) as run:
+            self.assertEqual(self.module.pending(), 5)
+        args = run.call_args.args[0]
+        self.assertEqual(args, ['docker', 'exec', '-i', 'oasis-postgres', 'psql', '-X', '-qAt',
+                               '-v', 'ON_ERROR_STOP=1', '-U', 'oasis', '-d', 'oasis_platform'])
+        query = run.call_args.kwargs['input']
+        self.assertEqual(run.call_args.kwargs['timeout'], 30)
+        self.assertIn('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;', query)
+        self.assertIn("count(c.oid)=0 AS transfer_absent", query)
+        self.assertIn("count(c.oid)=5 AND bool_and(c.relkind='r')", query)
+        self.assertIn("gp_transfers WHERE state='PENDING'", query)
+        self.assertIn(self.module.transfer_audit_sql(), query)
+        self.assertIn("RAISE EXCEPTION 'TRANSFER_SCHEMA_INCOMPLETE'", query)
+        self.assertTrue(query.endswith('COMMIT;'))
+        run.assert_called_once()
+
+    def test_explicit_absent_feature_requires_no_transfer_ledger_trace(self):
+        with mock.patch.object(self.module, 'run', return_value=json.dumps(self.report('absent', games=2))):
+            self.assertEqual(self.module.pending(), 2)
+        query = self.module.pending_sql()
+        self.assertIn("account LIKE 'transfer:%' OR meta->>'kind' LIKE 'transfer_%'", query)
+        self.assertLess(query.index('\\if :transfer_legacy_clean'), query.index("'transfer_schema','absent'"))
+
+    def test_missing_partial_unknown_malformed_audit_never_defaults_to_zero(self):
+        invalid = [{}, self.report('partial'), self.report('absent', transfers=1)]
+        for field in self.module.TRANSFER_AUDIT_FIELDS:
+            for value in (1, None, False, '0', -1):
+                report = self.report(); report['audit'][field] = value; invalid.append(report)
+        for key in ('audit', 'pending_games', 'pending_transfers', 'transfer_schema'):
+            report = self.report(); del report[key]; invalid.append(report)
+        for value in (None, False, '0', -1):
+            report = self.report(); report['pending_transfers'] = value; invalid.append(report)
+        for report in invalid:
+            with self.subTest(report=report), mock.patch.object(self.module, 'run', return_value=json.dumps(report)):
+                with self.assertRaisesRegex(RuntimeError, '^OBLIGATIONS_CHECK_FAILED$'):
+                    self.module.pending()
+
+    def test_psql_partial_schema_or_query_failure_is_sanitized_and_never_retried(self):
+        with mock.patch.object(self.module, 'run', side_effect=RuntimeError('private provider account')) as run:
+            with self.assertRaisesRegex(RuntimeError, '^OBLIGATIONS_CHECK_FAILED$') as error:
+                self.module.pending()
+        run.assert_called_once(); self.assertNotIn('private', str(error.exception))
+
+    def test_shared_audit_literal_cannot_silently_disappear_interpolate_or_expand_to_psql_commands(self):
+        valid = 'export const TRANSFER_AUDIT_SQL=`WITH records AS (SELECT 1) SELECT 1`;'
+        for source in ('', valid + valid, valid.replace('SELECT 1`', 'SELECT ${value}`'),
+                       valid.replace('SELECT 1`', 'SELECT 1; SELECT 2`'),
+                       valid.replace('SELECT 1`', 'SELECT 1\\gexec`')):
+            with self.subTest(source=source), mock.patch.object(Path, 'read_text', return_value=source):
+                with self.assertRaisesRegex(RuntimeError, '^TRANSFER_AUDIT_INTERFACE_INVALID$'):
+                    self.module.transfer_audit_sql()
 
 
 if __name__ == '__main__':

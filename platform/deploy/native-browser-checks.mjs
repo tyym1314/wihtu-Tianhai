@@ -513,7 +513,11 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
    const pending=[];
    for(const {entry,observation} of failedEntries){
     const classification=fetchProbe.classify(entry,requestEntries);
-    const deferred=!final&&!recordedFailures.has(observation.observation_id)&&entry.network_binding_incomplete&&['AMBIGUOUS_CDP_NETWORK_FAILURE','MISSING_CDP_NETWORK_PROOF'].includes(classification.reason);
+    // A later live poll can still have a zero Playwright clock at an active
+    // fence. Preserve that uncertainty, rather than permanently failing an
+    // earlier proven abort. Final drain still requires the full unique proof.
+    const deferred=!final&&!recordedFailures.has(observation.observation_id)&&
+     (classification.reason==='UNKNOWN_COMPETING_NETWORK_REQUEST'||entry.network_binding_incomplete&&['AMBIGUOUS_CDP_NETWORK_FAILURE','MISSING_CDP_NETWORK_PROOF'].includes(classification.reason));
     assert.ok(result.network_binding_decisions.length<20000,'Network binding decision limit exceeded');
     result.network_binding_decisions.push({drain_id:drainId,final,observation_id:observation.observation_id,verdict:recordedFailures.has(observation.observation_id)?'failure-retained':deferred?'pending':classification.eligible?'lifecycle':'failure',classification_failure:classification.reason??null,binding:structuredClone(entry.network_binding_observation??null),binding_anchor:structuredClone(entry.network_binding_anchor??null)});
     if(deferred)pending.push(entry);
