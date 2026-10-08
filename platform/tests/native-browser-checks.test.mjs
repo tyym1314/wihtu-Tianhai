@@ -761,6 +761,127 @@ function addSecondCancellation(f){
  f.page.emit('request',next);f.page.emit('requestfailed',next);
 }
 
+const earlyBindingTurn=()=>new Promise(resolve=>queueMicrotask(resolve));
+const lastEarlyDecision=f=>f.result.early_binding_observations.at(-1)?.decisions.at(-1);
+
+for(const game of ['golf','pool'])test(`${game}: requestfailed preserves the first unique anchor before any drain or later abort`,async()=>{
+ const f=cancellationFixture({timing:0,stateOptions:{game},frameUrl:origin+'/play/'+game});f.deliver();networkProof(f);f.fail();
+ await earlyBindingTurn();assert.equal(lastEarlyDecision(f).verdict,'anchored');assert.equal(lastEarlyDecision(f).identity.id,'protocol-request');
+ assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(f.result.pending_network_observations,1);assert.equal(nativeErrorsEmpty(f.result),false);
+ const firstRaw=f.result.network_observations[0],firstAnchor=structuredClone(lastEarlyDecision(f).anchor);
+ if(game==='golf')addSecondCancellation(f);
+ else{
+  const doc=f.trace[0].document_id;
+  f.deliver([{...f.trace[1],event_seq:5,at_ms:190,attempt_id:2},
+   {document_id:doc,event_seq:6,at_ms:210,kind:'fulfilled',attempt_id:2,signal_aborted:false,reason:null},
+   {...f.trace[1],event_seq:7,at_ms:210.4,attempt_id:3},{...f.trace[2],event_seq:8,at_ms:230,attempt_id:3},{...f.trace[3],event_seq:9,at_ms:235,attempt_id:3}]);
+  response(f,{...f.req,timing:()=>({startTime:190.3})},{json:async()=>room({game_id:game})});
+  f.probe.network.set('success',{id:'success',frame:'protocol-frame',url:f.req.url(),method:'GET',type:'Fetch',started_at_ms:190.3,response_seen:true});
+  f.probe.network.set('second',{...f.probe.network.get('protocol-request'),id:'second',started_at_ms:210.65,failed_at_ms:232});
+  const next={...f.req};f.page.emit('request',next);f.page.emit('requestfailed',next);
+ }
+ await earlyBindingTurn();assert.equal(f.result.lifecycle_cancellations.length,0);
+ await f.drain({final:true});assert.equal(nativeErrorsEmpty(f.result),true);assert.equal(f.result.lifecycle_cancellations.length,2);
+ assert.equal(new Set(f.result.lifecycle_cancellations.map(e=>e.network_protocol_id)).size,2);assert.equal(f.result.unmatched_fetch_rejections.length,0);
+ assert.equal(f.result.network_observations[0],firstRaw);assert.equal(Object.isFrozen(firstRaw),true);
+ assert.deepEqual(f.result.early_binding_observations[0].decisions[0].anchor,firstAnchor);
+});
+
+test('early proof does not wait for response bodies or flush the page',async()=>{
+ const f=cancellationFixture({timing:0});let resolveBody,flushes=0;
+ response(f,{...request({path:'/api/pvp/rooms/other'}),timing:()=>({startTime:99})},{json:()=>new Promise(resolve=>{resolveBody=resolve;})});
+ f.probe.flush=async()=>{flushes++;};f.deliver();networkProof(f);f.fail();await earlyBindingTurn();
+ assert.equal(lastEarlyDecision(f).verdict,'anchored');assert.equal(flushes,0);assert.equal(f.result.observer_drain_observations.length,0);
+ resolveBody(room({id:'other'}));await f.drain();assert.equal(flushes,1);assert.equal(nativeErrorsEmpty(f.result),true);
+});
+
+test('a late complete fetch terminal retries proof without retaining an early incomplete failure',async()=>{
+ const f=cancellationFixture({timing:0});f.deliver(f.trace.slice(0,3));networkProof(f);f.fail();await earlyBindingTurn();
+ assert.equal(lastEarlyDecision(f).verdict,'unresolved');assert.equal(lastEarlyDecision(f).anchor,null);assert.equal(f.result.network_errors.length,0);
+ f.deliver([f.trace[3]]);await earlyBindingTurn();assert.equal(lastEarlyDecision(f).verdict,'anchored');assert.equal(f.result.network_errors.length,0);
+ await f.drain();assert.equal(nativeErrorsEmpty(f.result),true);
+});
+
+test('unknown network timing is never sufficient, but later CDP completion can trigger a valid anchor',async()=>{
+ const f=cancellationFixture({timing:0});f.deliver();f.fail();await earlyBindingTurn();assert.equal(lastEarlyDecision(f).anchor,null);
+ networkProof(f);const record=f.probe.network.get('protocol-request');delete record.error;delete record.failed_at_ms;
+ await earlyBindingTurn();assert.equal(lastEarlyDecision(f).anchor,null);assert.equal(f.result.network_errors.length,0);
+ Object.assign(record,{error:'net::ERR_ABORTED',cancelled:true,failed_at_ms:132});f.probe.notifyNetworkChange();await earlyBindingTurn();
+ assert.equal(lastEarlyDecision(f).verdict,'anchored');await f.drain();assert.equal(nativeErrorsEmpty(f.result),true);
+});
+
+test('a missing prefix sequence cannot anchor until the complete monotonic sequence arrives',async()=>{
+ const f=cancellationFixture({timing:0});f.deliver(f.trace.filter(e=>e.kind!=='abort'));networkProof(f);f.fail();await earlyBindingTurn();
+ assert.equal(lastEarlyDecision(f).anchor,null);assert.equal(f.result.network_errors.length,0);
+ f.deliver([f.trace[2]]);await earlyBindingTurn();assert.equal(lastEarlyDecision(f).verdict,'anchored');await f.drain();assert.equal(nativeErrorsEmpty(f.result),true);
+});
+
+test('a late nonmonotonic prefix remains invalid despite completing all sequence numbers',async()=>{
+ const f=cancellationFixture({timing:0});f.deliver(f.trace.filter(e=>e.kind!=='abort'));networkProof(f);f.fail();await earlyBindingTurn();
+ f.deliver([{...f.trace[2],at_ms:109}]);await earlyBindingTurn();assert.equal(lastEarlyDecision(f).anchor,null);
+ await f.drain();assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+test('two zero-clock failures in the same event burst do not acquire an arbitrary first anchor',async()=>{
+ const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();addSecondCancellation(f);await earlyBindingTurn();
+ assert.equal(f.result.early_binding_observations.length,1);assert.ok(f.result.early_binding_observations[0].decisions.every(d=>d.anchor===null));
+ assert.equal(f.result.network_errors.length,0);await f.drain();assert.equal(f.result.network_errors.length,2);
+ assert.ok(f.result.network_errors.every(e=>e.classification_failure==='AMBIGUOUS_CDP_NETWORK_FAILURE'));
+});
+
+test('an already known unfinished zero-clock PW competitor blocks opportunistic binding',async()=>{
+ const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();f.page.emit('request',{...f.req});await earlyBindingTurn();
+ assert.equal(lastEarlyDecision(f).classification_failure,'UNKNOWN_COMPETING_NETWORK_REQUEST');assert.equal(lastEarlyDecision(f).anchor,null);
+ await f.drain();assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+for(const when of ['before','after'])test(`a competing pre-watermark CDP request arriving ${when} early proof is never hidden`,async()=>{
+ const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();
+ if(when==='after'){await earlyBindingTurn();assert.equal(lastEarlyDecision(f).verdict,'anchored');}
+ f.probe.network.set('competitor',{...f.probe.network.get('protocol-request'),id:'competitor',started_at_ms:120,failed_at_ms:134});f.probe.notifyNetworkChange();
+ await earlyBindingTurn();await f.drain();assert.equal(f.result.lifecycle_cancellations.length,0);
+ assert.equal(f.result.network_errors[0].classification_failure,when==='after'?'LATE_COMPETING_CDP_EVIDENCE':'AMBIGUOUS_CDP_NETWORK_FAILURE');
+});
+
+for(const contradiction of ['clock','headers','document'])test(`final drain revalidates an early anchor against late ${contradiction} contradiction`,async()=>{
+ const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();await earlyBindingTurn();assert.equal(lastEarlyDecision(f).verdict,'anchored');
+ const record=f.probe.network.get('protocol-request');
+ if(contradiction==='clock')record.started_at_ms+=3;
+ if(contradiction==='headers')record.response_seen=true;
+ if(contradiction==='document'){const replacement={...f.trace[0],document_id:'replacement-document',at_ms:108};f.deliver([replacement]);f.probe.receiveNetworkDocument('protocol-frame',replacement);}
+ f.probe.notifyNetworkChange();await f.drain();assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+test('fetch/CDP event bursts coalesce and early diagnostics do not contain request URLs or tokens',async()=>{
+ const f=cancellationFixture({timing:0});f.fail();f.deliver();networkProof(f);f.probe.notifyNetworkChange();f.probe.notifyNetworkChange();await earlyBindingTurn();
+ assert.equal(f.result.early_binding_observations.length,1);assert.equal(lastEarlyDecision(f).verdict,'anchored');
+ assert.deepEqual(new Set(f.result.early_binding_observations[0].triggers),new Set(['requestfailed','fetch','network-document','network']));
+ const text=JSON.stringify(f.result.early_binding_observations);assert.equal(text.includes(origin),false);assert.equal(text.includes('memory-only'),false);assert.equal(text.includes('owned_player'),false);
+ await f.drain();assert.equal(nativeErrorsEmpty(f.result),true);
+});
+
+test('bounded early attempts do not replace a strict final failure',async()=>{
+ const f=cancellationFixture({timing:0});f.fail();await earlyBindingTurn();
+ for(let i=0;i<140;i++){f.probe.notifyNetworkChange();await earlyBindingTurn();}
+ assert.equal(f.result.early_binding_observations.length,128);assert.equal(f.result.early_binding_attempt_limit_reached,true);
+ assert.equal(f.result.network_errors.length,0);await f.drain();assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+test('page close removes the early listener while final evidence remains revalidatable',async()=>{
+ const f=cancellationFixture({timing:0});f.fail();await earlyBindingTurn();const count=f.result.early_binding_observations.length;
+ f.page.emit('close');f.deliver();networkProof(f);f.probe.notifyNetworkChange();await earlyBindingTurn();assert.equal(f.result.early_binding_observations.length,count);
+ await f.drain();assert.equal(nativeErrorsEmpty(f.result),true);
+});
+
+test('actual CDP request, response and failure callbacks publish bounded evidence-change notifications',async()=>{
+ const {context,sessions}=attachmentFixture(),probe=await installNativeFetchProbe(context),page={isClosed:()=>false};await probe.attach(page);
+ const changes=[],unsubscribe=probe.onChange(kind=>changes.push(kind)),session=sessions[0];
+ session.emit('Network.requestWillBeSent',{requestId:'request',frameId:'frame',request:{url:origin+'/api/pvp/rooms/owned',method:'GET'},wallTime:1,timestamp:1,type:'Fetch'});
+ session.emit('Network.responseReceived',{requestId:'request',response:{status:200}});
+ session.emit('Network.loadingFailed',{requestId:'request',timestamp:1.1,errorText:'net::ERR_ABORTED',canceled:true});
+ assert.deepEqual(changes,['network','network','network']);assert.equal(probe.revision,3);unsubscribe();probe.notifyNetworkChange();assert.equal(changes.length,3);
+});
+
 test('a previously unique CDP identity survives a later sequential same-URL zero-clock abort',async()=>{
  const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();await f.drain({final:false});
  const original=f.result.lifecycle_cancellations[0];addSecondCancellation(f);await f.drain({final:true});

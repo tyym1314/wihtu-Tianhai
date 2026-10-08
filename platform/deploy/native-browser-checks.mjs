@@ -14,17 +14,21 @@ const pollCancellationReasons=new Set(['OASIS_ROOM_POLL_STOPPED','OASIS_ROOM_POL
 const fetchClockUncertaintyMs=1;
 
 export function createNativeFetchEvidence({clean=String}={}){
- const frames=new WeakMap(),documents=new Map(),events=[],errors=[],network=new Map(),networkDocuments=new Map();
+ const frames=new WeakMap(),documents=new Map(),events=[],errors=[],network=new Map(),networkDocuments=new Map(),listeners=new Set();
  let frameSequence=0,revision=0;
+ const changed=kind=>{revision++;for(const listener of listeners)try{listener(kind);}catch{errors.push('FETCH_PROBE_CHANGE_LISTENER_FAILED');}};
+ const onChange=listener=>{assert.equal(typeof listener,'function');listeners.add(listener);return()=>listeners.delete(listener);};
+ const notifyNetworkChange=()=>changed('network');
  const frameId=frame=>{if(!frame||typeof frame!=='object')return null;if(!frames.has(frame))frames.set(frame,`frame-${++frameSequence}`);return frames.get(frame);};
  const receive=(frame,event)=>{
-  revision++;
+  try{
   if(events.length>=20000){errors.push('FETCH_PROBE_EVENT_LIMIT');return;}
   if(!frameId(frame)||!event||typeof event.document_id!=='string'||!event.document_id||!Number.isSafeInteger(event.event_seq)||event.event_seq<1||!Number.isFinite(event.at_ms)||!['document','checkpoint','start','abort','fulfilled','rejected'].includes(event.kind)){errors.push('INVALID_FETCH_PROBE_EVENT');return;}
   let doc=documents.get(event.document_id);
   if(!doc){doc={frame,events:new Map()};documents.set(event.document_id,doc);}
   if(doc.frame!==frame||doc.events.has(event.event_seq)){errors.push('CONFLICTING_FETCH_PROBE_EVENT');return;}
   const value=structuredClone(event);doc.events.set(value.event_seq,value);events.push({frame_id:frameId(frame),...value});
+  }finally{changed('fetch');}
  };
  const attempts=()=>{
   const values=[];
@@ -56,10 +60,12 @@ export function createNativeFetchEvidence({clean=String}={}){
   });
  };
  const receiveNetworkDocument=(frame,event)=>{
+  try{
   if(!frame||event?.kind!=='document'||typeof event.document_id!=='string'||!Number.isFinite(event.at_ms)){errors.push('INVALID_NETWORK_DOCUMENT');return;}
   const previous=networkDocuments.get(event.document_id);
   if(previous&&(previous.frame!==frame||previous.at_ms!==event.at_ms)){errors.push('CONFLICTING_NETWORK_DOCUMENT');return;}
   networkDocuments.set(event.document_id,{frame,...event});
+  }finally{changed('network-document');}
  };
  const networkDocument=record=>{
   const candidates=[...networkDocuments.entries()].filter(([_id,doc])=>doc.frame===record.frame&&doc.at_ms<=record.started_at_ms).sort((a,b)=>b[1].at_ms-a[1].at_ms);
@@ -173,7 +179,7 @@ export function createNativeFetchEvidence({clean=String}={}){
   summary.passed=Boolean(!errors.length&&summary.checkpoints&&summary.complete_prefix&&matching.length===1&&attempt.valid&&attempt.start.supported&&attempt.start.method==='GET'&&attempt.start.body_present===false&&!attempt.abort&&attempt.end?.kind==='fulfilled'&&!attempt.end.signal_aborted&&attempt.start.event_seq>before&&attempt.end.event_seq<after&&records.length===1&&mapped?.frame===frame&&mapped.id===id&&record.method==='GET'&&record.type==='Fetch'&&record.response_seen&&record.response_status===200&&!record.error&&!record.redirected);
   return summary;
  };
- return{receive,classify,observations,errors,frameId,receiveNetworkDocument,bindNetwork,network,networkObservations,unmatchedRejections,rejectionPending,hasDocument,inspectChallenge,get revision(){return revision;}};
+ return{receive,classify,observations,errors,frameId,receiveNetworkDocument,bindNetwork,network,networkObservations,unmatchedRejections,rejectionPending,hasDocument,inspectChallenge,onChange,notifyNetworkChange,get revision(){return revision;}};
 }
 
 function nativeFetchProbe({bindingName,flushName,networkBindingName}){
@@ -244,9 +250,10 @@ export async function installNativeFetchProbe(context,{clean=String}={}){
   session.on('Network.requestWillBeSent',event=>{
    const previous=evidence.network.get(key(event.requestId));
    evidence.network.set(key(event.requestId),{id:event.requestId,session_id:sessionId,frame:key(event.frameId),url:event.request.url,method:event.request.method,started_at_ms:event.wallTime*1000,monotonic_start:event.timestamp,response_seen:false,redirected:Boolean(previous||event.redirectResponse),type:event.type});
+   evidence.notifyNetworkChange();
   });
-  session.on('Network.responseReceived',event=>{const record=evidence.network.get(key(event.requestId));if(record){record.response_seen=true;record.response_status=event.response?.status??null;}});
-  session.on('Network.loadingFailed',event=>{const record=evidence.network.get(key(event.requestId));if(record){record.error=event.errorText;record.cancelled=event.canceled===true;record.failed_at_ms=record.started_at_ms+(event.timestamp-record.monotonic_start)*1000;}});
+  session.on('Network.responseReceived',event=>{const record=evidence.network.get(key(event.requestId));if(record){record.response_seen=true;record.response_status=event.response?.status??null;evidence.notifyNetworkChange();}});
+  session.on('Network.loadingFailed',event=>{const record=evidence.network.get(key(event.requestId));if(record){record.error=event.errorText;record.cancelled=event.canceled===true;record.failed_at_ms=record.started_at_ms+(event.timestamp-record.monotonic_start)*1000;evidence.notifyNetworkChange();}});
   await session.send('Runtime.enable');await session.send('Runtime.addBinding',{name:networkBindingName});await session.send('Network.enable');
   networkFlushes.push(async()=>{if(!page.isClosed())await session.send('Runtime.evaluate',{expression:'void 0'});});
  };
@@ -320,6 +327,7 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
  result.network_observations??=[];result.fetch_observations??=[];result.lifecycle_cancellations??=[];result.pending_network_observations=0;
  result.unmatched_fetch_rejections??=[];
  result.pending_fetch_rejections??=[];result.network_binding_decisions??=[];result.page_error_observations??=[];
+ result.early_binding_observations??=[];result.early_binding_attempt_limit_reached=false;
  state.creations??=[];state.actionRequests??=[];state.inputsRequests??=[];state.probabilityRequests??=[];
  result.creations=state.creations;result.action_requests=state.actionRequests;result.inputs_requests=state.inputsRequests;result.probability_requests=state.probabilityRequests;
  const phase=()=>state.phase||(state.returning?'returning':'entry');
@@ -330,6 +338,38 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
  };
  const row=entry=>({path:clean(entry.path),method:entry.method,phase:entry.phase,frame_url:entry.frame_url,game_frame_request:entry.game_frame_request,session_id:entry.session_id?clean(entry.session_id):null,player_id:entry.player_id?clean(entry.player_id):null});
  const failure=(stage,error,entry={},task=null)=>result.observer_errors.push({stage,...row(entry),observed_phase:phase(),message:clean(message(error)),...(task?{response_work:workDetails(task,Date.now())}:{})});
+ const refreshRequestTimings=()=>{
+  // A tentative CDP clock from a previous ineligible attempt is not independent
+  // Playwright evidence. Only a validated binding_identity survives this read.
+  for(const entry of requestEntries){try{entry.network_started_at_ms=entry.request.timing?.().startTime;entry.redirected||=Boolean(entry.request.redirectedFrom?.()||entry.request.redirectedTo?.());}catch{entry.network_started_at_ms=null;}}
+ };
+ let earlyQueued=false,earlyClosed=false,earlyAttempts=0;
+ const earlyTriggers=new Set(),maxEarlyAttempts=128,maxEarlyDetails=16;
+ const scheduleEarlyBinding=trigger=>{
+  if(earlyClosed||!fetchProbe?.bindNetwork||!fetchProbe?.classify||!failedEntries.some(({entry,observation})=>!entry.network_binding_identity&&!recordedFailures.has(observation.observation_id)))return;
+  if(earlyAttempts>=maxEarlyAttempts||failedEntries.length>maxEarlyAttempts){result.early_binding_attempt_limit_reached=true;return;}
+  earlyTriggers.add(trigger);if(earlyQueued)return;earlyQueued=true;
+  queueMicrotask(()=>{
+   earlyQueued=false;const triggers=[...earlyTriggers];earlyTriggers.clear();if(earlyClosed)return;
+   if(failedEntries.length>maxEarlyAttempts){result.early_binding_attempt_limit_reached=true;return;}
+   const record={attempt:++earlyAttempts,observed_at_ms:Date.now(),evidence_revision:fetchProbe.revision??null,triggers,decisions:[],decisions_omitted:0};
+   try{
+    refreshRequestTimings();fetchProbe.bindNetwork(requestEntries,failedEntries);
+    for(const {entry,observation} of failedEntries){
+     if(recordedFailures.has(observation.observation_id))continue;
+     const previous=Boolean(entry.network_binding_identity),classification=fetchProbe.classify(entry,requestEntries);
+     const anchor=entry.network_binding_anchor;
+     const decision={observation_id:observation.observation_id,verdict:classification.eligible&&anchor?'anchored':'unresolved',classification_failure:classification.reason??(anchor?null:'NO_CDP_ANCHOR'),previous_anchor:previous,
+      identity:entry.network_binding_identity?{...entry.network_binding_identity}:null,
+      anchor:anchor?{document_id:anchor.document_id,event_seq:anchor.event_seq,at_ms:anchor.at_ms,protocol_count:anchor.protocol_keys.length}:null};
+     if(record.decisions.length<maxEarlyDetails)record.decisions.push(decision);else record.decisions_omitted++;
+    }
+   }catch(error){record.failed=true;failure('early-binding',error);}
+   result.early_binding_observations.push(record);
+  });
+ };
+ const stopEarlyBinding=fetchProbe?.onChange?.(scheduleEarlyBinding);
+ page.once('close',()=>{earlyClosed=true;earlyTriggers.clear();stopEarlyBinding?.();});
  if(fetchProbe?.observePageErrors)fetchProbe.observePageErrors(page,value=>{result.page_error_observations.push(value);result.js_errors.push(value.message);});
  else{
   page.on('pageerror',error=>result.js_errors.push(clean(message(error))));
@@ -337,6 +377,7 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
  }
  page.on('request',request=>{let entry;try{
   entry=address(request);entry.request_observed=true;requests.set(request,entry);requestEntries.push(entry);
+  scheduleEarlyBinding('request');
   if(entry.origin===origin&&(entry.path.startsWith('/api/pvp/rooms')||entry.path==='/v1/launch/exchange'))entry.runSnapshotTicket=runSnapshotRequest(runSnapshots,request,entry.path);
   if(entry.origin!==origin||entry.method!=='POST')return;
   if(entry.path==='/api/pvp/rooms'){
@@ -364,7 +405,7 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
    entry.probability={...row(entry),type:entry.path.endsWith('/spin')?'spin':'ack',request_id:body.requestId,round_id:body.roundId,status:null};state.probabilityRequests.push(entry.probability);
   }
  }catch(error){failure('request',error,entry);}});
- page.on('requestfinished',request=>{const entry=requests.get(request);if(entry?.creation)entry.creation.finished=true;});
+ page.on('requestfinished',request=>{const entry=requests.get(request);if(entry?.creation)entry.creation.finished=true;scheduleEarlyBinding('requestfinished');});
  page.on('requestfailed',request=>{let entry;try{
   entry=requests.get(request)||address(request);const error=clean(request.failure()?.errorText||'NETWORK_ERROR');
   entry.failure_error=error;
@@ -373,6 +414,7 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
   if(entry.origin===origin&&apiPath(entry.path)||['fetch','xhr'].includes(entry.type)){
    const observation=Object.freeze({observation_id:entry.request_id,...row(entry),frame_id:fetchProbe?.frameId(entry.frame_object)??null,observed_at_ms:Date.now(),error});result.network_observations.push(observation);
    failedEntries.push({entry,observation});result.pending_network_observations++;
+   scheduleEarlyBinding('requestfailed');
    if(!fetchProbe){result.network_errors.push({...observation});recordedFailures.add(observation.observation_id);result.pending_network_observations--;}
   }
   else if(assets.has(entry.type))result.resource_errors.push({...row(entry),error});
@@ -386,7 +428,7 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
    task.body_completed_at_ms=Date.now();task.stage='snapshot-queue';return body;
   });};
   const work=(async()=>{
-   const request=response.request();entry=requests.get(request)||address(request);entry.response_seen=true;
+   const request=response.request();entry=requests.get(request)||address(request);entry.response_seen=true;scheduleEarlyBinding('response');
    const status=response.status(),path=entry.path;
    task.request_id=entry.request_id;
    task.kind=path.startsWith('/api/pvp/rooms')?'room':(['/api/demo/config','/api/demo/launch','/v1/launch/exchange'].includes(path)?'launch':path===`/api/play/${state.game}/spin`?'spin':path===`/api/play/${state.game}/ack`?'ack':'other');
@@ -462,7 +504,7 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
    let timer;
    try{await Promise.race([fetchProbe.flush?.(page),new Promise((_resolve,reject)=>{timer=setTimeout(()=>reject(new Error('Fetch observer drain timed out')),Math.max(1,deadline-Date.now()));})]);}catch(error){failure('fetch-probe-drain',error);throw error;}finally{clearTimeout(timer);}
    stage='response-work-after-flush';await waitForWork();stage='network-proof';
-   for(const entry of requestEntries){try{entry.network_started_at_ms=entry.request.timing?.().startTime;entry.redirected||=Boolean(entry.request.redirectedFrom?.()||entry.request.redirectedTo?.());}catch{entry.network_started_at_ms=null;}}
+   refreshRequestTimings();
    fetchProbe.bindNetwork?.(requestEntries,failedEntries);
    result.fetch_probe_installation_observations=structuredClone(fetchProbe.installationObservations??[]);
    result.network_protocol_observations=fetchProbe.networkObservations?.()||[];
