@@ -1,5 +1,18 @@
 # Dedicated Mock ingress migration
 
+**Status: experimental alternative, not the selected upgrade path.** The
+current 04-to-15 plan uses [derived release views](RELEASE-VIEWS.md) to retain
+historical download bytes and publish new files at versioned paths. APK 1.3
+opens `/demo/native/<game>` directly; it does not depend on updating those four
+historical download URLs. This removes the need to change the existing Nginx
+entry point for that upgrade. No dedicated ingress has been installed.
+
+The native isolation results below remain valid within their stated fixture
+scope. They do not qualify this unit for the host: its installed Nginx 1.18.0
+does not support the example unit's `-e` option
+([introduced in 1.19.5](https://nginx.org/en/docs/switches.html)). Do not install
+the example as-is.
+
 The current public Web release is separate from this candidate. The installed
 Mock remains `20261007-04`. None of these new files changes an installed service,
 APK origin, release pin or database. The failed shared-master Linux attempt3
