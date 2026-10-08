@@ -6,7 +6,7 @@ import {resolve} from 'node:path';
 import {build} from 'esbuild';
 import {chromium,webkit} from 'playwright';
 
-const root=resolve(new URL('..',import.meta.url).pathname),out=resolve(root,'review/arena-host-return');
+const root=resolve(new URL('..',import.meta.url).pathname),out=resolve(root,process.env.HOST_RETURN_OUT||'review/arena-host-return');
 const fixture=`window.returnQA={roomId:'room-a',status:'active',version:1,accepted:true,returns:[],calls:[],balanceReads:[],
  context:{game_id:'match',session_id:'session-a',external_user_id:'p0',scope:{app_id:'fixture'},active_room_id:'room-a',balance:{balance:{available_minor:'100'}}},
  snapshot(){return{id:this.roomId,code:'ROOM',game_id:'match',status:this.status,capacity:2,practice:true,team_size:1,me:'p0',me_last_seq:0,version:++this.version,entry_minor:'0',prize_minor:'0',fee_bps:0,players:[{external_user_id:'p0',ready:true}],game:{}}},
