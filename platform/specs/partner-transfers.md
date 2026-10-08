@@ -75,6 +75,59 @@ the sum of each transaction's financial deltas remains zero.
 
 ## Financial and recovery contract
 
+### Read-only console operations
+
+The existing administrator and partner consoles expose **资金划转查询** within
+**局单与对账**, including an App selector, exact original-request search, status
+filter, bounded next-page navigation, and original-order details. This is a
+read-only operational view, not a way to retry, refund, unfreeze, adjust a balance
+or force a successful result.
+
+`GET /api/admin/transfers` and `GET /api/partner/transfers` use their existing
+separate console cookies. Only `platform_admin` or the authenticated
+`partner_developer` on its respective route is accepted. There is currently no
+separate organization-level `financial-read` scope; this view follows the same
+two-role authority as existing console financial records. It grants no App-key
+financial capability. An ordinary App HMAC is not console authentication.
+
+Allowed query parameters are `app_id`, `state` (`PENDING`, `SUCCEEDED`, or
+`REJECTED`), exact `request_id`, `limit` (1–100, default 25), and `cursor`. Unknown,
+duplicate, oversized, and malformed parameters are rejected. SQL constrains the
+runtime environment and, for partners, the authenticated partner ID before
+pagination or projection. An explicit foreign or nonexistent App or original
+order returns the same 404. Query parameters cannot supply an alternative tenant
+or environment. Detail is `GET .../transfers/:transfer_id`, with only optional
+`app_id` accepted; non-GET methods are rejected.
+
+Each request uses a bounded repeatable-read, read-only database transaction.
+Pagination uses `(created_at, id)` with full PostgreSQL microsecond precision and
+an explicit C collation. The cursor retains the initial highest visible tuple
+and binds the console principal, environment and filters. It is an opaque
+continuation, **not an authorization token or a frozen multi-request snapshot**.
+Later orders above that upper bound are excluded; an earlier transaction that
+commits later may become visible below it. Order status can also change between
+pages, especially when filtering PENDING. Refresh from the first page for a new
+view. No offset, client-selected sorting or unbounded export is supported here.
+
+Responses allowlist original request/transfer identifiers, App, direction,
+integer minor-unit amount/currency/scale, timestamps and age, persisted attempt
+count and next-attempt time, lease-derived scheduling state, fixed error
+categories, and last recorded external state. Detail includes safe original
+operation/transaction/ledger references and selected terminal receipt fields.
+No binding configuration, credential reference, account proof, partner account,
+raw request/provider body, lease token or arbitrary provider error is returned.
+Unknown stored observations are reported as unknown instead of echoed.
+
+`status_basis=stored_order_not_reconciled` is explicit: the displayed hold and
+local credit/debit state are **derived from the order**, not a fresh independent
+wallet/ledger audit. An unresolved OUT records reserved funds; an unresolved IN
+records reserved credit capacity. Both stay unresolved through backoff or an
+unknown external outcome. Current App/binding admission status and account
+mapping activation are shown separately and do not imply that an accepted old
+order has stopped recovery. The GET paths never invoke an adapter, recovery,
+ledger write or external business request. Responses are `Cache-Control:
+no-store`.
+
 - `IN`: reserve destination credit capacity before sending the external debit.
   Verified SUCCEEDED debits permit one atomic user credit, owned capacity release,
   signed clearing counter-entry, receipt and audit. Definitive REJECTED releases

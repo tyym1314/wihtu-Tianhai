@@ -14,7 +14,7 @@ export function setApiMode(mode){
 }
 function scopedPath(path,mode){
   if(mode!=='partner'||!path.startsWith('/api/admin/'))return path;
-  if(!/^\/api\/admin\/(?:apps(?:\/|$)|overview(?:-activity)?$|rounds$|operations$|audit$|health$|login$|session$|logout$|password$)/.test(path))throw new ApiError('此功能仅供平台管理员使用。',403,'SCOPE_FORBIDDEN');
+  if(!/^\/api\/admin\/(?:apps(?:\/|$)|overview(?:-activity)?$|rounds$|operations$|transfers(?:[/?]|$)|audit$|health$|login$|session$|logout$|password$)/.test(path))throw new ApiError('此功能仅供平台管理员使用。',403,'SCOPE_FORBIDDEN');
   return path.replace('/api/admin/','/api/partner/');
 }
 export async function api(path, { method = 'GET', body, signal, mode=apiMode } = {}) {

@@ -28,6 +28,7 @@ import {startRequestTimingSink} from './request-timing-sink.mjs';
 import {checkWalletDependencies} from './dependency-health.mjs';
 import {createTransferService,migrateTransfers,TRANSFER_PUBLIC_CODES} from './transfers/index.mjs';
 import {routeTransfers} from './transfers/routes.mjs';
+import {routeTransferOperations} from './transfer-operations.mjs';
 const PORT=Number(process.env.OASIS_API_PORT||8797),WALLET_PORT=Number(process.env.OASIS_WALLET_PORT||8798);
 const limiter=new ApiRateLimits();
 // No third-party financial protocol is registered until independently configured
@@ -42,6 +43,7 @@ async function adminRoutes(req,res,path,b){
   if(path==='/api/admin/login'&&req.method==='POST'){checkOrigin(req);rate(req,'login',12);const r=await login(b.username,b.password);res.setHeader('set-cookie',adminSessionCookie(r.token,origin));return send(res,200,{user:r.user});}
   const user=await adminUser(req);
   if(path==='/api/admin/session'&&req.method==='GET')return send(res,200,{user,environment:runtime.environment});if(!user)fail(401,'LOGIN_REQUIRED');
+  if(await routeTransferOperations(req,res,path,user,{pool,environment:runtime.environment}))return;
   if(req.method!=='GET')checkOrigin(req);
   if(path==='/api/admin/logout'&&req.method==='POST'){const token=req.headers.cookie?.split(';').map(x=>x.trim()).find(x=>x.startsWith('oasis_admin='))?.split('=')[1];if(token)await pool.query('DELETE FROM gp_admin_sessions WHERE token_hash=$1',[hash(token)]);res.setHeader('set-cookie',adminSessionCookie('',origin,0));return send(res,200,{ok:true});}
   if(path==='/api/admin/operations-status'&&req.method==='GET')return send(res,200,await operationsStatus());

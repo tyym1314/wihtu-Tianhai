@@ -12,7 +12,9 @@ const Art=({game,className=''})=><div className={`game-art ${game.category==='pr
 function Stat({icon:Icon,label,value,unit,foot,tone='green'}){return <div className="stat-card"><div className="stat-top"><span>{label}</span><span className={`stat-icon ${tone}`}><Icon size={18}/></span></div><div className="stat-number">{value}<small>{unit}</small></div><div className="stat-foot">{foot}</div></div>;}
 
 export { default as Overview } from './LiveOverview.jsx';
-export { default as Ledger } from './LiveLedger.jsx';
+import LiveLedger from './LiveLedger.jsx';
+import TransferOperations from '../components/TransferOperations.jsx';
+export function Ledger(props){return <><LiveLedger {...props}/><TransferOperations key={`${props.user?.id}:${props.user?.role}:${props.appScope}`} {...props}/></>;}
 
 export function Games({navigate,notify}) {
   const [category,setCategory]=useState('all'),[query,setQuery]=useState(''),[layout,setLayout]=useState('grid'),[selected,setSelected]=useState(()=>{const id=sessionStorage.getItem('oasis-game-focus');sessionStorage.removeItem('oasis-game-focus');return games.find(g=>g.id===id)||null;});
