@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {EventEmitter} from 'node:events';
-import {createAndroidMeasurementBoundary,parseAndroidForwards,ownedAndroidForward,assertAndroidForwardsRestored,androidForeground,assertAndroidSessionBaseline,assertAndroidPaidCycle,assertAndroidOneAction,cleanupOwnedAndroidSession,androidStrictPassed} from '../scripts/android-webview-checks.mjs';
+import {createAndroidMeasurementBoundary,parseAndroidForwards,ownedAndroidForward,assertAndroidForwardsRestored,androidForeground,assertAndroidSessionBaseline,assertAndroidPaidCycle,assertAndroidOneAction,cleanupOwnedAndroidSession,androidStrictPassed,androidContinueLayoutDiagnostic} from '../scripts/android-webview-checks.mjs';
 import {androidInventoryProgram,verifyAndroidInventory,ANDROID_INVENTORY_COUNTERS,validateAndroidInventoryDatabase} from '../scripts/android-guest-inventory.mjs';
 const state=(overrides={})=>({game:'run',token:'in-memory-only',sessionId:'original',playerId:'guest',appId:'app',ownedRooms:new Set(),creations:[],probabilityRequests:[],actionRequests:[],inputsRequests:[],practiceRequested:false,spins:[],acks:new Set(),...overrides});
 const session=(overrides={})=>({session_id:'original',external_user_id:'guest',game_id:'run',scope:{app_id:'app'},active_room_id:null,other_active_game:null,...overrides});
@@ -95,6 +95,22 @@ test('dynamic forward is new and exactly bound; cleanup preserves both original 
 test('foreground must be unambiguous and strict success includes cleanup/resources/full catalogue',()=>{
  assert.equal(androidForeground('topResumedActivity=ActivityRecord{123 u0 com.launcher/.Home t11}'),'com.launcher/.Home');assert.throws(()=>androidForeground('unknown'));
  const report={full_catalog:true,games:Array.from({length:13},()=>({passed:true,cleanup:{passed:true}})),inventory_final:{clean:true},resources:{passed:true}};assert.equal(androidStrictPassed(report),true);report.games[12].cleanup.passed=false;assert.equal(androidStrictPassed(report),false);
+});
+
+test('layout-only diagnostic preserves failure and cannot be promoted to strict acceptance',()=>{
+ const report={layout_diagnostic:true,full_catalog:true,games:Array.from({length:13},()=>({passed:true,cleanup:{passed:true}})),inventory_final:{clean:true},resources:{passed:true,errors:[]}};
+ const failed={error:'WEBVIEW_SINGLE_SCREEN_REQUIRED',layout:{single_screen:false},ui_stopped:true,cleanup:{passed:true},inventory_after:{clean:true}};
+ assert.equal(androidContinueLayoutDiagnostic(report,failed,true),true);
+ assert.equal(androidStrictPassed(report),false); // Even an all-green diagnostic is not strict acceptance.
+ assert.equal(androidContinueLayoutDiagnostic({...report,layout_diagnostic:false},failed,true),false);
+ assert.equal(androidContinueLayoutDiagnostic(report,failed,false),false);
+ for(const mutation of [
+  value=>{value.error='ACTION_REJECTED';},value=>{delete value.layout;},value=>{value.layout.single_screen=true;},
+  value=>{value.ui_stopped=false;},value=>{value.cleanup.passed=false;},value=>{value.inventory_after.clean=false;},
+  value=>{value.inventory_error='UNEXPECTED_CYCLE_COUNT';},value=>{value.screenshot_error='CDP_CLOSED';}
+ ]){const value=structuredClone(failed);mutation(value);assert.equal(androidContinueLayoutDiagnostic(report,value,true),false);}
+ assert.equal(androidContinueLayoutDiagnostic({...report,resources:{errors:['OWNED_FORWARD_REMAINS']}},failed,true),false);
+ assert.equal(failed.error,'WEBVIEW_SINGLE_SCREEN_REQUIRED');
 });
 
 const inventoryInput={variant:'isolated-mock',origin:'https://mock.fixture.invalid',release:'20261008-16',manifest_sha256:'a'.repeat(64),app_id:'app',guest_id:'guest',session_id:'original',game_id:'match'};

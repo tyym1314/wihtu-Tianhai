@@ -15,7 +15,7 @@ import {RELEASED_IDS,ARENA_IDS} from '../shared/games.mjs';
 import {playOneArenaAction} from './android-game-actions.mjs';
 import {readAndroidArtifact,androidVerificationTarget,androidAdbArgs,androidReleaseCommand,verifyAndroidReleaseState,verifyInstalledAndroidArtifact} from './android-artifact.mjs';
 import {installNativeFetchProbe,observeNativeBrowser,runNativeActionOnce,nativeErrorsEmpty,createNativeCleanupApi} from '../deploy/native-browser-checks.mjs';
-import {createAndroidMeasurementBoundary,parseAndroidForwards,ownedAndroidForward,assertAndroidForwardsRestored,androidForeground,assertAndroidSessionBaseline,assertAndroidOneAction,assertAndroidPaidCycle,cleanupOwnedAndroidSession,androidStrictPassed} from './android-webview-checks.mjs';
+import {createAndroidMeasurementBoundary,parseAndroidForwards,ownedAndroidForward,assertAndroidForwardsRestored,androidForeground,assertAndroidSessionBaseline,assertAndroidOneAction,assertAndroidPaidCycle,cleanupOwnedAndroidSession,androidStrictPassed,androidContinueLayoutDiagnostic} from './android-webview-checks.mjs';
 import {androidInventoryProgram,verifyAndroidInventory} from './android-guest-inventory.mjs';
 assert.ok(process.env.OASIS_ANDROID_ARTIFACT,'OASIS_ANDROID_ARTIFACT_REQUIRED');
 const artifact=await readAndroidArtifact(process.env.OASIS_ANDROID_ARTIFACT),target=androidVerificationTarget(process.env,artifact);
@@ -28,6 +28,8 @@ const run=promisify(execFile),serial=target.serial,origin=target.origin,pkg=targ
 const catalog=RELEASED_IDS;
 const selected=process.env.OASIS_ANDROID_GAMES?process.env.OASIS_ANDROID_GAMES.split(','):catalog;
 assert.ok(selected.length&&selected.every(g=>catalog.includes(g))&&new Set(selected).size===selected.length);
+assert.ok(!process.env.OASIS_ANDROID_LAYOUT_DIAGNOSTIC||['0','1'].includes(process.env.OASIS_ANDROID_LAYOUT_DIAGNOSTIC));
+const layoutDiagnostic=process.env.OASIS_ANDROID_LAYOUT_DIAGNOSTIC==='1';
 const nonce=randomUUID().replaceAll('-',''),xmlPath=`/data/local/tmp/oasis-strict-${nonce}.xml`;
 const outputRoot=new URL('../review/android/',import.meta.url);await fs.mkdir(outputRoot,{recursive:true});
 const outputPath=await fs.mkdtemp(resolve(outputRoot.pathname,`${artifact.variant}-${target.release}-strict-`));await fs.chmod(outputPath,0o700);const out=pathToFileURL(outputPath+'/');
@@ -42,6 +44,8 @@ const until=async(fn,label,timeout=45000)=>{const end=Date.now()+timeout;while(D
 const {apkPath,...artifactEvidence}=artifact;
 const report={schema:'android-webview-strict-v1',started_at:new Date().toISOString(),origin,artifact:artifactEvidence,requested_games:selected,full_catalog:selected.length===catalog.length,physical_device:!remoteDevice,scope:remoteDevice?'Remote Android APK, not physical USB evidence. Strict observed UI/ACK and original-session cleanup.':'Physical USB APK UI/ACK and original-session cleanup; not full-game quality or GPU acceptance.',instrumentation:'Initial unobserved native launch is excluded. Read-only exact guest inventory precedes each action; measured document is reloaded after observer/probe installation.',lifecycle:{included:false,reason:'Recovery, outage and negative-request tests require a separate report; never exempted here.'},games:[],resources:{events:[],errors:[],passed:false},passed:false};
 let browser,context,page,ownedForward,originalForeground,beforeForwards,guest,previousInventory,apiContext,apkStarted=false;
+report.layout_diagnostic=layoutDiagnostic;
+if(layoutDiagnostic)report.scope+=' Layout diagnosis only: clean, measured layout failures may continue; strict acceptance is always false.';
 const save=()=>fs.writeFile(new URL('device-smoke.json',out),JSON.stringify(report,(_key,value)=>typeof value==='string'?clean(value):value,2)+'\n',{mode:0o600});
 await fs.writeFile(new URL('device-smoke.json',out),JSON.stringify(report,null,2)+'\n',{flag:'wx',mode:0o600});
 const sshArgs=()=>['-i',target.sshKey,'-o','BatchMode=yes','-o','IdentitiesOnly=yes','-o','StrictHostKeyChecking=yes',target.sshHost];
@@ -230,7 +234,7 @@ try{
    await closeConnection(result);try{await session.drain?.({final:true});}catch(error){(result.observer_errors??=[]).push({stage:'post-close-drain',message:clean(error.message)});}
    result.passed=Boolean(result.ui_check_passed&&result.cleanup?.passed&&result.inventory_after?.clean&&nativeErrorsEmpty(result)&&!result.error&&!result.inventory_error&&report.resources.errors.length===0);await save();
   }
-  if(!result.passed)throw Error('STRICT_GAME_FAILED: '+game+'; first failure retained, no retry');
+  if(!result.passed&&!androidContinueLayoutDiagnostic(report,result,nativeErrorsEmpty(result)))throw Error('STRICT_GAME_FAILED: '+game+'; first failure retained, no retry');
  }
  report.inventory_final=previousInventory;report.release_after=await deployedRelease();assert.deepEqual(report.release_after,releaseBefore,'DEPLOYMENT_CHANGED');
  assert.deepEqual(await verifyInstalledAndroidArtifact(target,artifact,run),report.installed_artifact,'INSTALLED_APK_CHANGED');

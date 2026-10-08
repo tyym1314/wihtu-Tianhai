@@ -91,6 +91,108 @@ test('observer drain has a bounded failure for an unread response',async()=>{
  await assert.rejects(drain(),/drain timed out/);finish(room());await drain();
 });
 
+const waitObserverTurn=()=>new Promise(resolve=>setTimeout(resolve,10));
+function drainFixture({timeout=200,probe=null}={}){
+ const page=new EventEmitter(),current=state({game:'match'}),result={};
+ return{page,state:current,result,drain:observeNativeBrowser(page,{origin,state:current,result,drainTimeoutMs:timeout,fetchProbe:probe})};
+}
+function pendingRoomResponse(fixture,{path='/api/pvp/rooms/owned',version=1}={}){
+ let resolve,reject;
+ response(fixture,request({path}),{json:()=>new Promise((done,fail)=>{resolve=()=>done(room({game_id:'match',version}));reject=fail;})});
+ return{resolve,reject};
+}
+const drainProbe=()=>({errors:[],flush:async()=>{},observations:()=>[]});
+
+test('active drain completes its original fence while overlapping normal polling continues',async()=>{
+ const fixture=drainFixture(),first=pendingRoomResponse(fixture);let current=first,issued=1,complete=false;
+ const drained=fixture.drain({final:false});void drained.then(()=>{complete=true;});
+ const timer=setInterval(()=>{const previous=current;current=pendingRoomResponse(fixture,{version:++issued});previous.resolve();},5);
+ try{
+  await drained;
+  assert.equal(complete,true);assert.ok(issued>=2);
+  const detail=fixture.result.observer_drain_observations[0];
+  assert.equal(detail.fence_work_id,1);assert.equal(detail.initial_work_count,1);assert.equal(detail.pending_work_count,0);
+  assert.ok(detail.later_pending_work_count>=1);assert.equal(detail.initial_work[0].outcome,'complete');
+  assert.ok(detail.initial_work[0].body_completed_at_ms>=detail.initial_work[0].body_started_at_ms);
+ }finally{clearInterval(timer);current.resolve();await fixture.drain({final:true});}
+ assert.equal(nativeErrorsEmpty(fixture.result),true);
+});
+
+test('active drain waits every original task and preserves later unread work for final drain',async()=>{
+ const fixture=drainFixture(),first=pendingRoomResponse(fixture),second=pendingRoomResponse(fixture,{version:2});
+ let activeComplete=false;const active=fixture.drain({final:false});void active.then(()=>{activeComplete=true;});
+ const later=pendingRoomResponse(fixture,{version:3});first.resolve();await waitObserverTurn();assert.equal(activeComplete,false);
+ second.resolve();await active;
+ assert.equal(fixture.result.observer_drain_observations[0].fence_work_id,2);
+ assert.equal(fixture.result.observer_drain_observations[0].later_pending_work[0].work_id,3);
+ let finalComplete=false;const final=fixture.drain({final:true});void final.then(()=>{finalComplete=true;});
+ await waitObserverTurn();assert.equal(finalComplete,false);later.resolve();await final;
+ assert.equal(nativeErrorsEmpty(fixture.result),true);
+});
+
+test('body loss after the active fence remains an observer error at final drain',async()=>{
+ const fixture=drainFixture(),first=pendingRoomResponse(fixture),active=fixture.drain({final:false});
+ const late=pendingRoomResponse(fixture,{version:2});first.resolve();await active;
+ assert.equal(nativeErrorsEmpty(fixture.result),true);
+ const final=fixture.drain({final:true});late.reject(new Error(knownLoss));await final;
+ assert.equal(fixture.result.observer_errors.length,1);assert.equal(fixture.result.observer_errors[0].message,knownLoss);
+ assert.equal(fixture.result.observer_errors[0].response_work.work_id,2);assert.equal(fixture.result.observer_errors[0].response_work.request_id,'network-2');
+ assert.equal(nativeErrorsEmpty(fixture.result),false);
+ const detail=fixture.result.observer_drain_observations.at(-1).initial_work[0];
+ assert.equal(detail.outcome,'failed');assert.equal(detail.failure_stage,'body-read');assert.ok(Number.isFinite(detail.completed_at_ms));
+});
+
+test('active timeout distinguishes unread body from serialized consumption without payload or credentials',async()=>{
+ const fixture=drainFixture({timeout:20});fixture.state.token='private-token-must-not-appear';
+ const first=pendingRoomResponse(fixture,{path:'/api/pvp/rooms/owned?secret=must-not-appear'}),second=pendingRoomResponse(fixture,{version:2});second.resolve();
+ await assert.rejects(fixture.drain({final:false}),/Response observer drain timed out/);
+ const detail=fixture.result.observer_drain_observations[0];
+ assert.equal(detail.completed,false);assert.equal(detail.failure_stage,'response-work-before-flush');assert.equal(detail.pending_work_count,2);
+ assert.deepEqual(detail.pending_work.map(task=>task.stage),['body-read','snapshot-queue']);
+ assert.equal(detail.pending_work[0].body_completed_at_ms,null);assert.ok(Number.isFinite(detail.pending_work[1].body_completed_at_ms));
+ assert.ok(detail.pending_work.every(task=>task.kind==='room'&&task.elapsed_ms>=0&&task.completed_at_ms===null));
+ const encoded=JSON.stringify(detail);for(const hidden of ['private-token-must-not-appear','must-not-appear','owned_player','original_session','fixture.invalid'])assert.equal(encoded.includes(hidden),false);
+ first.resolve();await fixture.drain({final:true});assert.equal(nativeErrorsEmpty(fixture.result),true);
+});
+
+for(const fail of [false,true])test(`active fence defers work arriving during probe flush and retains its ${fail?'failure':'success'}`,async()=>{
+ const probe=drainProbe(),fixture=drainFixture({probe});let later;
+ probe.flush=async()=>{later=pendingRoomResponse(fixture);};
+ await fixture.drain({final:false});
+ const detail=fixture.result.observer_drain_observations[0];assert.equal(detail.fence_work_id,0);assert.equal(detail.later_pending_work_count,1);assert.equal(detail.completed,true);
+ probe.flush=async()=>{};const final=fixture.drain({final:true});
+ if(fail)later.reject(Error(knownLoss));else later.resolve();await final;
+ assert.equal(nativeErrorsEmpty(fixture.result),!fail);assert.equal(fixture.result.observer_errors.length,fail?1:0);
+ if(fail)assert.equal(fixture.result.observer_errors[0].response_work.work_id,detail.later_pending_work[0].work_id);
+});
+
+test('final drain still waits response work introduced by its probe flush',async()=>{
+ const probe=drainProbe(),fixture=drainFixture({probe});let later,finished=false;
+ probe.flush=async()=>{later=pendingRoomResponse(fixture);};
+ const final=fixture.drain({final:true});void final.then(()=>{finished=true;});await waitObserverTurn();
+ assert.equal(finished,false);assert.ok(later);later.resolve();await final;
+ assert.equal(fixture.result.observer_drain_observations[0].observed_through_work_id,1);assert.equal(nativeErrorsEmpty(fixture.result),true);
+});
+
+test('synchronous body read exception in the active fence is retained',async()=>{
+ const fixture=drainFixture();response(fixture,request(),{json:()=>{throw Error('fixture synchronous body failure');}});
+ await fixture.drain({final:false});await fixture.drain({final:true});
+ assert.equal(nativeErrorsEmpty(fixture.result),false);assert.equal(fixture.result.observer_errors[0].message,'fixture synchronous body failure');
+ const task=fixture.result.observer_drain_observations[0].initial_work[0];assert.equal(task.outcome,'failed');assert.equal(task.failure_stage,'body-read');
+});
+
+test('drain diagnostics bound both per-work details and completed history without dropping errors',async()=>{
+ const fixture=drainFixture({timeout:10}),pending=Array.from({length:40},()=>pendingRoomResponse(fixture));
+ await assert.rejects(fixture.drain({final:false}),/drain timed out/);
+ const detail=fixture.result.observer_drain_observations[0];
+ assert.equal(detail.initial_work_count,40);assert.equal(detail.initial_work.length,16);assert.equal(detail.initial_work_details_omitted,24);
+ assert.equal(detail.pending_work_count,40);assert.equal(detail.pending_work.length,16);assert.equal(detail.pending_work_details_omitted,24);
+ pending[0].reject(Error('retained beyond diagnostic ring'));for(const entry of pending.slice(1))entry.resolve();
+ await fixture.drain({final:true});for(let index=0;index<70;index++)await fixture.drain({final:false});
+ assert.equal(fixture.result.observer_drain_observations.length,64);assert.equal(fixture.result.observer_drain_observations_dropped,8);
+ assert.equal(fixture.result.observer_errors.length,1);assert.equal(nativeErrorsEmpty(fixture.result),false);
+});
+
 test('Run first 409 fails the gate and is retained; it is not retried',async()=>{
  let count=0;const result={};const rejection=Object.assign(new Error('temporarily busy'),{status:409,code:'BUSY'});
  await assert.rejects(runNativeActionOnce(async()=>{count++;throw rejection;},result),{code:'BUSY'});

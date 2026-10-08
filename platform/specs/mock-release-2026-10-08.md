@@ -1,6 +1,6 @@
 # Mock 发布与验收记录（2026-10-08）
 
-公网试玩已更新为 `20261008-19`，Mock 服务保持 `20261008-16`。这是运行版本更新，**不是 13 款手机性能或第三方生产上线验收通过**。GitLab 默认分支与提交目标为 `master`，本地和远端 `main` 已删除。
+公网试玩为 `20261008-19`，Mock 服务已更新为 `20261008-20`。这是运行版本更新，**不是 13 款手机性能或第三方生产上线验收通过**。GitLab 默认分支与提交目标为 `master`，本地和远端 `main` 已删除。
 
 ## 运行版本与恢复边界
 
@@ -8,14 +8,36 @@
 | --- | --- |
 | 公网试玩 | `https://game.tianyahuyu.com/demo/`；`/opt/oasis/current` 指向 `20261008-19`；08:45:59 UTC 激活 |
 | 公网源码 / 清单 SHA-256 | `8c2737ad00f185122339a4cb095267512bdb0682` / `3b6fac4d7af3d14ef88bdda286210c873bdd8a7310cddd66885b942ec178d4f9` |
-| APK Mock 接口 | `https://oasis-mock.43.98.202.236.sslip.io`；`/opt/oasis/android-mock-current` 指向 `20261008-16` |
-| Mock 发布清单 SHA-256 | `91e8796604c13db1d676ec51a9deb3f6095d6bd9793e5bb754b4d738a23367a4` |
-| Mock 内容来源 | 公网 `20261008-15`；源码 `e6e01a60fd1d11d2c9b26d509e7a86b6b3e3005a`，另保留历史静态资源 |
-| 更新事务 | 公网 19 及既有 Mock16 更新均已完成；19 未改变后端或迁移数据库；没有恢复或清空数据库 |
-| 服务读回 | 08:53:02 UTC 五项服务均 active，两个发布指向符合上表；08:47:59 UTC 公网未决 cycle / room 均为零 |
+| APK Mock 接口 | `https://oasis-mock.43.98.202.236.sslip.io`；`/opt/oasis/android-mock-current` 指向 `20261008-20` |
+| Mock 发布清单 SHA-256 | `0a310fd8e0037cf675f8d14018b6ab40caae6929b397b1e0eb29eb627d3f998d` |
+| Mock 内容来源 | 公网19页面；保留Mock16同一运行时、依赖及历史静态资源；兼容恢复视图为21 |
+| 更新事务 | 公网19、Mock20更新均已完成；没有迁移、恢复或清空数据库 |
+| 服务读回 | 10:19:12 UTC五项服务正常；Mock20进程/目录/UID与HTTPS正文验证通过，公网19服务身份和Nginx配置未变 |
 | 下载配置 | 08:52:11 UTC 生效；Nginx SHA-256 `8970cbc8396018fc632efeb3085494578109cac090d79da9a45b20354aac9ac3`；14 项独立 HTTPS 检查通过 |
 
-## Mock20 更新准备与三消完整诊断
+## Mock20 激活与 APK 首次严格检查
+
+10:16:25–10:19:12 UTC，只执行一次Mock16→20事务，最终为 `complete/forward`，没有失败、自动重试或恢复。真实数据库dump、私有配置tar与收据均完成独立正文验证。41张表、2个sequence的完整数据库观察与停服基线相等；账本、未决业务和非法状态检查全部为零。Mock20的安装标记、发布指向、两个服务进程身份和三份HTTPS/loopback页面正文均通过。公网19及其API/demo/Nginx进程与配置保持不变。备份和兼容恢复视图21保留；这不等于已实际执行恢复演练。
+
+10:23:37 UTC完成一次APK1.3.0/code6的严格13款计划，设备是 `localhost:54005 / vcloud`，不是实体手机。实际只测到两款：**Thunder通过；Tiger因单屏溢出失败，其余11款未执行**。两款都完成一次原始沙箱转动及精确ACK。Thunder宿主与页面均为360×640；Tiger宿主和iframe为360×640，document/body实际高度690px，向下多出50px。原始布局数据在断言前保留，尚不能宣布修复或13款通过。
+
+两款的原会话清理与inventory读回均通过，观察器错误为零；Tiger失败后停止UI。最后恢复原前台、原ADB forward和自有XML清理，独立再次核对两APK字节、源码、发布与App范围均未变化。首次失败保留，不自动重跑。部署证据为本地 `review/mock-refresh-live-apply-20261008-c932be75/`（索引SHA `76ebb3f97cacaced8a8933013ade370a276898d809ffc54745c4c18e9e351766`）；APK证据为 `review/mock20-apk-strict-20261008-prepared/evidence/` 和 `review/android/isolated-mock-20261008-20-strict-Tv0tqz/`。
+
+另一份独立桌面原生音频小夹具将首次unlock同步耗时130.7ms进一步分段：`new AudioContext()`为129.5ms，Gain构建0.1ms，开始音乐0.9ms；构造直接返回running，因此本样本没有执行resume，不能把它写成resume零耗时。后两次可信触摸同步计时均低于计时器分辨率。证据为本地 `review/deep-mobile-20261004/arena-audio-entry-segments-20261008/`；它不替代下面V5的原始分段，也不证明iPhone或Run持续卡顿原因。
+
+## 后续候选与目录诊断（尚未发布）
+
+游戏、音频与布局诊断候选的完整 `npm run test:release` 已通过：2,408 项通过，失败、跳过均为零，隔离数据库已删除。该轮运行发生在响应观察器修复之前；观察器的后续修改须另有定向验证，不能沿用本次全量结果。日志 SHA-256 为 `1cd0247785299c4a2c4fc10bc8e8d93078edb4ccc733aa51d33c43ec6d9136b9`，位于本地 `review/release/tiger-audio-candidate-20261008/`。这不替代完整构建、公开版本和手机验收。
+
+Tiger候选仅修改平台发布样式：移除690px移动端最小高度，将装饰画面和棋盘设为可伸缩行，保留固定操作区域与安全区；360×640实测body为640px，旋转按钮90×90，12项控件至少44px且可点击。Chromium/WebKit各9组通过，包括短屏、常见长屏、中英阿、安全区和结果层；没有新增裁切规则，没有发出spin/ACK。当前公网19/Mock20仍是旧样式，真实APK需新版本复验。证据：本地 `review/tiger-short-screen-20261008/`。
+
+Arena候选在入场阶段预建静音、无声源的音频图，真实指针/键盘手势中同步resume；处理恢复失败、超时、销毁和重复音乐timer，保留原乐谱、声效与音量。30项定向单测通过。第一次原生对照因Chrome不提供命令行CDP接口而在创建音频前停止；新的一次通过CDP绑定浏览器PID只读取得实际flags，4个样本均无autoplay/mute覆盖。原音频的指针首unlock为224.5ms，新候选为0.1ms；键盘为150.7ms→0.2ms。新候选入场构造分别173.0/151.6ms，初态suspended，实际resume异步27.6/7.2ms后running。成本移至入场，没有消失；两组均使用当前手势监听，属于桌面静态小夹具，不是旧整页键盘、完整游戏或手机验收。4个浏览器进程/profile均清理。证据：本地 `review/arena-audio-integration-20261008/browser-ab-v2/`。
+
+为继续定位未达标布局，新增独立诊断模式：仅已量到尺寸的单屏失败，在本次会话、库存、截图、资源和最终观察均清理正常后可继续；动作、网络观察或清理失败仍停止，诊断模式永不成为严格验收通过。19项定向检查通过。10:40:28 UTC的一次Mock20云机诊断测到Thunder通过、Tiger原50px溢出后继续，随后Match因 `Response observer drain timed out` 停止，其余10款未执行；不能记为完整目录检查。关闭页面后另保留两条GET response.json已关闭错误，尚在分析等待点，不能据此归因为游戏服务器故障。会话、设备资源和独立来源读回均完成。原始记录：本地 `review/android/isolated-mock-20261008-20-strict-6DN7gh/`，包装器及冻结闭包：`review/mock20-apk-layout-diagnostic-20261008/`。
+
+后续已在纯本地夹具复现观察器的中间等待范围错误：每条body及时完成时，持续新增轮询也会使旧实现等待超时。修复让中间drain只等待调用时已有工作，最终drain仍等待完整集合；迟到body错误和原有网络/安装证明门槛均保留，并新增不含正文或凭证的有界等待诊断。9项新增回归及相关Run快照、Android检查合计246项通过，未跳过；这不证明原APK超时只有此原因，也不撤销原失败。完整构建后另对实际Tiger产物进行无候选CSS叠加的Chromium/WebKit检查，各9组通过，浏览器与本地服务均关闭。新一次APK验收与公网发布仍待执行。
+
+## Mock20 更新准备与三消完整诊断（激活前记录）
 
 09:27:14 UTC，新的 forward `20261008-20` 与兼容回退 `20261008-21` 已完成服务器 staging 和独立逐文件读回，**尚未激活**。两份视图均保持当前 Mock16 的 122 个运行时文件和 8,339 项已安装依赖，包含相同的 742 个静态文件；forward 使用公网19的页面，rollback 使用Mock16页面，四个历史下载正文保持不变。清单 SHA 分别为 `0a310fd8e0037cf675f8d14018b6ab40caae6929b397b1e0eb29eb627d3f998d` 和 `aa7e6d086e7fd4040cf206c43e2c1df396268859bf599f12fb6ce7312bf5fa8d`。最终可用空间约 6.795 GB，公网19、Mock16、五个服务 PID、安装标记和 Nginx 配置均未改变。
 

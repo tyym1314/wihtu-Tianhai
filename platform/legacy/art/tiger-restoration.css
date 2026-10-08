@@ -12,3 +12,24 @@
 @keyframes tiger-cell-aureole{0%,100%{opacity:.65;transform:scale(.97)}50%{opacity:1;transform:scale(1.015)}}
 @keyframes tiger-column-recoil{0%{translate:0 -2px}38%{translate:0 3px}70%{translate:0 -1px}100%{translate:0 0}}
 @media(prefers-reduced-motion:reduce){.tiger-game .reel-cell.winning:after,.tiger-game .reel-column.landed{animation:none!important}}
+/* The platform presentation keeps all controls in the viewport. Decorative
+   hero/reel space absorbs short-screen resizing; buttons never shrink to fit. */
+@media(max-width:760px){
+ .tiger-game{--tiger-safe-top:env(safe-area-inset-top,0px);--tiger-safe-bottom:env(safe-area-inset-bottom,0px);height:100svh;min-height:0;grid-template-rows:minmax(0,31.5fr) minmax(0,41fr) 40px calc(231px + var(--tiger-safe-bottom))}
+ .tiger-experience{height:100svh;min-height:0}
+ .tiger-game .topbar{top:max(10px,var(--tiger-safe-top))}
+ .tiger-game .topbar button,.tiger-game .music-status{min-width:44px;min-height:44px}
+ .tiger-game .control-panel{display:grid;grid-template-rows:64px 106px 44px 16px;padding:0 14px var(--tiger-safe-bottom)}
+ .tiger-game .wallet-row{height:64px;min-height:0}
+ .tiger-game .wallet-cell{height:100%}
+ .tiger-game .wallet-cell button{min-width:44px;min-height:44px}
+ .tiger-game .spin-row{min-height:0;gap:clamp(5px,1.5vw,8px);padding:0}
+ .tiger-game .tiger-spin{width:clamp(80px,25vw,100px);height:clamp(80px,25vw,100px);margin-top:0}
+ .tiger-game .bet-step{width:44px;height:44px;min-width:44px;min-height:44px}
+ .tiger-game .side-control{min-width:44px;min-height:50px}
+ .tiger-game .utility-row{height:44px;margin-top:0;padding-top:0}
+ .tiger-game .utility-row button{min-height:44px}
+ .tiger-game .control-panel footer{height:16px;padding:0}
+ .tiger-game .celebration{padding-top:var(--tiger-safe-top);padding-bottom:var(--tiger-safe-bottom)}
+ .tiger-game #continue{min-height:44px}
+}

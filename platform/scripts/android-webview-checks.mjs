@@ -150,6 +150,17 @@ export async function cleanupOwnedAndroidSession({state,arenaGames,api,until,new
 }
 
 export function androidStrictPassed(report){
- return report.full_catalog===true&&report.games.length===13&&report.games.every(game=>game.passed===true&&game.cleanup?.passed===true)
+ return report.layout_diagnostic!==true&&report.full_catalog===true&&report.games.length===13&&report.games.every(game=>game.passed===true&&game.cleanup?.passed===true)
   &&report.inventory_final?.clean===true&&report.resources?.passed===true&&!report.failure;
+}
+
+/** A separate diagnostic may inspect the remaining catalog after a measured
+ * layout failure, but only after this session and all owned resources are clean.
+ * It can never produce a strict acceptance pass.
+ */
+export function androidContinueLayoutDiagnostic(report,result,observationsClean){
+ return report.layout_diagnostic===true&&result.error==='WEBVIEW_SINGLE_SCREEN_REQUIRED'
+  &&result.layout?.single_screen===false&&result.ui_stopped===true
+  &&result.cleanup?.passed===true&&result.inventory_after?.clean===true
+  &&!result.inventory_error&&!result.screenshot_error&&observationsClean===true&&report.resources.errors.length===0;
 }

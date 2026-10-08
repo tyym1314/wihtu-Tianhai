@@ -292,8 +292,14 @@ export async function reserveNativeReportDirectory(out,report){
 }
 
 export function observeNativeBrowser(page,{origin,state,result,clean=String,remember=()=>{},drainTimeoutMs=10000,fetchProbe=null}){
- const tasks=new Set(),requests=new WeakMap(),requestEntries=[],failedEntries=[],recordedFailures=new Set(),recordedProbeErrors=new Set(),recordedUnmatchedRejections=new Set();
- let drainSequence=0;
+ const tasks=new Map(),requests=new WeakMap(),requestEntries=[],failedEntries=[],recordedFailures=new Set(),recordedProbeErrors=new Set(),recordedUnmatchedRejections=new Set();
+ let drainSequence=0,workSequence=0;
+ const maxDrainRecords=64,maxWorkDetails=16;
+ result.observer_drain_observations??=[];result.observer_drain_observations_dropped??=0;
+ const workDetails=(task,at)=>({work_id:task.work_id,request_id:task.request_id,kind:task.kind,stage:task.stage,
+  started_at_ms:task.started_at_ms,body_started_at_ms:task.body_started_at_ms,body_completed_at_ms:task.body_completed_at_ms,
+  completed_at_ms:task.completed_at_ms,elapsed_ms:Math.max(0,(task.completed_at_ms??at)-task.started_at_ms),
+  outcome:task.outcome,failure_stage:task.failure_stage});
  const runSnapshots=createRunSnapshotObserver();
  if(state.game==='run'&&state.token&&state.sessionId&&state.playerId&&state.appId)runSnapshots.authorize({token:state.token,sessionId:state.sessionId,playerId:state.playerId,appId:state.appId});
  result.run_snapshot_duplicates??=[];
@@ -310,7 +316,7 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
   return{request,request_id:`network-${requestEntries.length+1}`,origin:url.origin,path:url.pathname,query:url.search,full_url:url.href,frame_object:frame,frame_url_raw:frameUrl,method:request.method(),type:request.resourceType(),phase:phase(),frame_url:frameUrl?clean(frameUrl):null,game_frame_request:frameUrl===origin+'/play/'+state.game,session_id:state.sessionId,player_id:state.playerId,owned_room_at_start:Boolean(url.origin===origin&&roomId&&state.ownedRooms?.has(roomId)),body_present:typeof request.postData==='function'?request.postData()!==null:null,redirected:Boolean(request.redirectedFrom?.()||request.redirectedTo?.()),response_seen:false};
  };
  const row=entry=>({path:clean(entry.path),method:entry.method,phase:entry.phase,frame_url:entry.frame_url,game_frame_request:entry.game_frame_request,session_id:entry.session_id?clean(entry.session_id):null,player_id:entry.player_id?clean(entry.player_id):null});
- const failure=(stage,error,entry={})=>result.observer_errors.push({stage,...row(entry),observed_phase:phase(),message:clean(message(error))});
+ const failure=(stage,error,entry={},task=null)=>result.observer_errors.push({stage,...row(entry),observed_phase:phase(),message:clean(message(error)),...(task?{response_work:workDetails(task,Date.now())}:{})});
  if(fetchProbe?.observePageErrors)fetchProbe.observePageErrors(page,value=>{result.page_error_observations.push(value);result.js_errors.push(value.message);});
  else{
   page.on('pageerror',error=>result.js_errors.push(clean(message(error))));
@@ -360,16 +366,24 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
  }catch(error){failure('requestfailed',error,entry);}});
  page.on('response',response=>{
   let entry;
+  const task={work_id:++workSequence,request_id:null,kind:'other',stage:'response-headers',started_at_ms:Date.now(),
+   body_started_at_ms:null,body_completed_at_ms:null,completed_at_ms:null,outcome:null,failure_stage:null};
+  tasks.set(task.work_id,task);
+  const readBody=()=>{task.stage='body-read';task.body_started_at_ms=Date.now();return response.json().then(body=>{
+   task.body_completed_at_ms=Date.now();task.stage='snapshot-queue';return body;
+  });};
   const work=(async()=>{
    const request=response.request();entry=requests.get(request)||address(request);entry.response_seen=true;
    const status=response.status(),path=entry.path;
+   task.request_id=entry.request_id;
+   task.kind=path.startsWith('/api/pvp/rooms')?'room':(['/api/demo/config','/api/demo/launch','/v1/launch/exchange'].includes(path)?'launch':path===`/api/play/${state.game}/spin`?'spin':path===`/api/play/${state.game}/ack`?'ack':'other');
    for(const intent of [entry.creation,entry.action,entry.inputs,entry.probability])if(intent)intent.status=status;
    if(assets.has(entry.type)&&status>=400)result.resource_errors.push({...row(entry),status});
    if(entry.origin===origin&&apiPath(path)?!response.ok():['fetch','xhr'].includes(entry.type)&&status>=400)result.http_errors.push({...row(entry),status});
    if(entry.origin!==origin)return;
    if(!response.ok())return;
    if(['/api/demo/config','/api/demo/launch','/v1/launch/exchange'].includes(path)){
-    const decoded=response.json().then(body=>{remember(body);
+    const decoded=readBody().then(body=>{task.stage='consume';remember(body);
      if(path==='/v1/launch/exchange'){
       assert.equal(body.game_id,state.game,'Exchange game differs');
       assert.ok(body.session_id&&body.external_user_id&&body.access_token,'Incomplete launch exchange');
@@ -378,12 +392,12 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
       if(state.game==='run')runSnapshots.authorize({token:body.access_token,sessionId:body.session_id,playerId:body.external_user_id,appId:body.scope?.app_id},entry.runSnapshotTicket);
       state.token=body.access_token;state.sessionId=body.session_id;state.playerId=body.external_user_id;result.launch_exchange=true;
      }
-     return body;
+     task.stage='snapshot-queue';return body;
     });
-    await runSnapshots.enqueue(decoded,()=>{});
+    await runSnapshots.enqueue(decoded,()=>{task.stage='consume';});
    }
    if(path.startsWith('/api/pvp/rooms')){
-    await runSnapshots.enqueue(response.json(),body=>{const room=body.room||body;
+    await runSnapshots.enqueue(readBody(),body=>{task.stage='consume';const room=body.room||body;
      if(!room.id&&(Object.hasOwn(room,'run_game_transfer')||entry.method==='GET'&&/^\/api\/pvp\/rooms\/[^/]+$/.test(path)))runSnapshots.inspect(entry.runSnapshotTicket,room);
      if(entry.inputs){const proof=verifyRunPracticeInputAction(entry.inputBaseline,entry.inputBody,room);entry.inputs.proof=proof;entry.inputs.validated=true;}
      if(room.id){
@@ -400,30 +414,41 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
     });
    }
    if(path===`/api/play/${state.game}/spin`){
-    const body=await response.json();
+    const body=await readBody();task.stage='consume';
     assert.equal(body.session?.sessionId,state.sessionId,'Spin session differs');assert.ok(body.round?.id&&body.round.cycleId,'Spin response lacks a round/cycle identity');
     state.spins.push({id:body.round.id,cycleId:body.round.cycleId,status:body.round.settlementStatus,isFreeSpin:body.round.isFreeSpin===true,httpStatus:status});
    }
    if(path===`/api/play/${state.game}/ack`){
-    const body=await response.json();
+    const body=await readBody();task.stage='consume';
     assert.equal(body.session?.sessionId,state.sessionId,'ACK session differs');assert.equal(body.session.pendingRound,null);
     state.acks.add(request.postDataJSON().roundId);
    }
-  })().catch(error=>failure('response',error,entry));
+  })().catch(error=>{task.outcome='failed';task.failure_stage=task.stage;failure('response',error,entry,task);});
   // No body-loss exception is suppressed, including after return or teardown.
-  tasks.add(work);void work.finally(()=>tasks.delete(work));
+  void work.finally(()=>{task.completed_at_ms=Date.now();task.outcome??='complete';task.stage=task.outcome==='failed'?'failed':'complete';tasks.delete(task.work_id);});
  });
  return async({final=true}={})=>{
   assert.equal(typeof final,'boolean','final must be boolean');const drainId=++drainSequence;
-  const deadline=Date.now()+drainTimeoutMs;
-  while(tasks.size){
+  // An active page can keep polling forever. Only the work observed at this
+  // call belongs to an intermediate drain; the final drain still requires the
+  // whole live set to empty after the caller has stopped the UI.
+  const startedAt=Date.now(),fence=workSequence,deadline=startedAt+drainTimeoutMs;
+  const initialCount=tasks.size,initialDetails=[];
+  for(const task of tasks.values()){if(initialDetails.length===maxWorkDetails)break;initialDetails.push(task);}
+  const observation={drain_id:drainId,final,fence_work_id:fence,started_at_ms:startedAt,initial_work_count:initialCount};
+  let stage='response-work-before-flush',completed=false;
+  const hasAwaitedWork=()=>{if(final)return tasks.size>0;for(const id of tasks.keys())if(id<=fence)return true;return false;};
+  const waitForWork=async()=>{while(hasAwaitedWork()){
    assert.ok(Date.now()<deadline,'Response observer drain timed out');
    await new Promise(resolve=>setTimeout(resolve,5));
-  }
+  }};
+  try{
+  await waitForWork();
   if(fetchProbe){
+   stage='fetch-probe-flush';
    let timer;
    try{await Promise.race([fetchProbe.flush?.(page),new Promise((_resolve,reject)=>{timer=setTimeout(()=>reject(new Error('Fetch observer drain timed out')),Math.max(1,deadline-Date.now()));})]);}catch(error){failure('fetch-probe-drain',error);throw error;}finally{clearTimeout(timer);}
-   while(tasks.size){assert.ok(Date.now()<deadline,'Response observer drain timed out');await new Promise(resolve=>setTimeout(resolve,5));}
+   stage='response-work-after-flush';await waitForWork();stage='network-proof';
    for(const entry of requestEntries){try{entry.network_started_at_ms=entry.request.timing?.().startTime;entry.redirected||=Boolean(entry.request.redirectedFrom?.()||entry.request.redirectedTo?.());}catch{entry.network_started_at_ms=null;}}
    fetchProbe.bindNetwork?.(requestEntries,failedEntries);
    result.fetch_probe_installation_observations=structuredClone(fetchProbe.installationObservations??[]);
@@ -448,6 +473,22 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
     if(!recordedUnmatchedRejections.has(id)){result.unmatched_fetch_rejections.push(rejection);failure('unmatched-fetch-rejection',`${rejection.error.name}: ${rejection.error.message}`);recordedUnmatchedRejections.add(id);}
    }
    result.pending_network_observations=pending.length;
+  }
+  completed=true;
+  }finally{
+   const endedAt=Date.now(),pending=[],later=[];let pendingCount=0,laterCount=0;
+   for(const task of tasks.values()){
+    const awaited=final||task.work_id<=fence,details=awaited?pending:later;
+    if(awaited)pendingCount++;else laterCount++;
+    if(details.length<maxWorkDetails)details.push(workDetails(task,endedAt));
+   }
+   Object.assign(observation,{ended_at_ms:endedAt,elapsed_ms:Math.max(0,endedAt-startedAt),completed,
+    failure_stage:completed?null:stage,observed_through_work_id:workSequence,
+    initial_work:initialDetails.map(task=>workDetails(task,endedAt)),initial_work_details_omitted:Math.max(0,initialCount-initialDetails.length),
+    pending_work_count:pendingCount,pending_work:pending,pending_work_details_omitted:pendingCount-pending.length,
+    later_pending_work_count:laterCount,later_pending_work:later,later_pending_work_details_omitted:laterCount-later.length});
+   if(result.observer_drain_observations.length===maxDrainRecords){result.observer_drain_observations.shift();result.observer_drain_observations_dropped++;}
+   result.observer_drain_observations.push(observation);
   }
  };
 }
