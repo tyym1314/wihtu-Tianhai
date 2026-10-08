@@ -122,9 +122,70 @@ The fixture covers:
    cannot mutate shared paths. Such a finding requires an explicit production
    design review; never weaken the assertion to obtain a pass.
 
-No evidence exists yet for any of these Linux checks on this host. Even if they
+The dedicated Linux attempt retained at
+`review/mock-linux-remote-execution-20261008-b784e659/` failed at compiled path
+inventory (`NGINX_COMPILED_WRITE_PATH_REQUIRES_REVIEW`), with no completed cases.
+Nginx 1.22.1 reported `--error-log-path=stderr` and
+`--lock-path=/var/lock/nginx.lock`. The exact-sentinel/validated-alias correction
+is covered by local filesystem tests only; no container rerun, namespace proof
+or HUP success is implied. The original failed capsule and logs remain intact.
+
+No passing evidence exists yet for the five Linux checks above. Even if they
 later pass, they do not prove the production enclosing configuration, systemd
 unit/master dispatch checks, post-reload TLS routing, 88-file historical overlay,
 startup/recovery transactions, database/ledger behavior, 13-game Mock quality,
 APK acceptance or suitability of the obsolete historical 05 for current public
 09 code. Those remain separate gates described in `PROFILE-ACTIVATION.md`.
+
+
+## Recorded native attempt3 — 2026-10-08 (overall FAIL)
+
+This dated result supersedes the earlier pre-execution status above; the original
+attempt1/attempt2 failures and capsules are unchanged. The exact reviewed
+attempt3 used a new dedicated Docker container on Linux 5.15.0-117-generic with
+Nginx 1.22.1, not the host Nginx process. Only its test container selected
+`apparmor=unconfined` (all AppArmor confinement for that container removed, not a
+mount-only exception); the builder retained `docker-default`. No host AppArmor
+profile/daemon, service, Nginx configuration or production pin was changed.
+
+Native execution was 2026-10-08T04:11:39.235556775Z through
+04:11:40.300523673Z: **exit 1, passed=false, four cases passed and the fifth
+failed**. The controller's exit 0 only recorded the native result.
+
+- Real recursive read-only namespace/full-enclosure syntax and protected
+  identities passed, including the nested mount and private write-path shadows.
+- Invalid candidate syntax and an invalid unrelated include were both rejected
+  without changing protected identities.
+- A normal direct HUP of the container's own Nginx switched loopback content and
+  preserved protected file/owner/mode identities.
+- The deliberately drifted compiled `/var/lib/nginx/body` case failed with
+  `DIRECT_HUP_MUTATES_DRIFTED_COMPILED_TEMP_METADATA`: the same inode changed
+  from **uid 1234 / gid 1234 / mode 0500** to **uid 33 / gid 1234 / mode 0700**
+  after the container master's HUP. This disproves unconditional shared-temp
+  metadata immutability on reload. The original failure is not relabelled as a
+  passing expected mutation, and the assertion/gates remain unchanged.
+
+Self diagnostics were actually read before the first mount: CapEff and CapBnd
+`00000000002000eb`, NoNewPrivs=1, Seccomp=0, LSM `unconfined`, matching the
+reviewed test contract. The fixture's own Nginx exited, its ports closed and its
+nested mount was removed; capsule source bytes remained identical. All 20
+collected remote files (352,263 bytes) were copied and SHA-verified locally before
+removing the exact two owned containers and new image. The official base and
+owned scratch were left for root's separate verified retirement.
+
+**No host Nginx parser, reload or HUP was executed.** Host readbacks at 04:09:04Z
+and 04:13:52Z matched: current public14/Mock04, manifest, Nginx MainPID 1689488,
+five active services, and all five global temp-directory inode/device/uid/gid/
+mode/mtime/ctime fields. Remaining disk was 9,621,463,040 bytes; this free-space
+observation is not a claim that all disk changes were caused by the fixture.
+
+Evidence: `review/mock-linux-remote-execution3-20261008-c580263c/`, particularly
+`native-report.json`, `hup-drift-result.json`, `tar-inspection.json`,
+`baseline-comparison.json`, `cleanup-readback.stdout`, and the immutable
+`index.json` (SHA256
+`37608ec385922192b6627b5d727ecb7a7c6cb6929b82001d0e2fe2842df54bc3`).
+The namespace/preflight observations are real synthetic Linux evidence; overall
+activation remains blocked by the HUP finding. This run does not prove the
+production enclosure, TLS overlay activation, systemd/DB recovery, current
+release-pair compatibility or APK gameplay, and authorizes no production action
+or fourth attempt.

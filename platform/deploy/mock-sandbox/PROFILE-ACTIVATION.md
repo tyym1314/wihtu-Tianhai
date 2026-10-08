@@ -145,14 +145,25 @@ Only the private nonce work mount becomes writable again. All five compiled
 temporary paths and all compiled/configured log, pid, lock and cache destinations
 must resolve within the reviewed `/var/lib/nginx`, `/var/log/nginx` or `/run`
 namespaces, then are shadowed by private directories. No configuration input or
-controller path may be hidden. Missing, linked or unreviewed paths refuse the
-check. The candidate vhost is bind-mounted over its exact pathname **only inside
+controller path may be hidden. The exact compiled error-log value `stderr` is
+the Nginx stream sentinel, not a relative pathname. The sole accepted compiled
+alias is `--lock-path=/var/lock/nginx.lock`: root-owned `/var/lock` must be a
+single symlink spelled `../run/lock` or `/run/lock`, with real, root-owned
+`/var` and `/run` ancestors not writable by group or others, and a real root-owned
+`/run/lock` directory (also not writable by group or others, or standard sticky
+mode `01777`). The canonical target
+is shadowed inside the namespace. Unknown spellings, links or destinations
+refuse the check. The candidate vhost is bind-mounted over its exact pathname **only inside
 the namespace**, then Nginx tests the real enclosing configuration and modules.
 Unknown write paths remain read-only. Namespace exit releases all mounts; there
 is no host mount command or broad cleanup.
 
-This source is Linux-specific and currently has only local controller fixtures,
-not a real kernel isolation proof. Before real use, a separately authorized
+This source is Linux-specific. The first dedicated Linux container run refused
+the compiled `stderr` path before any mount or HUP case ran; its original failure
+is retained in `review/mock-linux-remote-execution-20261008-b784e659/`. The subsequent
+path correction has local filesystem tests, not a real kernel isolation proof.
+It changes the adapter identity, so a new reviewed capsule is required; old
+capsules, journals and evidence are not rewritten. Before real use, a separately authorized
 isolated Linux fixture must exercise the mount syscall/capabilities, complete
 enclosure, all five temp/log/pid/lock/cache paths, syntax failure, then direct HUP,
 and verify original host file/permission identities before and after. A mock
@@ -213,3 +224,56 @@ the original effective file intact. It is not an automatically removed file or
 an installed profile. These tests do not simulate power-loss durability, native
 mount operations or an actual Nginx master. No activation is authorized solely
 by their result.
+
+
+## Recorded native attempt3 — 2026-10-08 (overall FAIL)
+
+This dated result supersedes the earlier pre-execution status above; the original
+attempt1/attempt2 failures and capsules are unchanged. The exact reviewed
+attempt3 used a new dedicated Docker container on Linux 5.15.0-117-generic with
+Nginx 1.22.1, not the host Nginx process. Only its test container selected
+`apparmor=unconfined` (all AppArmor confinement for that container removed, not a
+mount-only exception); the builder retained `docker-default`. No host AppArmor
+profile/daemon, service, Nginx configuration or production pin was changed.
+
+Native execution was 2026-10-08T04:11:39.235556775Z through
+04:11:40.300523673Z: **exit 1, passed=false, four cases passed and the fifth
+failed**. The controller's exit 0 only recorded the native result.
+
+- Real recursive read-only namespace/full-enclosure syntax and protected
+  identities passed, including the nested mount and private write-path shadows.
+- Invalid candidate syntax and an invalid unrelated include were both rejected
+  without changing protected identities.
+- A normal direct HUP of the container's own Nginx switched loopback content and
+  preserved protected file/owner/mode identities.
+- The deliberately drifted compiled `/var/lib/nginx/body` case failed with
+  `DIRECT_HUP_MUTATES_DRIFTED_COMPILED_TEMP_METADATA`: the same inode changed
+  from **uid 1234 / gid 1234 / mode 0500** to **uid 33 / gid 1234 / mode 0700**
+  after the container master's HUP. This disproves unconditional shared-temp
+  metadata immutability on reload. The original failure is not relabelled as a
+  passing expected mutation, and the assertion/gates remain unchanged.
+
+Self diagnostics were actually read before the first mount: CapEff and CapBnd
+`00000000002000eb`, NoNewPrivs=1, Seccomp=0, LSM `unconfined`, matching the
+reviewed test contract. The fixture's own Nginx exited, its ports closed and its
+nested mount was removed; capsule source bytes remained identical. All 20
+collected remote files (352,263 bytes) were copied and SHA-verified locally before
+removing the exact two owned containers and new image. The official base and
+owned scratch were left for root's separate verified retirement.
+
+**No host Nginx parser, reload or HUP was executed.** Host readbacks at 04:09:04Z
+and 04:13:52Z matched: current public14/Mock04, manifest, Nginx MainPID 1689488,
+five active services, and all five global temp-directory inode/device/uid/gid/
+mode/mtime/ctime fields. Remaining disk was 9,621,463,040 bytes; this free-space
+observation is not a claim that all disk changes were caused by the fixture.
+
+Evidence: `review/mock-linux-remote-execution3-20261008-c580263c/`, particularly
+`native-report.json`, `hup-drift-result.json`, `tar-inspection.json`,
+`baseline-comparison.json`, `cleanup-readback.stdout`, and the immutable
+`index.json` (SHA256
+`37608ec385922192b6627b5d727ecb7a7c6cb6929b82001d0e2fe2842df54bc3`).
+The namespace/preflight observations are real synthetic Linux evidence; overall
+activation remains blocked by the HUP finding. This run does not prove the
+production enclosure, TLS overlay activation, systemd/DB recovery, current
+release-pair compatibility or APK gameplay, and authorizes no production action
+or fourth attempt.

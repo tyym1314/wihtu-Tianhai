@@ -334,7 +334,35 @@ def same_enclosure(before, after, tls):
             and before['write_directories'] == after['write_directories'], 'NGINX_ENCLOSURE_CHANGED')
 
 
-def namespace_write_directories(enclosure, compiled):
+def compiled_lock_directory(*, filesystem_root=Path('/'), owner=0):
+    """Validate only Debian's /var/lock -> /run/lock alias; never resolve arbitrary writes.
+
+    The namespace caller always uses the real root and uid 0. The relocated root
+    and owner are explicit unit-fixture inputs, not CLI or configuration options.
+    """
+    code = 'NGINX_COMPILED_LOCK_ALIAS_REQUIRES_REVIEW'
+    root = Path(filesystem_root)
+    try:
+        require(root.is_absolute() and '..' not in root.parts and root.resolve(strict=True) == root, code)
+        for relative in ('', 'var', 'run'):
+            s = (root / relative).lstat()
+            require(stat.S_ISDIR(s.st_mode) and s.st_uid == owner and not s.st_mode & 0o022, code)
+        alias = root / 'var/lock'
+        s = alias.lstat()
+        require(stat.S_ISLNK(s.st_mode) and s.st_uid == owner and s.st_nlink == 1, code)
+        require(os.readlink(alias) in ('../run/lock', '/run/lock'), code)
+        s = (root / 'run/lock').lstat()
+        # Linux commonly provides root-owned /run/lock as 01777. Its sticky bit
+        # does not make /run itself replaceable, and no existing children are
+        # followed: this directory is shadowed before any Nginx parser runs.
+        require(stat.S_ISDIR(s.st_mode) and s.st_uid == owner
+                and (not s.st_mode & 0o022 or stat.S_IMODE(s.st_mode) == 0o1777), code)
+    except OSError as error:
+        raise RuntimeError(code) from error
+    return Path('/run/lock')
+
+
+def namespace_write_directories(enclosure, compiled, *, filesystem_root=Path('/'), owner=0):
     require('configure arguments:' in compiled, 'NGINX_BUILD_PATHS_UNKNOWN')
     flags = dict(item[2:].split('=', 1) for item in shlex.split(compiled.split('configure arguments:', 1)[1])
                  if item.startswith('--') and '=' in item)
@@ -345,7 +373,15 @@ def namespace_write_directories(enclosure, compiled):
     prefix = Path(flags.get('prefix', '/usr/local/nginx'))
     directories = set(enclosure['write_directories'])
     for flag, default in defaults.items():
-        path = Path(flags.get(flag, default))
+        raw = flags.get(flag, default)
+        # Nginx auto/options turns this exact compile-time sentinel into the
+        # stderr stream. It is not the relative file <prefix>/stderr.
+        if flag == 'error-log-path' and raw == 'stderr':
+            continue
+        if flag == 'lock-path' and raw == '/var/lock/nginx.lock':
+            directories.add(str(compiled_lock_directory(filesystem_root=filesystem_root, owner=owner)))
+            continue
+        path = Path(raw)
         if not path.is_absolute():
             path = prefix / path
         if str(path) in ('/dev/stderr', '/dev/null'):

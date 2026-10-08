@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import signal
 import socket
 import stat
@@ -74,6 +75,60 @@ def command(args, timeout=30):
     require(p.returncode == 0, 'COMMAND_FAILED ' + json.dumps({
         'argv': args, 'returncode': p.returncode, 'stdout': p.stdout, 'stderr': p.stderr}))
     return p
+
+
+def self_security_context():
+    """Diagnostic only: fixed self files, bounded reads, no inferred mount errno.
+
+    Missing or denied diagnostics do not replace the native mount result. Never
+    copy other status fields, environment, process arguments or host state.
+    """
+    def read(path, limit):
+        try:
+            with Path(path).open('rb') as stream:
+                raw = stream.read(limit + 1)
+        except OSError as error:
+            return None, {'state': 'unavailable', 'reason': 'read_error', 'errno': error.errno}
+        if len(raw) > limit:
+            return None, {'state': 'unavailable', 'reason': 'size_limit'}
+        try:
+            return raw.decode('utf-8'), None
+        except UnicodeError:
+            return None, {'state': 'unavailable', 'reason': 'invalid_utf8'}
+
+    text, error = read('/proc/self/status', 16 * 1024)
+    if error:
+        status = error
+    else:
+        allowed = ('CapEff', 'CapBnd', 'NoNewPrivs', 'Seccomp')
+        found = {name: [] for name in allowed}
+        for line in text.splitlines():
+            name, colon, value = line.partition(':')
+            if colon and name in found:
+                found[name].append(value.strip())
+        fields, unavailable = {}, {}
+        for name, values in found.items():
+            if len(values) != 1:
+                unavailable[name] = 'missing' if not values else 'duplicate'
+            elif name.startswith('Cap') and re.fullmatch(r'[0-9a-fA-F]{16}', values[0]):
+                fields[name] = values[0]
+            elif name == 'NoNewPrivs' and values[0] in ('0', '1'):
+                fields[name] = int(values[0])
+            elif name == 'Seccomp' and values[0] in ('0', '1', '2'):
+                fields[name] = int(values[0])
+            else:
+                unavailable[name] = 'malformed'
+        status = {'state': 'partial' if unavailable else 'available',
+                  'fields': fields, 'unavailable_fields': unavailable}
+
+    text, error = read('/proc/self/attr/current', 1024)
+    if error:
+        label = error
+    else:
+        value = text.removesuffix('\n')
+        label = ({'state': 'available', 'value': value} if value and value.isprintable()
+                 else {'state': 'unavailable', 'reason': 'malformed'})
+    return {'scope': 'container_process_self', 'proc_self_status': status, 'lsm_current': label}
 
 
 def wait_body(port, expected, timeout=5):
@@ -172,6 +227,7 @@ http {
             protected += [p, sentinel]
         nested = Path('/unrelated/nested')
         nested.mkdir()
+        report['process_security_before_first_mount'] = self_security_context()
         command(['/usr/bin/mount', '-t', 'tmpfs', '-o', 'size=1m', 'fixture-owned', str(nested)])
         mounted = True
         sentinel = write(nested / 'original', b'nested separate mount', 0o400)
