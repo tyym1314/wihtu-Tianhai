@@ -104,8 +104,9 @@ async function hostReturn(page,frame,state,result){
 
 await reserveNativeReportDirectory(out,report);
 try{
- browser=await chromium.launch({channel:'chrome',headless:true,args:[...(process.platform==='darwin'?['--use-angle=metal']:[]),...(dnsPin?[`--host-resolver-rules=MAP ${target.hostname} ${dnsPin}`]:[])]});
- report.browser={name:'desktop Chrome',version:browser.version(),dns_override:Boolean(dnsPin)};
+ // Chrome also inherits the OS proxy; clearing shell proxy variables is insufficient.
+ browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-proxy-server',...(process.platform==='darwin'?['--use-angle=metal']:[]),...(dnsPin?[`--host-resolver-rules=MAP ${target.hostname} ${dnsPin}`]:[])]});
+ report.browser={name:'desktop Chrome',version:browser.version(),dns_override:Boolean(dnsPin),requested_proxy_bypass:'--no-proxy-server',proxy_claim:'Browser proxy bypass requested; this flag alone does not verify the actual peer or exclude OS/VPN intermediaries.'};
  for(const game of requested){
   const context=await browser.newContext({viewport,isMobile:true,hasTouch:true,ignoreHTTPSErrors:false}),fetchProbe=await installNativeFetchProbe(context,{clean}),page=await context.newPage();
   await fetchProbe.attach(page);
