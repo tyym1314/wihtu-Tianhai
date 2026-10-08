@@ -17,6 +17,23 @@ function fixture(){
  return{model,state,dispatch,receipt,sample,update,setTime:value=>{time=value},game:()=>game};
 }
 
+test('legal recovery input survives a causal pose one fixed step behind control time',()=>{
+ const f=fixture(),g=structuredClone(f.game());g.snapshotTick=60;g.players[0].stunUntilTick=60;f.update(g,100);
+ const pose={x:0,y:0,tick:59.25,controlTick:60.25};f.model.sample(pose,{at:100});
+ const input=f.dispatch();assert.equal(f.model.beginInput(input),true);
+ f.setTime(116);const visual=f.model.sample({...pose,tick:60.21,controlTick:61.21},{at:116});
+ assert.equal(visual.feedback.token,input.token);assert.equal(visual.visualAction.type,'jump');assert.ok(visual.y>0);
+ assert.equal(f.model.state().active,1);
+});
+
+test('causal sampling cannot admit input before authoritative stun expiry or through physical interruption',()=>{
+ for(const fields of [{stunUntilTick:60},{stunUntilTick:60,fallStartTick:1,fallUntilTick:91},{stunUntilTick:60,finishTick:59}]){
+  const f=fixture(),g=structuredClone(f.game());g.snapshotTick=60;Object.assign(g.players[0],fields);f.update(g,100);
+  f.model.sample({x:0,y:0,tick:59.25,controlTick:fields.fallUntilTick||fields.finishTick?60.25:59.99},{at:100});
+  assert.equal(f.model.beginInput(f.dispatch()),false);
+ }
+});
+
 for(const type of ['left','right','jump','slide'])test(type+' changes only render pose/clip on the next local frame before ACK',()=>{
  const f=fixture(),before=JSON.stringify(f.game());assert.equal(f.model.beginInput(f.dispatch(type)),true);
  const {base,visual}=f.sample(16);

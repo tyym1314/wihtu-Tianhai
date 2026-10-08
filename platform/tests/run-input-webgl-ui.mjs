@@ -9,13 +9,14 @@ import {build} from 'esbuild';
 import {chromium} from 'playwright';
 import * as engine from '../arena/run/engine.mjs';
 import {createRunTimeline} from '../arena/run/timeline.mjs';
+import {createRunTimelineJournal} from '../arena/run/timeline-journal.mjs';
 import {makeRunActionReceipt} from '../shared/run-action-receipt.mjs';
 import {createRunHeldBoostFixture} from './fixtures/run-timeline-race-fixture.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const out=resolve(root,'review/deployment',`run-input-webgl-${Date.now()}-${Math.random().toString(16).slice(2,8)}`);
 await mkdir(out,{recursive:true});console.log(JSON.stringify({report_directory:out}));
-const sourceFiles=['arena/run/RunGame.jsx','arena/run/scene.mjs','arena/run/timeline.mjs','arena/run/self-projection.mjs','arena/run/runner-physics.mjs','arena/run/input-presentation.mjs','arena/run/presentation-events.mjs','arena/run/input-readiness.mjs','arena/run/frame-trace.mjs','arena/run/presentation.mjs','arena/run/atlas-characters.mjs','arena/run/characters.mjs','arena/run/engine.mjs','arena/shared/room-poller.mjs','arena/shared/run-room-poller.mjs','shared/run-action-receipt.mjs','tests/fixtures/run-timeline-race-fixture.mjs'];
+const sourceFiles=['arena/run/RunGame.jsx','arena/run/scene.mjs','arena/run/timeline.mjs','arena/run/self-projection.mjs','arena/run/causal-sampling.mjs','arena/run/timeline-journal.mjs','arena/run/runner-physics.mjs','arena/run/input-presentation.mjs','arena/run/presentation-events.mjs','arena/run/input-readiness.mjs','arena/run/frame-trace.mjs','arena/run/presentation.mjs','arena/run/atlas-characters.mjs','arena/run/characters.mjs','arena/run/engine.mjs','arena/shared/room-poller.mjs','arena/shared/run-room-poller.mjs','shared/run-action-receipt.mjs','tests/fixtures/run-timeline-race-fixture.mjs'];
 const hashes=async()=>Object.fromEntries(await Promise.all(sourceFiles.map(async file=>[file,createHash('sha256').update(await readFile(resolve(root,file))).digest('hex')])));
 const report={scope:'Local Chrome with actual RunGame, scene, GLB/WebP assets and WebGL renderer. Isolated real HTTP wrapper and pinned engine; controlled ACK/publication delays, not Arena backend, device, public-host, FPS or full-round acceptance.',harness_sha256:createHash('sha256').update(await readFile(fileURLToPath(import.meta.url))).digest('hex'),cases:[],errors:[],source_hashes:await hashes(),passed:false};
 const source=`
@@ -44,7 +45,7 @@ function instrumentScene(content){
  const animationAnchor='scene.add(runner.root);runners.set(p.key,runner);';assert.equal(content.split(animationAnchor).length,2,'animation observer anchor must be unique');
  content=content.replace(animationAnchor,`const originalAnimate=runner.animate;runner.animate=(...args)=>{if(p.key===me&&window.inputWebgl)window.inputWebgl.lastAnimationTick=args[1];return originalAnimate.apply(runner,args);};scene.add(runner.root);runners.set(p.key,runner);`);
  const eventAnchor='onEvent(event.type,event);';assert.equal(content.split(eventAnchor).length,2,'event observation anchor must be unique');
- content=content.replace(eventAnchor,`if(window.inputWebgl)window.inputWebgl.effects.push({event:structuredClone(event),display_tick:currentVisualPose.tick,warmed,at:performance.now()});onEvent(event.type,event);`);
+ content=content.replace(eventAnchor,`if(window.inputWebgl)window.inputWebgl.effects.push({event:structuredClone(event),display_tick:currentVisualPose.eventTick??currentVisualPose.tick,warmed,at:performance.now()});onEvent(event.type,event);`);
  return content.replace(needle,`onFrame(time);if(mine&&window.inputWebgl){const observedRoot=runners.get(me)?.root,observedAuthority=(lastTimelineFrame?.mode==='fallback'?null:lastTimelineFrame?.pose)??projectedPose(mine,game,snapshotClock.elapsed(time)),probe=window.inputWebgl;
   if(probe.frames.length<6000)probe.frames.push({at:performance.now(),raf_at:time,timeline_sample_no:probe.timelineSampleNo,timeline:lastTimelineFrame?{mode:lastTimelineFrame.mode,reason:lastTimelineFrame.reason,displayTick:lastTimelineFrame.displayTick,baseTick:lastTimelineFrame.baseTick,baseVersion:lastTimelineFrame.baseVersion}:null,snapshot_tick:game.snapshotTick,snapshot_elapsed:snapshotClock.elapsed(time),input_no:mine.inputNo,applied_input_no:mine.appliedInputNo,actual:{x:observedRoot.position.x,y:observedRoot.position.y,z:observedRoot.position.z,clip:observedRoot.userData.clip},authority:observedAuthority,animation_tick:probe.lastAnimationTick,visible_items:items.filter(item=>item.root.visible).map(item=>item.id),camera_distance:cameraDistance,camera_z:camera.position.z,feedback_at:container.dataset.inputFeedbackAt||null,feedback_type:container.dataset.inputFeedbackType||null,feedback_state:container.dataset.inputFeedbackState||null,calls:renderer.info.render.calls,textures:renderer.info.memory.textures});else probe.droppedFrames++;
  }if(mine&&!readyAnnounced)`);
@@ -162,6 +163,22 @@ export function createRunTimeline(...factoryArgs){const inner=createRunTimelineI
   if(row.trace_enabled){
    const trace=row.observation.frame_trace,field=Object.fromEntries(trace.fields.map((name,i)=>[name,i]));
    assert.equal(trace.stored,frames.length);assert.equal(trace.rejected,0);assert.equal(trace.overwritten,0);
+   const journal=trace.timelineJournal;assert.equal(journal.enabled,true);assert.equal(journal.complete,true,journal.reason);
+   const journalReplay=createRunTimelineJournal(createRunTimeline(),{enabled:true,capacity:journal.capacity,payloadBytes:journal.payloadBytes});
+   const decoded=journal.commands.map(([methodCode,payload])=>({method:journal.methods[methodCode],args:journal.methods[methodCode]==='sample'?[payload]:journal.payloads[payload]}));
+   assert.deepEqual(decoded,row.observation.timelineCommands.map(({method,args})=>({method,args})),'production journal must preserve the independently observed controller command stream');
+   for(const {method,args} of decoded)journalReplay.timeline[method](...args);
+   const replayJournal=journalReplay.read();assert.equal(replayJournal.complete,true,replayJournal.reason);
+   assert.deepEqual(replayJournal.commands,journal.commands);assert.deepEqual(replayJournal.strings,journal.strings);assert.deepEqual(replayJournal.samples,journal.samples,'every recorded pose and causal endpoint must replay exactly');
+   const jf=Object.fromEntries(journal.frameFields.map((name,i)=>[name,i])),js=Object.fromEntries(journal.sampleFields.map((name,i)=>[name,i]));
+   const bound=new Map(journal.frames.map(frame=>[frame[jf.frameAtMs],frame]));assert.equal(bound.size,journal.frames.length);
+   for(const frame of frames){
+    const binding=bound.get(frame.raf_at);assert.ok(binding,'every post-reset render retains its full-prefix journal binding');assert.equal(binding[jf.sampleNo],frame.timeline_sample_no);
+    assert.equal(binding[jf.runnerX],frame.actual.x);assert.equal(binding[jf.runnerY],frame.actual.y);assert.equal(binding[jf.runnerZ],frame.actual.z);assert.equal(binding[jf.cameraZ],frame.camera_z);
+    const sample=journal.samples[binding[jf.sampleNo]-1];assert.equal(sample[js.sampleNo],frame.timeline_sample_no);
+    if(frame.timeline.mode!=='fallback'){assert.equal(sample[js.distance],frame.authority.distance);assert.equal(sample[js.poseTick],frame.authority.tick);assert.equal(sample[js.causalFromTick],frame.authority.causalFromTick??null);assert.equal(sample[js.causalToTick],frame.authority.causalToTick??null);assert.equal(sample[js.causalMix],frame.authority.causalMix??null);}
+   }
+   row.journal_replay={complete:true,commands:journal.commands.length,samples:journal.samples.length,bound_frames:journal.frames.length,matched_observed_frames:frames.length};journalReplay.dispose();
    for(let i=0;i<frames.length;i++){
     const sample=trace.samples[i],frame=frames[i];assert.equal(sample[field.frameAtMs],frame.raf_at);assert.equal(sample[field.snapshotTick],frame.snapshot_tick);
     assert.equal(sample[field.runnerZ],frame.actual.z);assert.equal(sample[field.cameraZ],frame.camera_z);assert.equal(sample[field.projectedDistance],frame.camera_distance);

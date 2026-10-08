@@ -43,6 +43,8 @@ function differential(s,label='scenario'){
  for(let offset=0;offset<=steps;offset++){
   if(offset)E.testing.step(reference);
   const actual=model.sample(offset*1000/60),expected=visual(reference);
+  const canonical=model.stateAtTick(reference.tick);
+  for(const [field,value]of Object.entries(canonical)){if(field==='tick')assert.equal(value,reference.tick);else assert.deepEqual(value,reference.players[0][field],`${label} canonical ${reference.tick} ${field}`);}
   for(const [field,value]of Object.entries(expected))typeof value==='number'?near(actual[field],value,`${label} tick ${reference.tick} ${field}`):assert.equal(actual[field],value,`${label} tick ${reference.tick} ${field}`);
   near(actual.tick,reference.tick,`${label} tick`);
  }

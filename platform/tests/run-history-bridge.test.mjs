@@ -41,7 +41,13 @@ test('actual Android accepted actions and calibrated prior phase reproduce the 1
  near(games.get(946).players[0].distance,119.86666666666666);near(games.get(992).players[0].distance,126);
  const t=createRunTimeline(),initialDelay=134.63333334519615,freshAt=initialDelay+839.9000000357628;
  receive(t,games.get(931),75,0);t.sample(0);t.sample(initialDelay);receive(t,games.get(946),76,initialDelay);distanceSamples(t,initialDelay,initialDelay+650);
- const before=t.sample(freshAt);near(before.pose.distance,124.14373333342823);near(games.get(992).players[0].distance-before.pose.distance,1.85626666657177);
+ const before=t.sample(freshAt);
+ // Retain the old same-tick distance/defect as a separate legacy oracle. The
+ // candidate now displays the proven previous interval, not that old phase.
+ const legacy=createRunSelfProjection();assert.ok(legacy.update(games.get(946),KEY,{roomId:ROOM,roomVersion:76}));
+ const rawElapsed=(before.displayTick-946)*DT,old=legacy.sample(rawElapsed);
+ near(old.distance,124.14373333342823);near(games.get(992).players[0].distance-old.distance,1.85626666657177);
+ near(before.pose.distance,legacy.sample(rawElapsed-DT).distance);near(before.pose.tick,before.displayTick-1);
  receive(t,games.get(992),79,freshAt);const after=t.sample(freshAt);assert.equal(after.mode,'project');near(after.pose.distance,before.pose.distance);near(after.displayTick,978.0780000007118);
  continuous(distanceSamples(t,freshAt,freshAt+650));
 });

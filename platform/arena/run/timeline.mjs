@@ -7,7 +7,8 @@ import {runnerPose} from './runner-physics.mjs';
 
 const HZ=60,MS_PER_TICK=1000/HZ,HORIZON=39,MAX_BASES=16,MAX_HISTORY=256,MAX_INPUTS=128;
 // One small startup buffer lets accepted history arrive before its display tick.
-// It is not a network estimate and does not extend the authority lease.
+// This total includes the causal anchor interval; it is not a network estimate
+// and does not extend the authority lease.
 export const RUN_TIMELINE_STARTUP_BUFFER_MS=100;
 export const RUN_MAX_BOOST_RETIME_MS=100;
 const actions=new Set(['left','right','jump','slide','item']);
@@ -27,7 +28,9 @@ function acceptedInput(value){
   ?{type:value.type,tick:value.tick,no:value.no,item:value.item}:null;
 }
 
-/** Continuous display time over bounded, independently replayed authority bases.
+/** Continuous raw display time over bounded, independently replayed authority bases.
+ * Renderer pose.tick/eventTick are one causal interval behind raw displayTick;
+ * that fixed interval is not future prediction or a renewable time lease.
  * Only an accepted boost may retime display phase by at most 100 ms; its
  * position remains continuous and authoritative simulation time never changes.
  * Neither local dispatch nor this controller completes an HTTP request. */
@@ -42,7 +45,19 @@ export function createRunTimeline(){
   if(!projection.update(game,key,{roomId:room,roomVersion:version,acceptedInputs}))return null;
   return {game,version,tick:game.snapshotTick,receivedAtMs,firstReceivedAtMs,projection,course:resolveRunCourse(game)};
  }
- function sourcePose(entry,tick){return entry.projection.sample((tick-entry.tick)*MS_PER_TICK);}
+ function sourcePose(entry,tick){
+  const pose=entry.projection.sampleCausal((tick-entry.tick)*MS_PER_TICK,{predecessor:entry.causalPredecessor??null});
+  const finish=own(latest,key)?.finishTick;
+  if(pose&&finish!==null&&finish!==undefined&&pose.finishTick===finish&&pose.eventTick>=finish&&pose.visualPlayer.finishTick!==finish)return{...pose,visualPlayer:Object.freeze({...pose.visualPlayer,finishTick:finish})};
+  return pose;
+ }
+ function inheritPredecessor(from,to){
+  if(from.tick===to.tick){to.causalPredecessor=from.causalPredecessor??null;return true;}
+  // Two owned immutable frames only; never keep a projection reference chain.
+  const previous=from.projection.frameAtTick(to.tick-1),endpoint=from.projection.frameAtTick(to.tick);
+  if(!previous||!endpoint||!statesEqual(from.projection.stateAtTick(to.tick),to.projection.stateAtTick(to.tick)))return false;
+  to.causalPredecessor=Object.freeze({previous,endpoint});return true;
+ }
  function lastCoveredTick(entry){return entry.historyEndTick??entry.tick+HORIZON;}
  function proveBridge(from,to){
   const acceptedInputs=[...history.values()].filter(input=>input.tick>from.tick&&input.tick<=to.tick&&input.no>own(from.game,key).appliedInputNo).sort((a,b)=>a.tick-b.tick||a.no-b.no);
@@ -51,6 +66,7 @@ export function createRunTimeline(){
  }
  function rebase(entry,at,reason){
   startupUntil=null;pendingReconciliation=null;animationPhase=null;
+  if(entry)entry={...entry,causalPredecessor:null};
   bases=entry?[entry]:[];invalidReason=entry?null:reason;
   displayTick=entry?Math.max(entry.tick,Math.min(displayTick??entry.tick,entry.tick+HORIZON)):Math.max(displayTick??0,latest?.snapshotTick??0);
   lastAt=at;lastPose=entry?sourcePose(entry,displayTick):authorityPose();pendingResync=reason;
@@ -117,7 +133,8 @@ export function createRunTimeline(){
   const animationFields=['lane','fromLane','changeStartTick','changeEndTick','jumpStartTick','slideUntilTick'];
   if(animationFields.some(field=>oldState[field]!==newState[field])||animationPhase)return unsafe;
   const player=Object.fromEntries(animationFields.map(field=>[field,newState[field]]));
-  const lane=fromTick<player.changeEndTick,jump=player.jumpStartTick!==null&&fromTick<player.jumpStartTick+58,slide=fromTick<player.slideUntilTick;
+  const animationAt=oldPose.tick;
+  const lane=animationAt<player.changeEndTick,jump=player.jumpStartTick!==null&&animationAt<player.jumpStartTick+58,slide=animationAt<player.slideUntilTick;
   const phase=lane||jump||slide?{player,offsetTicks:fromTick-nextTick,lane,jump,slide,hits:newState.hits,resolvedObstacleCount:newState.resolvedObstacles.length}:null;
   pendingReconciliation=Object.freeze({reason:'accepted-boost-retime',inputNo:boost.no,fromTick,toTick:nextTick,rewindMs:(fromTick-nextTick)*MS_PER_TICK,correctionDistanceMeters:newPose.distance-oldPose.distance,observedAtMs:lastObservedAt,...(phase?{preservedAnimation:Object.freeze({offsetTicks:phase.offsetTicks,lane,jump,slide})}:{})});
   animationPhase=phase;
@@ -126,10 +143,11 @@ export function createRunTimeline(){
  }
  function rebuild(reason='history-correction'){
   if(!bases.length)return false;
-  const next=bases.map(entry=>build(entry.game,entry.version,entry.receivedAtMs,entry.firstReceivedAtMs));
+  const next=bases.map(entry=>{const rebuilt=build(entry.game,entry.version,entry.receivedAtMs,entry.firstReceivedAtMs);if(rebuilt)rebuilt.causalPredecessor=entry.causalPredecessor??null;return rebuilt;});
   for(let index=0;index<next.length-1;index++)if(next[index]&&next[index+1]&&next[index+1].tick>next[index].tick+HORIZON)next[index]=proveBridge(next[index],next[index+1]);
   if(next.some(entry=>!entry)){rebase(build(latest,latestVersion,lastObservedAt,tickFirstObservedAt??lastObservedAt),lastObservedAt,'input-history-invalid');return false;}
   for(let index=0;index<next.length-1;index++)if(!statesEqual(next[index].projection.stateAtTick(next[index+1].tick),next[index+1].projection.stateAtTick(next[index+1].tick))){rebase(next.at(-1),lastObservedAt,'input-history-divergence');return false;}
+  for(let index=1;index<next.length;index++)if(!inheritPredecessor(next[index-1],next[index])){rebase(next.at(-1),lastObservedAt,'causal-predecessor-unproved');return false;}
   const prior=bases[0],replacement=next[0];
   if(displayTick!==null&&displayTick>=prior.tick&&displayTick<=lastCoveredTick(prior)&&(!poseEqual(sourcePose(prior,displayTick),sourcePose(replacement,displayTick))||['hits','checkpointU','fallStartTick','fallUntilTick','stunUntilTick','finishTick','forfeited'].some(field=>prior.projection.stateAtTick(Math.floor(displayTick))?.[field]!==replacement.projection.stateAtTick(Math.floor(displayTick))?.[field]))){
    const retimed=retimeAcceptedBoost(prior,replacement);
@@ -144,7 +162,12 @@ export function createRunTimeline(){
   if(receivedAtMs<lastObservedAt||roomVersion<=latestVersion||game.snapshotTick<latestTick)return false;
   const prior=latest,previousTick=latestTick,previousMapping=mapping;
   latest=game;latestVersion=roomVersion;latestTick=game.snapshotTick;lastObservedAt=receivedAtMs;
-  terminal=game.status==='finished'||game.phase==='finished'||!!own(game,key)?.forfeited||own(game,key)?.finishTick!==null&&own(game,key)?.finishTick!==undefined;
+  const incomingTerminal=game.status==='finished'||game.phase==='finished'||!!own(game,key)?.forfeited||own(game,key)?.finishTick!==null&&own(game,key)?.finishTick!==undefined;
+  // Only an active, exactly reconciled own finish may continue to its causal
+  // endpoint. Other terminal authority keeps the existing explicit immediate
+  // boundary; it is not evidence of a continuous or replay-proved transition.
+  const continueFinish=incomingTerminal&&active(game)&&own(game,key)?.finishTick!==null&&!own(game,key)?.forfeited&&bases.length>0&&mapping===profile(game);
+  terminal=incomingTerminal&&!continueFinish;
   if(terminal){bases=[];pendingResync=null;invalidReason=null;lastPose=authorityPose();displayTick=Math.max(displayTick??game.snapshotTick,game.snapshotTick);lastAt=receivedAtMs;return true;}
   if(!runRequiresSceneReady(game.ruleVersion)||!active(game)||!Object.hasOwn(game,'selfPrediction')){bases=[];mapping=null;displayTick=game.snapshotTick;lastAt=receivedAtMs;lastPose=authorityPose();invalidReason=null;pendingResync=null;return true;}
   mapping=profile(game);
@@ -164,7 +187,7 @@ export function createRunTimeline(){
   }
   if(!bases.length){
    if(prior&&active(prior)&&previousMapping!==null)rebase(next,receivedAtMs,'authority-restored');
-   else {bases=[next];displayTick=next.tick;lastAt=receivedAtMs;lastPose=sourcePose(next,next.tick);pendingResync=null;invalidReason=null;startupUntil=next.tick===0?receivedAtMs+RUN_TIMELINE_STARTUP_BUFFER_MS:null;}
+   else {bases=[next];displayTick=next.tick;lastAt=receivedAtMs;lastPose=sourcePose(next,next.tick);pendingResync=null;invalidReason=null;startupUntil=next.tick===0?receivedAtMs+Math.max(0,RUN_TIMELINE_STARTUP_BUFFER_MS-MS_PER_TICK):null;}
    trim();return true;
   }
   if(!rebuild()){trim();return true;}
@@ -180,6 +203,7 @@ export function createRunTimeline(){
   if(next.tick-displayTick>HORIZON){rebase(next,receivedAtMs,'display-lag');trim();return true;}
   const priorState=predecessor.projection.stateAtTick(next.tick),newState=next.projection.stateAtTick(next.tick);
   if(!statesEqual(priorState,newState)){rebase(next,receivedAtMs,'authority-divergence');trim();return true;}
+  if(!inheritPredecessor(predecessor,next)){rebase(next,receivedAtMs,'causal-predecessor-unproved');trim();return true;}
   if(next.tick===predecessor.tick)bases[bases.length-1]=next;else bases.push(next);
   if(bases.length>MAX_BASES){rebase(next,receivedAtMs,'history-overflow');trim();return true;}
   while(bases.length>1&&bases[1].tick<=displayTick){bases.shift();lastPose=sourcePose(bases[0],displayTick);}
@@ -244,7 +268,15 @@ export function createRunTimeline(){
   const animationTick=phase.jump?Math.min(at,previous.jumpStartTick+58):phase.slide?Math.min(at,previous.slideUntilTick):null;
   return {...pose,x:phase.lane?a.x+(b.x-a.x)*fraction:pose.x,y:phase.jump?a.y+(b.y-a.y)*fraction:pose.y,...(animationTick!==null?{animationTick}:{}),...(phase.slide?{sliding:at<previous.slideUntilTick}:{})};
  }
- function result(mode,reason,entry=bases[0]){const reconciliation=pendingReconciliation;pendingReconciliation=null;const pose=displayedPose(mode);lastPresentedPose=pose;return{mode,pose,reason:reason??reconciliation?.reason??null,displayTick,baseTick:entry?.tick??latest?.snapshotTick??null,baseVersion:entry?.version??latestVersion,...(reconciliation?{reconciliation}:{})};}
+ function result(mode,reason,entry=bases[0]){
+  const reconciliation=pendingReconciliation;pendingReconciliation=null;
+  let pose=displayedPose(mode);
+  // A known interval can still have a positive derivative after the wall lease
+  // expires or while input/suspension holds its clock. Do not animate travel
+  // while this controller is deliberately keeping that transform stationary.
+  if(mode!=='project'&&typeof pose?.visualSpeed==='number'&&pose.visualSpeed!==0)pose={...pose,visualSpeed:0};
+  lastPresentedPose=pose;return{mode,pose,reason:reason??reconciliation?.reason??null,displayTick,baseTick:entry?.tick??latest?.snapshotTick??null,baseVersion:entry?.version??latestVersion,...(reconciliation?{reconciliation}:{})};
+ }
 
  function sample(now){
   if(!finite(now))return result('hold','invalid-time');
@@ -252,7 +284,7 @@ export function createRunTimeline(){
   // observation time orders messages, but cannot accelerate display time.
   // Initial/resync bases already anchor lastAt at their real receive time.
   const at=Math.max(now,lastAt??now);
-  if(terminal){lastAt=at;lastPose=authorityPose();return result('hold','authoritative-terminal');}
+  if(terminal){lastAt=at;return result('hold','authoritative-terminal');}
   if(suspended){lastAt=at;return result('hold',suspended.reason);}
   if(invalidReason){lastAt=at;return result('resync',invalidReason);}
   if(!bases.length){lastAt=at;return {...result('fallback','unsupported-or-inactive'),pose:null};}
@@ -284,7 +316,10 @@ export function createRunTimeline(){
    if(limit<displayTick){rebase(entry,at,'uncovered-display-time');return result('resync','uncovered-display-time');}
    displayTick=limit;lastPose=sourcePose(entry,displayTick);
    if(!lastPose){rebase(null,at,'invalid-projection');return result('resync','invalid-projection');}
-   if(lastPose.finishTick!==null)return result('hold','projected-finish',entry);
+   if(lastPose.finishTick!==null){
+    if(own(latest,key)?.finishTick===lastPose.finishTick){terminal=true;inputs.clear();return result('hold','authoritative-terminal',entry);}
+    return result('hold','projected-finish',entry);
+   }
    if(reason)return result('hold',reason,entry);
    if(successor&&displayTick>=successor.tick){bases.shift();if(displayTick<target)continue;lastPose=sourcePose(bases[0],displayTick);return result('project',null);}
    if(displayTick>=endTick)return result('hold','race-deadline',entry);

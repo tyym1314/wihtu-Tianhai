@@ -2,6 +2,22 @@
 
 ## Current acceptance boundary
 
+Public `20261008-09`, source `09bd4f98df19c5087d65a8c0875b9bdc871b6182`,
+passed basic 13-game browser flows and 81 static cache checks. Its single physical
+Android observation lasted 60.1056 seconds and accepted 10 inputs without
+captured HTTP/JavaScript errors. It has no ordinary hold of at least 100 ms,
+but still has one forward anomaly: 0.225333 m in 16.6 ms at stun recovery.
+Three backward steps remain in the original report; two are conservatively
+unproved. It ends before personal finish or settlement. It therefore does not
+pass overall smoothness or launch readiness. Evidence is sealed in
+`review/release/public-20261008-09-final-evidence.json`.
+
+The next unshipped change is described in
+[the causal rendering contract](CAUSAL-RENDER-20261008.md). Its tests cannot
+replace a new physical-device observation or the outstanding iPhone check.
+
+## Historical public08 acceptance boundary
+
 Public `20261008-08`, source `335f11a105538d7cca7dfaf48a7b45037eac497c`,
 passed its 13-game basic browser flow and 81 static cache requests. Its physical
 Android Run observation lasted 60.060 seconds, with 14 accepted inputs and no
@@ -29,7 +45,7 @@ hold of 100 ms or more. Authority collisions still change motion. These are
 separate measures: prompt input feedback does not establish smooth scrolling.
 The two public runs are not a controlled A/B comparison.
 
-## Next candidate: missing-history recovery and slow reads
+## Released in public09: missing-history recovery and slow reads
 
 `proveRunHistory()` now proves at most 120 ticks of already received history
 against a complete fresh own-state endpoint. Only a successful proof can expose
@@ -145,8 +161,8 @@ timeline passed 12 complete
 course/input combinations but exposed a 150 ms mid-race boost hold; that failure
 is retained as the regression motivating the bounded adjustment above. Neither
 contract tests nor browser compatibility checks constitute a smoothness or
-launch-readiness pass. Public remains `20261008-07` until a new deployment and
-independent public readback establish otherwise.
+launch-readiness pass. These were pre-public08 candidate observations; the
+current deployed revision and its remaining failures are recorded at the top.
 
 The earlier timeline `51fa0f8e08e186971d2b928f1937e278ca4038ce171c22eeeba5407b1f7b4b9f`
 had the following local evidence (before the animation/event fixes below):

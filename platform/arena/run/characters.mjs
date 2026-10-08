@@ -37,7 +37,7 @@ export function createRigRunner(kind='fox',ghost=false,{onError=()=>{}}={}){
  }
  function animate(p,tick,time){
   const previous=lastState?.[0];if(previous&&previous.fallUntilTick!==null&&p.fallUntilTick===null)recoveredAt=tick;lastState=[{...p},tick,time];
-  const jumping=p.jumpStartTick!==null&&tick>=p.jumpStartTick&&tick<p.jumpStartTick+48,sliding=tick<p.slideUntilTick,stunned=tick<p.stunUntilTick,falling=p.fallUntilTick!==null,finished=p.finishTick!==null;
+  const jumping=p.jumpStartTick!==null&&tick>=p.jumpStartTick&&tick<p.jumpStartTick+48,sliding=tick<p.slideUntilTick,stunned=(Number.isFinite(p.visualControlTick)?p.visualControlTick:tick)<p.stunUntilTick,falling=p.fallUntilTick!==null,finished=p.finishTick!==null;
   const visual=readRunVisualAction(p.visualAction);let clip='run',elapsed=p.distance/10;
   if(finished){if(finishVisualAt===null)finishVisualAt=time-Math.max(0,(tick-p.finishTick)/60);const t=time-finishVisualAt;clip=t<1.2?'finish':p.visualWinner===false?'idle':'celebrate';elapsed=clip==='finish'?t:t-1.2;}
   else if(falling){clip='fall';elapsed=(tick-p.fallStartTick)/60;}

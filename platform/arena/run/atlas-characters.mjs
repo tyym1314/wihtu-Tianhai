@@ -115,7 +115,7 @@ export function createIllustratedRunner(kind='fox',ghost=false,{onError=()=>{}}=
    if(finishVisual===null)finishVisual=time-Math.max(0,(tick-p.finishTick)/60);
    const t=time-finishVisual;clip=t<1.2?'finish':p.visualWinner===false?'idle':'celebrate';elapsed=t<1.2?t:t-1.2;
   }else if(p.fallUntilTick!==null){clip='fall';elapsed=(tick-p.fallStartTick)/60;}
-  else if(tick<p.stunUntilTick){clip='hit';elapsed=(tick-(p.stunUntilTick-48))/60;}
+  else if((Number.isFinite(p.visualControlTick)?p.visualControlTick:tick)<p.stunUntilTick){clip='hit';elapsed=(tick-(p.stunUntilTick-48))/60;}
   else if(tick-recoverTick<36&&recoverTick>=0){clip='recover';elapsed=(tick-recoverTick)/60;}
   else if(visual){clip=visual.type;if(clip!=='run')elapsed=visual.elapsedMs/1000;}
   else if(tick<p.slideUntilTick){clip='slide';elapsed=(tick-(p.slideUntilTick-36))/60;}

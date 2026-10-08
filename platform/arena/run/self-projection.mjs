@@ -1,3 +1,4 @@
+import {sampleRunCausalFrames} from './causal-sampling.mjs';
 import {PHYSICS_VERSION,TRACK_LENGTH} from './level.mjs';
 import {resolveRunCourse} from './courses.mjs';
 import {runRequiresSceneReady} from './start-policy.mjs';
@@ -104,11 +105,11 @@ function restore(game,playerKey){
  }};
 }
 
-function frame(player,tick,boundary=null,authoritativeFinishTick=player.finishTick){
+function frame(player,tick,boundary=null,authoritativeFinishTick=player.finishTick,boundaryEvents=[]){
  const pose=runnerPose(player,tick);
  let y=pose.y,scale=1;
  if(player.fallUntilTick!==null){const progress=clamp((tick-player.fallStartTick)/RUN_RULES.respawnTicks,0,1);y=-Math.min(2.4,progress*5);scale=Math.max(.15,1-progress*.9);}
- return{x:pose.x,y,distance:player.distanceU/RUN_RULES.distanceUnitsPerMeter,tick,scale,sliding:pose.sliding,boundary,
+ return{x:pose.x,y,distance:player.distanceU/RUN_RULES.distanceUnitsPerMeter,tick,scale,sliding:pose.sliding,boundary,boundaryEvents:Object.freeze([...boundaryEvents]),
   checkpoint:player.checkpointU/RUN_RULES.distanceUnitsPerMeter,inventory:player.inventory,hits:player.hits,appliedInputNo:player.appliedInputNo,
   fallStartTick:player.fallStartTick,fallUntilTick:player.fallUntilTick,stunUntilTick:player.stunUntilTick,immuneUntilTick:player.immuneUntilTick,shieldUntilTick:player.shieldUntilTick,boostUntilTick:player.boostUntilTick,finishTick:player.finishTick,
   claimedItemCount:player.claimedItems.length,resolvedObstacleCount:player.resolvedObstacles.length,
@@ -121,7 +122,7 @@ function replayFrames(restored,game,acceptedInputs,steps){
  const {course,tick,player}=restored,authoritativeFinishTick=player.finishTick;
  const history=acceptedHistory(acceptedInputs,player,tick,tick+steps);
  if(history===null)return null;
- const frames=[frame(player,tick)],states=[ownedState(player,tick)];
+ const frames=[Object.freeze(frame(player,tick))],states=[ownedState(player,tick)];
  for(let offset=1;offset<=steps;offset++){
   const current=tick+offset,wasStunned=current-1<player.stunUntilTick,resolvedCount=player.resolvedObstacles.length,input=history.get(current);
   if(input){
@@ -129,11 +130,11 @@ function replayFrames(restored,game,acceptedInputs,steps){
    player.pendingInput={...input};player.inputNo=input.no;player.lastInputTick=current;
    states[offset-1]=ownedState(player,current-1);
   }
-  let boundary=null;
-  stepRunnerInPlace(player,current,course,{at:game.startedAt+current*1000/RUN_RULES.hz,emit(type){if(['hit','shield_hit','fall','respawn','finish'].includes(type))boundary=type;}});
-  if(boundary===null&&resolvedCount!==player.resolvedObstacles.length)boundary='collision';
+  let boundary=null;const boundaryEvents=[];
+  stepRunnerInPlace(player,current,course,{at:game.startedAt+current*1000/RUN_RULES.hz,emit(type){if(['hit','shield_hit','fall','respawn','finish'].includes(type)){boundary=type;boundaryEvents.push(type);}}});
+  if(boundary===null&&resolvedCount!==player.resolvedObstacles.length){boundary='collision';boundaryEvents.push('collision');}
   if(boundary===null&&wasStunned&&current>=player.stunUntilTick)boundary='recovery';
-  frames.push(frame(player,current,boundary,authoritativeFinishTick));states.push(ownedState(player,current));
+  frames.push(Object.freeze(frame(player,current,boundary,authoritativeFinishTick,boundaryEvents)));states.push(ownedState(player,current));
  }
  return{frames,states};
 }
@@ -176,7 +177,9 @@ export function proveRunHistory(fromGame,toGame,playerKey,{roomId,fromVersion,to
  const durationMs=steps*1000/RUN_RULES.hz;
  const projection=Object.freeze({
   stateAtTick(tick){return integer(tick,from.tick,to.tick)?replay.states[tick-from.tick]:null;},
+  frameAtTick(tick){return integer(tick,from.tick,to.tick)?replay.frames[tick-from.tick]:null;},
   sample(elapsed){return sampleFrames(replay.frames,from.tick,fromVersion,elapsed,durationMs);},
+  sampleCausal(elapsed,{predecessor=null}={}){return sampleRunCausalFrames(replay.frames,from.tick,fromVersion,elapsed,durationMs,predecessor);},
  });
  return Object.freeze({ok:true,projection,fromTick:from.tick,toTick:to.tick,acceptedInputCount:acceptedInputs.length});
 }
@@ -211,6 +214,8 @@ export function createRunSelfProjection(){
    if(states===null||!integer(tick,sourceTick,sourceTick+states.length-1))return null;
    return states[tick-sourceTick];
   },
+  frameAtTick(tick){return frames!==null&&integer(tick,sourceTick,sourceTick+frames.length-1)?frames[tick-sourceTick]:null;},
+  sampleCausal(elapsed,{predecessor=null}={}){return sampleRunCausalFrames(frames,sourceTick,version,elapsed,RUN_PROJECTION_LIMIT_MS,predecessor);},
   sample(elapsed){
    return sampleFrames(frames,sourceTick,version,elapsed,RUN_PROJECTION_LIMIT_MS);
   },

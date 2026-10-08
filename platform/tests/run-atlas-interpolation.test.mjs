@@ -96,6 +96,17 @@ test('lateral input with no vertical override retains the real jump and invalid 
  runner.dispose();
 });
 
+test('recovery control time releases only stun animation while jump and shield retain causal time',async()=>{
+ const {createIllustratedRunner}=await import(`${bundleUrl}#causal-recovery`),runner=createIllustratedRunner('fox');await runner.ready;
+ runner.animate(authority({stunUntilTick:60,visualControlTick:59.99}),59.25,1);assert.equal(runner.root.userData.clip,'hit');
+ runner.animate(authority({stunUntilTick:60,visualControlTick:60.25}),59.25,1);assert.equal(runner.root.userData.clip,'run');
+ runner.animate(authority({stunUntilTick:60,visualControlTick:60.25,jumpStartTick:50,shieldUntilTick:60}),59.25,1);
+ assert.equal(runner.root.userData.clip,'jump');assert.equal(runner.root.userData.clipTime,9.25/60);
+ const shield=runner.root.children.find(child=>child.geometry?.type==='SphereGeometry');assert.ok(shield);assert.equal(shield.visible,true);
+ runner.animate(authority({stunUntilTick:60,visualControlTick:61,jumpStartTick:50,shieldUntilTick:60}),60,1);assert.equal(shield.visible,false);
+ runner.dispose();
+});
+
 test('rig compatibility selects one overridden mixer pose and still prioritizes authoritative injury',async()=>{
  const rigBundle=await build({...bundleOptions,entryPoints:[new URL('../arena/run/characters.mjs',import.meta.url).pathname]});
  const {createRigRunner}=await import(`data:text/javascript;base64,${Buffer.from(rigBundle.outputFiles[0].contents).toString('base64')}`),runner=createRigRunner('fox');await runner.ready;

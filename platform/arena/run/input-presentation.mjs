@@ -50,7 +50,7 @@ export function createRunInputPresentation({now=()=>performance.now()}={}){
  }
  function beginInput(input){
   const at=now(),axis=axisOf(input?.type);prune(at);
-  if(dead||!axis||!supported(game)||game.status!=='active'||['arming','countdown','finished'].includes(game.phase)||interrupted(player)||!lastBase||stale(at)||lastBase.tick<player.stunUntilTick)return false;
+  if(dead||!axis||!supported(game)||game.status!=='active'||['arming','countdown','finished'].includes(game.phase)||interrupted(player)||!lastBase||stale(at)||lastBase.controlTick<player.stunUntilTick)return false;
   if(typeof input.token!=='string'||!input.token||input.token.length>512||seenTokens.has(input.token)||seenTokens.size>=4096||typeof input.request_id!=='string'||!/^[A-Za-z0-9_-]{8,128}$/.test(input.request_id)||!integer(input.seq)||input.seq===0)return false;
   if(input.playerKey!==playerKey||input.ruleVersion!==game.ruleVersion||JSON.stringify([input.roomId,input.playerKey,input.ruleVersion,game.startedAt])!==scope||!integer(player.inputNo)||!integer(player.appliedInputNo))return false;
   if([...records.values()].some(record=>record.state==='predicted'))return false;
@@ -90,8 +90,11 @@ export function createRunInputPresentation({now=()=>performance.now()}={}){
   if(!Number.isFinite(at)||!Number.isFinite(base.x)||!Number.isFinite(base.y)||!Number.isFinite(base.tick))return result;
   // RAF can carry an older frame timestamp. Animation uses that timestamp,
   // but it must not keep an expired input alive when the callback runs late.
-  lastBase={x:base.x,y:base.y,tick:base.tick};prune(Math.max(at,now()));
-  if(dead||!supported(game)||interrupted(player)||base.tick<player.stunUntilTick){clear('authority-interruption');lastVisual={x:base.x,y:base.y};return result;}
+  // The causal transform is up to one fixed step behind control admission.
+  // Only stun expiry uses control time; vertical animation remains causal.
+  const controlTick=Number.isFinite(base.controlTick)?base.controlTick:base.tick;
+  lastBase={x:base.x,y:base.y,tick:base.tick,controlTick};prune(Math.max(at,now()));
+  if(dead||!supported(game)||interrupted(player)||controlTick<player.stunUntilTick){clear('authority-interruption');lastVisual={x:base.x,y:base.y};return result;}
   for(const record of records.values()){
    const elapsedMs=Math.max(0,at-record.at);
    if(record.axis==='x')result.x=mix(record.fromX,LANES[record.targetLane],clamp(elapsedMs/200,0,1));

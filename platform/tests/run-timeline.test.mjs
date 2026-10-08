@@ -14,8 +14,8 @@ const receipt=(d,no,tick)=>({roomId:d.roomId,playerKey:d.playerKey,request_id:d.
 
 test('authority tick 120 arriving when display is 112 preserves continuous display and adopts only at 120',()=>{
  const s=state(),t=createRunTimeline();receive(t,viewAt(s,100),1,0);near(t.sample(0).displayTick,100);near(t.sample(200).displayTick,112);
- receive(t,viewAt(s,120),2,200);const after=t.sample(200);assert.equal(after.mode,'project');near(after.displayTick,112);near(after.pose.distance,112*40/300);assert.equal(after.baseTick,100);
- const adopted=t.sample(1000/3);near(adopted.displayTick,120);assert.equal(adopted.baseTick,120);near(adopted.pose.distance,16);
+ receive(t,viewAt(s,120),2,200);const after=t.sample(200);assert.equal(after.mode,'project');near(after.displayTick,112);near(after.pose.tick,111);near(after.pose.distance,111*40/300);assert.equal(after.baseTick,100);
+ const adopted=t.sample(1000/3);near(adopted.displayTick,120);assert.equal(adopted.baseTick,120);near(adopted.pose.tick,119);near(adopted.pose.distance,119*40/300);
 });
 
 test('same tick higher version pending rebuilds accepted history without renewing the original lease',()=>{
@@ -30,7 +30,7 @@ test('accepted jump in authoritative history prevents the old no-input projectio
  const s=state(2),t=createRunTimeline();receive(t,viewAt(s,240),1,0);const sent=dispatch('jump-history','jump',0);assert.equal(t.noteInput(sent),true);
  Engine.tick(s,at(s,248));Engine.act(s,KEY,{type:'jump'},s.now);const next=viewAt(s,250);assert.equal(next.players[0].hits,0);receive(t,next,2,100);
  const before=t.sample(100);assert.equal(before.mode,'project');near(before.displayTick,246);
- const jumped=t.sample(250);assert.equal(jumped.mode,'project');assert.equal(jumped.pose.appliedInputNo,1);assert.equal(jumped.pose.fallUntilTick,null);assert.ok(jumped.pose.y>.5);
+ const jumped=t.sample(250);assert.equal(jumped.mode,'project');assert.equal(jumped.pose.appliedInputNo,1);assert.equal(jumped.pose.fallUntilTick,null);near(jumped.pose.tick,254);near(jumped.pose.y,Engine.pose(s.players[0],jumped.pose.tick).y);assert.ok(jumped.pose.y>0);
  // The event is enough for replay, but only the exact original HTTP receipt may resolve the dispatch.
  assert.equal(t.resolveInput({token:sent.token,receipt:{...receipt(sent,1,249),request_id:'different-request'},resolvedAtMs:250}),false);
  assert.equal(t.resolveInput({token:sent.token,receipt:receipt(sent,1,249),resolvedAtMs:250}),true);
@@ -98,7 +98,7 @@ test('all five dispatch types are tracked, scoped receipts are mandatory, and un
   if(type==='item'){for(let tick=0;tick<=6000;tick++){Engine.tick(s,at(s,tick));if(s.players[0].inventory==='boost')break;for(const p of s.players){const action=Engine.botAction(s,p.key,s.now);if(action)Engine.act(s,p.key,action,s.now);}}assert.equal(s.players[0].inventory,'boost');receive(t,clone(Engine.view(s,KEY)),1,0);}else receive(t,viewAt(s,100),1,0);
   const d=dispatch(type,type);assert.equal(t.noteInput(d),true);assert.equal(t.noteInput(d),false);
   assert.equal(t.resolveInput({token:d.token,receipt:{...receipt(d,1,101),playerKey:'wrong'}}),false);
-  if(type==='item'){const initial=clone(s.players[0]),moving=t.sample(100);assert.equal(moving.mode,'project');near(moving.pose.distance,initial.distanceU/300+.8);assert.equal(moving.pose.appliedInputNo,initial.appliedInputNo);assert.equal(moving.pose.inventory,'boost');assert.equal(moving.reconciliation,undefined);}
+  if(type==='item'){const initial=clone(s.players[0]),moving=t.sample(100);assert.equal(moving.mode,'project');near(moving.pose.distance,initial.distanceU/300+5*40/300);assert.equal(moving.pose.appliedInputNo,initial.appliedInputNo);assert.equal(moving.pose.inventory,'boost');assert.equal(moving.reconciliation,undefined);}
   assert.equal(t.resolveInput({token:d.token,outcome:'rejected'}),true);
  }
 });
@@ -155,8 +155,8 @@ test('completed accepted input records are retired so a full race cannot exhaust
 
 test('the tick-zero startup buffer occurs once and never extends the first authority lease',()=>{
  const s=state(),t=createRunTimeline(),g=Engine.view(s,KEY);receive(t,g,1,0);const initial=t.sample(50);assert.equal(initial.mode,'hold');assert.equal(initial.reason,'startup-buffer');near(initial.displayTick,0);
- receive(t,g,2,80);near(t.sample(100).displayTick,0);near(t.sample(200).displayTick,6);const expired=t.sample(650);assert.equal(expired.mode,'hold');near(expired.displayTick,33);
- receive(t,g,3,1000);near(t.sample(1000).displayTick,33);assert.equal(t.sample(1000).reason,'projection-expired');
+ receive(t,g,2,80);near(t.sample(100).pose.tick,0);near(t.sample(200).pose.tick,6);const expired=t.sample(650);assert.equal(expired.mode,'hold');near(expired.displayTick,34);near(expired.pose.tick,33);
+ receive(t,g,3,1000);near(t.sample(1000).displayTick,34);assert.equal(t.sample(1000).reason,'projection-expired');
 });
 
 
@@ -171,7 +171,7 @@ for(const animation of ['right','jump'])test(`accepted boost during a legal ${an
  assert.equal(timeline.resolveInput({token:d.token,receipt:receipt(d,accepted.event.inputNo,accepted.event.acceptedTick),resolvedAtMs:100}),true);
  const after=timeline.sample(100);assert.equal(after.mode,'project');assert.equal(after.reason,'accepted-boost-retime');for(const field of ['distance','x','y'])near(after.pose[field],before.pose[field]);assert.equal(after.reconciliation.preservedAnimation[animation==='jump'?'jump':'lane'],true);if(animation==='jump')near(after.pose.animationTick,before.pose.tick);
  t.diagnostic(JSON.stringify({animation,baseTick:g.snapshotTick,acceptedTick:accepted.event.acceptedTick,displayTick:after.displayTick,distanceCorrection:after.pose.distance-before.pose.distance,xBefore:before.pose.x,xAfter:after.pose.x,yBefore:before.pose.y,yAfter:after.pose.y}));
- assert.equal(after.pose.appliedInputNo,accepted.event.inputNo);assert.equal(after.pose.hits,0);
+ assert.ok(after.pose.controlTick>=accepted.event.acceptedTick);assert.equal(after.pose.appliedInputNo,accepted.event.inputNo-1,'contact state is still before the causal input endpoint');assert.equal(timeline.sample(100+1000/60).pose.appliedInputNo,accepted.event.inputNo);assert.equal(after.pose.hits,0);
 });
 
 test('accepted boost needing more than six display ticks correction explicitly resynchronizes',()=>{
@@ -222,7 +222,7 @@ test('a newly accepted jump has its own animation identity and does not inherit 
  for(const [tick,ms]of [[1367,250],[1382,500]]){receive(timeline,viewAt(s,tick),++version,ms);assert.equal(timeline.sample(ms).mode,'project');}
  Engine.tick(s,at(s,1398));const next=Engine.act(s,KEY,{type:'jump'},s.now);assert.equal(next.event.acceptedTick,1399);
  receive(timeline,clone(Engine.view(s,KEY)),++version,750);assert.equal(timeline.sample(750).mode,'project');
- const newJump=timeline.sample(800);assert.equal(newJump.mode,'project');assert.equal(newJump.pose.visualPlayer.jumpStartTick,1399);assert.equal(newJump.pose.animationTick,undefined);assert.ok(newJump.pose.y>0);
+ const newJump=timeline.sample(800+1000/60);assert.equal(newJump.mode,'project');assert.equal(newJump.pose.visualPlayer.jumpStartTick,1399);assert.equal(newJump.pose.animationTick,undefined);assert.ok(newJump.pose.y>0);
 });
 
 test('authoritative forfeiture clears retained visual animation immediately',()=>{
@@ -240,7 +240,7 @@ test('a real beam clears retained jump phase at impact, never at its fractional 
  timeline.sample(100);timeline.resolveInput({token:d.token,receipt:receipt(d,accepted.event.inputNo,accepted.event.acceptedTick),resolvedAtMs:100});const corrected=timeline.sample(100);assert.ok(corrected.pose.animationTick);
  let hitTick=null;for(let tick=s.tick+1;tick<=initial.snapshotTick+39;tick++){Engine.tick(s,at(s,tick));if(s.players[0].hits){hitTick=tick;break;}}
  assert.equal(hitTick,1630);assert.equal(s.players[0].lastEvent.type,'hit');assert.equal(s.players[0].lastEvent.tick,hitTick);
- const offset=corrected.reconciliation.preservedAnimation.offsetTicks,toMs=tick=>(tick-initial.snapshotTick+offset)*1000/60;
+ const offset=corrected.reconciliation.preservedAnimation.offsetTicks,toMs=tick=>(tick+1-initial.snapshotTick+offset)*1000/60;
  const before=timeline.sample(toMs(hitTick-1));assert.ok(before.pose.animationTick);
  for(const fraction of [.006,.25,.5,.99]){
   const frame=timeline.sample(toMs(hitTick-1+fraction));assert.equal(frame.pose.boundary,'hit');assert.equal(frame.pose.hits,0);assert.equal(frame.pose.stunUntilTick,0);
@@ -265,4 +265,23 @@ test('ordinary receive, dispatch and accepted ACK after a RAF timestamp never ac
  // the second basis's original35+650ms lease either.
  const held=timeline.sample(80);near(held.displayTick,previous.displayTick);const expired=timeline.sample(750);assert.equal(expired.reason,'projection-expired');assert.ok(expired.displayTick<=newer.snapshotTick+39);
  receive(timeline,newer,3,850);const refreshed=timeline.sample(900);assert.equal(refreshed.reason,'projection-expired');near(refreshed.displayTick,expired.displayTick);near(refreshed.pose.distance,expired.pose.distance);
+});
+
+
+test('wall lease expiry before raw39 stops visual speed without consuming another interval',()=>{
+ const {state:s,game}=createRunHeldBoostFixture(),timeline=createRunTimeline();receive(timeline,game,1,0);timeline.sample(0);
+ const d=dispatch('wall-speed-hold','item',0);timeline.noteInput(d);Engine.tick(s,at(s,s.tick+3));const accepted=Engine.act(s,KEY,{type:'item'},s.now);
+ timeline.sample(150);timeline.resolveInput({token:d.token,receipt:receipt(d,accepted.event.inputNo,accepted.event.acceptedTick),resolvedAtMs:150});timeline.sample(150);
+ const moving=timeline.sample(640);assert.equal(moving.mode,'project');near(moving.pose.visualSpeed,9.6);
+ const frozen=timeline.sample(650);assert.equal(frozen.reason,'projection-expired');assert.ok(frozen.displayTick<game.snapshotTick+39);assert.equal(frozen.pose.visualSpeed,0);
+ assert.deepEqual(timeline.sample(2000).pose,frozen.pose);assert.equal(frozen.pose.controlTick,frozen.displayTick);
+});
+
+test('suspension and unknown-contact hold stop animation speed while preserving exact transform and clocks',()=>{
+ const s=state(),timeline=createRunTimeline();receive(timeline,viewAt(s,100),1,0);const moving=timeline.sample(100);assert.equal(moving.mode,'project');near(moving.pose.visualSpeed,8);
+ timeline.suspend('background');const paused=timeline.sample(110);assert.equal(paused.mode,'hold');assert.equal(paused.reason,'background');assert.equal(paused.pose.visualSpeed,0);
+ for(const field of ['x','y','distance','scale','tick','controlTick','eventTick'])assert.equal(paused.pose[field],moving.pose[field]);assert.deepEqual(timeline.sample(900).pose,paused.pose);
+ const danger=state(2),waiting=createRunTimeline();receive(waiting,viewAt(danger,248),1,0);waiting.noteInput(dispatch('visual-speed-unknown','jump'));
+ const held=waiting.sample(200);assert.equal(held.reason,'input-collision-uncertain');assert.equal(held.pose.visualSpeed,0);assert.equal(held.pose.fallUntilTick,null);
+ const later=waiting.sample(800);assert.equal(later.pose.visualSpeed,0);for(const field of ['x','y','distance','scale','tick','controlTick','eventTick'])assert.equal(later.pose[field],held.pose[field]);
 });
