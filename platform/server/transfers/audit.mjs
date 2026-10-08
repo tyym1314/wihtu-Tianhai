@@ -38,8 +38,27 @@ export const TRANSFER_AUDIT_SQL=`WITH entries AS (
  (t.state<>'PENDING' AND (t.receipt IS NULL OR o.result IS NULL OR o.result->>'state' IS DISTINCT FROM t.state OR
   o.result->>'operation_id' IS DISTINCT FROM o.operation_id OR o.result->>'body_sha256' IS DISTINCT FROM o.body_sha256 OR
   o.result->>'amount_minor' IS DISTINCT FROM t.amount_minor::text OR o.result->>'direction' IS DISTINCT FROM t.direction OR
-  o.result->>'currency_id' IS DISTINCT FROM t.currency_id OR t.receipt->>'transfer_id' IS DISTINCT FROM t.id OR
-  t.receipt->>'ledger_transaction_id' IS DISTINCT FROM t.ledger_transaction_id OR o.lease_token IS NOT NULL OR o.lease_until IS NOT NULL)) OR
+  o.result->>'currency_id' IS DISTINCT FROM t.currency_id OR t.ledger_transaction_id IS NULL OR
+  t.receipt IS DISTINCT FROM (jsonb_build_object('transfer_id',t.id,'external_operation_id',o.operation_id,
+   'external_transaction_id',CASE WHEN t.state='SUCCEEDED' THEN o.external_transaction_id ELSE NULL END,
+   'direction',t.direction,'amount_minor',t.amount_minor::text,'currency_id',t.currency_id,
+   'ledger_transaction_id',t.ledger_transaction_id,'body_sha256',t.request_sha256) ||
+   CASE WHEN t.state='REJECTED' THEN jsonb_build_object('rejection_code',o.result->>'rejection_code') ELSE '{}'::jsonb END) OR
+  NOT EXISTS (SELECT 1 FROM wallet_ledger l WHERE l.scope_id=t.scope_id AND l.operation_id=t.id AND
+   l.transaction_id=t.ledger_transaction_id AND l.account='user:'||t.external_user_id AND
+   l.meta=(jsonb_build_object('kind',CASE WHEN t.direction='IN' THEN CASE WHEN t.state='SUCCEEDED' THEN 'transfer_in' ELSE 'transfer_capacity_released' END
+                       ELSE CASE WHEN t.state='SUCCEEDED' THEN 'transfer_out' ELSE 'transfer_rejected' END END) ||
+    CASE WHEN t.direction='IN' THEN jsonb_build_object('credit_pending_delta',(-t.amount_minor)::text) ELSE '{}'::jsonb END) AND
+   l.delta_available=CASE WHEN t.direction='IN' AND t.state='SUCCEEDED' OR t.direction='OUT' AND t.state='REJECTED' THEN t.amount_minor ELSE 0 END AND
+   l.delta_reserved=CASE WHEN t.direction='OUT' THEN -t.amount_minor ELSE 0 END) OR
+  (t.state='SUCCEEDED' AND NOT EXISTS (SELECT 1 FROM wallet_ledger l JOIN wallet_transfer_clearing c ON c.scope_id=l.scope_id AND c.account=l.account
+   WHERE c.scope_id=t.scope_id AND c.issuer=o.issuer AND c.merchant=o.merchant AND
+    l.operation_id=t.id AND l.transaction_id=t.ledger_transaction_id AND l.delta_reserved=0 AND
+    l.delta_available=CASE WHEN t.direction='IN' THEN -t.amount_minor ELSE t.amount_minor END AND
+    l.meta=jsonb_build_object('kind',CASE WHEN t.direction='IN' THEN 'transfer_in' ELSE 'transfer_out' END))) OR
+  (SELECT count(*) FROM wallet_ledger l WHERE l.scope_id=t.scope_id AND l.operation_id=t.id AND l.transaction_id=t.ledger_transaction_id)<>
+   CASE WHEN t.state='SUCCEEDED' THEN 2 ELSE 1 END OR
+  o.lease_token IS NOT NULL OR o.lease_until IS NOT NULL)) OR
  (t.state='SUCCEEDED' AND (o.external_transaction_id IS NULL OR o.result->>'transaction_id' IS DISTINCT FROM o.external_transaction_id))
 ), owned_holds AS (
  SELECT scope_id,external_user_id,amount_minor::numeric reserved,0::numeric credit FROM wallet_reservations WHERE state='RESERVED'

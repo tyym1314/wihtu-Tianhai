@@ -190,6 +190,45 @@ test('full hold reconstruction detects extra or missing transfer capacity and cl
  await pool.query('UPDATE wallet_transfer_clearing SET net_minor=net_minor+1 WHERE scope_id=$1',[f.scopeId]);assert.equal((await transferAudit(pool)).clearing_mismatches,2);
  await pool.query('UPDATE wallet_transfer_clearing SET net_minor=net_minor-1 WHERE scope_id=$1',[f.scopeId]);await cleanAudit();
 });
+test('terminal receipt corruption is audited even when balances and external result remain intact',async()=>{
+ const f=await fixture(),t=await credit(f),row=(await pool.query('SELECT receipt FROM gp_transfers WHERE id=$1',[t.transfer_id])).rows[0];
+ const changes={amount_minor:'999',direction:'OUT',currency_id:'OTHER',external_operation_id:'other_operation',external_transaction_id:'other_external',body_sha256:'0'.repeat(64),unexpected:'not-a-generated-receipt-field'};
+ for(const [field,value] of Object.entries(changes)){
+  try{
+   await pool.query('UPDATE gp_transfers SET receipt=$2 WHERE id=$1',[t.transfer_id,{...row.receipt,[field]:value}]);
+   assert.deepEqual(await transferAudit(pool),{clearing_mismatches:0,transfer_order_mismatches:1,wallet_hold_mismatches:0},field);
+  }finally{await pool.query('UPDATE gp_transfers SET receipt=$2 WHERE id=$1',[t.transfer_id,row.receipt]);}
+ }
+ await cleanAudit();
+});
+test('terminal transaction proof rejects missing, borrowed and own hold IDs while all four valid outcomes stay auditable',async()=>{
+ const f=await fixture(),credited=await credit(f,'500');
+ const returned=await f.create(f.body('OUT','50'));await f.api.advance(returned.transfer_id);
+ f.remote.behavior.reject=true;
+ const rejectedIn=await f.create(f.body('IN','25'));await f.api.advance(rejectedIn.transfer_id);
+ const rejectedOut=await f.create(f.body('OUT','25'));await f.api.advance(rejectedOut.transfer_id);
+ const ids=[credited,returned,rejectedIn,rejectedOut].map(t=>t.transfer_id);
+ const rows=(await pool.query('SELECT id,receipt,ledger_transaction_id FROM gp_transfers WHERE id=ANY($1::text[]) ORDER BY id',[ids])).rows;
+ assert.equal(rows.length,4);await cleanAudit();
+ for(const row of rows){
+  const hold=(await pool.query('SELECT transaction_id FROM wallet_ledger WHERE scope_id=$1 AND operation_id=$2 ORDER BY id LIMIT 1',[f.scopeId,row.id])).rows[0].transaction_id;
+  const borrowed=rows.find(other=>other.id!==row.id).ledger_transaction_id;
+  for(const wrong of [uid('missing_transaction'),borrowed,hold]){
+   try{
+    await pool.query('UPDATE gp_transfers SET ledger_transaction_id=$2,receipt=$3 WHERE id=$1',[row.id,wrong,{...row.receipt,ledger_transaction_id:wrong}]);
+    assert.deepEqual(await transferAudit(pool),{clearing_mismatches:0,transfer_order_mismatches:1,wallet_hold_mismatches:0},row.id+':'+wrong);
+   }finally{await pool.query('UPDATE gp_transfers SET ledger_transaction_id=$2,receipt=$3 WHERE id=$1',[row.id,row.ledger_transaction_id,row.receipt]);}
+  }
+ }
+ // Moving a clearing row's operation association changes no balance, amount,
+ // transaction sum or ledger version. It must still invalidate this order.
+ const clearing=(await pool.query("SELECT id,operation_id FROM wallet_ledger WHERE scope_id=$1 AND operation_id=$2 AND account LIKE 'transfer:%'",[f.scopeId,credited.transfer_id])).rows[0];
+ try{
+  await pool.query('UPDATE wallet_ledger SET operation_id=$2 WHERE id=$1',[clearing.id,uid('unrelated_order')]);
+  assert.deepEqual(await transferAudit(pool),{clearing_mismatches:0,transfer_order_mismatches:1,wallet_hold_mismatches:0});
+ }finally{await pool.query('UPDATE wallet_ledger SET operation_id=$2 WHERE id=$1',[clearing.id,clearing.operation_id]);}
+ await cleanAudit();
+});
 test('real pg_dump/restore retains pending holds, original outbox bytes and final receipts, then recovers once',async()=>{
  const f=await fixture();const original=await credit(f,'500');const originalReceipt=(await f.api.read(f.app,original.transfer_id,{keyId:f.key})).receipt;
  f.remote.behavior.lost=true;const pending=await f.create(f.body('OUT','75'));await f.api.advance(pending.transfer_id);

@@ -195,7 +195,13 @@ Clearing is projected into ledger audits, never exempted as test funding.
 The audit reconstructs all user reserved/credit-pending amounts from game
 reservations, probability liabilities, captured matches and pending transfers. It
 also compares clearing to both ledger rows and successful transfers, checks stored
-request/outbox hashes and terminal receipt relationships. Pending is preserved in
+request/outbox hashes and the complete generated terminal receipt. A terminal
+ledger transaction must contain that same order's exact finalization rows (one
+user row for rejection, user plus clearing rows for success), in the same scope,
+with the expected accounts, metadata and signed deltas; a matching
+pair of fabricated transaction IDs in the order and receipt is insufficient.
+This detects persisted-data drift and mistaken repair, not an assertion that an
+HTTP caller can supply or rewrite those server-generated fields. Pending is preserved in
 backups and restoration; it is not corrupt merely because it remains unresolved.
 Deployment admission and rollback must count every PENDING observation as an
 obligation, and schema/audit read failures remain failures.
