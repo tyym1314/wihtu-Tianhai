@@ -1,0 +1,50 @@
+# Candidate only. User, immutable configuration, credentials and initial outer
+# TLS forwarder must be installed/verified by a separate migration controller.
+[Unit]
+Description=Dedicated OASIS Android Mock TLS ingress
+After=network-online.target oasis-android-mock-api.service oasis-android-mock-demo.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=oasis-mock-ingress
+Group=oasis-mock-ingress
+WorkingDirectory=/etc/oasis-android-mock-ingress
+RuntimeDirectory=oasis-android-mock-ingress
+RuntimeDirectoryMode=0700
+LoadCredential=fullchain.pem:/opt/oasis/acme/config/live/oasis-android-mock/fullchain.pem
+LoadCredential=privkey.pem:/opt/oasis/acme/config/live/oasis-android-mock/privkey.pem
+ExecStartPre=/usr/sbin/nginx -e stderr -p /etc/oasis-android-mock-ingress/ -c /etc/oasis-android-mock-ingress/nginx.conf -t
+ExecStart=/usr/sbin/nginx -e stderr -p /etc/oasis-android-mock-ingress/ -c /etc/oasis-android-mock-ingress/nginx.conf
+# This is the dedicated unit's MainPID only, never the shared nginx unit.
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGQUIT
+TimeoutStopSec=30
+Restart=on-failure
+RestartSec=2
+UMask=0077
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_UNIX AF_INET
+ReadWritePaths=/run/oasis-android-mock-ingress
+InaccessiblePaths=-/opt/oasis/private -/opt/oasis/android-mock-private -/var/lib/nginx -/var/log/nginx -/etc/nginx -/run/nginx.pid -/run/lock/nginx.lock
+MemoryMax=128M
+TasksMax=16
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=oasis-mock-ingress
+
+[Install]
+WantedBy=multi-user.target
