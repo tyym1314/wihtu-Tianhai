@@ -93,7 +93,7 @@ export function createRunPracticeController({roomId,playerKey,clockEpoch,makeReq
  const scope=Object.freeze({roomId,playerKey,clockEpoch});
  let base=null,outbox=null,local=new Map(),trajectory=null,mapping=null,closed=false,epochLost=false;
  let firstReceivedAt=null,highestHead=-1,lastReceiveAt=-Infinity,clockTick=0,clockAt=0,lastSampleAt=-Infinity,lastRaw=null,lastPose=null,lastSample=null;
- let hidden=false,resumeAfter=null,replayFailure=null,reason='no-authority',correction=null,correctionSerial=0,lastWorkSteps=0;
+ let hidden=false,resumeAfter=null,replayFailure=null,reason='no-authority',correction=null,correctionSerial=0,lastWorkSteps=0,clockReset=null;
  const statistics={receives:0,rebuilds:0,samples:0,stepCalls:0,maxReceiveSteps:0,maxFrames:0,sampleHistoryCopies:0,frameRecordsAllocated:0,stateRecordsAllocated:0};
 
  function parse(room){
@@ -173,20 +173,24 @@ export function createRunPracticeController({roomId,playerKey,clockEpoch,makeReq
   const plan=commandsFor(candidate,records),end=Math.min(END,Math.round((candidate.game.deadlineAt-candidate.game.startedAt)/MS),candidate.headTick+L.futureTicks);
   const built=replay(candidate,candidate.terminal?candidate.headTick:end,plan.commands,work,{authorized:!!candidate.authorization});
   if(built.frames.length>L.frames)throw new Error('frame-limit');
-  return {...built,blocked:plan.blocked,issues:[...plan.issues,...built.issues]};
+  // Enqueue/receipt rebuilds of this exact anchor can only change commands
+  // after it. Retain its already verified causal predecessor, including when
+  // a new pending input changes the anchor's admission metadata.
+  return {...built,...(candidate===base&&trajectory?.predecessor?{predecessor:trajectory.predecessor}:{}),
+   blocked:plan.blocked,issues:[...plan.issues,...built.issues]};
  }
  function rawAt(now,candidate=base){
   if(!candidate)return null;
   const deadline=firstReceivedAt+L.provisionalMs;
   const raw=Math.min(candidate.headTick+L.futureTicks,Math.round((candidate.game.deadlineAt-candidate.game.startedAt)/MS),
-   Math.max(candidate.headTick,clockTick+Math.max(0,Math.min(now,deadline)-clockAt)/MS));
+   clockTick+Math.max(0,Math.min(now,deadline)-clockAt)/MS);
   const nearest=Math.round(raw);
   return Math.abs(raw-nearest)<=Number.EPSILON*Math.max(1,Math.abs(raw))*4?nearest:raw;
  }
  function poseAt(raw,built=trajectory,candidate=base){
   if(!built?.frames.length)return null;
   const elapsed=Math.max(0,(raw-candidate.anchorTick)*MS),limit=Math.max(0,(built.frames.length-1)*MS);
-  const pose=sampleRunCausalFrames(built.frames,candidate.anchorTick,candidate.revision,elapsed,limit);
+  const pose=sampleRunCausalFrames(built.frames,candidate.anchorTick,candidate.revision,elapsed,limit,built.predecessor??null);
   return pose?{...pose,predictionOnly:true,provisionalFinish:pose.visualPlayer.finishTick===null&&built.states[Math.min(built.states.length-1,Math.max(0,Math.floor(raw-candidate.anchorTick)))].finishTick!==null}:null;
  }
  function changed(before,after,cause){
@@ -217,15 +221,39 @@ export function createRunPracticeController({roomId,playerKey,clockEpoch,makeReq
   const oldPose=lastPose,previousRaw=base?rawAt(receivedAt):candidate.headTick,advanced=candidate.headTick>highestHead;
   if(!outbox)outbox=createRunPracticeInputOutbox({scope:{protocol:RUN_PRACTICE_OUTBOX_PROTOCOL,ruleVersion:RUN_PRACTICE_OUTBOX_RULE_VERSION,roomId,playerKey,clockEpoch,practice:true,entryMinor:'0',players:candidate.game.players.map(p=>({key:p.key,isBot:p.isBot}))},makeRequestId,
    initial:{lastCommandSeq:candidate.processedThroughCommandSeq,acceptedInputNo:candidate.acceptedInputNo,revision:candidate.revision}});
-  // Carry only the phase actually reached under the old budget. Time spent
-  // frozen must not be replayed as instant catch-up when a new head arrives.
-  if(!base||advanced){clockTick=Math.max(candidate.headTick,previousRaw);clockAt=receivedAt;}
-  else if(candidate.headTick>previousRaw){clockTick=candidate.headTick;clockAt=receivedAt;}
+  // A fresher authority is not a new presentation time. In particular, less
+  // network delay must not move the camera forward, and a receive callback
+  // must not pull an older timestamped RAF up to performance.now(). Keep the
+  // same affine clock while its displayed interval remains in the new proof.
+  // One immutable predecessor preserves causal sampling at an anchor rollover;
+  // inherit it only when the full canonical endpoint is exactly unchanged.
+  if(base){
+   const index=candidate.anchorTick-base.anchorTick;
+   if(index>=0&&same(trajectory.states[index],built.states[0])){
+    if(index>0)built.predecessor={previous:trajectory.frames[index-1],endpoint:trajectory.frames[index]};
+    else if(trajectory.predecessor)built.predecessor=trajectory.predecessor;
+   }
+  }
+  const coverageTick=lastRaw??previousRaw;
+  const historyGap=base&&(coverageTick<candidate.anchorTick
+   ||Math.floor(coverageTick)===candidate.anchorTick&&!built.predecessor&&candidate.anchorTick!==base.anchorTick);
+  const resumed=base&&!hidden&&resumeAfter!==null&&candidate.headTick>resumeAfter;
+  const expired=base&&(receivedAt>=firstReceivedAt+L.provisionalMs||previousRaw>=base.headTick+L.futureTicks);
+  clockReset=null;
+  if(!base||historyGap||resumed){
+   clockTick=candidate.headTick;clockAt=receivedAt;
+   if(base)clockReset=freeze({reason:historyGap?'history-gap-resync':'visibility-resync',revision:candidate.revision,fromTick:coverageTick,toTick:clockTick});
+  }else if(advanced&&expired){
+   // Resume from the phase reached under the old budget; frozen wall time is
+   // never instant catch-up. Both authority leases retain their old rules.
+   clockTick=previousRaw;clockAt=receivedAt;
+   clockReset=freeze({reason:'budget-resume',revision:candidate.revision,fromTick:previousRaw,toTick:previousRaw});
+  }
   if(advanced){highestHead=candidate.headTick;firstReceivedAt=receivedAt;}
   base=candidate;trajectory=built;replayFailure=null;mapping=candidate.mapping;lastReceiveAt=receivedAt;statistics.receives++;statistics.rebuilds++;recordWork(work);
   if(!hidden&&resumeAfter!==null&&candidate.headTick>resumeAfter)resumeAfter=null;
   for(const [seq,input]of local)if(input.decision&&seq<=candidate.processedThroughCommandSeq&&(input.decision.outcome==='rejected'||input.executeTick<=candidate.headTick))local.delete(seq);
-  if(lastRaw!==null)changed(oldPose,poseAt(Math.max(candidate.headTick,lastRaw)),'authority-revision');
+  if(lastRaw!==null)changed(oldPose,poseAt(historyGap||resumed?clockTick:lastRaw),clockReset?.reason??'authority-revision');
   reason=gate(receivedAt);refreshOutbox(receivedAt);return Object.freeze({ok:true,reason,steps:work.steps});
  }
  function sample(now){
@@ -244,12 +272,13 @@ export function createRunPracticeController({roomId,playerKey,clockEpoch,makeReq
   return lastSample=Object.freeze({mode:closed?'closed':base?.authorization?'authoritative-terminal':why?'hold':'provisional',reason:why,
    pose:lastPose?Object.freeze({...lastPose}):null,authorityExpired:base?at-firstReceivedAt>=L.authorityMs:true,
    headTick:base?.headTick??null,revision:base?.revision??null,provisionalTick:lastRaw,firstReceivedAt,hardDeadline:firstReceivedAt===null?null:firstReceivedAt+L.provisionalMs,
-   correction,resultAuthorization:base?.authorization??null});
+   correction,clockReset,resultAuthorization:base?.authorization??null});
  }
  function enqueue(type,now){
   if(!time(now)||now<lastSampleAt)return fail('invalid-time');const why=gate(now);if(why)return fail(why);
   if(!types.has(type))return fail('invalid-command');if(local.size>=L.localCommands)return fail('local-history-limit');
   const raw=rawAt(now),executeTick=Math.floor(raw)+1,current=trajectory.states[Math.floor(raw)-base.anchorTick];
+  if(executeTick<=base.committedThroughTick)return fail('input-expired');
   if(!current||executeTick>Math.min(END,base.headTick+L.futureTicks))return fail('provisional-budget-expired');
   const p=own(current),error=admit(p,{type,executeTick},executeTick-1,base.game);if(error)return fail(error);
   const queued=outbox.enqueue({type,executeTick});if(!queued.ok)return queued;

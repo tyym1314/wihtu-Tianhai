@@ -1,9 +1,40 @@
-/* Platform WebView only: preserve the standalone presentation and reel geometry. */
-@media(max-width:480px) and (max-height:780px){
- .feature-bar{min-height:25px;padding-bottom:5px}
- .round-message{height:24px}
- .stats{min-height:50px}
- .spin-dock{height:auto;min-height:0;padding:10px 0 8px}
- .control-deck{padding-bottom:max(4px,env(safe-area-inset-bottom))}
- .game-footer{padding-top:4px}
+/* Only the platform Thunder entry imports this file. Keep a square 6 x 5
+   board, but size that artwork from the space left by reachable controls. */
+@media(max-width:480px){
+ .game-shell{--thunder-safe-top:env(safe-area-inset-top,0px);--thunder-safe-bottom:env(safe-area-inset-bottom,0px)}
+ .topbar .round-icon,.language-pill{min-width:44px;min-height:44px}
+ .audio-status-badge{min-height:44px}
+ .stake-button,.dock-icon{width:44px;min-width:44px;height:44px;min-height:44px;flex-basis:44px}
+ .stat-bet button{min-height:44px;min-width:44px}
+ .bottom-nav button{min-height:44px}
+ .experience,.game-shell{height:100svh;min-height:0}
+ .game-shell{display:flex;flex-direction:column}
+ .hero{height:calc(clamp(108px,18svh,140px) + var(--thunder-safe-top));aspect-ratio:auto;flex:none}
+ .topbar{top:max(10px,var(--thunder-safe-top))}
+ .play-area{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:25px minmax(0,1fr) 24px auto;min-width:0;min-height:0;flex:1;padding-inline:12px}
+ .feature-bar{min-height:0;padding:3px 3px 5px}
+ .board-surround{box-sizing:content-box;justify-self:center;align-self:center;width:auto;height:min(calc(100% - 12px),calc((100vw - 36px)*5/6));aspect-ratio:6/5;padding:4px;flex:none}
+ .board{height:100%;aspect-ratio:6/5}
+ .round-message{height:24px;font-size:10px}
+ .control-deck{display:grid;grid-template-rows:64px 100px 46px auto;margin-inline:-12px;padding:0 12px max(4px,var(--thunder-safe-bottom));min-height:0}
+ .stats{min-height:0;height:64px;padding:2px 0 0}
+ .stat{padding:3px 4px;gap:0}
+ .stat>span{font-size:10px}
+ .stat strong,.stat-bet button{font-size:20px}
+ .spin-dock{height:100px;min-height:100px;padding:10px 0;gap:8px}
+ .spin-button{width:80px;height:80px;flex-basis:80px}
+ .spin-center svg{width:44px;height:44px}
+ .spin-label{font-size:9px;bottom:8px}
+ .spin-ornament{inset:-12px}
+ .dock-icon{font-size:7px;gap:3px;padding:2px 0}
+ .bottom-nav{margin-top:0}
+ .game-footer{padding-top:4px;font-size:7px}
+}
+@media(max-width:480px) and (min-height:820px) and (max-aspect-ratio:1/2){
+ .hero{height:calc(100vw/2.1 + var(--thunder-safe-top))}
+ .control-deck{grid-template-rows:64px 153px 46px auto}
+ .spin-dock{height:153px;min-height:153px;padding:18px 0 10px}
+ .spin-button{width:120px;height:120px;flex-basis:120px}
+ .spin-center svg{width:66px;height:66px}
+ .spin-label{bottom:13px}
 }
