@@ -13,6 +13,7 @@ import {ARENA_GAMES,allowedCapacity,teamSizeFor} from '../../shared/games.mjs';
 import {getTrainingLesson} from '../../arena/towerlink/training.mjs';
 import {PRACTICE_RULE_VERSION as RUN_PRACTICE_RULE_VERSION,PRACTICE_INPUT_RULE_VERSION as RUN_INPUT_RULE_VERSION,RUN_SCENE_READY_POLICY} from '../../arena/run/engine.mjs';
 import {runRequiresSceneReady} from '../../arena/run/start-policy.mjs';
+import {newRunPracticeCourseOptions,storedRunPracticeCourse} from './run-course-policy.mjs';
 import {newTowerPracticeStartOptions,roomStartDelayMs} from './tower-start-policy.mjs';
 import {makeRunActionReceipt} from '../../shared/run-action-receipt.mjs';
 import {walletRetryNotDue} from './retry-time.mjs';
@@ -80,6 +81,7 @@ function personal(r,s,now=Date.now()){
  const view={id:r.id,code:r.code,game_id:r.game_id,status:r.status,capacity:r.capacity,practice:r.practice,team_size:r.terms.team_size,seed_commitment:hash(unseal(r.seed_enc)),me:s.external_user_id,me_last_seq:mine?.last_seq||0,entry_minor:r.entry_minor,fee_bps:r.fee_bps,pool_minor:total.toString(),prize_minor:(total-fee).toString(),server_now:now,starts_at:r.starts_at,end_at:r.end_at,ready_deadline_at:r.ready_deadline_at,result:r.result,error:r.error,version:r.version,
  players:r.players.map(p=>{const rank=byKey.get(p.external_user_id),result=r.result?.payouts.find(v=>v.external_user_id===p.external_user_id);return{external_user_id:p.external_user_id,name:p.name,seat_index:p.seat_index,team_id:p.team_id||null,ready:p.ready,...(r.game_id==='run'&&runRequiresSceneReady(r.rule_version)?{scene_ready:r.game_state?.phase==='arming'?runSceneReadyFresh(p,now):!!p.scene_ready_at}:{}),connected:p.bot||now-p.last_seen_at<=30000,bot:p.bot,forfeited:rank?.forfeited||p.forfeited||false,score:rank?.score||0,rank:rank?.forfeited?null:rank?.rank??null,payout_minor:result?.payout_minor||'0'};}),
  game:mine&&r.game_state&&supportsRules(engines[r.game_id],r.rule_version)?engines[r.game_id].view(r.game_state,s.external_user_id,{roomId:r.id}):null};
+ if(r.game_id==='run'){const course=storedRunPracticeCourse(r);if(course)view.run_course=course;}
  if(r.game_id==='towerlink'){view.room_mode=r.practice?'practice':walletless(r)?'social':'competitive';view.training_lesson_id=r.game_options?.training_lesson_id||null;}
  if(r.game_id==='run'&&runRequiresSceneReady(r.rule_version)){const humans=r.players.filter(p=>!p.bot);view.start_protocol={kind:RUN_SCENE_READY_POLICY,phase:r.game_state?.phase||null,ready_count:humans.filter(p=>r.game_state?.phase==='arming'?runSceneReadyFresh(p,now):!!p.scene_ready_at).length,human_count:humans.length,ready_deadline_at:r.game_state?.armingDeadlineAt??null,starts_at:r.starts_at};}
  if(isRunInputRoom(r)&&r.run_input_state){
@@ -137,7 +139,7 @@ function fixResult(r,now,resolution='completed',reason){
  const payouts=r.players.map(p=>{const rank=ranking.find(v=>v.playerKey===p.external_user_id),index=ordered.findIndex(v=>v.external_user_id===p.external_user_id);return{external_user_id:p.external_user_id,seat_index:p.seat_index,...(resolution==='completed'?{rank:rank?.forfeited?r.capacity:rank?.rank||r.capacity}:{}),payout_minor:(resolution==='void'?BigInt(r.entry_minor):index<0?0n:prize/count+(BigInt(index)<prize%count?1n:0n)).toString()};});
  r.result={resolution,reason:reason||null,rankings:ranking,payouts,fee_minor:fee.toString(),pool_minor:total.toString(),fixed_at:now,rule_version:r.rule_version};r.result_hash=hash(JSON.stringify(r.result));r.result.result_hash=r.result_hash;r.status=walletless(r)?(resolution==='void'?'voided':'settled'):(resolution==='void'?'voiding':'settling');r.end_at=now;r.error=null;
 }
-function startGame(r,now){const fairRun=r.game_id==='run'&&runRequiresSceneReady(r.rule_version),startAt=now+roomStartDelayMs(r);r.game_state=engines[r.game_id].createState(unseal(r.seed_enc),now,{ruleVersion:r.rule_version,players:r.players.map(p=>({key:p.external_user_id,seatIndex:p.seat_index,name:p.name,isBot:p.bot,teamId:p.team_id})),...(fairRun?{startPolicy:RUN_SCENE_READY_POLICY}:{}),...(r.game_id==='towerlink'?{startAt,...(r.game_options?.training_lesson_id?{trainingLessonId:r.game_options.training_lesson_id}:{})}:{})});r.status='active';r.starts_at=fairRun?null:startAt;r.end_at=fairRun?r.game_state.armingDeadlineAt:r.game_id==='towerlink'?r.game_state.deadlineAt:startAt+ARENA_GAMES[r.game_id].duration;r.last_tick_at=now;for(const p of r.players)p.last_seen_at=now;r.error=null;}
+function startGame(r,now){const fairRun=r.game_id==='run'&&runRequiresSceneReady(r.rule_version),startAt=now+roomStartDelayMs(r),practiceCourse=r.game_id==='run'?storedRunPracticeCourse(r):null;r.game_state=engines[r.game_id].createState(unseal(r.seed_enc),now,{ruleVersion:r.rule_version,players:r.players.map(p=>({key:p.external_user_id,seatIndex:p.seat_index,name:p.name,isBot:p.bot,teamId:p.team_id})),...(fairRun?{startPolicy:RUN_SCENE_READY_POLICY}:{}),...(practiceCourse?{practiceCourseId:practiceCourse.id}:{}),...(r.game_id==='towerlink'?{startAt,...(r.game_options?.training_lesson_id?{trainingLessonId:r.game_options.training_lesson_id}:{})}:{})});r.status='active';r.starts_at=fairRun?null:startAt;r.end_at=fairRun?r.game_state.armingDeadlineAt:r.game_id==='towerlink'?r.game_state.deadlineAt:startAt+ARENA_GAMES[r.game_id].duration;r.last_tick_at=now;for(const p of r.players)p.last_seen_at=now;r.error=null;}
 function allRunHumansPresent(r,now,heartbeatKey){
  return r.players.filter(p=>!p.bot).every(p=>runSceneReadyFresh(p,now,heartbeatKey));
 }
@@ -229,7 +231,7 @@ export async function routePvp(session,method,path,body={},options={}){
   const inputProtocol=body.run_input_protocol;
   if(inputProtocol!==undefined&&(inputProtocol!==RUN_PRACTICE_INPUT_PROTOCOL||s.game_id!=='run'||!practice||(body.entry_minor!==undefined&&body.entry_minor!=='0')))fail(400,'INVALID_INPUT_PROTOCOL');
   if(s.game_id==='towerlink'&&!practice&&!social&&body.capacity!==2)fail(400,'TOWERLINK_PAID_1V1_ONLY');
-  const gameOptions={};
+  const gameOptions=newRunPracticeCourseOptions(s.game_id,practice,body);
   if(body.training_lesson_id!==undefined){
    if(s.game_id!=='towerlink'||!practice||(body.entry_minor!==undefined&&body.entry_minor!=='0'))fail(400,'INVALID_TRAINING_MODE');
    const lesson=getTrainingLesson(body.training_lesson_id);if(!lesson||lesson.playerCount!==body.capacity)fail(400,'INVALID_TRAINING_LESSON');
