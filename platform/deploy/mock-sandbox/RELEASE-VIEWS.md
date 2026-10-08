@@ -294,3 +294,44 @@ or state mutations.
 Once forward16 accepts a Run V2.3 session, old04 and rollback17 are no longer an
 automatic recovery option, even when that session is terminal. Fix forward and
 preserve its records. Browser smoke tests themselves cross this boundary.
+
+## Observed activation and bounded forward retry
+
+On 2026-10-08 the full server staging and initial activation checks passed. The
+first activation completed its backup and additive migration, then failed a
+process-directory observation immediately after starting a service. Its recovery
+reached rollback17 with both services running correctly; their real cwd/inode,
+UID, argv, cgroup and HTTPS bodies were subsequently verified. The frozen
+controller finished that already-running rollback without another stop or any
+database restoration. The failing instant was not captured, so the later healthy
+processes do not establish the exact original cause.
+
+`view_retry.py` adds one explicitly recorded forward retry to this exact existing
+journal. It leaves the original frozen controller, runtime and tool bindings
+unchanged. Default `check-only` requires a completed rollback17, the original
+verified backup and a quiet database still equal to the additive empty baseline.
+Any new business refuses this retry. `apply` records its own source hash and uses
+the original durable phases and recovery policy; it never runs DDL, creates a
+replacement backup or restores the database. `recover` resumes only a journal
+bound to the same retry tool; a terminal journal is read back without mutations.
+
+Its startup adapter calls the original start method once. Only a recognized
+process-observation failure at the exact pinned post-start call can trigger up to
+10 seconds of read-only readiness checks. Existing wrong-role processes,
+preflight/guard failures and unknown errors still fail immediately. Every accepted
+process must pass the original complete identity checks. Original error codes and
+later observations are retained separately; later observations are not claimed as
+a reconstruction of the lost failing sample. Fourteen local tests cover this
+boundary, signal deadlines, interruption phases and concurrent new business.
+
+The isolated real-Nginx fixture additionally passed 12 recorded cases for
+rollback17 to forward16 revalidation. The host has no `if_modified_since` override;
+Nginx's [documented default comparison](https://nginx.org/en/docs/http/ngx_http_core_module.html#if_modified_since)
+is exact. A different deployment using `before` requires a new publication epoch
+before retrying a lower-timestamp view. External HTTPS validators captured from
+rollback17 must also be checked after activation; this fixture does not replace
+that deployed check or phone acceptance.
+
+Detailed activation/recovery evidence is retained under
+`platform/review/mock-view-transaction-20261008/`; retry cache evidence is
+`platform/review/mock-view-http-validators-20261008/native-retry-result.json`.
