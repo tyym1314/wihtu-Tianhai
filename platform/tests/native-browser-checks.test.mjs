@@ -4,6 +4,8 @@ import {EventEmitter} from 'node:events';
 import fs from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+import vm from 'node:vm';
+import {webcrypto} from 'node:crypto';
 import {observeNativeBrowser,createNativeFetchEvidence,installNativeFetchProbe,cleanupNativeSession,createNativeCleanupApi,runNativeActionOnce,nativeErrorsEmpty,reserveNativeReportDirectory} from '../deploy/native-browser-checks.mjs';
 import {replayNativeFetchReport} from './native-fetch-cancellation-replay.mjs';
 
@@ -371,7 +373,7 @@ test('CDP document cannot borrow a different document abort in the same frame',a
 });
 
 function attachmentFixture(){
- const sessions=[],context={exposeBinding:async()=>{},addInitScript:async()=>{},newCDPSession:async()=>{const session=new EventEmitter();session.commands=[];session.send=async(method,args)=>session.commands.push({method,args});sessions.push(session);return session;}};
+ const sessions=[],context=Object.assign(new EventEmitter(),{pages:()=>[],exposeBinding:async()=>{},addInitScript:async()=>{},newCDPSession:async()=>{const session=new EventEmitter();session.commands=[];session.send=async(method,args)=>session.commands.push({method,args});sessions.push(session);return session;}});
  return{context,sessions};
 }
 test('CDP request/frame identities are isolated across attachment sessions',async()=>{
@@ -515,4 +517,111 @@ test('input body loss, HTTP failure and transport cancellation remain strict fai
 test('overlapping or repeated input POSTs retain two independent requests instead of deduping evidence',async()=>{
  const f=nativeInputFixture(),h=observation({room:f.before});response(h,f.req,{json:async()=>f.after});response(h,{...f.req},{json:async()=>f.after});await h.drain();
  assert.equal(h.state.inputsRequests.length,2);assert.equal(h.state.actionRequests.length,0);
+});
+
+test('original init function initializes about: without randomUUID and preserves fetch',async()=>{
+ const {context}=attachmentFixture();let init,args;
+ context.addInitScript=async(fn,values)=>{init=fn;args=values;};await installNativeFetchProbe(context);
+ const events=[],response={fixture:true},fetch=function(...values){assert.equal(values[0],'/fixture');return Promise.resolve(response);};
+ const sandbox={crypto:{getRandomValues:webcrypto.getRandomValues.bind(webcrypto)},fetch,URL,Request,AbortSignal,location:{href:'about:blank'},performance:{timeOrigin:1000,now:()=>1},[args.bindingName]:async event=>events.push(event)};
+ vm.runInNewContext(`(${init.toString()})(${JSON.stringify(args)})`,sandbox);
+ assert.equal(events[0].kind,'document');assert.equal(events[0].frame_url,'about:blank');assert.match(events[0].document_id,/^[0-9a-f]{32}$/);
+ assert.equal(await sandbox.fetch('/fixture'),response);const proof=await sandbox[args.flushName]();
+ assert.equal(proof.fetch_wrapper_intact,true);assert.equal(proof.lost,false);assert.equal(events.at(-1).kind,'checkpoint');
+ sandbox.fetch=fetch;assert.equal((await sandbox[args.flushName]()).fetch_wrapper_intact,false);
+});
+
+test('page creation errors before the main observer are retained once and future errors are live',async()=>{
+ const {context}=attachmentFixture(),probe=await installNativeFetchProbe(context),page=Object.assign(new EventEmitter(),{url:()=> 'about:blank'});
+ context.emit('page',page);page.emit('pageerror',new Error('initial realm failure'));
+ const result={},drain=observeNativeBrowser(page,{origin,state:state(),result,fetchProbe:probe});
+ assert.deepEqual(result.js_errors,['initial realm failure']);page.emit('pageerror',new Error('later failure'));
+ page.emit('console',{type:()=> 'error',text:()=> 'early console error'});probe.flush=async()=>{};
+ await drain();await drain();assert.deepEqual(result.js_errors,['initial realm failure','later failure','early console error']);
+ assert.equal(result.page_error_observations.length,3);assert.equal(result.page_error_observations[0].page_url,'about:blank');
+});
+
+for(const mode of ['missing','lost','overwritten','wrong-url','unknown-document','installed'])test(`game-frame installation proof: ${mode}`,async()=>{
+ const {context}=attachmentFixture(),probe=await installNativeFetchProbe(context),url='about:blank',id='a'.repeat(32);
+ const value={document_id:id,frame_url:url,lost:false,fetch_wrapper_intact:true};
+ if(mode==='lost')value.lost=true;if(mode==='overwritten')value.fetch_wrapper_intact=false;if(mode==='wrong-url')value.frame_url=origin+'/play/other';
+ const frame={url:()=>url,evaluate:async()=>mode==='missing'?null:value};
+ if(mode!=='unknown-document')probe.receive(frame,{kind:'document',document_id:id,event_seq:1,at_ms:1,frame_url:url});
+ if(mode==='installed'){assert.equal((await probe.requireInstalled(frame)).document_id,id);assert.equal(probe.errors.length,0);}
+ else{await assert.rejects(probe.requireInstalled(frame),/FETCH_PROBE_NOT_INSTALLED/);assert.deepEqual(probe.errors,['FETCH_PROBE_NOT_INSTALLED']);}
+});
+
+test('later unfinished GET defers zero-clock attribution and closes without erasing its decision history',async()=>{
+ const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();
+ const later={id:'later',frame:'protocol-frame',url:f.req.url(),method:'GET',type:'Fetch',started_at_ms:2500,response_seen:false};f.probe.network.set('later',later);
+ await f.drain({final:false});assert.equal(f.result.network_errors.length,0);assert.equal(f.result.unmatched_fetch_rejections.length,0);
+ assert.equal(f.result.pending_network_observations,1);assert.equal(f.result.pending_fetch_rejections.length,1);assert.equal(nativeErrorsEmpty(f.result),false);
+ const original=JSON.stringify(f.result.network_binding_decisions[0]);assert.equal(f.result.network_binding_decisions[0].binding.candidates.length,2);
+ later.response_seen=true;await f.drain({final:true});assert.equal(f.result.lifecycle_cancellations.length,1);assert.equal(nativeErrorsEmpty(f.result),true);
+ assert.equal(f.result.pending_fetch_rejections.length,0);assert.equal(JSON.stringify(f.result.network_binding_decisions[0]),original);
+ assert.deepEqual(f.result.network_binding_decisions.map(row=>row.verdict),['pending','lifecycle']);assert.equal(f.result.network_observations.length,1);
+});
+
+test('final drain fails an unresolved pending association and later success cannot erase the failure',async()=>{
+ const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();
+ const later={id:'later',frame:'protocol-frame',url:f.req.url(),method:'GET',type:'Fetch',started_at_ms:2500,response_seen:false};f.probe.network.set('later',later);
+ await f.drain({final:false});await f.drain({final:true});assert.equal(f.result.network_errors[0].classification_failure,'AMBIGUOUS_CDP_NETWORK_FAILURE');assert.equal(f.result.unmatched_fetch_rejections.length,1);
+ later.response_seen=true;await f.drain();assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+function addSecondCancellation(f){
+ const next={...f.req,timing:()=>({startTime:0})};
+ f.deliver(f.trace.slice(1).map(event=>({...event,event_seq:event.event_seq+3,attempt_id:2,at_ms:event.at_ms+100})));
+ f.probe.network.set('second',{...f.probe.network.get('protocol-request'),id:'second',started_at_ms:215,failed_at_ms:232});
+ f.page.emit('request',next);f.page.emit('requestfailed',next);
+}
+
+test('a previously unique CDP identity survives a later sequential same-URL zero-clock abort',async()=>{
+ const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();await f.drain({final:false});
+ const original=f.result.lifecycle_cancellations[0];addSecondCancellation(f);await f.drain({final:true});
+ assert.equal(f.result.lifecycle_cancellations.length,2);assert.equal(f.result.lifecycle_cancellations[0].network_protocol_id,original.network_protocol_id);
+ assert.equal(new Set(f.result.lifecycle_cancellations.map(row=>row.network_protocol_id)).size,2);assert.equal(nativeErrorsEmpty(f.result),true);
+ assert.equal(f.result.network_binding_decisions[1].binding.retained_identity.id,'protocol-request');
+});
+
+test('two complete zero-clock failures without a prior unique binding remain ambiguous',async()=>{
+ const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();addSecondCancellation(f);await f.drain({final:false});await f.drain({final:true});
+ assert.equal(f.result.network_errors.length,2);assert.ok(f.result.network_errors.every(row=>row.classification_failure==='AMBIGUOUS_CDP_NETWORK_FAILURE'));
+ assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+for(const change of ['id','session','clock','headers','redirect','duplicate'])test(`retained zero-clock binding detects later ${change} contradiction`,async()=>{
+ const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();await f.drain({final:false});const record=f.probe.network.get('protocol-request');
+ if(change==='id')record.id='changed';if(change==='session')record.session_id='changed';if(change==='clock')record.started_at_ms=116;
+ if(change==='headers')record.response_seen=true;if(change==='redirect')record.redirected=true;
+ if(change==='duplicate')f.probe.network.set('duplicate',{...record,id:'duplicate'});
+ await f.drain({final:true});assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(f.result.network_errors.length,1);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+test('late pre-watermark CDP evidence revokes a retained binding instead of pretending a new request',async()=>{
+ const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();await f.drain({final:false});
+ f.probe.network.set('late-old',{...f.probe.network.get('protocol-request'),id:'late-old',started_at_ms:120,failed_at_ms:134});
+ await f.drain({final:true});assert.equal(f.result.lifecycle_cancellations.length,0);
+ assert.equal(f.result.network_errors[0].classification_failure,'LATE_COMPETING_CDP_EVIDENCE');assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+test('already observed competing zero-clock request prevents initial binding before its late failure',async()=>{
+ const f=cancellationFixture({timing:0});f.deliver();networkProof(f);f.fail();const other={...f.req};f.page.emit('request',other);
+ await f.drain({final:false});assert.equal(f.result.lifecycle_cancellations.length,0);
+ assert.equal(f.result.network_errors[0].classification_failure,'UNKNOWN_COMPETING_NETWORK_REQUEST');assert.equal(f.result.network_binding_decisions[0].binding_anchor,null);
+ f.probe.network.set('late',{...f.probe.network.get('protocol-request'),id:'late',started_at_ms:120});f.page.emit('requestfailed',other);
+ await f.drain({final:true});assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(f.result.network_errors.length,2);
+});
+
+for(const variant of ['valid','missing-start','missing-end','wrong-status','two-network-requests','wrong-frame','wrong-method','lost-prefix'])test(`installation challenge requires complete exact evidence: ${variant}`,()=>{
+ const probe=createNativeFetchEvidence(),frame={},doc='challenge-document',frameUrl=origin+'/play/tiger',url=origin+'/health';
+ const events=[{kind:'document',event_seq:1,at_ms:100,frame_url:frameUrl},{kind:'checkpoint',event_seq:2,at_ms:105},
+  {kind:'start',event_seq:3,at_ms:110,attempt_id:1,url,method:'GET',supported:true,body_present:false,frame_url:frameUrl},
+  {kind:'fulfilled',event_seq:4,at_ms:120,attempt_id:1,signal_aborted:false,reason:null},{kind:'checkpoint',event_seq:5,at_ms:125}].map(event=>({document_id:doc,...event}));
+ for(const event of events)if(!(variant==='missing-start'&&event.kind==='start')&&!(variant==='missing-end'&&event.kind==='fulfilled')&&!(variant==='lost-prefix'&&event.event_seq===2))probe.receive(frame,event);
+ probe.receiveNetworkDocument('frame',events[0]);
+ const record={id:'network',frame:'frame',url,method:'GET',type:'Fetch',started_at_ms:111,response_seen:true,response_status:200,redirected:false};
+ if(variant==='wrong-status')record.response_status=404;if(variant==='wrong-frame')record.frame='other';if(variant==='wrong-method')record.method='POST';
+ probe.network.set('network',record);if(variant==='two-network-requests')probe.network.set('second',{...record,id:'second'});
+ const summary=probe.inspectChallenge(frame,doc,url,2,5);assert.equal(summary.passed,variant==='valid');assert.equal(summary.network_statuses[0],record.response_status);
 });

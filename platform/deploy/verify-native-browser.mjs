@@ -121,11 +121,12 @@ try{
    assert.equal(await page.locator('iframe').count(),1,'Exactly one selected-game frame expected');
    assert.equal(await page.locator('button[data-game]').count(),0,'Native host must not embed a web game lobby');
    const frame=page.frames().find(frame=>frame.url()===origin+'/play/'+game);
+   result.fetch_probe_installation=await fetchProbe.requireInstalled(frame);
    if(ARENA_IDS.includes(game)){
     await startPractice(frame,state,result);
     state.phase='playing';
     const action=await runNativeActionOnce(()=>playOneArenaAction(frame,state.game,()=>state.room),result,clean);
-    await drain();
+    await drain({final:false});
     if(action.protocol==='run-practice-inputs-v1'){
      assert.equal(state.actionRequests.length,0,'V2.3 must not submit legacy actions');
      assert.equal(state.inputsRequests.length,1,'Expected exactly one UI input batch; no hidden retry');
@@ -138,9 +139,10 @@ try{
    result.layout=await layout(page,frame);
    result.screenshot=game+'-390.png';await page.screenshot({path:resolve(out,result.screenshot)});
    assert.ok(result.layout.single_screen,'Active game does not fit in one mobile viewport');
-   await hostReturn(page,frame,state,result);await drain();
+   await hostReturn(page,frame,state,result);await drain({final:false});
    if(result.action?.input_evidence){assert.equal(state.inputsRequests.length,1,'Unexpected later input retry');assert.equal(state.actionRequests.length,0,'Unexpected later legacy action');}
-   assert.ok(nativeErrorsEmpty(result),'Observed JavaScript/resource/API/transport/response errors; see retained evidence');
+   // Transport attribution may still be pending; only the final closed-page
+   // drain below can determine the overall observer verdict.
    result.passed=true;
   }catch(error){
    result.error=clean(error.message);
@@ -156,11 +158,11 @@ try{
     if(hasGameFrame())await page.goto(origin+'/demo/native-return',{waitUntil:'domcontentloaded',timeout:15000});
     assert.equal(hasGameFrame(),false,'Game UI remains attached');uiStopped=true;
    }catch(error){result.cleanup={attempted:false,passed:false,error:clean('Could not stop game UI: '+error.message)};}
-   try{await drain();}catch(error){result.observer_errors.push({stage:'pre-cleanup-drain',message:clean(error.message)});}
+   try{await drain({final:false});}catch(error){result.observer_errors.push({stage:'pre-cleanup-drain',message:clean(error.message)});}
    if(uiStopped)result.cleanup=await cleanupNativeSession({state,arenaGames:ARENA_IDS,api:createNativeCleanupApi({page,origin,state,result,clean}),until,newId:()=> 'browser_cleanup_'+randomUUID().replaceAll('-',''),clean});
    try{await context.close();}catch(error){result.observer_errors.push({stage:'context-close',message:clean(error.message)});}
-   try{await drain();}catch(error){result.observer_errors.push({stage:'final-drain',message:clean(error.message)});}
-   if(!result.cleanup?.passed||!nativeErrorsEmpty(result))result.passed=false;
+   try{await drain({final:true});}catch(error){result.observer_errors.push({stage:'final-drain',message:clean(error.message)});}
+   if(!result.cleanup?.passed||!nativeErrorsEmpty(result)){result.passed=false;result.error??='Observed JavaScript/resource/API/transport/response or cleanup errors; see retained evidence';}
    await writeReport();console.log(`${game}: ${result.passed?'passed':'failed'} (desktop mobile viewport; no phone)`);
   }
  }

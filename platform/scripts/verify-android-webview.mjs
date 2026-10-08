@@ -1,98 +1,91 @@
-/** Android WebView smoke on an explicitly selected USB or remote device. Own test APK and sandbox wallets only. */
+/** Strict APK smoke: existing sandbox/test wallets, but never inherited business.
+ * Defaults to all 13 games. Legacy recovery/offline tests are deliberately not run.
+ * Safe Match bootstrap is instrumentation-only; every measured game is reloaded
+ * after the observer is installed. No input is sent before the exact guest inventory.
+ */
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {execFile} from 'node:child_process';
+import {execFile,spawn} from 'node:child_process';
 import {promisify} from 'node:util';
-import {chromium} from 'playwright';
-import {RELEASED_IDS} from '../shared/games.mjs';
+import {randomUUID,createHash} from 'node:crypto';
+import {chromium,request as httpRequest} from 'playwright';
+import {RELEASED_IDS,ARENA_IDS} from '../shared/games.mjs';
 import {playOneArenaAction} from './android-game-actions.mjs';
 import {readAndroidArtifact,androidVerificationTarget,androidAdbArgs,androidReleaseCommand,verifyAndroidReleaseState,verifyInstalledAndroidArtifact} from './android-artifact.mjs';
+import {installNativeFetchProbe,observeNativeBrowser,runNativeActionOnce,nativeErrorsEmpty,createNativeCleanupApi} from '../deploy/native-browser-checks.mjs';
+import {createAndroidMeasurementBoundary,parseAndroidForwards,ownedAndroidForward,assertAndroidForwardsRestored,androidForeground,assertAndroidSessionBaseline,assertAndroidOneAction,assertAndroidPaidCycle,cleanupOwnedAndroidSession,androidStrictPassed} from './android-webview-checks.mjs';
+import {androidInventoryProgram,verifyAndroidInventory} from './android-guest-inventory.mjs';
 assert.ok(process.env.OASIS_ANDROID_ARTIFACT,'OASIS_ANDROID_ARTIFACT_REQUIRED');
-const artifact=await readAndroidArtifact(process.env.OASIS_ANDROID_ARTIFACT);
-const target=androidVerificationTarget(process.env,artifact);
-const run=promisify(execFile),serial=target.serial;
-const origin=target.origin,pkg=target.packageName,port=19220;
-const remoteDevice=process.env.OASIS_ANDROID_ALLOW_REMOTE==='1';
-const expectedApkVersion=artifact.version;
+const artifact=await readAndroidArtifact(process.env.OASIS_ANDROID_ARTIFACT),target=androidVerificationTarget(process.env,artifact);
+assert.equal(target.variant,'isolated-mock','STRICT_APK_MODE_REQUIRES_ISOLATED_MOCK');
+assert.ok(!process.env.OASIS_ANDROID_LIFECYCLE||process.env.OASIS_ANDROID_LIFECYCLE==='0','LEGACY_LIFECYCLE_IS_NOT_STRICT_APK_ACCEPTANCE');
+assert.ok(!process.env.NODE_TLS_REJECT_UNAUTHORIZED||process.env.NODE_TLS_REJECT_UNAUTHORIZED==='1','STRICT_TLS_REQUIRED');
+const expectedManifest=process.env.OASIS_ANDROID_RELEASE_MANIFEST_SHA256,expectedApp=process.env.OASIS_ANDROID_APP_ID;
+assert.match(expectedManifest||'',/^[a-f0-9]{64}$/,'ANDROID_RELEASE_MANIFEST_REQUIRED');assert.match(expectedApp||'',/^[A-Za-z0-9_-]{1,128}$/,'ANDROID_MOCK_APP_ID_REQUIRED');
+const run=promisify(execFile),serial=target.serial,origin=target.origin,pkg=target.packageName,remoteDevice=process.env.OASIS_ANDROID_ALLOW_REMOTE==='1';
 const catalog=RELEASED_IDS;
 const selected=process.env.OASIS_ANDROID_GAMES?process.env.OASIS_ANDROID_GAMES.split(','):catalog;
 assert.ok(selected.length&&selected.every(g=>catalog.includes(g))&&new Set(selected).size===selected.length);
-const lifecycle=process.env.OASIS_ANDROID_LIFECYCLE!=='0';
+const nonce=randomUUID().replaceAll('-',''),xmlPath=`/data/local/tmp/oasis-strict-${nonce}.xml`;
 const outputRoot=new URL('../review/android/',import.meta.url);await fs.mkdir(outputRoot,{recursive:true});
-const outputPath=await fs.mkdtemp(resolve(outputRoot.pathname,`${artifact.variant}-${target.release}-`));
-const out=pathToFileURL(outputPath+'/');
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const outputPath=await fs.mkdtemp(resolve(outputRoot.pathname,`${artifact.variant}-${target.release}-strict-`));await fs.chmod(outputPath,0o700);const out=pathToFileURL(outputPath+'/');
+const hash=value=>createHash('sha256').update(value).digest('hex'),secrets=new Set();
+const clean=value=>{let text=String(value);for(const secret of [...secrets].sort((a,b)=>b.length-a.length))text=text.split(secret).join('[redacted:'+hash(secret).slice(0,12)+']');return text;};
+const remember=body=>{if(!body||typeof body!=='object')return;for(const [key,value] of Object.entries(body)){if(typeof value==='string'&&/(token|secret|cookie|csrf|launch_code|session_id|external_user_id)/i.test(key))secrets.add(value);}};
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const bounded=async(operation,label,ms=10000)=>{let timer;try{return await Promise.race([operation(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(label+'_TIMEOUT')),ms);})]);}finally{clearTimeout(timer);}};
 const adb=async(...args)=>(await run('adb',androidAdbArgs(target,args),{timeout:45000,maxBuffer:4*1024*1024})).stdout.trim();
-async function deployedRelease(){
- const {stdout}=await run('ssh',['-i',target.sshKey,'-o','BatchMode=yes','-o','IdentitiesOnly=yes','-o','StrictHostKeyChecking=yes',target.sshHost,androidReleaseCommand(target)],{timeout:60000,maxBuffer:16384});
- return verifyAndroidReleaseState(JSON.parse(stdout),target);
-}
+const forwards=async()=>parseAndroidForwards(await adb('forward','--list'));
 const until=async(fn,label,timeout=45000)=>{const end=Date.now()+timeout;while(Date.now()<end){if(await fn())return;await sleep(120);}throw Error('Timeout: '+label);};
 const {apkPath,...artifactEvidence}=artifact;
-const report={started_at:new Date().toISOString(),origin,artifact:artifactEvidence,adb_server:{host:'127.0.0.1',port:target.adbPort},requested_games:selected,full_catalog:selected.length===catalog.length,scope:remoteDevice?'Remote Android WebView native game buttons and fullscreen single-game flow; not physical USB proof. Existing sandbox/test wallets.':'Physical USB Android native game buttons and fullscreen single-game WebView; existing sandbox/test wallets.',physical_device:!remoteDevice,mock_app_service:true,network_origins:[],external_asset_origins:[],games:[],lifecycle:{},negative_checks:[],page_errors:[],asset_failures:[],expected_network_failures:[],passed:false};
-let browser,context,page,current,cdp,injectingOffline=false;
-const tokens=new Map(),tasks=new Set();
-function watch(p){
- p.on('request',request=>{
-  try{
-   const url=new URL(request.url());
-   if(url.protocol==='http:'||url.protocol==='https:'){
-    const origins=report.network_origins;
-    if(!origins.includes(url.origin))origins.push(url.origin);
-    if(url.origin!==origin){
-     // These two origins are browser-hosted font assets referenced by the
-     // retained visual themes; they are static assets, never App/game APIs.
-     if(['https://fonts.googleapis.com','https://fonts.gstatic.com'].includes(url.origin)){
-      if(!report.external_asset_origins.includes(url.origin))report.external_asset_origins.push(url.origin);
-      if(url.pathname.startsWith('/api/'))report.page_errors.push('External asset origin used for API: '+url.origin+url.pathname);
-     }else report.page_errors.push('Unexpected network origin: '+url.origin);
-    }
-   }
-  }catch{}
+const report={schema:'android-webview-strict-v1',started_at:new Date().toISOString(),origin,artifact:artifactEvidence,requested_games:selected,full_catalog:selected.length===catalog.length,physical_device:!remoteDevice,scope:remoteDevice?'Remote Android APK, not physical USB evidence. Strict observed UI/ACK and original-session cleanup.':'Physical USB APK UI/ACK and original-session cleanup; not full-game quality or GPU acceptance.',instrumentation:'Initial unobserved native launch is excluded. Read-only exact guest inventory precedes each action; measured document is reloaded after observer/probe installation.',lifecycle:{included:false,reason:'Recovery, outage and negative-request tests require a separate report; never exempted here.'},games:[],resources:{events:[],errors:[],passed:false},passed:false};
+let browser,context,page,ownedForward,originalForeground,beforeForwards,guest,previousInventory,apiContext,apkStarted=false;
+const save=()=>fs.writeFile(new URL('device-smoke.json',out),JSON.stringify(report,(_key,value)=>typeof value==='string'?clean(value):value,2)+'\n',{mode:0o600});
+await fs.writeFile(new URL('device-smoke.json',out),JSON.stringify(report,null,2)+'\n',{flag:'wx',mode:0o600});
+const sshArgs=()=>['-i',target.sshKey,'-o','BatchMode=yes','-o','IdentitiesOnly=yes','-o','StrictHostKeyChecking=yes',target.sshHost];
+async function deployedRelease(){const {stdout}=await run('ssh',[...sshArgs(),androidReleaseCommand(target)],{timeout:60000,maxBuffer:16384});return verifyAndroidReleaseState(JSON.parse(stdout),target);}
+async function inventory(state,{previous}={}){
+ assert.equal(state.appId,expectedApp,'EXCHANGE_APP_DIFFERS_FROM_CONFIGURED_MOCK');
+ if(guest)assert.equal(state.playerId,guest,'PERSISTENT_GUEST_CHANGED');
+ const input={variant:target.variant,origin,release:target.release,manifest_sha256:expectedManifest,app_id:state.appId,guest_id:state.playerId,session_id:state.sessionId,game_id:state.game};
+ const program=androidInventoryProgram(input);
+ const stdout=await new Promise((resolve,reject)=>{
+  const child=spawn('ssh',[...sshArgs(),program.command],{stdio:['pipe','pipe','pipe']});let output='',error='',size=0,expired=false;
+  const timer=setTimeout(()=>{expired=true;child.kill('SIGKILL');},20000);
+  child.stdout.on('data',chunk=>{size+=chunk.length;if(size>65536)child.kill('SIGKILL');else output+=chunk;});
+  child.stderr.on('data',chunk=>{if(error.length<4096)error+=chunk;});child.on('error',reject);
+  child.on('close',code=>{clearTimeout(timer);if(code===0&&!expired&&size<=65536)resolve(output);else reject(Error('READ_ONLY_GUEST_INVENTORY_FAILED: '+clean(error).slice(0,500)));});
+  child.stdin.on('error',reject);child.stdin.end(program.input);
  });
- p.on('pageerror',e=>{(injectingOffline?report.expected_network_failures:report.page_errors).push(e.message.slice(0,500));});
- p.on('response',response=>{
-  const subject=current;
-  const task=(async()=>{try{
-   const u=new URL(response.url());if(u.origin!==origin)return;
-   if(response.status()>=400&&/\.(?:mjs|js|css|webp|png|glb|wasm|mp3|ogg)$/.test(u.pathname))report.asset_failures.push({path:u.pathname,status:response.status()});
-   if(u.pathname==='/v1/launch/exchange'&&response.ok()){
-    const d=await response.json();tokens.set(d.game_id,d.access_token);if(subject?.game===d.game_id){subject.session_id=d.session_id;subject.guest=d.external_user_id;}
-   }
-   if(!subject)return;
-   if(u.pathname.startsWith('/api/pvp/rooms')&&response.request().method()==='POST'&&u.pathname.endsWith('/action')&&!response.ok()){
-    const d=await response.json();subject.action_rejections??=[];subject.action_rejections.push({status:response.status(),code:d.error?.code});
-   }
-   if(u.pathname.startsWith('/api/pvp/rooms')&&response.ok()){
-    const d=await response.json();if(d.id&&d.game_id===subject.game&&(!subject.room||subject.room.id!==d.id||d.version>=subject.room.version)){subject.room=d;subject.lastRoomResponseAt=Date.now();}
-   }
-   if(u.pathname===`/api/play/${subject.game}/spin`&&response.ok()){
-    const d=await response.json();subject.spins.push({round_id:d.round.id,cycle_id:d.round.cycleId,status:d.round.settlementStatus,request_status:response.status()});
-   }
-   if(u.pathname===`/api/play/${subject.game}/ack`&&response.ok()){
-    const body=response.request().postDataJSON(),d=await response.json();
-    const record={round_id:body.roundId,request_status:response.status(),pending_cleared:d.session?.pendingRound===null,session_matches:d.session?.sessionId===subject.session_id};
-    subject.ack_records.push(record);if(record.pending_cleared&&record.session_matches)subject.acks++;
-   }
-  }catch(e){if(!/No data found|No resource with given|navigated away|Target.*closed|body.*unavailable/i.test(e.message))report.page_errors.push('Observer: '+e.message.slice(0,400));}})();
-  tasks.add(task);task.finally(()=>tasks.delete(task));
- });
+ const raw=JSON.parse(stdout);report.last_inventory_observation=raw; // Retain obligations even when the clean gate rejects them.
+ return {...verifyAndroidInventory(raw,input,{reader_sha256:program.reader_sha256,previous}),program_sha256:program.program_sha256};
 }
-async function connect(){
- await until(async()=>/^[0-9]+$/.test(await adb('shell','pidof',pkg).catch(()=>'')),'APK process');
- const pid=await adb('shell','pidof',pkg);
+async function connect(state,result){
+ await until(async()=>/^\d+$/.test(await adb('shell','pidof',pkg)),'APK process');const pid=await adb('shell','pidof',pkg),remote=`localabstract:webview_devtools_remote_${pid}`;
  await until(async()=>(await adb('shell','cat','/proc/net/unix')).includes('@webview_devtools_remote_'+pid),'WebView debug socket');
- await adb('forward',`tcp:${port}`,`localabstract:webview_devtools_remote_${pid}`);
- browser=await chromium.connectOverCDP(`http://127.0.0.1:${port}`,{isWebView:true,noDefaults:true});context=browser.contexts()[0];
- await until(()=>context.pages().length>0,'native WebView page');page=context.pages()[0];page.setDefaultTimeout(45000);watch(page);
- cdp=await context.newCDPSession(page);
- return page;
+ assert.ok(!ownedForward,'PREVIOUS_OWNED_FORWARD_NOT_RELEASED');const before=await forwards(),port=await adb('forward','tcp:0',remote);
+ ownedForward={port,serial,local:`tcp:${port}`,remote}; // retained even if binding readback fails
+ ownedAndroidForward(before,await forwards(),ownedForward);report.resources.events.push({event:'forward-created',...ownedForward});
+ browser=await chromium.connectOverCDP(`http://127.0.0.1:${port}`,{isWebView:true,noDefaults:true,timeout:15000});context=browser.contexts()[0];
+ await until(()=>context.pages().length===1,'exact owned APK WebView');page=context.pages()[0];page.setDefaultTimeout(45000);
+ const fetchProbe=await installNativeFetchProbe(context,{clean});await fetchProbe.attach(page);
+ const boundary=createAndroidMeasurementBoundary(page,{origin,game:state.game,result});
+ await page.waitForFunction(()=>document.querySelector('#native-status')?.hidden===true&&document.querySelector('#native-game')?.getAttribute('aria-busy')==='false',null,{timeout:15000});
+ await page.waitForLoadState('networkidle',{timeout:15000});result.initial_navigation_idle=true;
+ result.network_origins=[];page.on('request',request=>{try{const url=new URL(request.url());if(!['http:','https:'].includes(url.protocol))return;if(!result.network_origins.includes(url.origin))result.network_origins.push(url.origin);if(![origin,'https://fonts.googleapis.com','https://fonts.gstatic.com'].includes(url.origin)||url.origin!==origin&&url.pathname.startsWith('/api/'))result.observer_errors.push({stage:'origin',message:clean('Unexpected origin '+url.origin)});}catch(error){result.observer_errors.push({stage:'origin',message:clean(error.message)});}});
+ const drain=observeNativeBrowser(boundary.observedPage,{origin,state,result,clean,fetchProbe:boundary.probeAdapter(fetchProbe),remember:body=>{remember(body);if(body.game_id===state.game&&body.access_token){assert.equal(body.scope?.app_id,expectedApp);state.appId=body.scope.app_id;if(guest)assert.equal(body.external_user_id,guest);}}});
+ return{fetchProbe,drain,boundary};
+}
+async function releaseForward(){
+ if(!ownedForward)return;const owned=ownedForward;
+ const list=await forwards();assert.deepEqual(list.filter(row=>row.local===owned.local),[{serial:owned.serial,local:owned.local,remote:owned.remote}],'OWNED_FORWARD_REPLACED_NO_REMOVE');
+ await adb('forward','--remove',owned.local);assert.ok(!(await forwards()).some(row=>row.local===owned.local),'OWNED_FORWARD_REMAINS');report.resources.events.push({event:'forward-removed',local:owned.local});ownedForward=null;
 }
 async function nativeTap(locator){
  await locator.scrollIntoViewIfNeeded();const b=await locator.boundingBox();assert.ok(b);
- const targets=await fetch(`http://127.0.0.1:${port}/json/list`).then(r=>r.json());
+ const targets=await fetch(`http://127.0.0.1:${ownedForward.port}/json/list`,{signal:AbortSignal.timeout(5000)}).then(r=>r.json());
  const target=targets.find(t=>t.url===page.url());assert.ok(target);const box=JSON.parse(target.description);
  const viewport=await page.evaluate(()=>({width:innerWidth,height:innerHeight,dpr:devicePixelRatio}));
  assert.ok(Math.abs(box.width/viewport.width-viewport.dpr)<.1,'Unexpected WebView scale');
@@ -107,8 +100,8 @@ async function nativeXml(){
  // observed.
  for(let attempt=0;attempt<5;attempt++){
   try{
-   await adb('shell','uiautomator','dump','/data/local/tmp/oasis-smoke-ui.xml');
-   return await adb('shell','cat','/data/local/tmp/oasis-smoke-ui.xml');
+   await adb('shell','uiautomator','dump',xmlPath);
+   return await adb('shell','cat',xmlPath);
   }catch(error){
    if(attempt===4)throw error;
    await sleep(450);
@@ -131,190 +124,122 @@ async function nativeGameTap(game){
  }
  throw Error('Native game button not found: '+game);
 }
-async function openGame(game){
- current={game,spins:[],acks:0,ack_records:[]};
- // A card click first tears down the native lobby and then creates the
- // WebView. Android 16 can occasionally return the lobby XML during the
- // click transition; retry the native tap only while the WebView is absent.
- let webViewCreated=false;
- for(let attempt=0;attempt<3&&!webViewCreated;attempt++){
-  const xml=await nativeXml();
-  if(xml.includes('class="android.webkit.WebView"')){webViewCreated=true;break;}
-  await nativeGameTap(game);
-  try{await until(async()=>{const next=await nativeXml();return next.includes('class="android.webkit.WebView"');},'native WebView creation '+game,5000);webViewCreated=true;}catch{await sleep(500);}
- }
- assert(webViewCreated,'native WebView creation '+game);
- await connect();
- await until(()=>page.url()===origin+'/demo/native/'+game,'native single-game host');
- // Reload only the newly opened test game so CDP observes the whole launch
- // exchange rather than attaching after the native navigation already began.
- current={game,spins:[],acks:0,ack_records:[]};await page.reload();
- await until(()=>!!current.session_id,'launch exchange '+game);
- await until(()=>page.frames().some(f=>f.url()===origin+'/play/'+game),'single-game iframe');
- assert.equal(await page.locator('iframe').count(),1);assert.equal(await page.locator('button[data-game]').count(),0,'Web lobby must not exist inside the APK');
- const frame=page.frames().find(f=>f.url()===origin+'/play/'+game);assert.ok(frame);return frame;
+
+async function openObservedGame(game,result,holder){
+ const state={game,token:null,sessionId:null,playerId:null,appId:null,room:null,ownedRooms:new Set(),practiceRequested:false,spins:[],acks:new Set(),returning:false,phase:'entry'};
+ holder.state=state;
+ await nativeGameTap(game);await until(async()=>(await nativeXml()).includes('class="android.webkit.WebView"'),'native WebView creation');
+ const observer=await connect(state,result);Object.assign(holder,observer);await until(()=>page.url()===origin+'/demo/native/'+game,'exact native game host');
+ observer.boundary.arm();const reloadResponse=await page.reload({waitUntil:'domcontentloaded',timeout:30000});observer.boundary.verifyNavigation(reloadResponse);
+ await until(()=>Boolean(state.token&&state.sessionId),'observed launch exchange');
+ await until(()=>page.frames().some(frame=>frame.url()===origin+'/play/'+game),'exact game frame');
+ const frame=page.frames().find(frame=>frame.url()===origin+'/play/'+game);assert.equal(await page.locator('iframe').count(),1);assert.equal(await page.locator('button[data-game]').count(),0);
+ result.probe_installation=await observer.fetchProbe.requireInstalled(frame);
+ return{state,frame,...observer};
 }
-async function startPractice(frame){
- const settings=frame.locator('.lobby-settings');
- // Launch exchange can restore a durable active room left by an interrupted
- // device run.  In that case the lobby controls are intentionally absent;
- // continue against the recovered room instead of waiting 45s for controls
- // that cannot appear.
- if(!await settings.isVisible().catch(()=>false)){
-  if(current?.room?.status==='active')return;
-  await settings.waitFor();
- }
- await frame.getByRole('button',{name:'免费练习',exact:false}).click();
- await frame.getByRole('button',{name:'确认规则 · 准备开局',exact:true}).click();
- await until(()=>current.room?.status==='active','practice active');
- await frame.locator('.arena-loading').waitFor({state:'hidden'});await sleep(600);
+async function stopUi(result){
+ // Failure cleanup tears down only this explicitly selected test APK. It never
+ // presses a business leave/ACK button on an inherited room or presentation.
+ if(!page||page.isClosed()){await lobby();result.ui_stopped=true;return true;}
+ await adb('shell','am','force-stop',pkg);result.ui_stop_method='force-stop-owned-test-apk';
+ await until(async()=>!(await adb('shell','pidof',pkg).catch(error=>{if(error.code===1)return '';throw error;})),'owned APK stopped',10000);result.ui_stopped=true;return true;
 }
-async function back(frame){
- await adb('shell','input','keyevent','4');
- await sleep(350);
- const leave=frame.getByRole('button',{name:'确认离开',exact:true});
- if(await leave.isVisible().catch(()=>false))await leave.click();
- const confirm=frame.locator('[data-return="confirm"]');if(await confirm.isVisible().catch(()=>false))await confirm.click();
- await lobby();await browser?.close();browser=null;page=null;context=null;cdp=null;
- // Let the Activity finish destroying the previous WebView before the next
- // native card is tapped. This is a device lifecycle barrier, not a game
- // retry or an API wait.
- await sleep(500);
+async function closeConnection(result){
+ try{await bounded(()=>browser?.close(),'CDP_CLOSE');}catch(error){result.observer_errors??=[];result.observer_errors.push({stage:'cdp-close',message:clean(error.message)});}
+ browser=null;context=null;page=null;
+ try{await releaseForward();}catch(error){report.resources.errors.push(clean(error.message));}
 }
-async function frameSample(frame){
- return frame.evaluate(()=>new Promise(resolve=>{
-  const start=performance.now(),gaps=[];let last=start;
-  function tick(now){gaps.push(now-last);last=now;if(now-start<1800)requestAnimationFrame(tick);else{gaps.sort((a,b)=>a-b);resolve({scope:'WebView requestAnimationFrame cadence only; not a full GPU/FPS acceptance',callbacks:gaps.length,duration_ms:Math.round(now-start),p95_gap_ms:Math.round(gaps[Math.ceil(gaps.length*.95)-1]*100)/100});}}
-  requestAnimationFrame(tick);
- }));
+async function api(state,result){
+ const invoke=createNativeCleanupApi({page:{request:apiContext},origin,state,result,clean});return async(path,body)=>{const from=result.cleanup_requests.length;try{return await invoke(path,body);}finally{for(const row of result.cleanup_requests.slice(from))row.phase=state.phase==='entry'?'baseline':'cleanup';}};
 }
-// Run's authoritative engine can enter a short hit/fall recovery window
-// between the WebView's enabled-button check and the POST reaching the API.
-// A rejected BUSY/STALE_INPUT request has no sequence effect, so wait for a
-// newer public snapshot and let the real UI choose a fresh action.  This is a
-// bounded recovery of a rejected request, never a replay of an accepted one.
-async function arenaAction(frame,game){
- const retryable=new Set(['BUSY','STALE_INPUT','INPUT_PENDING','RATE_LIMIT']);
- for(let attempt=0;attempt<4;attempt++){
-  try{return await playOneArenaAction(frame,game,()=>current.room);}
-  catch(error){
-   if(game!=='run'||error.status!==409||!retryable.has(error.code)||attempt===3)throw error;
-   const failedTick=Number(current.room?.game?.snapshotTick??-1);
-   await until(async()=>{
-    const room=current.room,mine=room?.game?.players?.find(p=>p.key===room.me);
-    if(!room||room.status!=='active'||!mine||Number(room.game?.snapshotTick??-1)<=failedTick)return false;
-    const next=Number(room.game.snapshotTick)+1;
-    const recovered=mine.fallUntilTick===null&&next>=Number(mine.stunUntilTick||0)&&next>=Number(mine.slideUntilTick||0)&&next>=Number(mine.jumpStartTick??-Infinity)+48;
-    return recovered&&await frame.locator('[data-testid="run-scene"][data-input-ready="true"]').count()>0&&await frame.locator('[data-testid="run-jump"]').isEnabled().catch(()=>false);
-   },`run recovery after ${error.code}`,10000);
-  }
- }
- throw new Error('run action retry loop exhausted');
+async function startPractice(frame,state){
+ await frame.locator('.lobby-settings').waitFor();await nativeTap(frame.getByRole('button',{name:'免费练习',exact:false}));await nativeTap(frame.getByRole('button',{name:'确认规则 · 准备开局',exact:true}));
+ await until(()=>state.room?.status==='active','owned practice active');assert.equal(state.room.practice,true);assert.equal(state.room.entry_minor,'0');assert.ok(state.ownedRooms.has(state.room.id),'ROOM_NOT_CREATED_BY_THIS_RUN');
+ await frame.locator('.arena-loading').waitFor({state:'hidden'});
 }
+async function nativeBack(frame,state,result){
+ state.returning=true;state.phase='returning';await adb('shell','input','keyevent','4');await sleep(350);
+ const visible=async locator=>{if(frame.isDetached()||page.isClosed())return false;try{return await locator.isVisible();}catch(error){if(frame.isDetached()||page.isClosed())return false;throw error;}};
+ const leave=frame.getByRole('button',{name:'确认离开',exact:true});if(await visible(leave))await nativeTap(leave);
+ const confirm=frame.locator('[data-return="confirm"]');if(await visible(confirm))await nativeTap(confirm);
+ await lobby();result.native_back_returned=true;result.ui_stopped=true;
+}
+async function spinOnce(frame,state){
+ const spin=frame.locator('#spin');await spin.waitFor();await until(()=>spin.isEnabled(),'spin enabled');await nativeTap(spin);
+ await until(async()=>{const close=frame.locator(state.game==='tiger'?'#continue':'.celebration-close');if(await close.isVisible())await nativeTap(close);return state.spins.length>0&&state.spins.every(round=>state.acks.has(round.id));},'original paid cycle settlement and exact ACK',120000);
+ assertAndroidPaidCycle(state);
+}
+async function measureLayout(frame){
+ const v=await frame.evaluate(()=>({width:innerWidth,height:innerHeight,scroll_width:document.documentElement.scrollWidth,scroll_height:document.documentElement.scrollHeight,body_height:document.body.scrollHeight}));
+ const host=await page.evaluate(()=>({width:innerWidth,height:innerHeight,secure:isSecureContext,user_agent:navigator.userAgent}));assert.ok(host.secure&&host.user_agent.includes('OASISSmoke/'+artifact.version));
+ assert.ok(Math.abs(v.width-host.width)<=1&&Math.abs(v.height-host.height)<=1&&v.scroll_width<=v.width+1&&v.scroll_height<=v.height+1&&v.body_height<=v.height+1,'WEBVIEW_SINGLE_SCREEN_REQUIRED');return{host,game:v,single_screen:true};
+}
+let releaseBefore;
 try{
- const releaseBefore=await deployedRelease();report.tested_release=releaseBefore.version;
- const devices=(await run('adb',androidAdbArgs(target,['devices','-l'],{device:false}))).stdout;assert.ok(devices.split('\n').some(line=>line.split(/\s+/)[0]===serial&&line.split(/\s+/)[1]==='device'&&(remoteDevice||line.includes('usb:'))),remoteDevice?'Expected explicitly selected remote device':'Expected explicitly selected USB device');
- report.installed_artifact=await verifyInstalledAndroidArtifact(target,artifact,run);
- report.device={model:await adb('shell','getprop','ro.product.model'),android:await adb('shell','getprop','ro.build.version.release'),api:await adb('shell','getprop','ro.build.version.sdk')};
- // A previous failed smoke run may have left the APK on a single-game page;
- // start each independent report from the native card lobby.
- await adb('shell','am','force-stop',pkg);await sleep(400);await adb('shell','am','start','-n',target.component);await lobby();report.native_lobby_without_webview=true;
- await run('adb',androidAdbArgs(target,['exec-out','screencap','-p']),{encoding:'buffer',maxBuffer:20*1024*1024}).then(r=>fs.writeFile(new URL('lobby-device.png',out),r.stdout));
-  {
-  const frame=await openGame('match');await frame.locator('.lobby-settings').waitFor();
-  await frame.getByRole('button',{name:'返回',exact:true}).click();
-  const lobbyLeave=frame.getByRole('button',{name:'确认离开',exact:true});
-  if(await lobbyLeave.isVisible().catch(()=>false))await lobbyLeave.click();
-  await lobby();
-  await browser.close();browser=null;page=null;context=null;cdp=null;report.game_lobby_back_to_native=true;
+ releaseBefore=await deployedRelease();report.release_before=releaseBefore;
+ const devices=(await run('adb',androidAdbArgs(target,['devices','-l'],{device:false}),{timeout:10000})).stdout;
+ assert.ok(devices.split('\n').some(line=>line.split(/\s+/)[0]===serial&&line.split(/\s+/)[1]==='device'&&(remoteDevice||line.includes('usb:'))),'EXACT_ANDROID_DEVICE_REQUIRED');
+ report.installed_artifact=await verifyInstalledAndroidArtifact(target,artifact,run);beforeForwards=await forwards();report.resources.before_forwards=beforeForwards;
+ originalForeground=androidForeground(await adb('shell','dumpsys','activity','activities'));report.resources.original_foreground=originalForeground;
+ // No overwrite of another run's XML. Nonzero test means it is absent only
+ // when the shell exits exactly 1; transport/permission errors remain errors.
+ try{await adb('shell','test','-e',xmlPath);assert.fail('OWNED_XML_ALREADY_EXISTS');}catch(error){assert.equal(error.code,1,'OWNED_XML_ABSENCE_UNPROVEN');}
+ apiContext=await httpRequest.newContext({ignoreHTTPSErrors:false,timeout:12000});
+ apkStarted=true;await adb('shell','am','force-stop',pkg);await adb('shell','am','start','-n',target.component);await lobby();
+ const bootstrapResult={game:'match',instrumentation_only:true,passed:false};report.bootstrap=bootstrapResult;let bootstrap={};
+ try{
+  bootstrap=await openObservedGame('match',bootstrapResult,bootstrap);guest=bootstrap.state.playerId;
+  await bootstrap.drain({final:false});await stopUi(bootstrapResult);
+  previousInventory=await inventory(bootstrap.state);report.inventory_initial=previousInventory;
+  assert.equal(previousInventory.current_session_cycles,0);
+  }catch(error){bootstrapResult.error=clean(error.stack);}
+ finally{
+  try{if(!bootstrapResult.ui_stopped)await stopUi(bootstrapResult);}catch(error){bootstrapResult.stop_error=clean(error.message);}
+  await closeConnection(bootstrapResult);
+  try{await bootstrap.drain?.({final:true});}catch(error){(bootstrapResult.observer_errors??=[]).push({stage:'post-close-drain',message:clean(error.message)});}
  }
+ assert.ok(!bootstrapResult.error&&!bootstrapResult.stop_error&&nativeErrorsEmpty(bootstrapResult)&&report.resources.errors.length===0,bootstrapResult.error||'BOOTSTRAP_OBSERVATION_OR_CLEANUP_FAILED');bootstrapResult.passed=true;
  for(const game of selected){
-  const frame=await openGame(game);let result={game,session_id:current.session_id,guest:current.guest,launch_exchange:true,native_button:true,reloaded_for_network_observation:true};
-  report.webview=await page.evaluate(()=>({user_agent:navigator.userAgent,width:innerWidth,height:innerHeight,dpr:devicePixelRatio,secure:isSecureContext}));assert.ok(report.webview.secure&&report.webview.user_agent.includes('OASISSmoke/'+expectedApkVersion));
-  if(!['thunder','tiger'].includes(game)){
-   await startPractice(frame);result.room_id=current.room.id;result.entry_minor=current.room.entry_minor;assert.equal(result.entry_minor,'0');
-   if(game==='carrom'){
-    await adb('shell','input','keyevent','4');await frame.getByRole('button',{name:'继续游戏',exact:true}).click();
-    await frame.locator('.arena-modal-backdrop').waitFor({state:'hidden'});assert.equal(current.room.id,result.room_id);assert.equal(current.room.status,'active');result.cancel_back_kept_game=true;
+  const result={game,passed:false};report.games.push(result);let session={},action;
+  await adb('shell','am','start','-n',target.component);await lobby();
+  try{
+   session=await openObservedGame(game,result,session);const {state,frame,drain}=session,read=await api(state,result);
+   await drain({final:false});const proof=await inventory(state,{previous:previousInventory});result.inventory_before=proof;assert.equal(proof.current_session_cycles,0,'CURRENT_SESSION_ALREADY_HAS_A_CYCLE');
+   const baseline=await read(ARENA_IDS.includes(game)?'/api/arena/session':`/api/play/${game}/session`);
+   result.baseline=assertAndroidSessionBaseline(state,baseline,ARENA_IDS);state.phase='playing';
+   if(ARENA_IDS.includes(game)){
+    await startPractice(frame,state);action=await runNativeActionOnce(()=>playOneArenaAction(frame,game,()=>state.room),result,clean);await drain({final:false});assertAndroidOneAction(state,action);
+    result.action=action;result.input_scope='Trusted UI controls in the real WebView; drag paths use browser mouse input. Not a complete physical swipe-quality assessment.';
+   }else{await spinOnce(frame,state);result.probability={cycle:assertAndroidPaidCycle(state),spins:state.spins.length,matching_acks:state.acks.size};}
+   result.layout=await measureLayout(frame);await page.screenshot({path:new URL(game+'-webview.png',out).pathname});
+   await nativeBack(frame,state,result);await drain({final:false});if(action)assertAndroidOneAction(state,action);
+   result.ui_check_passed=true; // Errors/pending observations are gated only after final drain.
+  }catch(error){result.error=clean(error.message);result.failure_action={status:error.status??null,code:error.code??null,request_body:error.requestBody??null,response_body:error.responseBody??null};await page?.screenshot({path:new URL(game+'-failure.png',out).pathname}).catch(shot=>{result.screenshot_error=clean(shot.message);});}
+  finally{
+   try{if(!result.ui_stopped)await stopUi(result);}catch(error){result.cleanup={passed:false,error:clean(error.message)};}
+   if(session.state){
+    try{await session.drain?.({final:false});}catch(error){(result.observer_errors??=[]).push({stage:'pre-cleanup-drain',message:clean(error.message)});}
+    if(result.ui_stopped){session.state.phase='cleanup';result.cleanup=await cleanupOwnedAndroidSession({state:session.state,arenaGames:ARENA_IDS,api:await api(session.state,result),until,newId:()=> 'android_cleanup_'+randomUUID().replaceAll('-',''),uiStopped:true,clean});}
+    try{previousInventory=await inventory(session.state);result.inventory_after=previousInventory;assert.ok(result.inventory_before,'NO_ACCEPTED_INVENTORY_BASELINE');const probability=!ARENA_IDS.includes(game);assert.equal(previousInventory.counts.cycles,result.inventory_before.counts.cycles+(probability?1:0),'UNEXPECTED_CYCLE_COUNT');assert.equal(previousInventory.counts.rooms,result.inventory_before.counts.rooms+(probability?0:1),'UNEXPECTED_ROOM_COUNT');assert.equal(previousInventory.current_session_cycles,probability?1:0);if(action){assertAndroidOneAction(session.state,action);assert.equal(session.state.creations.length,1);}}catch(error){result.inventory_error=clean(error.message);}
    }
-   result.action=await arenaAction(frame,game);
-   result.render_sample=await frameSample(frame);
-  }else{
-   await frame.locator('#spin').waitFor();await until(()=>frame.locator('#spin').isEnabled(),'spin enabled');
-   if(await frame.locator('[data-action="turbo"]').count())await frame.locator('[data-action="turbo"]').click();
-   await nativeTap(frame.locator('#spin'));
-   await until(async()=>{const close=frame.locator(game==='tiger'?'#continue':'.celebration-close');if(await close.isVisible())await close.click();return current.acks>0;},'settlement and ACK '+game,120000);
-   assert.equal(current.spins[0]?.status,'SETTLED');
-   assert.ok(current.spins.every(spin=>current.ack_records.some(ack=>ack.round_id===spin.round_id&&ack.pending_cleared&&ack.session_matches)),'ACK must match each settled round');
-   result.spins=current.spins;result.acks=current.acks;result.ack_records=current.ack_records;
+   await closeConnection(result);try{await session.drain?.({final:true});}catch(error){(result.observer_errors??=[]).push({stage:'post-close-drain',message:clean(error.message)});}
+   result.passed=Boolean(result.ui_check_passed&&result.cleanup?.passed&&result.inventory_after?.clean&&nativeErrorsEmpty(result)&&!result.error&&!result.inventory_error&&report.resources.errors.length===0);await save();
   }
-  await page.screenshot({path:new URL(`${game}-webview.png`,out).pathname});
-  result.viewport=await frame.evaluate(()=>({width:innerWidth,height:innerHeight,scroll_width:document.documentElement.scrollWidth,scroll_height:document.documentElement.scrollHeight,body_height:document.body.scrollHeight}));
-  current.layout={viewport:result.viewport,outside:await frame.evaluate(()=>Array.from(document.querySelectorAll('body *')).map(el=>{const r=el.getBoundingClientRect();return{tag:el.tagName,class:typeof el.className==='string'?el.className:'',top:r.top,bottom:r.bottom,height:r.height,font:getComputedStyle(el).font};}).filter(r=>r.height>0&&r.bottom>innerHeight+1).slice(0,45))};
-  assert.ok(Math.abs(result.viewport.width-report.webview.width)<=1&&Math.abs(result.viewport.height-report.webview.height)<=1,'Game iframe must fill the entire WebView');
-  assert.ok(result.viewport.scroll_width<=result.viewport.width+1,'Game overflows WebView horizontally');
-  assert.ok(result.viewport.scroll_height<=result.viewport.height+1&&result.viewport.body_height<=result.viewport.height+1,'Active game does not fit in one screen');
-  result.single_screen=true;
-  if(['carrom','run','tiger'].includes(game))await run('adb',androidAdbArgs(target,['exec-out','screencap','-p']),{encoding:'buffer',maxBuffer:20*1024*1024}).then(r=>fs.writeFile(new URL(`${game}-device.png`,out),r.stdout));
-  if(game==='run'){
-   result.scene_ready=await frame.locator('[data-testid="run-track"]').evaluate(el=>({...el.dataset}));
-   assert.equal(result.scene_ready.ready,'true');assert.equal(result.scene_ready.rendered,'true');
-  }
-  // The normal full-catalog order starts with tiger, so wait until both
-  // probability sessions have been exchanged before checking token scope.
-  // This keeps the negative assertion real instead of silently skipping it.
-  if((game==='tiger'||game==='thunder')&&tokens.has('thunder')&&tokens.has('tiger')){
-   const negative=await page.evaluate(async({thunderToken})=>{
-    const a=await fetch('/api/arena/session',{headers:{authorization:'Bearer invalid-test-token'}});
-    const b=await fetch('/api/play/tiger/session',{headers:{authorization:'Bearer '+thunderToken}});
-    return [{case:'invalid session rejected',status:a.status},{case:'cross-game session rejected',status:b.status}];
-   },{thunderToken:tokens.get('thunder')});assert.equal(negative[0].status,401);assert.equal(negative[1].status,403);report.negative_checks=negative;
-  }
-  await back(frame);result.native_back_returned=true;report.games.push(result);
-  await fs.writeFile(new URL('device-smoke-progress.json',out),JSON.stringify(report,null,2));
-  console.log(`${game}: native WebView launch / real UI action / API response / Android back passed`);
+  if(!result.passed)throw Error('STRICT_GAME_FAILED: '+game+'; first failure retained, no retry');
  }
- // Representative lifecycle checks: same signed guest and durable room survive.
- if(lifecycle){
- let frame=await openGame('match');await startPractice(frame);const original={room:current.room.id,guest:current.guest,session:current.session_id};
- await playOneArenaAction(frame,'match',()=>current.room);
- const before=current.room.version;injectingOffline=true;
- await cdp.send('Network.enable');await cdp.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});
- await until(()=>frame.locator('.arena-network').isVisible(),'offline UI');await sleep(1800);
- await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
- await until(async()=>current.room.id===original.room&&current.room.version>before&&!await frame.locator('.arena-network').isVisible(),'network recovery');injectingOffline=false;
- report.lifecycle.network_recovery={same_room:true,mode:'CDP network outage in this WebView only'};
- await adb('shell','input','keyevent','3');await sleep(2200);const resumeAt=Date.now();await adb('shell','am','start','-n',target.component);
- await until(()=>page.evaluate(()=>!document.hidden),'foreground');await until(()=>current.room.id===original.room&&current.room.status==='active'&&current.lastRoomResponseAt>resumeAt,'fresh foreground room response');
- report.lifecycle.background_foreground={same_room:true,fresh_response_after_resume:true};
- await browser.close();browser=null;await adb('shell','am','force-stop',pkg);await sleep(500);await adb('shell','am','start','-n',target.component);
- await lobby();frame=await openGame('match');
- await until(()=>current.room?.id===original.room&&current.room.status==='active','persisted room after process restart');assert.equal(current.guest,original.guest);
- report.lifecycle.process_restart={same_guest:true,same_room:true,new_session:current.session_id!==original.session};
- await playOneArenaAction(frame,'match',()=>current.room);await back(frame);
- }
- await Promise.allSettled([...tasks]);assert.equal(report.games.length,selected.length);assert.deepEqual(report.page_errors,[]);assert.deepEqual(report.asset_failures,[]);
- assert.deepEqual(report.network_origins.filter(value=>value===origin),[origin],'Android game WebView must reach the configured platform origin');
- assert.deepEqual(report.network_origins.filter(value=>value!==origin).sort(),report.external_asset_origins.slice().sort(),'All non-platform requests must be classified static external assets');
- const releaseAfter=await deployedRelease();assert.deepEqual(releaseAfter,releaseBefore,'Deployment changed during device test');
- assert.deepEqual(await verifyInstalledAndroidArtifact(target,artifact,run),report.installed_artifact,'Installed APK changed during device test');
- report.release_verification={before:releaseBefore,after:releaseAfter,unchanged:true};report.passed=true;
-}catch(error){
- report.failure=error.stack;report.failed_game=current?.game;report.action_rejections=current?.action_rejections;
- report.failure_action=error.status||error.code||error.responseBody||error.requestBody?{status:error.status||null,code:error.code||null,response_body:error.responseBody||null,request_body:error.requestBody||null}:null;
- report.failure_layout=current?.layout;
- // Response observers consume bodies asynchronously.  Drain them before
- // persisting a failure so rejected action codes are not lost in a race with
- // the harness exception path.
- await Promise.allSettled([...tasks]);
- report.action_rejections=current?.action_rejections;
- console.error(error.message);process.exitCode=1;await page?.screenshot({path:new URL('failure-webview.png',out).pathname}).catch(()=>{});
-}
+ report.inventory_final=previousInventory;report.release_after=await deployedRelease();assert.deepEqual(report.release_after,releaseBefore,'DEPLOYMENT_CHANGED');
+ assert.deepEqual(await verifyInstalledAndroidArtifact(target,artifact,run),report.installed_artifact,'INSTALLED_APK_CHANGED');
+}catch(error){report.failure=clean(error.stack);process.exitCode=1;}
 finally{
- if(injectingOffline)await cdp?.send('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1}).catch(()=>{});
- if(current?.room&&!['settled','cancelled','voided'].includes(current.room.status)&&page){
-  try{const cleanup=await page.evaluate(async({room,token})=>{const r=await fetch('/api/pvp/rooms/'+room+'/leave',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+token},body:JSON.stringify({request_id:'android_cleanup_'+crypto.randomUUID().replaceAll('-','')})});const b=await r.json();return{status:r.status,room_status:b.status};},{room:current.room.id,token:tokens.get(current.game)});report.cleanup=cleanup;}catch{report.cleanup={status:'unconfirmed'};}
+ try{await bounded(()=>browser?.close(),'CDP_CLOSE');}catch(error){report.resources.errors.push(clean(error.message));}
+ try{await releaseForward();}catch(error){report.resources.errors.push(clean(error.message));}
+ if(apkStarted){
+  try{await adb('shell','am','force-stop',pkg);await adb('shell','rm','-f',xmlPath);try{await adb('shell','test','-e',xmlPath);assert.fail('OWNED_XML_REMAINS');}catch(error){assert.equal(error.code,1,'OWNED_XML_CLEANUP_UNPROVEN');}report.resources.xml_removed=true;}catch(error){report.resources.errors.push(clean(error.message));}
+  try{await adb('shell','am','start','-n',originalForeground);assert.equal(androidForeground(await adb('shell','dumpsys','activity','activities')),originalForeground);report.resources.foreground_restored=true;}catch(error){report.resources.errors.push(clean(error.message));}
  }
- report.finished_at=new Date().toISOString();await fs.writeFile(new URL('device-smoke.json',out),JSON.stringify(report,null,2));await browser?.close();
+ try{if(beforeForwards){report.resources.after_forwards=await forwards();assertAndroidForwardsRestored(beforeForwards,report.resources.after_forwards);report.resources.forwards_restored=true;}}catch(error){report.resources.errors.push(clean(error.message));}
+ try{await bounded(()=>apiContext?.dispose(),'API_CONTEXT_DISPOSE',15000);}catch(error){report.resources.errors.push(clean(error.message));}
+ report.resources.passed=Boolean(report.resources.forwards_restored&&report.resources.foreground_restored&&report.resources.xml_removed&&report.resources.errors.length===0);
+ report.passed=androidStrictPassed(report);if(!report.passed)process.exitCode=1;report.finished_at=new Date().toISOString();await save();
 }
-console.log(JSON.stringify({passed:report.passed,variant:artifact.variant,games:report.games.length,lifecycle:report.lifecycle,report:outputPath,failure:report.failure?.split('\n')[0]}));
+console.log(JSON.stringify({passed:report.passed,full_catalog:report.full_catalog,physical_device:report.physical_device,games:report.games.length,report:outputPath,failure:report.failure?.split('\n')[0]}));
