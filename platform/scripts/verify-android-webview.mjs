@@ -169,10 +169,15 @@ async function spinOnce(frame,state){
  await until(async()=>{const close=frame.locator(state.game==='tiger'?'#continue':'.celebration-close');if(await close.isVisible())await nativeTap(close);return state.spins.length>0&&state.spins.every(round=>state.acks.has(round.id));},'original paid cycle settlement and exact ACK',120000);
  assertAndroidPaidCycle(state);
 }
-async function measureLayout(frame){
+async function measureLayout(frame,result){
  const v=await frame.evaluate(()=>({width:innerWidth,height:innerHeight,scroll_width:document.documentElement.scrollWidth,scroll_height:document.documentElement.scrollHeight,body_height:document.body.scrollHeight}));
- const host=await page.evaluate(()=>({width:innerWidth,height:innerHeight,secure:isSecureContext,user_agent:navigator.userAgent}));assert.ok(host.secure&&host.user_agent.includes('OASISSmoke/'+artifact.version));
- assert.ok(Math.abs(v.width-host.width)<=1&&Math.abs(v.height-host.height)<=1&&v.scroll_width<=v.width+1&&v.scroll_height<=v.height+1&&v.body_height<=v.height+1,'WEBVIEW_SINGLE_SCREEN_REQUIRED');return{host,game:v,single_screen:true};
+ const host=await page.evaluate(()=>({width:innerWidth,height:innerHeight,secure:isSecureContext,user_agent:navigator.userAgent}));
+ const checks={width_matches:Math.abs(v.width-host.width)<=1,height_matches:Math.abs(v.height-host.height)<=1,no_horizontal_overflow:v.scroll_width<=v.width+1,no_document_overflow:v.scroll_height<=v.height+1,no_body_overflow:v.body_height<=v.height+1};
+ // Preserve the measured dimensions and failed predicates before an assertion
+ // exits the game attempt; screenshots cannot recover the CSS viewport size.
+ result.layout={host,game:v,checks,single_screen:Object.values(checks).every(Boolean)};
+ assert.ok(host.secure&&host.user_agent.includes('OASISSmoke/'+artifact.version));
+ assert.ok(result.layout.single_screen,'WEBVIEW_SINGLE_SCREEN_REQUIRED');return result.layout;
 }
 let releaseBefore;
 try{
@@ -211,7 +216,7 @@ try{
     await startPractice(frame,state);action=await runNativeActionOnce(()=>playOneArenaAction(frame,game,()=>state.room),result,clean);await drain({final:false});assertAndroidOneAction(state,action);
     result.action=action;result.input_scope='Trusted UI controls in the real WebView; drag paths use browser mouse input. Not a complete physical swipe-quality assessment.';
    }else{await spinOnce(frame,state);result.probability={cycle:assertAndroidPaidCycle(state),spins:state.spins.length,matching_acks:state.acks.size};}
-   result.layout=await measureLayout(frame);await page.screenshot({path:new URL(game+'-webview.png',out).pathname});
+   await measureLayout(frame,result);await page.screenshot({path:new URL(game+'-webview.png',out).pathname});
    await nativeBack(frame,state,result);await drain({final:false});if(action)assertAndroidOneAction(state,action);
    result.ui_check_passed=true; // Errors/pending observations are gated only after final drain.
   }catch(error){result.error=clean(error.message);result.failure_action={status:error.status??null,code:error.code??null,request_body:error.requestBody??null,response_body:error.responseBody??null};await page?.screenshot({path:new URL(game+'-failure.png',out).pathname}).catch(shot=>{result.screenshot_error=clean(shot.message);});}
