@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {createRunSourceCache,loadRunTexture,prepareRunAssets} from './asset-loading.mjs';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
-import kitUrl from './assets/environment/oasis-kit.glb?url';
+import kitUrl from './assets/environment/oasis-kit-runtime-v1.glb?url';
 import stoneUrl from '../golf/assets/textures/aged-sandstone-imagegen-mobile-dcc28108d4.webp?url';
 import normalUrl from '../golf/assets/textures/sandstone-normal.webp?url';
 import backdropUrl from '../golf/assets/textures/oasis-distant-palace-mobile-e251f780d8.webp?url';

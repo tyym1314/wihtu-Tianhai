@@ -132,3 +132,7 @@ bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'oasis-modular-environment.blend'))
 for r in roots:r.location=(0,0,0)
 bpy.ops.object.select_all(action='SELECT');bpy.ops.export_scene.gltf(filepath=str(OUT/'oasis-kit.glb'),export_format='GLB',export_animations=False,export_yup=True)
 meta={'prefabs':[r.name for r in roots],'source':'Original Blender modular meshes; cosmetic only','glb':'oasis-kit.glb','blend':'oasis-modular-environment.blend','triangles':sum(sum(len(p.vertices)-2 for p in o.data.polygons) for o in bpy.data.objects if o.type=='MESH')};(OUT/'manifest.json').write_text(json.dumps(meta,indent=2)+'\n');print('ENVIRONMENT_DONE',json.dumps(meta))
+# Preserve the editable/full export; runtime excludes the permanently hidden Palace.
+import runpy
+runtime=runpy.run_path(str(pathlib.Path(__file__).with_name('prune_environment.py')))
+runtime['write_runtime_assets'](OUT/'oasis-kit.glb',OUT/runtime['RUNTIME_NAME'])

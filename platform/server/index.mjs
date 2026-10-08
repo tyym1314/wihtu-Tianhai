@@ -23,7 +23,7 @@ import {routePlayer} from './player-routes.mjs';
 import {ApiRateLimits} from './rate-limit.mjs';
 import {activityTimeZone,migrateOverviewActivity,overviewActivity} from './overview-activity.mjs';
 import {clientAddress,adminSessionCookie} from './proxy-context.mjs';
-import {beginRoomReadTiming} from './request-timing.mjs';
+import {beginRoomReadTiming,beginGameEntryTiming} from './request-timing.mjs';
 import {startRequestTimingSink} from './request-timing-sink.mjs';
 import {checkWalletDependencies} from './dependency-health.mjs';
 import {createTransferService,migrateTransfers,TRANSFER_PUBLIC_CODES} from './transfers/index.mjs';
@@ -87,7 +87,7 @@ async function adminRoutes(req,res,path,b){
   if(path==='/api/admin/profiles'&&req.method==='GET')return send(res,200,{profiles:['thunder','tiger'].flatMap(g=>['98','99'].map(p=>getProfile(g,p)))});
   fail(404,'NOT_FOUND');
 }
-export function createPlatformServer(){return createServer(async(req,res)=>{beginRoomReadTiming(req,res,{sink:roomTimingSink});try{
+export function createPlatformServer(){return createServer(async(req,res)=>{beginRoomReadTiming(req,res,{sink:roomTimingSink});beginGameEntryTiming(req,res);try{
   const path=req.url||'/';if(path.includes('?')&&path.startsWith('/v1/'))fail(400,'INVALID_TARGET');
   if(path==='/health/ready'&&req.method==='GET'){await pool.query('SELECT 1');return send(res,200,{status:'ok',environment:runtime.environment});}
   if(path==='/health'&&req.method==='GET')return send(res,200,{status:'ok',environment:runtime.environment});

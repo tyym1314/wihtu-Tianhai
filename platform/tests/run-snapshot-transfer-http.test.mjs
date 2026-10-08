@@ -24,12 +24,15 @@ test('Run negotiated GETs preserve authentication, current outer fields and exac
  const admin=new pg.Pool({connectionString:adminUrl.href,max:1});let created=false,dir,db,child,lock,roomId,logs='';
  const out=resolve(root,'review/run-snapshot-transfer',new Date().toISOString().replaceAll(':','-')+'-'+uid());
  const report={schema:'run-snapshot-transfer-http-v1',scope:'Real isolated loopback API+PostgreSQL/authentication and current Run v2.2 practice room. Fixture tokens bypass launch only. Byte figures are actual HTTP JSON plus local gzip re-encoding, not captured gzip transport, Android 05 bodies or latency acceptance.',checks:[],requests:[],sizes:[],cleanup:{},source_sha256:{}};
- const port=await freePort(),origin='http://127.0.0.1:'+port,requestIds=new Set(),privateValues=[];
+ const port=await freePort(),origin='http://127.0.0.1:'+port,requestIds=new Set(),entryRequestIds=new Set(),privateValues=[];
  async function request(path,{token,body,runKey,expected=200}={}){
   const method=body===undefined?'GET':'POST',response=await fetch(origin+path,{method,headers:{origin,'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{}),...(runKey?{'X-Oasis-Known-Run-Game':runKey}:{})},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(5000)}),raw=await response.text(),value=JSON.parse(raw);
   const timing=response.headers.get('server-timing'),requestId=response.headers.get('x-oasis-request-id');
-  if(method==='GET'&&/^\/api\/pvp\/rooms\/[A-Za-z0-9_-]+$/.test(path)){
-   assert.match(timing,/^app;dur=\d+\.\d{3}$/);assert.match(requestId,/^[a-f0-9]{32}$/);assert(!requestIds.has(requestId));requestIds.add(requestId);
+  const roomRead=method==='GET'&&/^\/api\/pvp\/rooms\/[A-Za-z0-9_-]+$/.test(path);
+  const entryWrite=method==='POST'&&path==='/api/pvp/rooms';
+  if(roomRead||entryWrite){
+   assert.match(timing,/^app;dur=\d+\.\d{3}$/);assert.match(requestId,/^[a-f0-9]{32}$/);assert(!requestIds.has(requestId)&&!entryRequestIds.has(requestId));
+   (roomRead?requestIds:entryRequestIds).add(requestId);
   }else{assert.equal(timing,null);assert.equal(requestId,null);}
   report.requests.push({method,path:path.replace(/rooms\/[^/]+/,'rooms/[owned]'),status:response.status,omitted:value.run_game_transfer?.omitted??null,timing,request_id:requestId});
   assert.equal(response.status,expected,JSON.stringify(value));return{value,raw,headers:response.headers};
@@ -101,6 +104,7 @@ test('Run negotiated GETs preserve authentication, current outer fields and exac
    assert.equal(closed[0].boot_id,rows[0].boot_id);assert.equal(closed[0].pid,rows[0].pid);assert.equal(rows[0].pid,child.pid);
    assert(privateValues.every(value=>!raw.includes(value)),'Timing file must exclude tokens, room/player identity and DB connection');
    assert.deepEqual(new Set(requests.map(row=>row.request_id)),requestIds);
+   assert.equal(entryRequestIds.size,1);assert([...entryRequestIds].every(value=>!raw.includes(value)),'Header-only entry timing must not expand room trace logs');
    for(const requestId of requestIds){
     const phases=requests.filter(row=>row.request_id===requestId),expected=report.requests.find(row=>row.request_id===requestId);
     assert.deepEqual(phases.map(row=>row.phase),['entry','headers','finish']);

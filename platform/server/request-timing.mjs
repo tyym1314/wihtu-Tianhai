@@ -2,10 +2,26 @@ import {randomBytes} from 'node:crypto';
 
 const pending=new WeakMap();
 const roomRead=/^\/api\/pvp\/rooms\/[A-Za-z0-9_-]+$/;
+const entryReads=new Set(['/api/arena/session','/api/play/thunder/session','/api/play/tiger/session','/api/play/thunder/config','/api/play/tiger/config']);
+const entryWrites=new Set(['/v1/launch/exchange','/api/pvp/rooms']);
 
 /** Per-request diagnostics contain no room, player, token or caller-supplied ID. */
-export function beginRoomReadTiming(req,res,{now=()=>performance.now(),epoch=()=>Date.now(),makeId=()=>randomBytes(16).toString('hex'),sink=null}={}){
- if(req.method!=='GET'||!roomRead.test(req.url||'')||pending.has(res))return false;
+export function beginRoomReadTiming(req,res,options={}){
+ if(req.method!=='GET'||!roomRead.test(req.url||''))return false;
+ return beginTiming(res,options);
+}
+
+/** Bounded response-header diagnostics for the observed slow game-entry APIs.
+ * No request data is inspected, and the opt-in room log sink is not expanded.
+ * A query string, another verb or any other route remains outside this scope.
+ */
+export function beginGameEntryTiming(req,res,options={}){
+ if(!(req.method==='GET'&&entryReads.has(req.url)||req.method==='POST'&&entryWrites.has(req.url)))return false;
+ return beginTiming(res,{...options,sink:null});
+}
+
+function beginTiming(res,{now=()=>performance.now(),epoch=()=>Date.now(),makeId=()=>randomBytes(16).toString('hex'),sink=null}={}){
+ if(pending.has(res))return false;
  try{
   const started=now(),requestId=makeId();
   if(!Number.isFinite(started)||!/^[a-f0-9]{32}$/.test(requestId))return false;
@@ -33,7 +49,9 @@ function recordPhase(state,phase,time,extra={}){
  try{return state.sink.record({phase,request_id:state.requestId,epoch_ms:state.epoch(),mono_ms:time,...extra})===true;}catch{return false;}
 }
 
-/** Call after JSON serialization, immediately before headers are committed.
+/** Completes room-read or game-entry timing after JSON serialization,
+ * immediately before headers are committed. The historical export name is
+ * retained for existing callers.
  * app measures handler-entry through response preparation only. It excludes
  * pre-handler event-loop/socket queueing, proxy time, transfer and client parse.
  * The server-generated ID lets controlled clients correlate proxy diagnostics.

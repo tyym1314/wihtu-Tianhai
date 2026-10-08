@@ -1,0 +1,19 @@
+{
+  "schema": "run-runtime-environment-v1",
+  "source": "oasis-kit.glb",
+  "source_sha256": "611065e6fa1a1174c6a5095e997383fe7f467bc0c33273ed33aecde5b3cd90f0",
+  "source_bytes": 1344624,
+  "glb": "oasis-kit-runtime-v1.glb",
+  "sha256": "b2267dae5b712e0f143b020d0e137a703128456ad8752e8a05ba1779c38785bd",
+  "bytes": 933776,
+  "prefabs": [
+    "Palm",
+    "RockBank",
+    "BridgeSupport",
+    "FinishGate"
+  ],
+  "omitted_prefabs": [
+    "Palace"
+  ],
+  "method": "Deterministic reachability pruning; retained accessor and buffer-view bytes unchanged."
+}

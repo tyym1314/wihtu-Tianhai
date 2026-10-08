@@ -5,10 +5,29 @@ import {EventEmitter} from 'node:events';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {beginRoomReadTiming,finishRoomReadTiming} from '../server/request-timing.mjs';
+import {beginRoomReadTiming,beginGameEntryTiming,finishRoomReadTiming} from '../server/request-timing.mjs';
 
 const path='/api/pvp/rooms/pvp_example',id='a'.repeat(32);
 function response(){return{headers:{},setHeader(k,v){this.headers[k]=v;}};}
+test('entry timing is an exact method/path allowlist with no log sink or private data',()=>{
+ const allowed=[['GET','/api/arena/session'],['GET','/api/play/thunder/session'],['GET','/api/play/tiger/session'],['GET','/api/play/thunder/config'],['GET','/api/play/tiger/config'],['POST','/v1/launch/exchange'],['POST','/api/pvp/rooms']];
+ for(const [method,url] of allowed){
+  const r=Object.assign(new EventEmitter(),response());let at=10;
+  const options={now:()=>at,makeId:()=>id,epoch:()=>assert.fail('entry timing must not take a wall-clock sample'),sink:{record:()=>assert.fail('entry routes must not enter room trace logs')}};
+  const req={method,url,headers:{authorization:'Bearer private','x-oasis-request-id':'caller-secret'},body:{password:'private',launch_code:'private'}};
+  assert.equal(beginRoomReadTiming(req,r,options),false);
+  assert.equal(beginGameEntryTiming(req,r,options),true);
+  assert.equal(beginGameEntryTiming(req,r,options),false);
+  assert.equal(r.eventNames().length,0);at=17.25;
+  assert.equal(finishRoomReadTiming(r),true);
+  assert.deepEqual(r.headers,{'X-Oasis-Request-Id':id,'Server-Timing':'app;dur=7.250'});
+  for(const invalid of [{method:method==='GET'?'POST':'GET',url},{method:'HEAD',url},{method,url:url+'/'},{method,url:url+'?token=private'}])assert.equal(beginGameEntryTiming(invalid,response(),options),false);
+ }
+ for(const url of ['/health','/api/admin/login','/api/partner/session','/v1/sessions','/v1/transfers','/api/pvp/rooms/room/leave','/api/play/thunder/spin',path]){
+  for(const method of ['GET','POST'])assert.equal(beginGameEntryTiming({method,url},response()),false);
+ }
+ const r=response();assert.equal(beginGameEntryTiming({method:'GET',url:'/api/arena/session'},r,{makeId:()=>{throw Error('entropy');}}),false);assert.deepEqual(r.headers,{});
+});
 test('only exact room GETs are observed and caller correlation is ignored',()=>{
  for(const [method,url] of [['POST',path],['GET',path+'/action'],['GET','/health'],['GET',path+'?token=private'],['GET','/api/pvp/rooms/']]){
   const r=response();assert.equal(beginRoomReadTiming({method,url},r),false);assert.equal(finishRoomReadTiming(r),false);assert.deepEqual(r.headers,{});
@@ -62,7 +81,7 @@ test('real JSON responses include preparation timing without changing bytes or p
  try{
   const {send}=await import('../server/security.mjs');
   server=createServer((req,res)=>{
-   let at=0;beginRoomReadTiming(req,res,{now:()=>at,makeId:()=>id});
+   let at=0;beginRoomReadTiming(req,res,{now:()=>at,makeId:()=>id});beginGameEntryTiming(req,res,{now:()=>at,makeId:()=>id});
    if(req.url.endsWith('broken')){
     try{send(res,200,{toJSON(){at=9;throw Error('fixture');}});}catch{assert.equal(res.headersSent,false);send(res,500,{error:'serialization failed'});}
    }else send(res,200,{toJSON(){at=7.25;return{value:'汉字',status:'unchanged'};}});
@@ -74,6 +93,11 @@ test('real JSON responses include preparation timing without changing bytes or p
   assert.equal(res.headers.get('cache-control'),'no-store');assert.equal(res.headers.get('referrer-policy'),'no-referrer');
   assert.equal(res.headers.get('x-oasis-request-id'),id);assert.equal(res.headers.get('server-timing'),'app;dur=7.250');
   const other=await fetch(base+'/health');assert.equal(other.headers.get('server-timing'),null);await other.arrayBuffer();
+  for(const [method,url] of [['GET','/api/arena/session'],['GET','/api/play/thunder/session'],['POST','/api/pvp/rooms'],['POST','/v1/launch/exchange']]){
+   const entry=await fetch(base+url,{method,headers:{'X-Oasis-Request-Id':'must-not-reflect'},...(method==='POST'?{body:'{"launch_code":"private"}'}:{})});
+   assert.equal(entry.status,200);assert.equal(entry.headers.get('cache-control'),'no-store');assert.equal(entry.headers.get('x-oasis-request-id'),id);assert.equal(entry.headers.get('server-timing'),'app;dur=7.250');
+   assert.equal(await entry.text(),'{"value":"汉字","status":"unchanged"}');
+  }
   const broken=await fetch(base+'/api/pvp/rooms/broken');assert.equal(broken.status,500);assert.equal(broken.headers.get('server-timing'),'app;dur=9.000');assert.deepEqual(await broken.json(),{error:'serialization failed'});
  }finally{
   if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
