@@ -32,3 +32,49 @@ test('UI helper readiness waiting ends at optional deadline without input',async
 test('expired authoritative turn does not authorize a new UI gesture',()=>{const r=room('ludo');r.game.turnDeadlineAt=100;assert.equal(canExercise('ludo',r),false);});
 
 test('error response body waiting respects the helper deadline',async()=>{const h=uiHarness({status:409,bodyHang:true});await assert.rejects(()=>playOneArenaAction(h.frame,'golf',()=>h.current,{touch:true,timeoutMs:20}),{code:'ACTION_DEADLINE'});assert.equal(h.taps(),1);assert.equal(h.listeners.size,0);});
+
+function inputFixture(){
+ const current={...room('run'),practice:true,entry_minor:'0',game:{gameId:'run',me:'a',status:'active',ruleVersion:'pvp-run-v2.3.0',snapshotTick:30,
+  players:[{key:'a',isBot:false,inputNo:2,finishTick:null},{key:'bot',isBot:true,inputNo:0,finishTick:null}]},
+  run_inputs:{protocol:'run-practice-inputs-v1',ruleVersion:'pvp-run-v2.3.0',roomId:'room-a',playerKey:'a',clockEpoch:3,revision:7,headTick:30,serverTick:30,committedThroughTick:0,processedThroughCommandSeq:5,acceptedInputNo:2,decisions:[]}};
+ const request={request_id:'exact_input_request',roomId:'room-a',playerKey:'a',clockEpoch:3,baseRevision:7,commands:[{commandSeq:6,type:'jump',executeTick:31}]};
+ const after=structuredClone(current);after.request_id=request.request_id;Object.assign(after.run_inputs,{revision:8,processedThroughCommandSeq:6,acceptedInputNo:3,
+  decisions:[{commandSeq:6,type:'jump',executeTick:31,clockEpoch:3,outcome:'accepted',code:null,acceptedInputNo:3,decidedAtServerTick:30,revision:8,duplicate:false}]});after.game.players[0].inputNo=3;
+ return {current,request,after};
+}
+function inputUI({mutate=()=>{},method='POST',status=200,getFirst=false}={}){
+ const f=inputFixture(),listeners=new Map();mutate(f);let taps=0;
+ const page={on:(n,fn)=>listeners.set(n,fn),off:n=>listeners.delete(n)},frame={page:()=>page,locator:()=>({isVisible:async()=>true,isEnabled:async()=>true,tap:async()=>{
+  taps++;const response=verb=>({url:()=> 'https://fixture.invalid/api/pvp/rooms/room-a/inputs',request:()=>({method:()=>verb,frame:()=>frame,postDataJSON:()=>f.request}),status:()=>status,json:async()=>f.after});
+  if(getFirst)listeners.get('response')?.(response('GET'));listeners.get('response')?.(response(method));
+ }})};return {...f,frame,listeners,taps:()=>taps};
+}
+
+test('V2.3 one UI gesture requires its exact POST decision and independent accepted counter',async()=>{
+ const h=inputUI({getFirst:true}),r=await playOneArenaAction(h.frame,'run',()=>h.current,{touch:true});
+ assert.equal(h.taps(),1);assert.equal(h.listeners.size,0);assert.equal(r.protocol,'run-practice-inputs-v1');
+ assert.equal(r.sequenceBefore,5);assert.equal(r.sequenceAfter,6);assert.equal(r.inputEvidence.acceptedInputNoBefore,2);assert.equal(r.inputEvidence.acceptedInputNoAfter,3);
+ assert.equal(r.inputEvidence.requestId,'exact_input_request');assert.equal(r.inputEvidence.executeTick,31);assert.equal(h.after.me_last_seq,0,'legacy wireSeq is not repurposed');
+});
+for(const [label,mutate]of [
+ ['request id',f=>f.after.request_id='another_request'],['room',f=>f.request.roomId='another_room'],['player',f=>f.request.playerKey='other'],['epoch',f=>f.request.clockEpoch++],
+ ['command gap',f=>f.request.commands[0].commandSeq++],['command type',f=>f.request.commands[0].type='left'],['missing tick',f=>delete f.request.commands[0].executeTick],
+ ['extra command',f=>f.request.commands.push({...f.request.commands[0],commandSeq:7})],['missing decision',f=>f.after.run_inputs.decisions=[]],
+ ['decision type',f=>f.after.run_inputs.decisions[0].type='left'],['decision tick',f=>f.after.run_inputs.decisions[0].executeTick++],['decision seq',f=>f.after.run_inputs.decisions[0].commandSeq++],
+ ['decision epoch',f=>f.after.run_inputs.decisions[0].clockEpoch++],['decision duplicate',f=>f.after.run_inputs.decisions[0].duplicate=true],
+ ['accepted number',f=>f.after.run_inputs.decisions[0].acceptedInputNo++],['outer counter',f=>f.after.run_inputs.acceptedInputNo++],['player counter',f=>f.after.game.players[0].inputNo++],
+ ['cursor only GET-shaped body',f=>{delete f.after.request_id;f.after.run_inputs.decisions=[];}],['paid profile',f=>f.current.entry_minor='1000'],['wrong protocol',f=>f.current.run_inputs.protocol='unknown'],
+ ['HTTP200 rejection',f=>Object.assign(f.after.run_inputs.decisions[0],{outcome:'rejected',code:'BUSY',acceptedInputNo:null})],
+])test('V2.3 input evidence rejects '+label,async()=>{
+ const h=inputUI({mutate});await assert.rejects(()=>playOneArenaAction(h.frame,'run',()=>h.current,{touch:true}),{code:'RUN_INPUT_PROOF_INVALID'});
+ assert.ok(h.taps()<=1);assert.equal(h.listeners.size,0);
+});
+test('V2.3 GET cannot impersonate a POST ACK or cause another gesture',async()=>{
+ const h=inputUI({method:'GET'});await assert.rejects(()=>playOneArenaAction(h.frame,'run',()=>h.current,{touch:true,timeoutMs:20}),/deadline/);
+ assert.equal(h.taps(),1);assert.equal(h.listeners.size,0);
+});
+test('V2.3 HTTP and business rejections preserve the first body without a retry',async()=>{
+ for(const status of [409,200]){const h=inputUI({status,mutate:f=>Object.assign(f.after.run_inputs.decisions[0],{outcome:'rejected',code:'BUSY',acceptedInputNo:null})});
+  await assert.rejects(()=>playOneArenaAction(h.frame,'run',()=>h.current,{touch:true}),e=>e.status===status&&e.responseBody.run_inputs.decisions[0].code==='BUSY');assert.equal(h.taps(),1);
+ }
+});

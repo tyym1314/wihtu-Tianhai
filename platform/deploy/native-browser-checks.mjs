@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {randomUUID} from 'node:crypto';
+import {runPracticeInputBaseline,verifyRunPracticeInputAction} from '../scripts/android-game-actions.mjs';
 import {createRunSnapshotObserver,runSnapshotRequest} from './run-snapshot-observer.mjs';
 
 const terminal=status=>['cancelled','settled','voided'].includes(status);
@@ -209,8 +210,8 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
  for(const key of ['js_errors','resource_errors','observer_errors','http_errors','network_errors'])result[key]??=[];
  result.network_observations??=[];result.fetch_observations??=[];result.lifecycle_cancellations??=[];result.pending_network_observations=0;
  result.unmatched_fetch_rejections??=[];
- state.creations??=[];state.actionRequests??=[];state.probabilityRequests??=[];
- result.creations=state.creations;result.action_requests=state.actionRequests;result.probability_requests=state.probabilityRequests;
+ state.creations??=[];state.actionRequests??=[];state.inputsRequests??=[];state.probabilityRequests??=[];
+ result.creations=state.creations;result.action_requests=state.actionRequests;result.inputs_requests=state.inputsRequests;result.probability_requests=state.probabilityRequests;
  const phase=()=>state.phase||(state.returning?'returning':'entry');
  const address=request=>{
   const url=new URL(request.url()),frame=typeof request.frame==='function'?request.frame():null,frameUrl=frame?.url();
@@ -236,6 +237,15 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
    const body=request.postDataJSON();
    entry.action={...row(entry),request_id:body.request_id,sequence:body.seq,type:body.action?.type,status:null};state.actionRequests.push(entry.action);
   }
+  if(/^\/api\/pvp\/rooms\/[^/]+\/inputs$/.test(entry.path)){
+   const body=request.postDataJSON();
+   entry.inputs={...row(entry),request_id:body?.request_id,commands:body?.commands,status:null,validated:false};state.inputsRequests.push(entry.inputs);
+   assert.equal(state.game,'run','Only Run supports input batches');assert.ok(entry.game_frame_request,'Input batch is outside the game frame');
+   entry.inputBaseline=runPracticeInputBaseline(state.room);assert.ok(entry.inputBaseline,'Input batch has no explicit V2.3 before snapshot');
+   assert.equal(entry.path,`/api/pvp/rooms/${entry.inputBaseline.roomId}/inputs`,'Input path differs from owned room');
+   assert.equal(entry.inputBaseline.playerKey,state.playerId,'Input player differs from the original session');
+   entry.inputBody=structuredClone(body);
+  }
   if(new RegExp(`^/api/play/${state.game}/(spin|ack)$`).test(entry.path)){
    const body=request.postDataJSON();
    entry.probability={...row(entry),type:entry.path.endsWith('/spin')?'spin':'ack',request_id:body.requestId,round_id:body.roundId,status:null};state.probabilityRequests.push(entry.probability);
@@ -245,7 +255,7 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
  page.on('requestfailed',request=>{let entry;try{
   entry=requests.get(request)||address(request);const error=clean(request.failure()?.errorText||'NETWORK_ERROR');
   entry.failure_error=error;
-  for(const intent of [entry.creation,entry.action,entry.probability])if(intent)intent.transport_error=error;
+  for(const intent of [entry.creation,entry.action,entry.inputs,entry.probability])if(intent)intent.transport_error=error;
   if(entry.creation)entry.creation.finished=true;
   if(entry.origin===origin&&apiPath(entry.path)||['fetch','xhr'].includes(entry.type)){
    const observation=Object.freeze({observation_id:entry.request_id,...row(entry),frame_id:fetchProbe?.frameId(entry.frame_object)??null,observed_at_ms:Date.now(),error});result.network_observations.push(observation);
@@ -259,7 +269,7 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
   const work=(async()=>{
    const request=response.request();entry=requests.get(request)||address(request);entry.response_seen=true;
    const status=response.status(),path=entry.path;
-   for(const intent of [entry.creation,entry.action,entry.probability])if(intent)intent.status=status;
+   for(const intent of [entry.creation,entry.action,entry.inputs,entry.probability])if(intent)intent.status=status;
    if(assets.has(entry.type)&&status>=400)result.resource_errors.push({...row(entry),status});
    if(entry.origin===origin&&apiPath(path)?!response.ok():['fetch','xhr'].includes(entry.type)&&status>=400)result.http_errors.push({...row(entry),status});
    if(entry.origin!==origin)return;
@@ -281,6 +291,7 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
    if(path.startsWith('/api/pvp/rooms')){
     await runSnapshots.enqueue(response.json(),body=>{const room=body.room||body;
      if(!room.id&&(Object.hasOwn(room,'run_game_transfer')||entry.method==='GET'&&/^\/api\/pvp\/rooms\/[^/]+$/.test(path)))runSnapshots.inspect(entry.runSnapshotTicket,room);
+     if(entry.inputs){const proof=verifyRunPracticeInputAction(entry.inputBaseline,entry.inputBody,room);entry.inputs.proof=proof;entry.inputs.validated=true;}
      if(room.id){
       assert.equal(room.game_id,state.game,'Observed room belongs to another game');
       assert.equal(room.me,state.playerId,'Observed room belongs to another player');

@@ -125,13 +125,21 @@ try{
     await startPractice(frame,state,result);
     state.phase='playing';
     const action=await runNativeActionOnce(()=>playOneArenaAction(frame,state.game,()=>state.room),result,clean);
-    await drain();assert.equal(state.actionRequests.length,1,'Expected exactly one UI action request; no hidden retry');
-    result.action={type:action.actionType,sequence_before:action.sequenceBefore,sequence_after:action.sequenceAfter,http_status:action.httpStatus};
+    await drain();
+    if(action.protocol==='run-practice-inputs-v1'){
+     assert.equal(state.actionRequests.length,0,'V2.3 must not submit legacy actions');
+     assert.equal(state.inputsRequests.length,1,'Expected exactly one UI input batch; no hidden retry');
+     const observed=state.inputsRequests[0];assert.equal(observed.status,action.httpStatus);assert.equal(observed.validated,true,'Exact POST receipt was not validated');
+     assert.deepEqual(observed.proof,action.inputEvidence,'UI response and independently observed input receipt differ');
+    }else{assert.equal(state.actionRequests.length,1,'Expected exactly one UI action request; no hidden retry');assert.equal(state.inputsRequests.length,0,'Unexpected input-protocol mutation');}
+    result.action={type:action.actionType,sequence_before:action.sequenceBefore,sequence_after:action.sequenceAfter,http_status:action.httpStatus,
+     ...(action.inputEvidence?{protocol:action.protocol,input_evidence:action.inputEvidence}:{})};
    }else{state.phase='playing';await spinOnce(frame,state,result);}
    result.layout=await layout(page,frame);
    result.screenshot=game+'-390.png';await page.screenshot({path:resolve(out,result.screenshot)});
    assert.ok(result.layout.single_screen,'Active game does not fit in one mobile viewport');
    await hostReturn(page,frame,state,result);await drain();
+   if(result.action?.input_evidence){assert.equal(state.inputsRequests.length,1,'Unexpected later input retry');assert.equal(state.actionRequests.length,0,'Unexpected later legacy action');}
    assert.ok(nativeErrorsEmpty(result),'Observed JavaScript/resource/API/transport/response errors; see retained evidence');
    result.passed=true;
   }catch(error){

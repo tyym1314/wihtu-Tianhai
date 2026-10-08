@@ -7,7 +7,7 @@ import {isIP} from 'node:net';
 import {randomUUID} from 'node:crypto';
 import {chromium} from 'playwright';
 import {ARENA_IDS,LEGACY_IDS,RELEASED_IDS} from '../shared/games.mjs';
-import {playOneArenaAction} from '../scripts/android-game-actions.mjs';
+import {playOneArenaAction,runPracticeInputBaseline,verifyRunPracticeInputAction} from '../scripts/android-game-actions.mjs';
 import {createSnapshotTransfer} from '../arena/shared/snapshot-transfer.mjs';
 import {classifyReturningRoomBodyLoss,proveReturningRoomBodyLoss} from './public-smoke-observer.mjs';
 import {createRunSnapshotObserver,runSnapshotRequest} from './run-snapshot-observer.mjs';
@@ -67,13 +67,20 @@ function observe(target){
   if(request.method()==='POST'&&u.pathname==='/api/pvp/rooms'){
    const body=request.postDataJSON();entry.creation={requestId:body.request_id,game:body.game_id,practice:body.practice===true,clientRoomId:body.room_id||null,status:null,roomId:null,finished:false};attempt.creations.push(entry.creation);
   }
+  if(request.method()==='POST'&&/^\/api\/pvp\/rooms\/[^/]+\/inputs$/.test(u.pathname)){
+   const body=request.postDataJSON();entry.inputs={path:u.pathname,phase:entry.phase,request_id:body?.request_id,commands:body?.commands,status:null,validated:false};attempt.inputsRequests.push(entry.inputs);
+   assert.equal(attempt.game,'run');assert.equal(request.frame(),internal.gameFrame,'Input batch came from another frame');
+   entry.inputBaseline=runPracticeInputBaseline(attempt.room);assert.ok(entry.inputBaseline,'Input batch lacks explicit V2.3 baseline');
+   assert.equal(entry.inputBaseline.playerKey,guestId);assert.equal(u.pathname,`/api/pvp/rooms/${entry.inputBaseline.roomId}/inputs`);
+   entry.inputBody=structuredClone(body);
+  }
   if(request.method()==='POST'&&/^\/api\/pvp\/rooms\/[^/]+\/action$/.test(u.pathname)&&entry.phase!=='cleanup'){
    const body=request.postDataJSON();entry.action={path:u.pathname,requestId:body.request_id,sequence:body.seq,type:body.action?.type,status:null};attempt.actionRequests.push(entry.action);
   }
  }catch(e){report.observerErrors.push({stage:'request-observer',error:errorInfo(e)});}});
  target.on('requestfinished',request=>{const entry=requests.get(request);if(entry?.creation)entry.creation.finished=true;});
  target.on('requestfailed',request=>{
-  const entry=requests.get(request);if(entry?.probability)entry.probability.transportError=request.failure()?.errorText||'REQUEST_FAILED';if(entry?.creation){entry.creation.finished=true;entry.creation.transportError=request.failure()?.errorText||'REQUEST_FAILED';}
+  const entry=requests.get(request);if(entry?.inputs)entry.inputs.transportError=request.failure()?.errorText||'REQUEST_FAILED';if(entry?.probability)entry.probability.transportError=request.failure()?.errorText||'REQUEST_FAILED';if(entry?.creation){entry.creation.finished=true;entry.creation.transportError=request.failure()?.errorText||'REQUEST_FAILED';}
   if(!isAsset(request))return;
   const row={...address(request),game:entry?.attempt?.game||null,phase:entry?.phase,error:request.failure()?.errorText||'REQUEST_FAILED'};
   // A cancelled transfer during a proved return/cleanup is preserved separately.
@@ -84,7 +91,7 @@ function observe(target){
   const request=response.request(),entry=requests.get(request),attempt=entry?.attempt,u=new URL(response.url());
   if(isAsset(request)&&response.status()>=400)report.failedAssets.push({...address(request),game:attempt?.game||null,status:response.status()});
   if(u.origin===origin&&/^\/(?:api|v1)\//.test(u.pathname)&&response.status()>=400)report.httpErrors.push({path:u.pathname,method:request.method(),status:response.status(),game:attempt?.game||null,phase:entry?.phase});
-  if(entry?.creation)entry.creation.status=response.status();if(entry?.action)entry.action.status=response.status();if(entry?.probability)entry.probability.status=response.status();
+  if(entry?.inputs)entry.inputs.status=response.status();if(entry?.creation)entry.creation.status=response.status();if(entry?.action)entry.action.status=response.status();if(entry?.probability)entry.probability.status=response.status();
   if(u.origin!==origin||!attempt||!response.ok())return;
   const task=(async()=>{
    const internal=internals.get(attempt);
@@ -100,6 +107,7 @@ function observe(target){
    if(u.pathname.startsWith('/api/pvp/rooms')){
     await internal.runSnapshots.enqueue(response.json(),body=>{const raw=body.room||body;
      if(!raw.id&&(Object.hasOwn(raw,'run_game_transfer')||request.method()==='GET'&&/^\/api\/pvp\/rooms\/[^/]+$/.test(u.pathname)))internal.runSnapshots.inspect(entry.runSnapshotTicket,raw);
+     if(entry.inputs){entry.inputs.proof=verifyRunPracticeInputAction(entry.inputBaseline,entry.inputBody,raw);entry.inputs.validated=true;}
      if(!raw.id)return;
      registerRoom(attempt,raw,entry.creation?'create-response':'public-response');if(entry.creation)entry.creation.roomId=raw.id;
      const observed=internal.runSnapshots.inspect(entry.runSnapshotTicket,raw);
@@ -200,16 +208,27 @@ try{
  const firstConfig=await page.evaluate(()=>fetch('/api/demo/config').then(r=>r.json()));
  const second=await browser.newContext();try{const secondPage=await second.newPage();observe(secondPage);const secondConfig=await secondPage.goto(origin+'/api/demo/config').then(r=>r.json());assert.notEqual(firstConfig.csrf,secondConfig.csrf);assert.notEqual(firstConfig.profile.name,secondConfig.profile.name);report.distinctGuests=true;}finally{await second.close();}
  for(const game of RELEASED_IDS){
-  const attempt=current={game,phase:'entry',spins:[],acknowledged:[],creations:[],roomIds:[],actionRequests:[],probabilityRequests:[],snapshotNotes:[],runSnapshotDuplicates:[],launched:false,returned:false,cleanupComplete:false};report.games.push(attempt);internals.set(attempt,{token:null,transfer:createSnapshotTransfer(),runSnapshots:createRunSnapshotObserver(),terminalReads:[],gameFrame:null,returnStarted:false});await flush();
+  const attempt=current={game,phase:'entry',spins:[],acknowledged:[],creations:[],roomIds:[],actionRequests:[],inputsRequests:[],probabilityRequests:[],snapshotNotes:[],runSnapshotDuplicates:[],launched:false,returned:false,cleanupComplete:false};report.games.push(attempt);internals.set(attempt,{token:null,transfer:createSnapshotTransfer(),runSnapshots:createRunSnapshotObserver(),terminalReads:[],gameFrame:null,returnStarted:false});await flush();
   await page.locator(`[data-game="${game}"]`).tap();await page.locator('#connection').filter({hasText:'已连接'}).waitFor();
   const frame=page.frames().find(f=>f.url()===origin+'/play/'+game);assert.ok(frame);internals.get(attempt).gameFrame=frame;await until(()=>!!attempt.sessionId,'session exchange '+game);attempt.launched=true;
   if(ARENA_IDS.includes(game)){
    await frame.locator('.lobby-settings').waitFor();await frame.getByRole('button',{name:'免费练习',exact:false}).tap();await frame.getByRole('button',{name:'确认规则 · 准备开局',exact:true}).tap();
    await until(()=>attempt.room?.status==='active','active '+game);await frame.locator('.arena-loading').waitFor({state:'hidden'});attempt.phase='playing';
    attempt.action=await playOneArenaAction(frame,game,()=>attempt.room,{touch:true});await drainObservers();
-   assert.equal(attempt.action.httpStatus,200);assert.equal(attempt.action.sequenceAfter,attempt.action.sequenceBefore+1);assert.equal(attempt.actionRequests.length,1,'Expected exactly one UI action POST; no hidden action retry');
-   const readback=await readRoom(attempt,attempt.action.roomId);assert.equal(readback.me_last_seq,attempt.action.sequenceAfter,'Public GET did not retain accepted personal sequence');
-   attempt.action.publicReadback={roomId:readback.id,me:readback.me,meLastSeq:readback.me_last_seq,version:readback.version,status:readback.status};attempt.acceptedAction=true;
+   assert.equal(attempt.action.httpStatus,200);assert.equal(attempt.action.sequenceAfter,attempt.action.sequenceBefore+1);
+   const inputEvidence=attempt.action.inputEvidence;
+   if(attempt.action.protocol==='run-practice-inputs-v1'){
+    assert.equal(attempt.actionRequests.length,0,'V2.3 must not submit legacy actions');assert.equal(attempt.inputsRequests.length,1,'Expected exactly one UI input POST; no hidden retry');
+    const observed=attempt.inputsRequests[0];assert.equal(observed.status,200);assert.equal(observed.validated,true);assert.deepEqual(observed.proof,inputEvidence,'UI response and observer receipt differ');
+   }else{assert.equal(attempt.actionRequests.length,1,'Expected exactly one UI action POST; no hidden action retry');assert.equal(attempt.inputsRequests.length,0,'Unexpected input-protocol mutation');}
+   const readback=await readRoom(attempt,attempt.action.roomId);
+   if(inputEvidence){
+    const retained=runPracticeInputBaseline(readback);assert.ok(retained);
+    for(const key of ['roomId','playerKey','clockEpoch'])assert.equal(retained[key],inputEvidence[key]);
+    assert.equal(retained.commandSeq,inputEvidence.commandSeq);assert.equal(retained.acceptedInputNo,inputEvidence.acceptedInputNoAfter);
+    attempt.action.publicReadback={roomId:readback.id,me:readback.me,version:readback.version,status:readback.status,protocol:retained.protocol,commandSeq:retained.commandSeq,acceptedInputNo:retained.acceptedInputNo,clockEpoch:retained.clockEpoch};
+   }else{assert.equal(readback.me_last_seq,attempt.action.sequenceAfter,'Public GET did not retain accepted personal sequence');attempt.action.publicReadback={roomId:readback.id,me:readback.me,meLastSeq:readback.me_last_seq,version:readback.version,status:readback.status};}
+   attempt.acceptedAction=true;
    assert.equal(readback.practice,true);assert.equal(readback.entry_minor,'0');assert.equal(attempt.creations.length,1,'Unexpected additional room creation');
    report.practice.push({game,room:readback.id,entry:readback.entry_minor,action:attempt.action,input:['darts','towerlink'].includes(game)?'mouse drag; touch used for menu/return':'trusted touch taps'});
   }else{
@@ -223,7 +242,7 @@ try{
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.equal(await frame.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   await page.screenshot({path:new URL(`public-${game}-390.png`,out).pathname,fullPage:true});await back(attempt,frame);
   if(ARENA_IDS.includes(game)){const room=await readRoom(attempt,attempt.action.roomId);assert(terminal(room),'UI return did not release its practice room');attempt.returnReadback={roomId:room.id,status:room.status};}
-  await cleanupAttempt(attempt);await drainObservers();reconcileReadBodyLosses();await flush();console.log(game+' HTTPS launch/action-or-spin/ACK/return passed');current=null;
+  await cleanupAttempt(attempt);await drainObservers();if(attempt.action?.inputEvidence){assert.equal(attempt.inputsRequests.length,1,'Unexpected later input retry');assert.equal(attempt.actionRequests.length,0,'Unexpected later legacy action');}reconcileReadBodyLosses();await flush();console.log(game+' HTTPS launch/action-or-spin/ACK/return passed');current=null;
  }
  const kit=await page.evaluate(async()=>{const r=await fetch('/downloads/oasis-partner-sandbox-kit.zip');return{status:r.status,bytes:(await r.arrayBuffer()).byteLength};});assert.equal(kit.status,200);assert.ok(kit.bytes>100000);report.partnerKit=true;await drainObservers();
  assert.equal(report.games.length,RELEASED_IDS.length);assert.equal(report.practice.length,ARENA_IDS.length);assert.equal(report.probability.length,LEGACY_IDS.length);assert(report.games.every(g=>g.launched&&g.returned&&g.cleanupComplete));

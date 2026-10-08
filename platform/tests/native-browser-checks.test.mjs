@@ -470,3 +470,49 @@ test('orphan rejected telemetry without a start or network event is a permanent 
 test('foreign-origin fetch with an owned room pathname cannot use the lifecycle exemption',async()=>{
  const fixture=cancellationFixture();fixture.req.url=()=> 'https://another.invalid/api/pvp/rooms/owned';fixture.trace[1].url=fixture.req.url();fixture.deliver();fixture.fail();await fixture.drain();assert.equal(fixture.result.lifecycle_cancellations.length,0);assert.equal(fixture.result.network_errors.length,1);assert.equal(fixture.result.network_errors[0].classification_failure,'NOT_OWNED_READ_ONLY_ROOM_POLL');
 });
+
+function nativeInputFixture(){
+ const before=room({status:'active',game:{gameId:'run',me:'owned_player',physicsVersion:'fixture',ruleVersion:'pvp-run-v2.3.0',snapshotTick:1,
+  players:[{key:'owned_player',isBot:false,inputNo:0},{key:'bot',isBot:true,inputNo:0}]},
+  run_inputs:{protocol:'run-practice-inputs-v1',ruleVersion:'pvp-run-v2.3.0',roomId:'owned',playerKey:'owned_player',clockEpoch:1,revision:1,headTick:1,serverTick:1,committedThroughTick:0,processedThroughCommandSeq:0,acceptedInputNo:0,decisions:[]}});
+ const body={request_id:'input_request_exact',roomId:'owned',playerKey:'owned_player',clockEpoch:1,baseRevision:1,commands:[{commandSeq:1,type:'jump',executeTick:2}]};
+ const after=structuredClone(before);after.version=2;after.request_id=body.request_id;after.game.players[0].inputNo=1;
+ Object.assign(after.run_inputs,{revision:2,processedThroughCommandSeq:1,acceptedInputNo:1,decisions:[{commandSeq:1,type:'jump',executeTick:2,clockEpoch:1,outcome:'accepted',code:null,acceptedInputNo:1,decidedAtServerTick:1,revision:2,duplicate:false}]});
+ const req={...request({path:'/api/pvp/rooms/owned/inputs',method:'POST',body}),frame:()=>({url:()=>origin+'/play/run'})};
+ return{before,body,after,req};
+}
+test('native observer records V2.3 inputs separately and binds its exact accepted receipt',async()=>{
+ const f=nativeInputFixture(),h=observation({room:f.before,ownedRooms:new Set(['owned'])});
+ response(h,f.req,{json:async()=>f.after});await h.drain();
+ assert.equal(nativeErrorsEmpty(h.result),true);assert.equal(h.state.actionRequests.length,0);assert.equal(h.state.inputsRequests.length,1);
+ const observed=h.result.inputs_requests[0];assert.equal(observed.status,200);assert.equal(observed.validated,true);
+ assert.equal(observed.proof.requestId,f.body.request_id);assert.equal(observed.proof.acceptedInputNoBefore,0);assert.equal(observed.proof.acceptedInputNoAfter,1);
+});
+for(const [label,change]of [
+ ['wrong response request id',f=>f.after.request_id='wrong_request_id'],
+ ['no exact decision',f=>f.after.run_inputs.decisions=[]],
+ ['business rejection',f=>Object.assign(f.after.run_inputs.decisions[0],{outcome:'rejected',code:'BUSY',acceptedInputNo:null})],
+ ['wrong input number',f=>f.after.run_inputs.decisions[0].acceptedInputNo=2],
+ ['wrong epoch',f=>f.after.run_inputs.clockEpoch=2],
+ ['wrong frame',f=>f.req.frame=()=>({url:()=>origin+'/demo/'})],
+])test('native observer never treats 2xx '+label+' as accepted input',async()=>{
+ const f=nativeInputFixture();change(f);const h=observation({room:f.before,ownedRooms:new Set(['owned'])});response(h,f.req,{json:async()=>f.after});await h.drain();
+ assert.equal(h.result.inputs_requests.length,1);assert.equal(h.result.inputs_requests[0].status,200);assert.equal(nativeErrorsEmpty(h.result),false);assert.ok(h.result.observer_errors.length);
+});
+test('GET progress has no input request or accepted POST evidence',async()=>{
+ const f=nativeInputFixture(),h=observation({room:f.before});delete f.after.request_id;f.after.run_inputs.decisions=[];
+ response(h,request(),{json:async()=>f.after});await h.drain();assert.equal(nativeErrorsEmpty(h.result),true);
+ assert.equal(h.state.inputsRequests.length,0);assert.equal(h.state.actionRequests.length,0);assert.equal(h.state.room.run_inputs.acceptedInputNo,1);
+});
+test('input body loss, HTTP failure and transport cancellation remain strict failures',async()=>{
+ for(const kind of ['body','http','transport']){
+  const f=nativeInputFixture(),h=observation({room:f.before});
+  if(kind==='transport'){h.page.emit('request',f.req);h.page.emit('requestfailed',f.req);}
+  else response(h,f.req,{status:kind==='http'?409:200,json:async()=>{if(kind==='body')throw Error(knownLoss);return f.after;}});
+  await h.drain();assert.equal(nativeErrorsEmpty(h.result),false);assert.equal(h.state.inputsRequests.length,1);assert.equal(h.state.inputsRequests[0].validated,false);
+ }
+});
+test('overlapping or repeated input POSTs retain two independent requests instead of deduping evidence',async()=>{
+ const f=nativeInputFixture(),h=observation({room:f.before});response(h,f.req,{json:async()=>f.after});response(h,{...f.req},{json:async()=>f.after});await h.drain();
+ assert.equal(h.state.inputsRequests.length,2);assert.equal(h.state.actionRequests.length,0);
+});

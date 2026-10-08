@@ -35,6 +35,45 @@ const attr = (name, value) => {
   return `[${name}="${value}"]`;
 };
 
+const PRACTICE_PROTOCOL='run-practice-inputs-v1',PRACTICE_RULE='pvp-run-v2.3.0';
+const safeInteger=(n,min=0,max=Number.MAX_SAFE_INTEGER)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
+const exactKeys=(o,keys)=>o&&typeof o==='object'&&!Array.isArray(o)&&Object.keys(o).length===keys.length&&keys.every(k=>Object.hasOwn(o,k));
+const inputProof=(condition,message)=>{if(!condition)throw Object.assign(new Error('run: '+message),{code:'RUN_INPUT_PROOF_INVALID'});};
+
+// Smoke evidence only. A received GET supplies the before cursor, never an ACK.
+export function runPracticeInputBaseline(room){
+ if(room?.game?.ruleVersion!==PRACTICE_RULE)return null;
+ const a=room.run_inputs,p=room.game.players?.find(p=>p.key===room.me);
+ inputProof(room.game_id==='run'&&room.practice===true&&room.entry_minor==='0'&&room.game.me===room.me&&typeof room.id==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(room.id)&&typeof room.me==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(room.me),'invalid free-practice scope');
+ inputProof(a?.protocol===PRACTICE_PROTOCOL&&a.ruleVersion===PRACTICE_RULE&&a.roomId===room.id&&a.playerKey===room.me&&safeInteger(a.clockEpoch,1),'invalid input protocol binding');
+ inputProof(Array.isArray(room.game.players)&&room.game.players.length>=2&&room.game.players.length<=4&&new Set(room.game.players.map(p=>p.key)).size===room.game.players.length&&room.game.players.every(p=>typeof p.isBot==='boolean')&&room.game.players.filter(p=>!p.isBot).length===1&&p?.isBot===false,'invalid free BOT roster');
+ inputProof(safeInteger(a.revision)&&safeInteger(a.headTick,0,6000)&&room.game.snapshotTick===a.headTick&&safeInteger(a.serverTick,a.headTick,6120)&&safeInteger(a.committedThroughTick,0,a.serverTick)&&safeInteger(a.processedThroughCommandSeq)&&safeInteger(a.acceptedInputNo,0,a.processedThroughCommandSeq)&&p.inputNo===a.acceptedInputNo,'invalid input authority cursor');
+ return Object.freeze({protocol:PRACTICE_PROTOCOL,ruleVersion:PRACTICE_RULE,roomId:room.id,playerKey:room.me,clockEpoch:a.clockEpoch,
+  revision:a.revision,headTick:a.headTick,commandSeq:a.processedThroughCommandSeq,acceptedInputNo:a.acceptedInputNo});
+}
+
+export function verifyRunPracticeInputAction(before,request,after,{type='jump'}={}){
+ inputProof(before?.protocol===PRACTICE_PROTOCOL,'missing before cursor');
+ inputProof(exactKeys(request,['request_id','roomId','playerKey','clockEpoch','baseRevision','commands'])&&typeof request.request_id==='string'&&/^[A-Za-z0-9_-]{8,128}$/.test(request.request_id),'invalid exact request');
+ inputProof(request.roomId===before.roomId&&request.playerKey===before.playerKey&&request.clockEpoch===before.clockEpoch&&safeInteger(request.baseRevision),'request scope differs');
+ inputProof(Array.isArray(request.commands)&&request.commands.length===1,'expected exactly one UI command');
+ const command=request.commands[0];
+ inputProof(exactKeys(command,['commandSeq','type','executeTick'])&&command.commandSeq===before.commandSeq+1&&command.type===type&&safeInteger(command.executeTick,1,6001),'unexpected command sequence, type or execution tick');
+ const next=runPracticeInputBaseline(after),a=after?.run_inputs;
+ inputProof(next&&['roomId','playerKey','clockEpoch'].every(k=>next[k]===before[k])&&after.request_id===request.request_id,'response request or scope differs');
+ inputProof(next.commandSeq===command.commandSeq&&next.acceptedInputNo===before.acceptedInputNo+1&&next.revision>before.revision&&request.baseRevision<next.revision,'response does not prove one accepted input');
+ inputProof(Array.isArray(a.decisions)&&a.decisions.length===1,'missing exact batch decision');
+ const d=a.decisions[0];
+ inputProof(exactKeys(d,['commandSeq','type','executeTick','clockEpoch','outcome','code','acceptedInputNo','decidedAtServerTick','revision','duplicate'])
+  &&d.commandSeq===command.commandSeq&&d.type===command.type&&d.executeTick===command.executeTick&&d.clockEpoch===before.clockEpoch
+  &&d.outcome==='accepted'&&d.code===null&&d.duplicate===false&&d.acceptedInputNo===next.acceptedInputNo&&d.revision===next.revision
+  &&safeInteger(d.decidedAtServerTick,0,6120)&&safeInteger(a.serverTick,d.decidedAtServerTick,6120)&&d.executeTick<=d.decidedAtServerTick+1&&d.executeTick>a.committedThroughTick,'decision is missing, rejected, duplicated or mismatched');
+ inputProof(after.status!=='fault'&&after.game?.status!=='fault'&&after.game?.phase!=='fault','accepted input entered game fault');
+ return Object.freeze({protocol:PRACTICE_PROTOCOL,ruleVersion:PRACTICE_RULE,requestId:request.request_id,roomId:before.roomId,playerKey:before.playerKey,clockEpoch:before.clockEpoch,
+  commandSeq:command.commandSeq,type:command.type,executeTick:command.executeTick,acceptedInputNoBefore:before.acceptedInputNo,acceptedInputNoAfter:next.acceptedInputNo,
+  revision:next.revision,decidedAtServerTick:d.decidedAtServerTick});
+}
+
 export async function playOneArenaAction(frame, game, readRoom, {touch=false,timeoutMs=LIMIT_MS,deadlineAt=Infinity,signal,beforeAction=()=>{}}={}) {
   if (!GAMES.has(game)) throw new Error(`Unsupported arena game: ${game}`);
   if (typeof frame?.page !== 'function' || typeof frame?.locator !== 'function') {
@@ -276,7 +315,8 @@ export async function playOneArenaAction(frame, game, readRoom, {touch=false,tim
     if (!plan) await pause(150);
   }
 
-  const seq = room.me_last_seq, path = `/api/pvp/rooms/${room.id}/action`;
+  const inputBaseline=game==='run'?runPracticeInputBaseline(room):null;
+  const seq = inputBaseline?.commandSeq??room.me_last_seq, path = `/api/pvp/rooms/${room.id}/${inputBaseline?'inputs':'action'}`;
   let resolveResponse, responseTimer;
   const responsePromise = new Promise(resolve => { resolveResponse = resolve; });
   const onResponse = response => {
@@ -293,7 +333,7 @@ export async function playOneArenaAction(frame, game, readRoom, {touch=false,tim
     const captured = await bounded(()=>responsePromise);
     if (captured.timeout) throw new Error(`${game}: no action response before deadline`);
     const response = captured.response, requestBody = response.request().postDataJSON();
-    if (requestBody?.seq !== seq + 1 || requestBody?.action?.type !== plan.type) {
+    if (!inputBaseline&&(requestBody?.seq !== seq + 1 || requestBody?.action?.type !== plan.type)) {
       throw new Error(`${game}: UI submitted an unexpected action or sequence`);
     }
     const status = response.status();
@@ -314,7 +354,9 @@ export async function playOneArenaAction(frame, game, readRoom, {touch=false,tim
       throw error;
     }
     const body = await bounded(()=>response.json()), after = body.room || body;
-    if (after.id !== room.id || after.game_id !== game || after.me !== room.me || after.me_last_seq !== seq + 1) {
+    let inputEvidence=null;
+    if(inputBaseline)try{inputEvidence=verifyRunPracticeInputAction(inputBaseline,requestBody,after,{type:plan.type});}catch(error){Object.assign(error,{status,requestBody,responseBody:body});throw error;}
+    if (!inputBaseline&&(after.id !== room.id || after.game_id !== game || after.me !== room.me || after.me_last_seq !== seq + 1)) {
       throw new Error(`${game}: response does not prove exactly one accepted personal action`);
     }
     if (after.status === 'fault' || after.game?.phase === 'fault' || after.game?.status === 'fault') {
@@ -342,7 +384,8 @@ export async function playOneArenaAction(frame, game, readRoom, {touch=false,tim
     }
     return {
       game, roomId: room.id, actionType: plan.type, sequenceBefore: seq,
-      sequenceAfter: after.me_last_seq, httpStatus: status, uiSteps,
+      sequenceAfter: inputEvidence?.commandSeq??after.me_last_seq, httpStatus: status, uiSteps,
+      ...(inputEvidence?{protocol:PRACTICE_PROTOCOL,inputEvidence}:{}),
       ...(towerEvidence ? { towerEvidence } : {}),
     };
   } finally {
