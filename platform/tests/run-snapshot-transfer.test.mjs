@@ -88,6 +88,8 @@ test('client negotiates GET only, performs one forced-full recovery, and leaves 
  corrupt=true;assert.equal((await c.api(path)).game.gameId,'run');assert.equal(calls.length,4);assert.equal(calls[3].headers['X-Oasis-Known-Run-Game'],'full');
  const posted=await c.api(path+'/action',{seq:1,action:{type:'jump'}});assert.equal(posted.action_receipt.request_id,'original');assert.equal(calls.length,5);assert.equal(calls[4].headers['X-Oasis-Known-Run-Game'],undefined);
  c.authorize('token-b');await c.api(path);assert.equal(calls.at(-1).headers['X-Oasis-Known-Run-Game'],'full');
+ assert.ok(calls.filter(call=>call.method==='GET').every(call=>call.cache==='no-store'),'including full recovery GETs bypass browser cache transactions');
+ assert.equal(calls[4].cache,undefined,'mutation transport is unchanged');
 }));
 test('second malformed GET fails, HTTP errors and mutation failures are never retried',async()=>withClient(async c=>{
  let count=0;globalThis.fetch=async()=>{count++;return Response.json({...fixture(),run_game_transfer:{}});};
@@ -100,6 +102,6 @@ for(const kind of ['unavailable','rejected'])test('WebCrypto '+kind+' safely pre
  const descriptor=Object.getOwnPropertyDescriptor(globalThis,'crypto'),calls=[];
  Object.defineProperty(globalThis,'crypto',{configurable:true,value:kind==='unavailable'?{}:{subtle:{digest:async()=>{throw Error('fixture digest unavailable');}}}});
  globalThis.fetch=async(url,options)=>{calls.push(options);return Response.json(compact(fixture(),options.headers['X-Oasis-Known-Run-Game']??null));};
- try{assert.equal((await c.api(path)).game.gameId,'run');assert.equal(calls.length,kind==='unavailable'?1:2);assert.equal(calls.at(-1).headers['X-Oasis-Known-Run-Game'],undefined);await c.api(path);assert.equal(calls.at(-1).headers['X-Oasis-Known-Run-Game'],undefined);}
+ try{assert.equal((await c.api(path)).game.gameId,'run');assert.equal(calls.length,kind==='unavailable'?1:2);assert.equal(calls.at(-1).headers['X-Oasis-Known-Run-Game'],undefined);await c.api(path);assert.equal(calls.at(-1).headers['X-Oasis-Known-Run-Game'],undefined);assert.ok(calls.every(call=>call.cache==='no-store'),'cache bypass does not depend on WebCrypto');}
  finally{Object.defineProperty(globalThis,'crypto',descriptor);}
 }));

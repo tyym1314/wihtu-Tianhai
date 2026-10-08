@@ -9,6 +9,20 @@ out. No daemon restart/reset, container creation, image download or production
 operation was performed. Raw probes are in the ignored directory
 `platform/review/mock-linux-profile-20261008/`.
 
+A fresh check at **2026-10-08 01:09–01:10 UTC** still could not reach the
+engine: the Unix-socket `/_ping` returned no bytes before its 5-second deadline,
+and `docker info` / `docker desktop status` timed out. One normal start returned
+`Docker Desktop is already running` in 0.14 seconds; the subsequent engine and
+socket checks still failed. The CLI response is not evidence that the Linux VM
+is usable. The backend was not restarted, reset or terminated. No other installed
+local Linux runtime was found in PATH, Applications or the standard Colima,
+Lima, Podman, OrbStack, Multipass, Tart, UTM and VM storage locations checked.
+Docker's bundled `qemu-img` and virtualization helper were not used to bypass
+the unavailable backend or open its existing shared disk. Fresh raw probes,
+runtime inventory and the precise remaining gate are preserved separately in
+`platform/review/mock-linux-profile-20261008-v2/`; the first evidence remains
+unchanged. No image build, container, Linux fixture or Nginx operation occurred.
+
 `linux_profile_fixture.py` and `linux_profile_fixture.Dockerfile` provide a
 separate opt-in native test. They do not modify `profile_activation.py`. The
 fixture refuses macOS, non-root execution, execution outside the dedicated
