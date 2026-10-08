@@ -88,6 +88,24 @@ try{
  assert.equal((await fixture.pool.query('SELECT count(*)::int count FROM pvp_active_users')).rows[0].count,0);assert.equal(await page.getByRole('button',{name:'恢复 三消对战'}).count(),0);
  assert.deepEqual(await page.evaluate(()=>({local:Object.keys(localStorage),session:Object.keys(sessionStorage),cookie:document.cookie})),{local:[],session:[],cookie:''});
  assert.equal((await fixture.pool.query('SELECT available::text FROM wallet_users')).rows[0].available,'0');assert.equal((await fixture.pool.query('SELECT count(*)::int count FROM wallet_ledger')).rows[0].count,0);
+ const nextPassword='Hosted-browser-new-fixture-2026!';
+ const acceptedBefore=(await fixture.pool.query('SELECT * FROM gp_sessions ORDER BY id')).rows;
+ await page.getByRole('button',{name:'修改密码',exact:true}).click();
+ assert.equal(await page.locator('.player-games').count(),0);assert.equal(await page.getByRole('button',{name:'退出登录',exact:true}).isDisabled(),true);
+ await page.getByLabel('当前密码',{exact:true}).fill('Wrong-password-fixture!');await page.getByLabel('新密码',{exact:true}).fill(nextPassword);await page.getByRole('button',{name:'确认修改',exact:true}).click();
+ await page.getByRole('alert').filter({hasText:'当前密码不正确'}).waitFor();
+ for(const label of ['当前密码','新密码'])assert.equal(await page.getByLabel(label,{exact:true}).inputValue(),'');
+ assert.equal(await page.getByRole('button',{name:'确认修改',exact:true}).isEnabled(),true);
+ for(const width of [360,390,430]){
+  await page.setViewportSize({width,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  assert((await page.locator('section[aria-label="修改密码"] input,section[aria-label="修改密码"] button').evaluateAll(elements=>elements.map(element=>element.getBoundingClientRect().height))).every(height=>height>=44));
+ }
+ await page.getByLabel('当前密码',{exact:true}).fill(password);await page.getByLabel('新密码',{exact:true}).fill(nextPassword);await page.getByRole('button',{name:'确认修改',exact:true}).click();
+ await page.getByRole('status').filter({hasText:'密码已修改，请使用新密码重新登录'}).waitFor();await page.getByRole('button',{name:'登录',exact:true}).waitFor();
+ assert.equal(await page.locator('input[type=password]').inputValue(),'');assert.equal((await context.cookies()).filter(cookie=>cookie.name==='__Host-oasis_player').length,0);
+ assert.deepEqual((await fixture.pool.query('SELECT * FROM gp_sessions ORDER BY id')).rows,acceptedBefore);assert.equal((await fixture.pool.query('SELECT count(*)::int count FROM gp_player_sessions')).rows[0].count,0);
+ await page.getByLabel('账号',{exact:true}).fill(username);await page.getByLabel('密码',{exact:true}).fill(nextPassword);await page.getByRole('button',{name:'登录',exact:true}).click();await page.locator('.player-games').waitFor();
+ checks.push('player password form rejects wrong current password without losing retry, clears secret fields, revokes all logins and permits new-password login while accepted game records remain unchanged');
  await page.getByRole('button',{name:'退出登录',exact:true}).click();await page.getByRole('button',{name:'登录',exact:true}).waitFor();assert.equal((await context.cookies()).filter(cookie=>cookie.name==='__Host-oasis_player').length,0);
  assert(!requests.some(value=>value.startsWith('/api/admin/')||value.startsWith('/api/demo/')));assert.deepEqual(errors,[]);checks.push('return remains in owned lobby; closed games disabled; logout revokes real session; no browser storage or funded ledger');
  const report={passed:true,scope:'Isolated PostgreSQL production BFF + platform zero-balance wallet + real active practice room + React entry + real OasisHost and one-use exchange; synthetic game presentation, not full-game or device certification',checks,errors};

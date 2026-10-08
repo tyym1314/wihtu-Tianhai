@@ -43,3 +43,26 @@ test('abort stops retries when the player leaves while a launch is in flight',as
  const launch=fixture(async(url,options)=>{calls++;controller.abort();throw new DOMException('Aborted','AbortError');}).launchRequester('match');
  await assert.rejects(launch({gameId:'match',signal:controller.signal}));assert.equal(calls,1);
 });
+
+
+test('password change sends only current/new credentials, clears CSRF after confirmed success and never returns passwords',async()=>{
+ const calls=[],client=fixture(async(url,options)=>{calls.push({url,options});return response(url.endsWith('/session')?{csrf_token:'password_csrf'}:url.endsWith('/password')?{ok:true,reauthenticate:true}:{});});
+ await client.session();
+ assert.deepEqual(await client.changePassword('Current-fixture-only!','New-password-fixture-only!'),{ok:true,reauthenticate:true});
+ const changed=calls[1];assert.equal(changed.url,'/api/player/password');assert.equal(changed.options.headers['x-oasis-csrf'],'password_csrf');
+ assert.deepEqual(JSON.parse(changed.options.body),{current_password:'Current-fixture-only!',new_password:'New-password-fixture-only!'});
+ assert.equal(changed.options.credentials,'same-origin');assert.equal(changed.options.cache,'no-store');
+ await client.logout();assert.equal(calls[2].options.headers['x-oasis-csrf'],undefined);
+});
+
+test('password change does not replay uncertain writes; a definite denial retains the CSRF for manual retry',async()=>{
+ for(const result of ['network','invalid',400]){
+  let calls=0;const headers=[];
+  const client=fixture(async(url,options)=>{if(url.endsWith('/session'))return response({csrf_token:'existing_csrf'});calls++;headers.push(options.headers);if(result==='network')throw new TypeError('disconnected');return response(result==='invalid'?{}:{error:{code:'CURRENT_PASSWORD_INVALID'}},result===400?400:200);});
+  await client.session();await assert.rejects(client.changePassword('Current-fixture-only!','New-fixture-only!'));assert.equal(calls,1);
+  await assert.rejects(client.changePassword('Current-fixture-only!','New-fixture-only!'));assert.equal(calls,2);
+  assert(headers.every(value=>value['x-oasis-csrf']==='existing_csrf'));
+ }
+ assert.match(playerMessage({code:'CURRENT_PASSWORD_INVALID'}),/当前密码不正确/);
+ assert.match(playerMessage({code:'PASSWORD_UNCHANGED'}),/不能.*相同/);
+});

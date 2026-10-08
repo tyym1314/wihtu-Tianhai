@@ -52,7 +52,8 @@ export async function migrateCredentials(){await pool.query(`
  CREATE INDEX IF NOT EXISTS gp_key_issues_expiry ON gp_key_issues(expires_at) WHERE response_enc IS NOT NULL;
  `);}
 
-async function changePassword(kind,user,req,body){
+/** Shared self-service transaction: caller authenticates identity, Origin and CSRF. */
+export async function changePassword(kind,user,req,body){
  exact(body,['current_password','new_password']);
  if(typeof body.current_password!=='string'||body.current_password.length>256)fail(400,'INVALID_REQUEST');
  const store=stores[kind],snapshot=(await pool.query(`SELECT * FROM ${store.table} WHERE id=$1`,[user.id])).rows[0];

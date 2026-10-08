@@ -1,6 +1,6 @@
 import {send,fail} from './security.mjs';
 import {pool} from './db.mjs';
-import {credentialRate} from './credentials.mjs';
+import {credentialRate,changePassword} from './credentials.mjs';
 import {appById,createSession,origin,scope} from './platform.mjs';
 import {runtime,assertProductionAppReady} from './runtime-mode.mjs';
 import {RELEASED_IDS} from '../shared/games.mjs';
@@ -55,6 +55,12 @@ export async function routePlayer(req,res,path,body,raw){
  if(path==='/api/player/session'){
   if(req.method!=='GET')fail(405,'METHOD_NOT_ALLOWED');
   send(res,200,{player:{id:session.id,username:session.username},csrf_token:csrfFor(session.token),expires_at:session.expires_at});return true;
+ }
+ if(path==='/api/player/password'){
+  if(req.method!=='POST')fail(405,'METHOD_NOT_ALLOWED');exactOrigin(req);requirePlayerCsrf(req,session);credentialRate(req,'player-password',8);
+  // The platform identity is global: revoke its logins across Apps, never accepted game sessions.
+  await changePassword('player',session,req,body);
+  res.setHeader('set-cookie',cookie('',0));send(res,200,{ok:true,reauthenticate:true});return true;
  }
  if(path==='/api/player/logout'){
   if(req.method!=='POST')fail(405,'METHOD_NOT_ALLOWED');exactOrigin(req);requirePlayerCsrf(req,session);exact(body,[]);

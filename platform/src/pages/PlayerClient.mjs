@@ -5,6 +5,9 @@ export const playerMessage=error=>({
  USERNAME_TAKEN:'这个账号已被注册，请登录或换一个账号。',
  INVALID_USERNAME:'账号需为 3–64 位，以英文字母或数字开头，可包含下划线、点和横线。',
  INVALID_PASSWORD:'请使用 12–256 位的密码。',
+ CURRENT_PASSWORD_INVALID:'当前密码不正确，请重新输入。',
+ PASSWORD_UNCHANGED:'新密码不能与当前密码相同。',
+ CREDENTIAL_CHANGED:'账号凭证已变化，请重新登录。',
  PRODUCTION_ACCEPTANCE_REQUIRED:'当前暂未开放新玩家和新游戏。',
  APP_PAUSED:'这个游戏大厅暂时停止开放。',
  PLAYER_WALLET_NOT_READY:'账号还未准备就绪，请联系应用客服。',
@@ -37,6 +40,11 @@ export function createPlayerClient({appId,origin,fetch=globalThis.fetch.bind(glo
   login:(username,password)=>api('login',{body:{app_id:appId,username,password}}),
   register:(username,password)=>api('register',{body:{app_id:appId,username,password}}),
   async logout(){await api('logout',{body:{}});csrf='';},
+  async changePassword(currentPassword,newPassword){
+   const result=await api('password',{body:{current_password:currentPassword,new_password:newPassword}});
+   if(result.ok!==true||result.reauthenticate!==true)throw new Error('INVALID_RESPONSE');
+   csrf='';return result;
+  },
   launchRequester(gameId){
    let pending=null;
    return async({gameId:requested,resumeSessionId,signal}={})=>{

@@ -30,6 +30,30 @@ function Credentials({client,canRegister,onLogin,onCancel,reauth=false,username:
  </section>;
 }
 
+function PasswordChange({client,onComplete,onCancel}){
+ const [busy,setBusy]=useState(false),[error,setError]=useState('');
+ const submit=async event=>{
+  event.preventDefault();if(busy)return;
+  const form=event.currentTarget,current=form.elements.current_password,next=form.elements.new_password;
+  setBusy(true);setError('');
+  try{await client.changePassword(current.value,next.value);onComplete('密码已修改，请使用新密码重新登录。');}
+  catch(failure){
+   if(failure.status===401||['CSRF_FORBIDDEN','CREDENTIAL_CHANGED'].includes(failure.code))onComplete('登录状态已变化，请重新登录；若刚才提交过改密，请先尝试新密码。');
+   else setError(failure.status?playerMessage(failure):'修改结果未确认。可重新提交；若提示登录已过期，请使用新密码重新登录。');
+  }finally{current.value='';next.value='';setBusy(false);}
+ };
+ return <section className="player-auth" aria-label="修改密码">
+  <h2>修改密码</h2><p className="player-help">修改后需要在所有应用中重新登录；已受理的游戏仍可用原账号恢复。</p>
+  <form onSubmit={submit}>
+   <label>当前密码<input name="current_password" type="password" autoComplete="current-password" required maxLength={256} disabled={busy}/></label>
+   <label>新密码<input name="new_password" type="password" autoComplete="new-password" required minLength={12} maxLength={256} disabled={busy}/></label>
+   {error&&<p role="alert" className="player-error">{error}</p>}
+   <button className="player-primary" disabled={busy}>{busy?'正在修改…':'确认修改'}</button>
+  </form>
+  <button className="player-text-button" disabled={busy} onClick={onCancel}>取消</button>
+ </section>;
+}
+
 function PlayerGame({gameId,client,recoveryRevision,onReturn,initialSessionId=null}){
  const mount=useRef(null),host=useRef(null),sessionId=useRef(initialSessionId),[revision,setRevision]=useState(0),[state,setState]=useState('loading'),[error,setError]=useState('');
  const requestLaunch=useMemo(()=>client.launchRequester(gameId),[client,gameId]);
@@ -57,6 +81,7 @@ function PlayerGame({gameId,client,recoveryRevision,onReturn,initialSessionId=nu
 export default function Player(){
  const query=new URLSearchParams(location.search),appId=query.get('app_id'),validApp=query.getAll('app_id').length===1&&/^[-A-Za-z0-9_]{1,128}$/.test(appId||'');
  const [metadata,setMetadata]=useState(null),[session,setSession]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[gameId,setGameId]=useState(null),[resumeSessionId,setResumeSessionId]=useState(null),[recoverable,setRecoverable]=useState([]),[reauth,setReauth]=useState(false),[recoveryRevision,setRecoveryRevision]=useState(0),[busy,setBusy]=useState(false);
+ const [changingPassword,setChangingPassword]=useState(false),[accountNotice,setAccountNotice]=useState('');
  const client=useMemo(()=>createPlayerClient({appId,origin:location.origin,onExpired:()=>setReauth(true)}),[appId]);
  const load=async()=>{
   setLoading(true);setError('');
@@ -66,18 +91,22 @@ export default function Player(){
   }catch(failure){setError(playerMessage(failure));}finally{setLoading(false);}
  };
  useEffect(()=>{load();},[client]);
- const login=async result=>{if(reauth){setSession(result);setReauth(false);setRecoveryRevision(value=>value+1);}else{const accepted=await client.recovery();setRecoverable(accepted.sessions);setSession(result);}};
+ const login=async result=>{setAccountNotice('');if(reauth){setSession(result);setReauth(false);setRecoveryRevision(value=>value+1);}else{const accepted=await client.recovery();setRecoverable(accepted.sessions);setSession(result);}};
  const logout=async()=>{if(busy)return;setBusy(true);setError('');try{await client.logout();setSession(null);}catch(failure){setError(playerMessage(failure));}finally{setBusy(false);}};
  return <main className="player-page">
   {gameId?<PlayerGame key={gameId} gameId={gameId} client={client} initialSessionId={resumeSessionId} recoveryRevision={recoveryRevision} onReturn={()=>{setGameId(null);setResumeSessionId(null);setReauth(false);load();}}/>:<div className="player-lobby">
-   <header className="player-header"><div><span className="player-brand">OASIS</span><h1>{metadata?.name||'游戏大厅'}</h1></div>{session&&<button disabled={busy} onClick={logout}>{busy?'正在退出…':'退出登录'}</button>}</header>
+   <header className="player-header"><div><span className="player-brand">OASIS</span><h1>{metadata?.name||'游戏大厅'}</h1></div>{session&&<button disabled={busy||changingPassword} onClick={logout}>{busy?'正在退出…':'退出登录'}</button>}</header>
+   {accountNotice&&<p role="status" className="player-notice">{accountNotice}</p>}
    {loading?<p role="status">正在读取游戏大厅…</p>:error?<section className="player-notice"><p role="alert">{error}</p><button onClick={load}>重新加载</button></section>:<>
     {!metadata.admission_open&&<p className="player-notice" role="status">此应用暂未开放新游戏和注册。已有未完成对局的玩家可登录后恢复对局。</p>}
     {!session?<Credentials client={client} canRegister={metadata.admission_open} onLogin={login}/>:<>
      <p className="player-welcome">{session.player.username}，选择一款游戏开始。</p>
+     {changingPassword?<PasswordChange client={client} onCancel={()=>setChangingPassword(false)} onComplete={notice=>{setChangingPassword(false);setAccountNotice(notice);setSession(null);setRecoverable([]);setReauth(false);}}/>:<>
+     <button disabled={busy} onClick={()=>{setAccountNotice('');setChangingPassword(true);}}>修改密码</button>
      {recoverable.length>0&&<section className="player-recovery" aria-label="未完成对局"><h2>继续未完成的对局</h2>{recoverable.map(accepted=><button key={accepted.session_id} onClick={()=>{setResumeSessionId(accepted.session_id);setGameId(accepted.game_id);}}>恢复 {ARENA_GAMES[accepted.game_id]?.name||accepted.game_id}</button>)}</section>}
      <div className="player-games">{metadata.game_ids.map(game=><button key={game} className="player-game-card" disabled={!metadata.admission_open} onClick={()=>{setResumeSessionId(null);setGameId(game);}}><span aria-hidden="true">{ARENA_GAMES[game]?.icon||'✦'}</span><strong>{ARENA_GAMES[game]?.name||({thunder:'雷霆',tiger:'虎虎生财'}[game]||game)}</strong><small>{metadata.admission_open?'进入游戏':'暂未开放'}</small></button>)}</div>
      {!metadata.game_ids.length&&<p>此应用暂未开放游戏。</p>}
+     </>}
     </>}
    </>}
   </div>}

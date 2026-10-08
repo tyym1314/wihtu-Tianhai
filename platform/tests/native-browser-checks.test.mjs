@@ -404,6 +404,89 @@ function networkProof(fixture,overrides={}){
  fixture.probe.network.set('protocol-request',{id:'protocol-request',frame:'protocol-frame',url:fixture.req.url(),method:fixture.req.method(),type:'Fetch',started_at_ms:115,failed_at_ms:132,response_seen:false,redirected:false,error:'net::ERR_ABORTED',cancelled:true,...overrides});
 }
 
+function adjacentFulfilledCancellation({timing=0,start=200.4,networkStart=200.65}={}){
+ const f=cancellationFixture({timing}),doc=f.trace[0].document_id;
+ const events=[f.trace[0],{...f.trace[1],attempt_id:2},
+  {document_id:doc,event_seq:3,at_ms:200,kind:'fulfilled',attempt_id:2,signal_aborted:false,reason:null},
+  {...f.trace[1],event_seq:4,at_ms:start},
+  {...f.trace[2],event_seq:5,at_ms:205},
+  {...f.trace[3],event_seq:6,at_ms:206}];
+ const deliver=(input=events)=>{f.deliver(input);if(input===events)networkProof(f,{started_at_ms:networkStart,failed_at_ms:205.8});};
+ return{...f,events,deliver};
+}
+
+for(const [name,start,networkStart] of [
+ ['run',200.4,200.6518],['jackaroo',200.5,200.5972],['towerlink',200.6,200.7592],['equal rounded clocks',200,200.65],
+])test(`a complete sequential fulfilled fetch cannot explain the no-header CDP abort: ${name}`,async()=>{
+ const f=adjacentFulfilledCancellation({start,networkStart});f.deliver();
+ const previous={...f.req,timing:()=>({startTime:110.3})};response(f,previous,{json:async()=>room()});
+ f.probe.network.set('successful',{id:'successful',frame:'protocol-frame',url:f.req.url(),method:'GET',type:'Fetch',started_at_ms:110.3,response_seen:true});
+ f.fail();await f.drain();
+ assert.equal(nativeErrorsEmpty(f.result),true);assert.equal(f.result.lifecycle_cancellations.length,1);
+ assert.equal(f.result.lifecycle_cancellations[0].network_protocol_id,'protocol-request');assert.equal(f.result.lifecycle_cancellations[0].fetch_attempt_id,1);
+ assert.equal(f.result.lifecycle_cancellations[0].clock_uncertainty_ms,1);assert.equal(f.result.unmatched_fetch_rejections.length,0);
+ assert.deepEqual(f.result.fetch_observations.filter(e=>e.kind==='fulfilled').map(e=>e.attempt_id),[2]);
+});
+
+for(const [name,change] of [
+ ['missing start',f=>f.events.splice(1,1)],
+ ['nonmonotonic prefix',f=>f.events[1].at_ms=201],
+ ['duplicate terminal',f=>{f.events.splice(3,0,{...f.events[2],at_ms:200.1});f.events.forEach((e,i)=>e.event_seq=i+1);}],
+ ['missing terminal',f=>{f.events.splice(2,1);f.events.forEach((e,i)=>e.event_seq=i+1);}],
+ ['aborted success',f=>f.events[2].signal_aborted=true],
+ ['unknown success signal state',f=>delete f.events[2].signal_aborted],
+ ['missing success reason field',f=>delete f.events[2].reason],
+ ['contradictory success error',f=>f.events[2].error={name:'TypeError',message:'unexpected'}],
+ ['unsupported previous fetch',f=>f.events[1].supported=false],
+ ['different document',f=>{const old=f.events.splice(1,2);f.events.forEach((e,i)=>e.event_seq=i+1);f.events.push({...f.trace[0],document_id:'older-document',at_ms:99},...old.map((e,i)=>({...e,document_id:'older-document',event_seq:i+2})));}],
+ ['genuinely concurrent fulfilled fetch',f=>{f.events[2].at_ms=200.8;f.events.sort((a,b)=>a.at_ms-b.at_ms);f.events.forEach((e,i)=>e.event_seq=i+1);}],
+])test(`terminal exclusion fails closed for ${name}`,async()=>{
+ const f=adjacentFulfilledCancellation();change(f);f.deliver();f.fail();await f.drain();
+ assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(f.result.network_errors.length,1);
+ assert.equal(f.result.unmatched_fetch_rejections.length,1);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+test('a Playwright clock alone cannot exclude an adjacent fulfilled candidate',async()=>{
+ const f=adjacentFulfilledCancellation({timing:200.65});f.probe.receiveNetworkDocument=()=>{};
+ f.deliver();f.probe.network.clear();f.fail();await f.drain();
+ assert.equal(f.result.network_errors[0].classification_failure,'AMBIGUOUS_FETCH_ATTEMPT');
+ assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(f.result.unmatched_fetch_rejections.length,1);
+});
+
+test('excluding a fulfilled predecessor does not suppress its separate response body failure',async()=>{
+ const f=adjacentFulfilledCancellation();f.deliver();
+ const previous={...f.req,timing:()=>({startTime:110.3})};response(f,previous,{json:async()=>{throw new Error(knownLoss);}});
+ f.fail();await f.drain();
+ assert.equal(f.result.lifecycle_cancellations.length,1);assert.equal(f.result.unmatched_fetch_rejections.length,0);
+ assert.equal(f.result.observer_errors.length,1);assert.equal(f.result.observer_errors[0].message,knownLoss);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+test('a fulfilled-tail fix cannot disambiguate two unbound zero-clock CDP cancellations',async()=>{
+ const f=adjacentFulfilledCancellation();f.deliver();f.fail();
+ f.deliver(f.events.slice(3).map(e=>({...e,event_seq:e.event_seq+3,at_ms:e.at_ms+100,attempt_id:3})));
+ f.probe.network.set('second',{...f.probe.network.get('protocol-request'),id:'second',started_at_ms:300.65,failed_at_ms:305.8});
+ const second={...f.req};f.page.emit('request',second);f.page.emit('requestfailed',second);await f.drain();
+ assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(f.result.network_errors.length,2);
+ assert.ok(f.result.network_errors.every(e=>e.classification_failure==='AMBIGUOUS_CDP_NETWORK_FAILURE'));
+ assert.equal(f.result.unmatched_fetch_rejections.length,2);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
+test('later unfinished CDP evidence remains pending before a sequential-terminal association closes',async()=>{
+ const f=adjacentFulfilledCancellation();f.deliver();f.fail();
+ const next={id:'later',frame:'protocol-frame',url:f.req.url(),method:'GET',type:'Fetch',started_at_ms:300,response_seen:false};f.probe.network.set('later',next);
+ await f.drain({final:false});assert.equal(f.result.pending_network_observations,1);assert.equal(f.result.lifecycle_cancellations.length,0);
+ assert.equal(f.result.pending_fetch_rejections.length,1);assert.equal(nativeErrorsEmpty(f.result),false);
+ next.response_seen=true;await f.drain({final:true});assert.equal(nativeErrorsEmpty(f.result),true);
+ assert.equal(f.result.unmatched_fetch_rejections.length,0);assert.deepEqual(f.result.network_binding_decisions.map(row=>row.verdict),['pending','lifecycle']);
+});
+
+test('late contradictory abort evidence revokes a fulfilled-terminal exclusion',async()=>{
+ const f=adjacentFulfilledCancellation();f.deliver();f.fail();await f.drain();assert.equal(f.result.lifecycle_cancellations.length,1);
+ f.deliver([{...f.events[4],event_seq:7,at_ms:207,attempt_id:2}]);await f.drain();
+ assert.equal(f.result.lifecycle_cancellations.length,0);assert.equal(f.result.network_errors[0].classification_failure,'AMBIGUOUS_FETCH_ATTEMPT');
+ assert.equal(f.result.unmatched_fetch_rejections.length,1);assert.equal(nativeErrorsEmpty(f.result),false);
+});
+
 test('zero Playwright timing requires an independently joined document and actual CDP network clock',async()=>{
  const fixture=cancellationFixture({timing:0});fixture.deliver();networkProof(fixture);fixture.fail();await fixture.drain();
  assert.equal(fixture.result.lifecycle_cancellations.length,1);assert.equal(fixture.result.lifecycle_cancellations[0].network_timing_source,'cdp');assert.equal(fixture.result.lifecycle_cancellations[0].network_protocol_id,'protocol-request');assert.equal(fixture.result.network_protocol_observations.length,1);

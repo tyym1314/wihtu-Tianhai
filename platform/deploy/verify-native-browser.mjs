@@ -18,6 +18,7 @@ import {playOneArenaAction} from '../scripts/android-game-actions.mjs';
 import {observeNativeBrowser,installNativeFetchProbe,cleanupNativeSession,createNativeCleanupApi,runNativeActionOnce,nativeErrorsEmpty,reserveNativeReportDirectory} from './native-browser-checks.mjs';
 
 const target=new URL(process.env.OASIS_VERIFY_ORIGIN||'https://game.tianyahuyu.com');
+assert.ok(!process.env.NODE_TLS_REJECT_UNAUTHORIZED||process.env.NODE_TLS_REJECT_UNAUTHORIZED==='1','STRICT_TLS_REQUIRED');
 assert.ok(!target.username&&!target.password&&!target.search&&!target.hash&&target.pathname==='/','OASIS_VERIFY_ORIGIN must be an origin');
 assert.ok(target.protocol==='https:'||target.protocol==='http:'&&['localhost','127.0.0.1','[::1]'].includes(target.hostname),'HTTPS or loopback HTTP required');
 const runId=new Date().toISOString().replaceAll(':','-')+'-'+randomUUID().slice(0,8);
@@ -106,7 +107,7 @@ try{
  browser=await chromium.launch({channel:'chrome',headless:true,args:[...(process.platform==='darwin'?['--use-angle=metal']:[]),...(dnsPin?[`--host-resolver-rules=MAP ${target.hostname} ${dnsPin}`]:[])]});
  report.browser={name:'desktop Chrome',version:browser.version(),dns_override:Boolean(dnsPin)};
  for(const game of requested){
-  const context=await browser.newContext({viewport,isMobile:true,hasTouch:true}),fetchProbe=await installNativeFetchProbe(context,{clean}),page=await context.newPage();
+  const context=await browser.newContext({viewport,isMobile:true,hasTouch:true,ignoreHTTPSErrors:false}),fetchProbe=await installNativeFetchProbe(context,{clean}),page=await context.newPage();
   await fetchProbe.attach(page);
   page.setDefaultTimeout(45000);
   const state={game,token:null,sessionId:null,playerId:null,room:null,ownedRooms:new Set(),practiceRequested:false,spins:[],acks:new Set(),returning:false,phase:'entry'};

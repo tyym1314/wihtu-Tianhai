@@ -42,6 +42,19 @@ export function createNativeFetchEvidence({clean=String}={}){
  };
  const timeOverlap=(attempt,entry)=>Number.isFinite(entry.network_started_at_ms)&&entry.network_started_at_ms>0&&attempt.start.at_ms-fetchClockUncertaintyMs<=entry.network_started_at_ms&&entry.network_started_at_ms<(attempt.end?.at_ms??Infinity)+fetchClockUncertaintyMs;
  const overlap=(attempt,entry)=>attempt.frame===entry.frame_object&&attempt.start.frame_url===entry.frame_url_raw&&attempt.start.url===entry.full_url&&attempt.start.method===entry.method&&timeOverlap(attempt,entry);
+ const cancellationCandidates=(all,entry)=>{
+  const candidates=all.filter(attempt=>overlap(attempt,entry));
+  if(entry.network_timing_source!=='cdp'||!entry.network_document_id||!entry.network_protocol_id||entry.network_proof_error||entry.response_seen!==false||entry.failure_error!=='net::ERR_ABORTED')return candidates;
+  // Keep the 1ms clock bound. Only a complete, same-document event sequence can
+  // prove a prior fetch fulfilled before the cancelled fetch even began. A
+  // concurrent, incomplete, different-document or contradictory fetch remains
+  // a candidate; no nearest-time association is inferred.
+  return candidates.filter(attempt=>{
+   const {start,end}=attempt;
+   const completed=attempt.documentId===entry.network_document_id&&attempt.valid&&start.supported===true&&start.body_present===false&&!attempt.abort&&end?.kind==='fulfilled'&&end.signal_aborted===false&&end.reason===null&&!['error','sync_throw','reject_is_signal_reason'].some(key=>Object.hasOwn(end,key));
+   return !completed||!candidates.some(next=>next!==attempt&&next.documentId===attempt.documentId&&next.valid&&next.end?.kind==='rejected'&&next.start.event_seq>end.event_seq&&next.start.at_ms>=end.at_ms);
+  });
+ };
  const receiveNetworkDocument=(frame,event)=>{
   if(!frame||event?.kind!=='document'||typeof event.document_id!=='string'||!Number.isFinite(event.at_ms)){errors.push('INVALID_NETWORK_DOCUMENT');return;}
   const previous=networkDocuments.get(event.document_id);
@@ -108,7 +121,7 @@ export function createNativeFetchEvidence({clean=String}={}){
   if(requests.some(other=>other!==entry&&other.frame_object===entry.frame_object&&other.full_url===entry.full_url&&other.method===entry.method&&!(other.network_started_at_ms>0)))return deny('UNKNOWN_COMPETING_NETWORK_REQUEST');
   const allAttempts=attempts();
   if(allAttempts.some(attempt=>!attempt.start.supported&&attempt.frame===entry.frame_object&&timeOverlap(attempt,entry)))return deny('UNSUPPORTED_COMPETING_FETCH');
-  const candidates=allAttempts.filter(attempt=>overlap(attempt,entry));
+  const candidates=cancellationCandidates(allAttempts,entry);
   if(candidates.length!==1)return deny(candidates.length?'AMBIGUOUS_FETCH_ATTEMPT':'MISSING_FETCH_ATTEMPT');
   const attempt=candidates[0],{start,abort,end}=attempt;
   if(entry.network_document_id&&attempt.documentId!==entry.network_document_id)return deny('CONFLICTING_NETWORK_DOCUMENT');
@@ -138,7 +151,7 @@ export function createNativeFetchEvidence({clean=String}={}){
   for(const [documentId,doc] of documents)for(const end of doc.events.values())if(end.kind==='rejected'){
    const starts=all.filter(attempt=>attempt.documentId===documentId&&attempt.start.attempt_id===end.attempt_id&&attempt.end===end),attempt=starts.length===1?starts[0]:null;
    const matching=attempt?.valid?failed.filter(({entry})=>overlap(attempt,entry)):[];
-   if(matching.length===1&&all.filter(other=>overlap(other,matching[0].entry)).length===1)continue;
+   if(matching.length===1&&cancellationCandidates(all,matching[0].entry).length===1)continue;
    unmatched.push({document_id:documentId,frame_id:frameId(doc.frame),fetch_attempt_id:end.attempt_id??null,rejected_event_seq:end.event_seq,url:attempt?clean(attempt.start.url):null,method:attempt?.start.method??null,started_at_ms:attempt?.start.at_ms??null,rejected_at_ms:end.at_ms,error:{name:clean(end.error?.name),message:clean(end.error?.message)},reason:end.reason?{name:clean(end.reason.name),message:clean(end.reason.message)}:null});
   }
   return unmatched;
