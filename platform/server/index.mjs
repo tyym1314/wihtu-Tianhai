@@ -22,6 +22,7 @@ import {ApiRateLimits} from './rate-limit.mjs';
 import {activityTimeZone,migrateOverviewActivity,overviewActivity} from './overview-activity.mjs';
 import {clientAddress,adminSessionCookie} from './proxy-context.mjs';
 import {beginRoomReadTiming} from './request-timing.mjs';
+import {checkWalletDependencies} from './dependency-health.mjs';
 const PORT=Number(process.env.OASIS_API_PORT||8797),WALLET_PORT=Number(process.env.OASIS_WALLET_PORT||8798);
 const limiter=new ApiRateLimits();
 function rate(req,key,limit){limiter.ip(clientAddress(req),key,limit);}
@@ -31,11 +32,20 @@ const allowedPatch=new Set(['name','status','game_ids','math_profile','competiti
 async function adminRoutes(req,res,path,b){
   if(path==='/api/admin/login'&&req.method==='POST'){checkOrigin(req);rate(req,'login',12);const r=await login(b.username,b.password);res.setHeader('set-cookie',adminSessionCookie(r.token,origin));return send(res,200,{user:r.user});}
   const user=await adminUser(req);
-  if(path==='/api/admin/session'&&req.method==='GET')return send(res,200,{user});if(!user)fail(401,'LOGIN_REQUIRED');
+  if(path==='/api/admin/session'&&req.method==='GET')return send(res,200,{user,environment:runtime.environment});if(!user)fail(401,'LOGIN_REQUIRED');
   if(req.method!=='GET')checkOrigin(req);
   if(path==='/api/admin/logout'&&req.method==='POST'){const token=req.headers.cookie?.split(';').map(x=>x.trim()).find(x=>x.startsWith('oasis_admin='))?.split('=')[1];if(token)await pool.query('DELETE FROM gp_admin_sessions WHERE token_hash=$1',[hash(token)]);res.setHeader('set-cookie',adminSessionCookie('',origin,0));return send(res,200,{ok:true});}
   if(path==='/api/admin/operations-status'&&req.method==='GET')return send(res,200,await operationsStatus());
-  if(path==='/api/admin/health'&&req.method==='GET'){await pool.query('SELECT 1');let wallet='unavailable';try{const r=await fetch(`http://127.0.0.1:${WALLET_PORT}/health`,{signal:AbortSignal.timeout(1000)});if(r.ok)wallet='ok';}catch{}return send(res,200,{api:'ok',database:'ok',wallet,engine_pool:enginePoolStats(),environment:runtime.environment,production_enabled:runtime.production&&runtime.admissionEnabled});}
+  if(path==='/api/admin/health'&&req.method==='GET'){
+    await pool.query('SELECT 1');let dependencies;
+    try{dependencies=await checkWalletDependencies(pool,{environment:runtime.environment,
+      referenceOrigin:process.env.OASIS_REFERENCE_WALLET_URL||`http://127.0.0.1:${WALLET_PORT}`,
+      allowedOrigins:(process.env.OASIS_WALLET_ALLOWED_ORIGINS||'').split(',').map(x=>x.trim()).filter(Boolean)},
+      {request:async(url,{timeoutMs})=>{const r=await fetch(url,{signal:AbortSignal.timeout(timeoutMs),redirect:'error',cache:'no-store'});return{status:r.status,body:await r.json()};}});
+    }catch{dependencies={status:'failed',codes:['DEPENDENCY_READ_FAILED']};}
+    return send(res,200,{api:'ok',database:'ok',wallet:dependencies.status==='ok'?'ok':'unavailable',wallet_dependencies:dependencies,
+      engine_pool:enginePoolStats(),environment:runtime.environment,production_enabled:runtime.production&&runtime.admissionEnabled});
+  }
   if(path==='/api/admin/apps'&&req.method==='GET')return send(res,200,{apps:(await pool.query('SELECT * FROM gp_apps ORDER BY created_at')).rows});
   if(path==='/api/admin/apps'&&req.method==='POST'){if(Object.keys(b).some(k=>k!=='name'))fail(400,'INVALID_REQUEST');return send(res,201,await createApp(b.name));}
   const appMatch=path.match(/^\/api\/admin\/apps\/([A-Za-z0-9_-]+)(\/launch)?$/);

@@ -4,11 +4,12 @@ export class ApiError extends Error {
   constructor(message, status = 0, code = 'REQUEST_FAILED') { super(message); this.status = status; this.code = code; }
 }
 let apiMode='admin';
+let apiGeneration=0;
 try { if(sessionStorage.getItem('oasis-console-mode')==='partner')apiMode='partner'; } catch {}
 export const getApiMode=()=>apiMode;
 export function setApiMode(mode){
   if(!['admin','partner'].includes(mode))throw new Error('Unknown console mode');
-  apiMode=mode;try{sessionStorage.setItem('oasis-console-mode',mode);}catch{}
+  apiMode=mode;apiGeneration++;try{sessionStorage.setItem('oasis-console-mode',mode);}catch{}
   window.dispatchEvent(new CustomEvent('oasis:api-mode',{detail:{mode}}));
 }
 function scopedPath(path,mode){
@@ -17,6 +18,7 @@ function scopedPath(path,mode){
   return path.replace('/api/admin/','/api/partner/');
 }
 export async function api(path, { method = 'GET', body, signal, mode=apiMode } = {}) {
+  const generation=apiGeneration;
   const target=scopedPath(path,mode);
   let response;
   try {
@@ -28,7 +30,9 @@ export async function api(path, { method = 'GET', body, signal, mode=apiMode } =
   let data;
   try { data = await response.json(); } catch { throw new ApiError('后台未返回有效 JSON，请检查 API 服务与代理配置。', response.status); }
   if (!response.ok) {
-    if (response.status === 401 && !/^\/api\/(admin|partner)\/(login|session)$/.test(target)) window.dispatchEvent(new CustomEvent('oasis:unauthorized',{detail:{mode:target.startsWith('/api/partner/')?'partner':'admin'}}));
+    // A late rejection from an earlier login must not sign out its successor,
+    // including a new login in the same console mode.
+    if (response.status === 401 && generation===apiGeneration && mode===apiMode && !signal?.aborted && !/^\/api\/(admin|partner)\/(login|session)$/.test(target)) window.dispatchEvent(new CustomEvent('oasis:unauthorized',{detail:{mode:target.startsWith('/api/partner/')?'partner':'admin'}}));
     throw new ApiError(data.error?.message || data.message || (typeof data.error === 'string' ? data.error : `请求失败（HTTP ${response.status}）`), response.status, data.error?.code || data.code);
   }
   return data;

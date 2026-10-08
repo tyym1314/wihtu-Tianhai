@@ -1,12 +1,25 @@
 import {readFile} from 'node:fs/promises';
-import {basename} from 'node:path';
+import {basename,isAbsolute,normalize} from 'node:path';
 import {runtime} from './runtime-mode.mjs';
 import {enginePoolStats} from './pvp/engine-pool.mjs';
 
 async function report(path){try{const raw=await readFile(path,'utf8');if(raw.length>262144)return null;return JSON.parse(raw);}catch{return null;}}
 const names=new Set(['database','api','wallet','ingress','demo','systemd','backup','disks','certificate','report_history']);
-export function publicMonitorReport(monitor,now=Date.now()){
- if(!monitor||!Array.isArray(monitor.checks))return {status:'unavailable',checks:[]};
+export function monitorStatusPath(env=process.env,environment=runtime.environment){
+ const value=env.OASIS_MONITOR_STATUS_FILE,legacy='/opt/oasis/private/monitor/status.json';
+ if(environment==='sandbox')return value||legacy;
+ if(environment!=='production'||typeof value!=='string'||!isAbsolute(value)||normalize(value)!==value||value===legacy)return null;
+ return value;
+}
+export function publicMonitorReport(monitor,now=Date.now(),environment='sandbox'){
+ if(!monitor||!Array.isArray(monitor.checks)||!['sandbox','production'].includes(environment)||
+   (monitor.environment!==environment&&!(environment==='sandbox'&&monitor.environment===undefined)))return {status:'unavailable',checks:[]};
+ if(environment==='production'){
+  const required=['database','api','wallet','ingress','systemd','backup','disks','certificate'];
+  if(required.some(name=>monitor.checks.filter(c=>c?.name===name).length!==1)||
+    monitor.checks.some(c=>!c||!names.has(c.name)||!['ok','failed'].includes(c.status))||
+    !['ok','failed'].includes(monitor.status)||(monitor.status==='ok'&&monitor.checks.some(c=>c.status!=='ok')))return {status:'unavailable',checks:[]};
+ }
  const age=now-Date.parse(monitor.checked_at),stale=!Number.isFinite(age)||age<0||age>180000;
  return {checked_at:Number.isFinite(Date.parse(monitor.checked_at))?new Date(monitor.checked_at).toISOString():null,
   status:stale?'stale':monitor.status==='ok'?'ok':'failed',
@@ -51,14 +64,14 @@ export function publicAndroidReport(device,currentVersion){
 }
 export async function operationsStatus(){
  const [monitor,release,capacity,android]=await Promise.all([
-  report(process.env.OASIS_MONITOR_STATUS_FILE||'/opt/oasis/private/monitor/status.json'),
+  report(monitorStatusPath()),
   report(process.env.OASIS_RELEASE_STATUS_FILE||'/opt/oasis/private/last-release.json'),
   report(process.env.OASIS_CAPACITY_STATUS_FILE||'/opt/oasis/private/capacity-summary.json'),
   report(process.env.OASIS_ANDROID_STATUS_FILE||'/opt/oasis/private/android-validation.json'),
  ]);
  const androidReport=publicAndroidReport(android,basename(release?.current||''));
  return {environment:runtime.environment,production_admission_enabled:runtime.production&&runtime.admissionEnabled,
-  monitor:publicMonitorReport(monitor),
+  monitor:publicMonitorReport(monitor,Date.now(),runtime.environment),
   release:release?{version:basename(release.current||''),previous:basename(release.previous||''),activated_at:release.activated_at,health:release.health}:null,
   engine_pool:enginePoolStats(),capacity:publicCapacityReport(capacity,basename(release?.current||'')),
   android:androidReport,

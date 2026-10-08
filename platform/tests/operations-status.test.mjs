@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {RELEASED_IDS} from '../shared/games.mjs';
-import {publicMonitorReport,publicCapacityReport,publicAndroidReport} from '../server/operations-status.mjs';
+import {monitorStatusPath,publicMonitorReport,publicCapacityReport,publicAndroidReport} from '../server/operations-status.mjs';
 test('expired, future and invalid reports cannot show green component checks',()=>{
  const now=Date.now();for(const checked_at of [new Date(now-180001).toISOString(),new Date(now+1).toISOString(),'invalid']){
   const result=publicMonitorReport({checked_at,status:'ok',checks:[{name:'api',status:'ok',codes:[]}]},now);
@@ -79,4 +79,20 @@ test('public monitor projection removes unknown text and corrupted report shapes
  const now=Date.now(),result=publicMonitorReport({checked_at:new Date(now).toISOString(),status:'ok',checks:[{name:'api',status:'ok',codes:['PROBE_FAILED','secret=foo'],metrics:{queue:2,password:'secret'},password:'secret'}, {name:'secret=foo',status:'ok'}]},now);
  assert.equal(result.status,'ok');assert.equal(result.checks.length,1);assert.deepEqual(result.checks[0].metrics,{queue:2});assert.equal(JSON.stringify(result).includes('secret'),false);
  assert.equal(publicMonitorReport({checks:'broken'}).status,'unavailable');
+});
+
+
+test('production monitor consumer rejects sandbox, missing runtime, partial and contradictory reports',()=>{
+ const now=Date.now(),checks=['database','api','wallet','ingress','systemd','backup','disks','certificate'].map(name=>({name,status:'ok',codes:[],metrics:{}}));
+ const valid={environment:'production',checked_at:new Date(now).toISOString(),status:'ok',checks};
+ assert.equal(publicMonitorReport(valid,now,'production').status,'ok');
+ for(const report of [{...valid,environment:'sandbox'},{...valid,environment:undefined},{...valid,checks:[]},{...valid,checks:checks.slice(1)},{...valid,checks:[...checks,checks[0]]},{...valid,checks:checks.map(c=>c.name==='wallet'?{...c,status:'failed'}:c)}])assert.deepEqual(publicMonitorReport(report,now,'production'),{status:'unavailable',checks:[]});
+ assert.equal(publicMonitorReport({...valid,status:'failed',checks:checks.map(c=>c.name==='wallet'?{...c,status:'failed'}:c)},now,'production').status,'failed');
+ assert.equal(publicMonitorReport({...valid,environment:undefined},now,'sandbox').status,'ok','existing sandbox-only reports retain compatibility');
+ assert.equal(publicMonitorReport(valid,now,'sandbox').status,'unavailable');
+});
+test('production report path must be explicit and independent; no silent sandbox report fallback',()=>{
+ for(const value of [undefined,'','relative.json','/opt/oasis/private/monitor/status.json','/opt/oasis/private/production/../monitor/status.json'])assert.equal(monitorStatusPath({OASIS_MONITOR_STATUS_FILE:value},'production'),null);
+ assert.equal(monitorStatusPath({},'sandbox'),'/opt/oasis/private/monitor/status.json');
+ assert.equal(monitorStatusPath({OASIS_MONITOR_STATUS_FILE:'/opt/oasis/private/production/monitor/status.json'},'production'),'/opt/oasis/private/production/monitor/status.json');
 });

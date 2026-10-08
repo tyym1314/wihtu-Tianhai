@@ -67,6 +67,7 @@ test('production boots with independent master key and an admin, without demo ap
  await assert.rejects(readFile(join(production.folder,'sandbox-app-credentials.json')),e=>e.code==='ENOENT');assert.equal(walletRequests,0);
  const localCredentials=JSON.parse(await readFile(join(production.folder,'development-credentials.json'),'utf8'));
  const login=await request(production,'/api/admin/login',localCredentials);assert.equal(login.status,200);assert.match(login.headers.get('set-cookie'),/; Secure/);productionCookie=login.cookie;
+ const session=await request(production,'/api/admin/session',undefined,productionCookie);assert.equal(session.status,200);assert.equal(session.body.environment,'production');assert.equal(session.body.user.id,login.body.user.id);
  const overview=await request(production,'/api/admin/overview',undefined,productionCookie);assert.equal(overview.status,200);assert.equal(overview.body.wallet_status,'app_scoped');
 });
 
@@ -264,6 +265,9 @@ test('sandbox cannot reopen a production database or replace its identity, app, 
 test('production cannot promote a sandbox database and does not replace sandbox identity or test balances',async()=>{
  const sandboxDb=new pg.Pool({connectionString:urlFor(names[1]),max:2});pools.push(sandboxDb);
  const sandbox=await launch(names[1],'sandbox',join(dir,'sandbox'));assert.equal((await ready(sandbox)).environment,'sandbox');
+ const credentials=JSON.parse(await readFile(join(sandbox.folder,'development-credentials.json'),'utf8'));
+ const loggedIn=await request(sandbox,'/api/admin/login',credentials);assert.equal(loggedIn.status,200);
+ const session=await request(sandbox,'/api/admin/session',undefined,loggedIn.cookie);assert.equal(session.status,200);assert.equal(session.body.environment,'sandbox');assert.equal(session.body.user.id,loggedIn.body.user.id);
  const apps=(await sandboxDb.query('SELECT * FROM gp_apps ORDER BY id')).rows,users=(await sandboxDb.query('SELECT * FROM wallet_users ORDER BY scope_id,external_user_id')).rows;
  assert(apps.length>0);assert(apps.every(a=>a.environment==='sandbox'));assert(users.length>0);
  const sandboxMaster=await readFile(join(sandbox.folder,'master.key'));assert.notDeepEqual(sandboxMaster,await readFile(join(production.folder,'master.key')));

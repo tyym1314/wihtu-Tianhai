@@ -67,7 +67,7 @@ export async function routePortal(req,res,path,body){
  if(!path.startsWith('/api/partner/'))return false;
  if(path==='/api/partner/login'&&req.method==='POST'){checkOrigin(req);limited(req);const result=await partnerLogin(body);setCookie(res,result.token);send(res,200,{user:result.user});return true;}
  const user=await partnerUser(req);
- if(path==='/api/partner/session'&&req.method==='GET'){send(res,200,{user});return true;}
+ if(path==='/api/partner/session'&&req.method==='GET'){send(res,200,{user,environment:runtime.environment});return true;}
  identity(user);if(req.method!=='GET')checkOrigin(req);
  if(path==='/api/partner/logout'&&req.method==='POST'){await pool.query('DELETE FROM gp_partner_sessions WHERE token_hash=$1',[hash(cookieToken(req))]);setCookie(res,'',0);send(res,200,{ok:true});return true;}
  if(path==='/api/partner/apps'&&req.method==='GET'){const apps=(await pool.query("SELECT * FROM gp_apps WHERE partner_id=$1 ORDER BY created_at",[user.partner_id])).rows;send(res,200,{apps:apps.map(publicApp)});return true;}
@@ -112,7 +112,7 @@ export async function routePortal(req,res,path,body){
   const rows=(await pool.query(`SELECT e.id,e.actor,e.action,e.app_id,e.detail,e.created_at FROM gp_audit e LEFT JOIN gp_apps a ON a.id=e.app_id WHERE (a.partner_id=$1) OR (e.app_id IS NULL AND e.actor=$2) ORDER BY e.id DESC LIMIT 100`,[user.partner_id,user.id])).rows;send(res,200,{events:rows.map(safeDetail)});return true;
  }
  if(path==='/api/partner/health'&&req.method==='GET'){
-  await pool.query('SELECT 1');send(res,200,{api:'ok',database:'ok',wallet:'app_check_required',environment:runtime.environment,production_enabled:false,scope:'partner',partner_id:user.partner_id});return true;
+  await pool.query('SELECT 1');send(res,200,{api:'ok',database:'ok',wallet:'app_check_required',environment:runtime.environment,production_enabled:runtime.production&&runtime.admissionEnabled,scope:'partner',partner_id:user.partner_id});return true;
  }
  fail(404,'NOT_FOUND');
 }

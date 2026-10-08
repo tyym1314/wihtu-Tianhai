@@ -8,6 +8,7 @@ import {chmod, chown, lstat, mkdir, open, readFile, readdir, rename, stat, statf
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import pg from 'pg';
+import {readWalletDependencies,referenceWalletHealth} from '../server/dependency-health.mjs';
 
 const exec=promisify(execFile),DAY=86400000;
 const number=(env,key,fallback,min=1,max=Number.MAX_SAFE_INTEGER)=>{
@@ -19,8 +20,22 @@ export function monitorConfig(env=process.env){
  const origin=new URL(env.OASIS_PUBLIC_ORIGIN||'https://game.tianyahuyu.com');
  if(origin.protocol!=='https:'||origin.username||origin.password||origin.pathname!=='/'||origin.search||origin.hash)throw new Error('MONITOR_CONFIG_INVALID');
  if(!env.OASIS_DATABASE_URL)throw new Error('MONITOR_DATABASE_CONFIG_MISSING');
+ const environment=env.OASIS_ENVIRONMENT||'sandbox';
+ if(!['sandbox','production'].includes(environment))throw Error('MONITOR_CONFIG_INVALID');
+ const production=environment==='production';
+ if(production&&env.OASIS_START_WALLET!=='0')throw Error('MONITOR_PRODUCTION_ISOLATION_REQUIRED');
+ const absolute=(value,blocked)=>typeof value==='string'&&path.isAbsolute(value)&&path.normalize(value)===value&&!blocked.includes(value);
+ const backupDir=env.OASIS_MONITOR_BACKUP_DIR||'/opt/oasis/backups',reportFile=env.OASIS_MONITOR_STATUS_FILE||'/opt/oasis/private/monitor/status.json';
+ const backupUnit=env.OASIS_MONITOR_BACKUP_UNIT||'oasis-backup.service',backupTimer=env.OASIS_MONITOR_BACKUP_TIMER||'oasis-backup.timer';
+ const validUnit=(value,suffix)=>new RegExp('^oasis-[a-z0-9-]+\\.'+suffix+'$').test(value);
+ if(!validUnit(backupUnit,'service')||!validUnit(backupTimer,'timer')||backupTimer!==backupUnit.replace(/\.service$/,'.timer')||['oasis-api.service','oasis-demo.service','oasis-production.service','oasis-certificate.service'].includes(backupUnit))throw Error('MONITOR_CONFIG_INVALID');
+ if(production&&(!env.OASIS_API_PORT||!env.OASIS_PUBLIC_ORIGIN||!absolute(backupDir,['/opt/oasis/backups'])||!absolute(reportFile,['/opt/oasis/private/monitor/status.json'])||backupUnit==='oasis-backup.service'||backupTimer==='oasis-backup.timer'))throw Error('MONITOR_PRODUCTION_DEPENDENCIES_REQUIRED');
+ const serviceUnits=[production?'oasis-production.service':'oasis-api.service',...(!production?['oasis-demo.service']:[]),'nginx.service',backupTimer,'oasis-certificate.timer',backupUnit,'oasis-certificate.service'];
  const port=key=>number(env,key,{OASIS_API_PORT:18881,OASIS_WALLET_PORT:18882,OASIS_DEMO_PORT:18885}[key],1024,65535);
  return {
+  environment,production,serviceUnits,jobUnits:[backupUnit,'oasis-certificate.service'],
+  referenceOrigin:env.OASIS_REFERENCE_WALLET_URL||`http://127.0.0.1:${port('OASIS_WALLET_PORT')}`,
+  allowedOrigins:(env.OASIS_WALLET_ALLOWED_ORIGINS||'').split(',').map(x=>x.trim()).filter(Boolean),
   databaseUrl:env.OASIS_DATABASE_URL,origin:origin.origin,host:origin.host,hostname:origin.hostname,
   apiPort:port('OASIS_API_PORT'),walletPort:port('OASIS_WALLET_PORT'),demoPort:port('OASIS_DEMO_PORT'),
   timeoutMs:number(env,'OASIS_MONITOR_TIMEOUT_MS',5000,100,15000),
@@ -31,9 +46,9 @@ export function monitorConfig(env=process.env){
   backupMaxHours:number(env,'OASIS_MONITOR_BACKUP_MAX_HOURS',30),
   certMinDays:number(env,'OASIS_MONITOR_CERT_MIN_DAYS',14),
   diskPaths:(env.OASIS_MONITOR_DISK_PATHS||'/opt/oasis,/var/lib/docker').split(',').map(x=>x.trim()),
-  backupDir:env.OASIS_MONITOR_BACKUP_DIR||'/opt/oasis/backups',
+  backupDir,
   certFile:env.OASIS_MONITOR_CERT_FILE||'/opt/oasis/acme/config/live/oasis-game/fullchain.pem',
-  reportFile:'/opt/oasis/private/monitor/status.json',
+  reportFile,
   reportGroupRead:env.OASIS_MONITOR_REPORT_GROUP_READ==='1',
  };
 }
@@ -54,7 +69,6 @@ export const BACKLOG_SQL=`SELECT
    (status IN ('waiting','funding','cancelling') AND LEAST(expires_at,COALESCE(ready_deadline_at,expires_at)) < extract(epoch FROM now())*1000-$1*1000)
  ) AS rooms_overdue`;
 const metricNames=['cycles_pending','cycles_overdue','probability_operations_pending','probability_operations_overdue','pvp_operations_pending','pvp_operations_overdue','rooms_faulted','rooms_overdue'];
-const units=['oasis-api.service','oasis-demo.service','nginx.service','oasis-backup.timer','oasis-certificate.timer','oasis-backup.service','oasis-certificate.service'];
 
 export function requestHealth(url,{host,timeoutMs=5000,maxBytes=131072}={}){
  return new Promise((resolve,reject)=>{
@@ -75,20 +89,35 @@ export function createProbes(config){
   const response=await requestHealth(url,{host:config.host,timeoutMs:config.timeoutMs});
   if(response.status!==200)throw new Error('UNHEALTHY_HTTP');
   const data=JSON.parse(response.body);
-  if(data.status!=='ok')throw new Error('UNHEALTHY_BODY');
+  if(data.status!=='ok'||data.environment!==config.environment)throw new Error('UNHEALTHY_BODY');
   return {reachable:true};
  };
+ let databaseState;
+ // One repeatable read snapshot per monitor run, shared by backlog and provider checks.
+ const readDatabase=()=>databaseState??=(async()=>{
+  const client=new pg.Client({connectionString:config.databaseUrl,application_name:'oasis-readonly-monitor',
+   connectionTimeoutMillis:config.timeoutMs,query_timeout:config.timeoutMs,statement_timeout:config.timeoutMs,
+   options:'-c default_transaction_read_only=on'});
+  client.on('error',()=>{});
+  try{
+   await client.connect();await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+   const dependencies=await readWalletDependencies(client,config);
+   const backlog=(await client.query(BACKLOG_SQL,[config.overdueSeconds,config.roomStaleSeconds])).rows[0];
+   const identity=(await client.query('SELECT current_database() AS database')).rows[0];
+   await client.query('COMMIT');return {dependencies,backlog,database:identity.database};
+  }finally{await client.end();}
+ })();
  return {
-  database:async()=>{
-   const client=new pg.Client({connectionString:config.databaseUrl,application_name:'oasis-readonly-monitor',
-    connectionTimeoutMillis:config.timeoutMs,query_timeout:config.timeoutMs,statement_timeout:config.timeoutMs,
-    options:'-c default_transaction_read_only=on'});
-   client.on('error',()=>{}); // Query/connect errors are reported as fixed codes, never driver text.
-   try{await client.connect();return (await client.query(BACKLOG_SQL,[config.overdueSeconds,config.roomStaleSeconds])).rows[0];}
-   finally{await client.end();}
+  database:async()=>(await readDatabase()).backlog,
+  api:()=>jsonOK(`http://127.0.0.1:${config.apiPort}/health/ready`),
+  wallet:async()=>{
+   const {dependencies}=await readDatabase();
+   if(dependencies.reference_required){
+    try{await referenceWalletHealth(config.referenceOrigin,{request:requestHealth,timeoutMs:config.timeoutMs});}
+    catch{return {...dependencies,status:'failed',codes:[...dependencies.codes,'REFERENCE_WALLET_UNAVAILABLE']};}
+   }
+   return dependencies;
   },
-  api:()=>jsonOK(`http://127.0.0.1:${config.apiPort}/health`),
-  wallet:()=>jsonOK(`http://127.0.0.1:${config.walletPort}/health`),
   ingress:()=>jsonOK(`${config.origin}/health`),
   demo:async()=>{
    // /api/demo/config creates a guest and is rate limited. This check creates no identity.
@@ -96,7 +125,7 @@ export function createProbes(config){
    if(response.status!==200||!/<script type="module" src="\/demo\/static\/[a-f0-9]{64}\/host\.mjs"><\/script>/.test(response.body)||!response.body.includes('OASIS 游戏试玩'))throw new Error('DEMO_UNAVAILABLE');
    return {reachable:true};
   },
-  systemd:async()=>Object.fromEntries(await Promise.all(units.map(async unit=>{
+  systemd:async()=>Object.fromEntries(await Promise.all(config.serviceUnits.map(async unit=>{
    const {stdout}=await exec('systemctl',['show',unit,'--no-pager','--property=LoadState,ActiveState,SubState,Result,ExecMainStatus'],{timeout:config.timeoutMs,maxBuffer:8192});
    return [unit,Object.fromEntries(stdout.trim().split('\n').map(line=>{const pos=line.indexOf('=');return [line.slice(0,pos),line.slice(pos+1)];}))];
   }))),
@@ -105,7 +134,15 @@ export function createProbes(config){
    for(const name of candidates){
     try{
      const files=await Promise.all(['SHA256SUMS','database.dump','private-config.tar.gz','release.txt','database-contents.txt'].map(file=>stat(path.join(config.backupDir,name,file))));
-     if(files.every(item=>item.isFile()&&item.size>0))return {completedAtMs:files[0].mtimeMs};
+     if(files.every(item=>item.isFile()&&item.size>0)){
+      if(config.production){
+       // Production may not borrow a fresh sandbox backup. The backup producer
+       // must explicitly bind its receipt to this runtime/database.
+       const identity=JSON.parse(await readFile(path.join(config.backupDir,name,'runtime-identity.json'),'utf8'));
+       if(identity.environment!==config.environment||identity.database!==(await readDatabase()).database)continue;
+      }
+      return {completedAtMs:files[0].mtimeMs};
+     }
     }catch{/* A partial backup must not hide the last completed backup. */}
    }
    throw new Error('BACKUP_MISSING');
@@ -130,7 +167,7 @@ const check=(name,codes=[],metrics={})=>({name,status:codes.length?'failed':'ok'
 const validNumber=value=>Number.isFinite(Number(value))&&Number(value)>=0;
 const round=value=>Math.round(value*100)/100;
 export async function collectHealth(config,probes,{now=Date.now()}={}){
- const names=['database','api','wallet','ingress','demo','systemd','backup','disks','certificate'];
+ const names=['database','api','wallet','ingress',...(!config.production?['demo']:[]),'systemd','backup','disks','certificate'];
  const results=await Promise.all(names.map(async name=>{
   try{return {name,value:await bounded(probes[name],config.timeoutMs+500)};}catch{return {name,failed:true};}
  }));
@@ -146,10 +183,20 @@ export async function collectHealth(config,probes,{now=Date.now()}={}){
    if(metrics.rooms_faulted>0)codes.push('ROOM_FAULT');
    if(['cycles_pending','probability_operations_pending','pvp_operations_pending'].some(key=>metrics[key]>config.backlogLimit))codes.push('BACKLOG_LIMIT_EXCEEDED');
    checks.push(check(name,codes,metrics));
+  }else if(name==='wallet'&&value?.providers){
+   const providers=value.providers;
+   const metrics={...Object.fromEntries(Object.entries(providers).map(([key,count])=>[key+'_apps',count])),externalRequired:value.external_required};
+   const valid=['platform','external','reference','unconfigured'].every(key=>Number.isSafeInteger(providers[key])&&providers[key]>=0)&&
+    Number.isSafeInteger(value.external_required)&&value.external_required>=0&&Array.isArray(value.codes)&&value.codes.every(code=>/^[A-Z_]+$/.test(code))&&
+    ['ok','failed'].includes(value.status)&&(value.status==='ok')===(value.codes.length===0)&&
+    !(config.production&&providers.reference>0)&&!(value.external_required>0&&!value.codes.includes('EXTERNAL_WALLET_PROBE_REQUIRED'));
+   checks.push(valid?check(name,value.codes,metrics):check(name,['DEPENDENCY_REPORT_INVALID']));
+  }else if(name==='wallet'&&config.production){
+   checks.push(check(name,['DEPENDENCY_REPORT_INVALID']));
   }else if(name==='systemd'){
    const codes=[];
-   for(const unit of units){
-    const state=value?.[unit],isJob=['oasis-backup.service','oasis-certificate.service'].includes(unit);
+   for(const unit of config.serviceUnits){
+    const state=value?.[unit],isJob=config.jobUnits.includes(unit);
     if(state?.LoadState!=='loaded'||state.ActiveState==='failed'||(!isJob&&state.ActiveState!=='active')||
       (isJob&&(state.Result!=='success'||Number(state.ExecMainStatus)!==0))){codes.push('UNIT_UNHEALTHY:'+unit);}
    }
@@ -170,7 +217,7 @@ export async function collectHealth(config,probes,{now=Date.now()}={}){
    checks.push(check(name,codes,Number.isFinite(days)?{remainingDays:round(days)}:{}));
   }else checks.push(check(name,value?.reachable===true?[]:['HTTP_UNHEALTHY']));
  }
- return {schema_version:1,checked_at:new Date(now).toISOString(),status:checks.some(item=>item.status==='failed')?'failed':'ok',checks};
+ return {schema_version:1,environment:config.environment,checked_at:new Date(now).toISOString(),status:checks.some(item=>item.status==='failed')?'failed':'ok',checks};
 }
 
 export async function atomicReport(filename,report,{groupRead=false}={}){

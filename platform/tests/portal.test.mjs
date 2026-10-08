@@ -53,7 +53,7 @@ test('admin and partner cookies are disjoint authorities; account creation never
  assert.equal((await request('/api/admin/partner-accounts',undefined,a.cookie)).status,401);
  assert.equal((await request('/api/admin/partner-accounts',{name:'Escalation',username:'escape_admin',password},a.cookie)).status,401);
  assert.equal((await request('/api/partner/apps',undefined,adminCookie)).status,401);
- assert.equal((await request('/api/partner/session',undefined,adminCookie)).data.user,null);
+ const partnerSession=await request('/api/partner/session',undefined,adminCookie);assert.equal(partnerSession.data.user,null);assert.equal(partnerSession.data.environment,'sandbox');
  const forged=a.cookie.replace('oasis_partner=','oasis_admin=');assert.equal((await request('/api/admin/apps',undefined,forged)).status,401);
  assert.equal((await request('/api/partner/login',{username:'portal_admin',password})).status,401);
 });
