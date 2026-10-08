@@ -57,7 +57,7 @@ function ownedState(player,tick){
 // Reconstruct only the requesting player's complete, versioned simulation
 // state. Public positions alone cannot tell whether an obstacle was already
 // resolved or whether the server accepted an input for the next tick.
-function restore(game,playerKey){
+export function restoreRunSelfState(game,playerKey){
  if(!record(game)||game.gameId!=='run'||!runRequiresSceneReady(game.ruleVersion)||game.physicsVersion!==PHYSICS_VERSION||game.trackLength!==TRACK_LENGTH||game.me!==playerKey||game.status!=='active'||!['racing','finish-window'].includes(game.phase))return null;
  const tick=game.snapshotTick;
  if(!integer(tick)||!integer(game.startedAt,0,Number.MAX_SAFE_INTEGER)||!close(game.serverNow,game.startedAt+tick*1000/RUN_RULES.hz)||!Number.isFinite(game.deadlineAt))return null;
@@ -104,6 +104,7 @@ function restore(game,playerKey){
   inventory:source.inventory,claimedItems:[...source.claimedItems],resolvedObstacles:[...privateState.resolvedObstacles],hits:source.hits,inputNo:source.inputNo,appliedInputNo:source.appliedInputNo,lastInputTick:privateState.lastInputTick,pendingInput:pending===null?null:{...pending},finishTick:source.finishTick,finishedAt:source.finishedAt,forfeited:source.forfeited,
  }};
 }
+const restore=restoreRunSelfState;
 
 function frame(player,tick,boundary=null,authoritativeFinishTick=player.finishTick,boundaryEvents=[]){
  const pose=runnerPose(player,tick);

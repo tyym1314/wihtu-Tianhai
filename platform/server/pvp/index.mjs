@@ -11,11 +11,12 @@ import {bowlingPreparations} from './bowling-preparation.mjs';
 import {assertProductionAppReady} from '../runtime-mode.mjs';
 import {ARENA_GAMES,allowedCapacity,teamSizeFor} from '../../shared/games.mjs';
 import {getTrainingLesson} from '../../arena/towerlink/training.mjs';
-import {PRACTICE_RULE_VERSION as RUN_PRACTICE_RULE_VERSION,RUN_SCENE_READY_POLICY} from '../../arena/run/engine.mjs';
+import {PRACTICE_RULE_VERSION as RUN_PRACTICE_RULE_VERSION,PRACTICE_INPUT_RULE_VERSION as RUN_INPUT_RULE_VERSION,RUN_SCENE_READY_POLICY} from '../../arena/run/engine.mjs';
 import {runRequiresSceneReady} from '../../arena/run/start-policy.mjs';
 import {newTowerPracticeStartOptions,roomStartDelayMs} from './tower-start-policy.mjs';
 import {makeRunActionReceipt} from '../../shared/run-action-receipt.mjs';
 import {walletRetryNotDue} from './retry-time.mjs';
+import {RUN_PRACTICE_INPUT_PROTOCOL,isRunInputRoom,initializeRunInputRoom,advanceRunInputRoom,runInputResultCommitted,runInputAuthority,prepareRunInputBatch,persistRunInputBatch,shiftRunInputRoom} from './run-practice-protocol.mjs';
 const terminal=new Set(['settled','voided','cancelled']);
 const RUN_SCENE_READY_PRESENCE_MS=2000;
 function runSceneReadyFresh(p,now,heartbeatKey){
@@ -59,7 +60,15 @@ async function touchPresence(r,s,now){
 // newer engine snapshot. Explicit test clocks retain their original semantics.
 const roomNow=(r,explicitNow)=>explicitNow??Math.max(Date.now(),r?.last_tick_at??0);
 async function transaction(fn){const c=await pool.connect();try{await c.query('BEGIN');const result=await fn(c);await c.query('COMMIT');return result;}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}}
-async function save(r,c=pool){r.version++;await c.query('UPDATE pvp_rooms SET status=$2,players=$3,game_state=$4,captured=$5,result=$6,result_hash=$7,starts_at=$8,end_at=$9,last_tick_at=$10,fault_at=$11,error=$12,ready_deadline_at=$13,version=$14,updated_at=now() WHERE id=$1',[r.id,r.status,JSON.stringify(r.players),r.game_state,r.captured,r.result,r.result_hash,r.starts_at,r.end_at,r.last_tick_at,r.fault_at,r.error,r.ready_deadline_at,r.version]);if(terminal.has(r.status))await c.query('DELETE FROM pvp_active_users WHERE room_id=$1',[r.id]);}
+async function save(r,c=pool){
+ // Background ticks need the same atomic terminal boundary as POST commands:
+ // a settled room and removal of its active-user slot must commit together.
+ if(c===pool)return transaction(tx=>save(r,tx));
+ const version=r.version+1;
+ await c.query('UPDATE pvp_rooms SET status=$2,players=$3,game_state=$4,captured=$5,result=$6,result_hash=$7,starts_at=$8,end_at=$9,last_tick_at=$10,fault_at=$11,error=$12,ready_deadline_at=$13,version=$14,run_input_state=$15,updated_at=now() WHERE id=$1',[r.id,r.status,JSON.stringify(r.players),r.game_state,r.captured,r.result,r.result_hash,r.starts_at,r.end_at,r.last_tick_at,r.fault_at,r.error,r.ready_deadline_at,version,r.run_input_state||null]);
+ if(terminal.has(r.status))await c.query('DELETE FROM pvp_active_users WHERE room_id=$1',[r.id]);
+ r.version=version;
+}
 function checkSession(s){if(!s||!engines[s.game_id]||typeof s.external_user_id!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(s.external_user_id)||['__proto__','constructor','prototype'].includes(s.external_user_id))fail(403,'GAME_SESSION_REQUIRED');}
 function checkNew(app,game){if(!app||app.status!=='active')fail(409,'APP_PAUSED');if(!app.game_ids.includes(game))fail(403,'GAME_NOT_ENABLED');}
 function exactRecords(actual,expected){return Array.isArray(actual)&&actual.length===expected.length&&new Set(actual.map(p=>p.external_user_id)).size===actual.length&&new Set(actual.map(p=>p.seat_index)).size===actual.length&&expected.every(p=>actual.some(v=>Object.keys(v).length===Object.keys(p).length&&Object.keys(p).every(k=>v[k]===p[k])));}
@@ -73,6 +82,14 @@ function personal(r,s,now=Date.now()){
  game:mine&&r.game_state&&supportsRules(engines[r.game_id],r.rule_version)?engines[r.game_id].view(r.game_state,s.external_user_id,{roomId:r.id}):null};
  if(r.game_id==='towerlink'){view.room_mode=r.practice?'practice':walletless(r)?'social':'competitive';view.training_lesson_id=r.game_options?.training_lesson_id||null;}
  if(r.game_id==='run'&&runRequiresSceneReady(r.rule_version)){const humans=r.players.filter(p=>!p.bot);view.start_protocol={kind:RUN_SCENE_READY_POLICY,phase:r.game_state?.phase||null,ready_count:humans.filter(p=>r.game_state?.phase==='arming'?runSceneReadyFresh(p,now):!!p.scene_ready_at).length,human_count:humans.length,ready_deadline_at:r.game_state?.armingDeadlineAt??null,starts_at:r.starts_at};}
+ if(isRunInputRoom(r)&&r.run_input_state){
+  view.run_inputs=runInputAuthority(r);
+  if(view.game&&!r.result&&!runInputResultCommitted(r)){
+   // A rollback-capable finish cannot announce an authoritative winner.
+   view.game.winnerKeys=[];view.game.outcome=null;view.game.ranks=view.game.ranks.map(rank=>({...rank,winner:false}));
+   view.game.resultCommitted=false;
+  }else if(view.game)view.game.resultCommitted=!!r.result;
+ }
  if(view.game&&mine.last_event&&['match','golf'].includes(r.game_id))view.game.lastEvent=mine.last_event;return view;
 }
 async function command(app,r,path,body){
@@ -124,7 +141,7 @@ function startGame(r,now){const fairRun=r.game_id==='run'&&runRequiresSceneReady
 function allRunHumansPresent(r,now,heartbeatKey){
  return r.players.filter(p=>!p.bot).every(p=>runSceneReadyFresh(p,now,heartbeatKey));
 }
-function armRun(r,now){engines.run.armStart(r.game_state,now);r.starts_at=r.game_state.startedAt;r.end_at=r.game_state.deadlineAt;}
+function armRun(r,now){engines.run.armStart(r.game_state,now);r.starts_at=r.game_state.startedAt;r.end_at=r.game_state.deadlineAt;if(isRunInputRoom(r))initializeRunInputRoom(r);}
 async function advance(r,now,{skipGap=false,forfeitKeys=[],heartbeat,ignorePresence=false}={}){
  const persist=async()=>{if(heartbeat){const p=r.players.find(p=>p.external_user_id===heartbeat.key);if(p)p.last_seen_at=now;heartbeat.written=true;}await save(r);};
  if(terminal.has(r.status))return r;if(r.status==='active'&&r.game_state&&(!supportsRules(engines[r.game_id],r.rule_version)||r.game_state.ruleVersion!==r.rule_version)){r.status='fault';r.fault_at??=now;r.error={code:'PINNED_RULE_UNAVAILABLE'};await persist();}let app;const walletApp=async()=>app??=await appById(r.app_id);const base={...r.scope,match_id:r.id};
@@ -152,7 +169,7 @@ async function advance(r,now,{skipGap=false,forfeitKeys=[],heartbeat,ignorePrese
    const armingRun=fairRun&&r.game_state.phase==='arming';
    // Scene preparation has an absolute 15-second deadline. A missing room tick
    // is not proof of a platform outage, so it must never extend this deadline.
-   if(!skipGap&&!armingRun&&now-r.last_tick_at>5000){const gap=now-r.last_tick_at;if(gap>60000){fixResult(r,now,'void','platform_outage_over_60s');await persist();}else{r.game_state=engines[r.game_id].shiftTime(r.game_state,gap);r.end_at+=gap;if(r.game_id==='towerlink'||fairRun&&r.starts_at!==null)r.starts_at+=gap;for(const p of r.players)p.last_seen_at+=gap;r.error={code:'RECOVERED_SHARED_PAUSE',duration_ms:gap};}}
+   if(!skipGap&&!armingRun&&now-r.last_tick_at>5000){const gap=now-r.last_tick_at;if(isRunInputRoom(r)&&runInputResultCommitted(r)){fixResult(r,now,r.game_state.outcome==='void'?'void':'completed');await persist();}else if(gap>60000){fixResult(r,now,'void','platform_outage_over_60s');await persist();}else{if(isRunInputRoom(r))await shiftRunInputRoom(r,gap);else r.game_state=engines[r.game_id].shiftTime(r.game_state,gap);r.end_at+=gap;if(r.game_id==='towerlink'||fairRun&&r.starts_at!==null)r.starts_at+=gap;for(const p of r.players)p.last_seen_at+=gap;r.error={code:'RECOVERED_SHARED_PAUSE',duration_ms:gap};}}
    if(r.status==='active'){
     if(armingRun||fairRun&&r.game_state.phase==='countdown'&&now<r.game_state.startedAt&&forfeitKeys.length){
      if(forfeitKeys.length)fixResult(r,now,'void','scene_ready_aborted');
@@ -162,6 +179,11 @@ async function advance(r,now,{skipGap=false,forfeitKeys=[],heartbeat,ignorePrese
      await persist();
     }else{
     const absent=r.players.filter(p=>!p.bot&&!p.forfeited&&now-p.last_seen_at>30000).map(p=>p.external_user_id);
+    if(isRunInputRoom(r)){
+     if(absent.length||forfeitKeys.length)fixResult(r,now,'void','practice_player_disconnected');
+     else{await advanceRunInputRoom(r,now);if(runInputResultCommitted(r))fixResult(r,now,r.game_state.outcome==='void'?'void':'completed');}
+     await persist();return r;
+    }
     const result=await runEngineTask({kind:'advance',gameId:r.game_id,ruleVersion:r.rule_version,state:r.game_state,now,forfeits:[...new Set([...absent,...forfeitKeys])],bots:r.players.filter(p=>p.bot&&r.practice).map(p=>({key:p.external_user_id,lastBotAt:p.last_bot_at||0}))});
     const state=result.state;for(const update of result.botUpdates){const p=r.players.find(p=>p.external_user_id===update.key);p.last_event=memberEvent(r.game_id,update.lastEvent);p.last_bot_at=update.lastBotAt;}
     r.game_state=state;r.last_tick_at=now;
@@ -204,6 +226,8 @@ export async function routePvp(session,method,path,body={},options={}){
  if(method==='POST'&&path==='/api/pvp/rooms'){
   if(body.game_id!==s.game_id||!allowedCapacity(s.game_id,body.capacity)||typeof body.practice!=='undefined'&&typeof body.practice!=='boolean')fail(400,'INVALID_ROOM');
   const practice=body.practice===true,entry=practice?'0':body.entry_minor,social=s.game_id==='towerlink'&&!practice&&entry==='0';if(!practice&&!social&&!['1000','5000','10000','20000','50000'].includes(entry))fail(400,'INVALID_ENTRY');
+  const inputProtocol=body.run_input_protocol;
+  if(inputProtocol!==undefined&&(inputProtocol!==RUN_PRACTICE_INPUT_PROTOCOL||s.game_id!=='run'||!practice||(body.entry_minor!==undefined&&body.entry_minor!=='0')))fail(400,'INVALID_INPUT_PROTOCOL');
   if(s.game_id==='towerlink'&&!practice&&!social&&body.capacity!==2)fail(400,'TOWERLINK_PAID_1V1_ONLY');
   const gameOptions={};
   if(body.training_lesson_id!==undefined){
@@ -218,7 +242,7 @@ export async function routePvp(session,method,path,body={},options={}){
    const now=roomNow(null,options.now),fee=practice||social?0:Number(app.competitive_fee_bps??500);if(!practice&&!social&&![300,500,800,1000].includes(fee))fail(409,'INVALID_APP_FEE');
    const players=[player(s,0,now)];if(practice)for(let i=1;i<body.capacity;i++)players.push(player({external_user_id:`bot_${i}_${randomBytes(12).toString('hex')}`},i,now,true));
    const teamSize=teamSizeFor(s.game_id,body.capacity);if(teamSize===2)players.forEach((p,i)=>p.team_id=i%2?'team_b':'team_a');
-   const ruleVersion=s.game_id==='run'&&practice?RUN_PRACTICE_RULE_VERSION:engines[s.game_id].RULE_VERSION;
+   const ruleVersion=s.game_id==='run'&&practice?(inputProtocol?RUN_INPUT_RULE_VERSION:RUN_PRACTICE_RULE_VERSION):engines[s.game_id].RULE_VERSION;
    const terms={game_id:s.game_id,rule_version:ruleVersion,payout_template_version:teamSize===2?'team-share-v1':'winner-all-v1',fee_bps:fee,entry_minor:entry,player_count:body.capacity,team_size:teamSize};
    // Freeze a server-owned policy only on new eligible BOT-practice rooms.
    // Existing waiting/funding rooms retain their stored options and default 3s.
@@ -227,7 +251,7 @@ export async function routePvp(session,method,path,body={},options={}){
    await c.query('INSERT INTO pvp_active_users(app_id,external_user_id,room_id) VALUES($1,$2,$3)',[s.app_id,s.external_user_id,roomId]);return remember(c,s,body,digest,r,{status:201,body:personal(r,s,now)});
   });
  }
- const route=path.match(/^\/api\/pvp\/rooms\/([A-Za-z0-9_-]+)(?:\/(join|ready|scene-ready|action|leave))?$/);if(!route)fail(404,'NOT_FOUND');const verb=route[2],prepareBowling=method==='POST'&&verb==='action'&&s.game_id==='bowling',initial=await findRoom(s,route[1],method==='POST'&&!prepareBowling);
+ const route=path.match(/^\/api\/pvp\/rooms\/([A-Za-z0-9_-]+)(?:\/(join|ready|scene-ready|action|inputs|leave))?$/);if(!route)fail(404,'NOT_FOUND');const verb=route[2],prepareBowling=method==='POST'&&verb==='action'&&s.game_id==='bowling',initial=await findRoom(s,route[1],method==='POST'&&!prepareBowling);
  if(method==='GET'&&!verb&&options.now===undefined){
   const member=initial.players.find(p=>p.external_user_id===s.external_user_id);if(!member)fail(403,'NOT_A_PLAYER');
   const now=roomNow(initial);
@@ -255,7 +279,13 @@ export async function routePvp(session,method,path,body={},options={}){
   if(!member&&verb!=='join')fail(403,'NOT_A_PLAYER');
   if(r.status==='active'&&verb!=='leave')await advance(r,now,{skipGap:options.skipGap,ignorePresence:options.now!==undefined});
   let computedAction;
+  let computedInputs;
+  if(verb==='inputs'){
+   if(r.status!=='active')fail(409,'NOT_ACTIVE');
+   computedInputs=await prepareRunInputBatch(r,s.external_user_id,body,pool);
+  }
   if(verb==='action'){
+   if(isRunInputRoom(r))fail(409,'INPUT_PROTOCOL_REQUIRED');
    if(r.status!=='active')fail(409,'NOT_ACTIVE');if(!Number.isSafeInteger(body.seq)||body.seq!==member.last_seq+1)fail(409,'INVALID_SEQUENCE','Expected seq '+(member.last_seq+1));
    // A prepared Bowling shot applies only after rechecking this player's exact
    // proof against the current locked state. Other games retain the worker
@@ -298,6 +328,11 @@ export async function routePvp(session,method,path,body={},options={}){
      if(r.practice&&!terminal.has(r.status)){r.status='cancelled';r.end_at=now;r.last_tick_at=now;r.error=null;}
      else if(r.status==='waiting'||r.status==='funding')r.status='cancelling';
      // Active paid forfeits were computed before entering this transaction.
+    }else if(verb==='inputs'){
+     if(r.status!=='active')fail(409,'NOT_ACTIVE');
+     await persistRunInputBatch(r,computedInputs,c);
+     member.last_seq=r.run_input_state.current.players.find(p=>p.key===s.external_user_id).inputNo;
+     if(runInputResultCommitted(r))fixResult(r,now,r.game_state.outcome==='void'?'void':'completed');
     }else if(verb==='action'){
      if(r.status!=='active')fail(409,'NOT_ACTIVE');if(!Number.isSafeInteger(body.seq)||body.seq!==member.last_seq+1)fail(409,'INVALID_SEQUENCE','Expected seq '+(member.last_seq+1));
      const result=computedAction;r.game_state=result.state;member.last_seq=body.seq;member.last_event=memberEvent(r.game_id,result.event);
@@ -311,6 +346,7 @@ export async function routePvp(session,method,path,body={},options={}){
    // The request ledger stores this exact POST receipt. Snapshot GETs never
    // republish it, and replay never derives it from a newer room or member event.
    if(actionReceipt)response.action_receipt=actionReceipt;
+   if(computedInputs){response.request_id=body.request_id;response.run_inputs=runInputAuthority(r,computedInputs.decisions,computedInputs.correction);}
    return remember(c,s,body,digest,r,{status:200,body:response});
   });
  });}finally{bowlingPreparations.release(preparation);}

@@ -42,7 +42,7 @@ export class ApiRateLimits {
     }
   }
   player(session,family,method,path=''){
-    const bucket=family==='pvp'?(method==='GET'?'PVP_READ':method==='POST'&&path.endsWith('/action')?'PVP_ACTION':'PVP_ROOM_WRITE'):(method==='GET'?'PROBABILITY_READ':'PROBABILITY_WRITE');
+    const bucket=family==='pvp'?(method==='GET'?'PVP_READ':method==='POST'&&/\/(action|inputs)$/.test(path)?'PVP_ACTION':'PVP_ROOM_WRITE'):(method==='GET'?'PROBABILITY_READ':'PROBABILITY_WRITE');
     this.identities.consume(JSON.stringify([bucket,session.app_id,session.external_user_id]),this.config[bucket]);
   }
   partner(app,method){const bucket=method==='GET'?'PARTNER_READ':'PARTNER_WRITE';this.identities.consume(JSON.stringify([bucket,app.id]),this.config[bucket]);}

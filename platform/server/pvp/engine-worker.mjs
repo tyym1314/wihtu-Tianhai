@@ -2,11 +2,19 @@ import {parentPort} from 'node:worker_threads';
 import {engines} from './engines.mjs';
 import {supportsRules} from './rule-support.mjs';
 import {runRequiresSceneReady} from '../../arena/run/start-policy.mjs';
+import {applyRunPracticeInputs,advanceRunPracticeInputs,shiftRunPracticeInputs} from './run-practice-inputs.mjs';
 
 // Pure game computation only. No database, wallet, credentials or room locks
 // are imported into this process; the caller owns admission and persistence.
 export function executeEngineTask(job){
   const engine=engines[job.gameId];
+  if(job.kind==='run-practice-inputs'){
+    if(job.gameId!=='run'||job.ruleVersion!==engines.run.PRACTICE_INPUT_RULE_VERSION||job.envelope?.anchor?.ruleVersion!==job.ruleVersion){const e=new Error('Pinned input rules unavailable');e.code='PINNED_RULE_UNAVAILABLE';e.status=503;throw e;}
+    if(job.operation==='apply')return applyRunPracticeInputs(job.envelope,job.request,job.serverTick);
+    if(job.operation==='advance')return advanceRunPracticeInputs(job.envelope,job.serverTick);
+    if(job.operation==='shift')return shiftRunPracticeInputs(job.envelope,job.pause);
+    const e=new Error('Unknown input task');e.code='INVALID_ENGINE_TASK';e.status=400;throw e;
+  }
   if(job.kind==='prepare-bowling-roll'){
     if(job.gameId!=='bowling'||job.ruleVersion!==engine.RULE_VERSION||job.physicsVersion!==engine.PHYSICS_VERSION){const e=new Error('Pinned game rules unavailable');e.code='PINNED_RULE_UNAVAILABLE';e.status=503;throw e;}
     return engine.prepareRoll(job.standing,job.action);

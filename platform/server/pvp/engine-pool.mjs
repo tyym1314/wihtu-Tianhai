@@ -84,6 +84,9 @@ function bowlingBotStillBusy(job,bot){
 let singleton;
 function sharedPool(){return singleton??=createEnginePool({size:process.env.OASIS_ENGINE_WORKERS,maxQueue:process.env.OASIS_ENGINE_QUEUE,queueTimeoutMs:process.env.OASIS_ENGINE_QUEUE_TIMEOUT_MS,taskTimeoutMs:process.env.OASIS_ENGINE_TASK_TIMEOUT_MS});}
 export async function runEngineTask(job){
+  // Bounded history replay still belongs off the HTTP event loop, including
+  // background advances with no newly submitted human input.
+  if(job.kind==='run-practice-inputs')return sharedPool().run(job);
   // tick/forfeit only resolve already computed physical results. Avoid copying
   // every trajectory through a worker merely to advance a clock. A due BOT
   // can produce a new physical shot, so that complete batch stays off-thread.

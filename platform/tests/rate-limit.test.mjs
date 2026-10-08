@@ -22,6 +22,13 @@ test('run polling does not consume the action budget and full legal input rate f
  assert.throws(()=>limiter.player(s,'pvp','POST','/api/pvp/rooms/room/action'),e=>e.status===429);
  assert.doesNotThrow(()=>limiter.player(s,'pvp','POST','/api/pvp/rooms/room/leave'));
 });
+test('Run input batches share the action budget and cannot exhaust the independent leave budget',()=>{
+ const limiter=new ApiRateLimits({env:{OASIS_RATE_PVP_ACTION_PER_MINUTE:'2',OASIS_RATE_PVP_ROOM_WRITE_PER_MINUTE:'1'},now:()=>0}),s={app_id:'app',external_user_id:'runner'};
+ limiter.player(s,'pvp','POST','/api/pvp/rooms/room/inputs');
+ limiter.player(s,'pvp','POST','/api/pvp/rooms/room/action');
+ assert.throws(()=>limiter.player(s,'pvp','POST','/api/pvp/rooms/room/inputs'),e=>e.status===429);
+ assert.doesNotThrow(()=>limiter.player(s,'pvp','POST','/api/pvp/rooms/room/leave'));
+});
 test('probability reads/writes and partner Apps are separately limited',()=>{
  const limiter=new ApiRateLimits({env:{OASIS_RATE_PROBABILITY_READ_PER_MINUTE:'2',OASIS_RATE_PROBABILITY_WRITE_PER_MINUTE:'2',OASIS_RATE_PARTNER_READ_PER_MINUTE:'2',OASIS_RATE_PARTNER_WRITE_PER_MINUTE:'2'},now:()=>0}),s={app_id:'app',external_user_id:'user'};
  for(let i=0;i<2;i++){limiter.player(s,'probability','GET');limiter.partner({id:'app'},'GET');}
