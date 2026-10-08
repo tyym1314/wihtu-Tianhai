@@ -71,7 +71,8 @@ function conservation(s){assert.equal(s.ledger.reduce((sum,l)=>sum+BigInt(l.delt
 for(const game of['run','match','golf','towerlink'])test(`${game} historical waiting rooms start and execute their pinned rules after deployment`,async()=>{
  const f=await fixture(game),legacyVersion=game==='towerlink'?'towerlink-v2.1.0':`pvp-${game}-v1.0.0`;
  const r=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:game,capacity:2,entry_minor:'0',practice:true})).body;
- await pool.query("UPDATE pvp_rooms SET rule_version=$2,terms=jsonb_set(terms,'{rule_version}',to_jsonb($2::text)) WHERE id=$1",[r.id,legacyVersion]);
+ // Historical fixtures predate the persisted Run course policy; keep that original absence.
+ await pool.query("UPDATE pvp_rooms SET game_options=game_options-'run_course_policy'-'run_course_id',rule_version=$2,terms=jsonb_set(terms,'{rule_version}',to_jsonb($2::text)) WHERE id=$1",[r.id,legacyVersion]);
  await call(f.sessions[0],'POST',`/api/pvp/rooms/${r.id}/ready`);await tickPvp({roomIds:[r.id]});
  const started=(await call(f.sessions[0],'GET',`/api/pvp/rooms/${r.id}`)).body;assert.equal(started.status,'active');assert.equal(started.game.ruleVersion,legacyVersion);
  let db=await read(r.id);assert.equal(db.rule_version,legacyVersion);assert.equal(db.game_state.ruleVersion,legacyVersion);assert.equal(db.terms.rule_version,legacyVersion);
@@ -101,7 +102,8 @@ test('new Run BOT practice arms on ready and starts only after rendered-scene AC
 });
 test('existing Run v2.1 BOT practice retains its pinned 1.5-second countdown',async()=>{
  const f=await fixture('run'),created=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'0',practice:true})).body;
- await pool.query("UPDATE pvp_rooms SET rule_version=$2,terms=jsonb_set(terms,'{rule_version}',to_jsonb($2::text)) WHERE id=$1",[created.id,engines.run.RULE_VERSION]);
+ // Historical fixtures predate the persisted Run course policy; keep that original absence.
+ await pool.query("UPDATE pvp_rooms SET game_options=game_options-'run_course_policy'-'run_course_id',rule_version=$2,terms=jsonb_set(terms,'{rule_version}',to_jsonb($2::text)) WHERE id=$1",[created.id,engines.run.RULE_VERSION]);
  const ready=(await call(f.sessions[0],'POST',`/api/pvp/rooms/${created.id}/ready`)).body;
  assert.equal(ready.status,'active');assert.equal(ready.game.phase,'arming');
  const ackAt=Number((await read(created.id)).last_tick_at)+250;
@@ -228,7 +230,8 @@ test('Run foreground polling alone cannot replace a fresh rendered-frame acknowl
 });
 test('persisted Run v2.0 room keeps immediate start and rejects the new acknowledgement',async()=>{
  const f=await fixture('run'),room=(await call(f.sessions[0],'POST','/api/pvp/rooms',{game_id:'run',capacity:2,entry_minor:'0',practice:true})).body;
- const previous='pvp-run-v2.0.0';await pool.query("UPDATE pvp_rooms SET rule_version=$2,terms=jsonb_set(terms,'{rule_version}',to_jsonb($2::text)) WHERE id=$1",[room.id,previous]);
+ // Historical fixtures predate the persisted Run course policy; keep that original absence.
+ const previous='pvp-run-v2.0.0';await pool.query("UPDATE pvp_rooms SET game_options=game_options-'run_course_policy'-'run_course_id',rule_version=$2,terms=jsonb_set(terms,'{rule_version}',to_jsonb($2::text)) WHERE id=$1",[room.id,previous]);
  await call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/ready`);await tickPvp({roomIds:[room.id]});const db=await read(room.id);
  assert.equal(db.game_state.ruleVersion,previous);assert.equal(db.game_state.phase,'racing');assert.equal(Number(db.starts_at),db.game_state.startedAt);
  await assert.rejects(call(f.sessions[0],'POST',`/api/pvp/rooms/${room.id}/scene-ready`),{code:'UNSUPPORTED_START_PROTOCOL'});

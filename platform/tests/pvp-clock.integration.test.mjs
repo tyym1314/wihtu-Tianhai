@@ -22,7 +22,8 @@ after(async()=>{try{await closePools?.();if(created)await dropOwnedTestDatabase(
 async function fixture(){const app=uid('clock_app'),session={app_id:app,game_id:'run',external_user_id:'runner'};await pool.query('INSERT INTO gp_apps(id,name,partner_id,environment,wallet_scope_id,wallet_url,game_ids) VALUES($1,$2,$3,$4,$5,$6,$7)',[app,'clock regression','test_partner','sandbox','test_scope','https://no-wallet.invalid','["run"]']);const call=(method,path,body={})=>routePvp(session,method,path,{request_id:uid('clock_req'),...body});const room=(await call('POST','/api/pvp/rooms',{game_id:'run',capacity:2,practice:true})).body;
  // Clock-lock regressions need a race that has already begun; pin the
  // historical immediate-start rules rather than bypassing v2.1 scene arming.
- await pool.query("UPDATE pvp_rooms SET rule_version=$2,terms=jsonb_set(terms,'{rule_version}',to_jsonb($2::text)) WHERE id=$1",[room.id,run.PREVIOUS_RULE_VERSION]);
+ // Historical fixtures predate the persisted Run course policy; keep that original absence.
+ await pool.query("UPDATE pvp_rooms SET game_options=game_options-'run_course_policy'-'run_course_id',rule_version=$2,terms=jsonb_set(terms,'{rule_version}',to_jsonb($2::text)) WHERE id=$1",[room.id,run.PREVIOUS_RULE_VERSION]);
  await call('POST',`/api/pvp/rooms/${room.id}/ready`);await tickPvp({roomIds:[room.id]});return{session,id:room.id};}
 const read=async id=>(await pool.query('SELECT * FROM pvp_rooms WHERE id=$1',[id])).rows[0];
 async function waitUntilQueued(){const until=performance.now()+3000;while(performance.now()<until){const q=await pool.query("SELECT count(*)::int AS n FROM pg_locks WHERE locktype='advisory' AND NOT granted AND database=(SELECT oid FROM pg_database WHERE datname=current_database())");if(q.rows[0].n)return;await new Promise(r=>setTimeout(r,5));}assert.fail('request never reached the held advisory lock');}

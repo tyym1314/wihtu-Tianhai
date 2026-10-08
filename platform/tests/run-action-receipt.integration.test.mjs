@@ -42,7 +42,8 @@ async function fixture(ruleVersion){
   [appId,'Run receipt isolated fixture',uid('partner'),'sandbox',uid('scope'),'https://unused-wallet.invalid',JSON.stringify(['run'])]);
  const session={app_id:appId,external_user_id:uid('human'),game_id:'run'},start=Date.now()+100;
  const room=(await call(session,null,null,{game_id:'run',capacity:2,practice:true},start)).body;
- if(ruleVersion!==room.game?.ruleVersion)await pool.query("UPDATE pvp_rooms SET rule_version=$2,terms=jsonb_set(terms,'{rule_version}',to_jsonb($2::text)) WHERE id=$1",[room.id,ruleVersion]);
+ // Historical fixtures predate the persisted Run course policy; keep that original absence.
+ if(ruleVersion!==room.game?.ruleVersion)await pool.query("UPDATE pvp_rooms SET game_options=game_options-'run_course_policy'-'run_course_id',rule_version=$2,terms=jsonb_set(terms,'{rule_version}',to_jsonb($2::text)) WHERE id=$1",[room.id,ruleVersion]);
  await call(session,'ready',room.id,{},start+1);await tickPvp({roomIds:[room.id],now:start+2,skipGap:true});
  if(runRequiresSceneReady(ruleVersion))await call(session,'scene-ready',room.id,{},start+3);
  const row=await read(room.id),now=Math.max(Number(row.last_tick_at),row.game_state.startedAt)+1;

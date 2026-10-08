@@ -30,7 +30,8 @@ async function fixture(){
  // not need financial operations or BOT scheduling/physics. Pin the previous
  // immediate-start rules so these tests reach gameplay without v2.1 arming.
  const db=await read(room.id);Object.assign(db.players[1],{external_user_id:peer.external_user_id,bot:false,name:'peer'});
- await pool.query("UPDATE pvp_rooms SET players=$2,rule_version=$3,terms=jsonb_set(terms,'{rule_version}',to_jsonb($3::text)) WHERE id=$1",[room.id,JSON.stringify(db.players),run.PREVIOUS_RULE_VERSION]);
+ // Historical fixtures predate the persisted Run course policy; keep that original absence.
+ await pool.query("UPDATE pvp_rooms SET game_options=game_options-'run_course_policy'-'run_course_id',players=$2,rule_version=$3,terms=jsonb_set(terms,'{rule_version}',to_jsonb($3::text)) WHERE id=$1",[room.id,JSON.stringify(db.players),run.PREVIOUS_RULE_VERSION]);
  await call(owner,'POST',`/api/pvp/rooms/${room.id}/ready`);await tickPvp({roomIds:[room.id]});
  return{id:room.id,owner,peer,call,get:s=>call(s,'GET',`/api/pvp/rooms/${room.id}`)};
 }
