@@ -1,3 +1,4 @@
+export {startRunRoomPolling,readRunRoomOnce} from './run-room-poller.mjs';
 // Stable signal reasons distinguish lifecycle cancellation from a real timeout.
 export const ROOM_POLL_ABORT=Object.freeze({timeout:'OASIS_ROOM_POLL_TIMEOUT',background:'OASIS_ROOM_POLL_BACKGROUND',stopped:'OASIS_ROOM_POLL_STOPPED'});
 const abortReason=kind=>new DOMException(ROOM_POLL_ABORT[kind],kind==='timeout'?'TimeoutError':'AbortError');

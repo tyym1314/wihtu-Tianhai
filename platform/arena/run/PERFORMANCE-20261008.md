@@ -2,15 +2,88 @@
 
 ## Current acceptance boundary
 
-The sealed public `20261008-07` physical Android run lasted 60.169 seconds and
+Public `20261008-08`, source `335f11a105538d7cca7dfaf48a7b45037eac497c`,
+passed its 13-game basic browser flow and 81 static cache requests. Its physical
+Android Run observation lasted 60.060 seconds, with 14 accepted inputs and no
+captured HTTP/JavaScript errors, but **did not pass smoothness**: two ordinary
+holds lasted 166.3 and 166.4 ms, and one recovery moved forward 1.856267 m in
+one frame. Three smaller forward spikes occur at stun recovery. Five backwards
+steps are near actual respawns, but three remain conservatively unproved by
+the original analyzer. Neither thresholds nor those old labels were changed.
+The recording ends before personal finish and room settlement. The original
+iPhone 15 Pro / Safari / Wi-Fi complaint remains unverified.
+
+The 364 exactly correlated GETs measured application-handler P95 4.776 ms and
+browser TTFB P95 150.924 ms (maximum 802.614 ms). Their difference does not
+isolate network time: proxies, queueing and transport are outside the measured
+application interval. The measured 839.9 ms gap is between consumed snapshots,
+not time spent downloading a response body. Complete sealed evidence is in
+`review/release/public-20261008-08-final-evidence.json` and the physical run's
+`review-summary.json` under `review/release/run-timeline-android-20261008-v9-cookie-isolation/`.
+
+The historical sealed public `20261008-07` physical Android run lasted 60.169 seconds and
 accepted all 13 attempted inputs. Their dispatch-to-rendered-feedback times
 were 6.6–18.7 ms. The trace nevertheless contains **10 ordinary forward
 discontinuities**. It contains no ordinary backwards discontinuity or ordinary
 hold of 100 ms or more. Authority collisions still change motion. These are
 separate measures: prompt input feedback does not establish smooth scrolling.
-The original iPhone 15 Pro / Safari / Wi-Fi complaint remains unverified.
+The two public runs are not a controlled A/B comparison.
 
-The new candidate extracts the existing per-runner simulation into
+## Next candidate: missing-history recovery and slow reads
+
+`proveRunHistory()` now proves at most 120 ticks of already received history
+against a complete fresh own-state endpoint. Only a successful proof can expose
+the historical frames to the timeline. It cannot produce future frames, renew
+an authority timestamp, infer an input acceptance, or advance a result. The
+ordinary projection stays bounded to 39 ticks and 650 ms; outstanding display
+lag and the authority queue retain their existing limits. Missing/conflicting
+inputs, scope/mapping changes, terminal state or excessive lag still fail closed.
+The display consumes verified history at normal speed without chasing the
+server. This removes the reproduced recovery jump; it cannot remove a hold
+that already occurred before fresh data arrived.
+
+Active Run rooms additionally have a bounded slow-read fallback. A sole GET
+that remains pending for 350 ms permits one extra GET; at most two reads can
+exist, with at least 150 ms between sends. Other games retain serial polling.
+POSTs are never repeated. Lifecycle cancellation, authorization scope and
+Retry-After remain enforced. Older room versions and late same-version presence
+cannot replace newer state; valid fresh presence still reaches the existing
+React deduplication. Pending reads that ignore abort retain their physical slot.
+This targets isolated delayed responses, not a persistently slow or disconnected
+link. More GETs under delay also require capacity verification.
+
+The separate fractional stun-recovery issue remains open. The existing sampler
+holds the pre-recovery endpoint until its integer event, then advances one full
+physics step plus the next fractional interval. Recorded snapshots reproduce
+all three smaller spikes with the independent full engine agreeing at integer
+ticks (`review/run-stun-recovery-20261008/result.json`). The inferred phase is
+not a captured full controller replay. This candidate preserves that sampling
+policy; it does not exempt those findings or claim complete smoothness.
+
+The frozen candidate passed **1,985 isolated integration tests with no skips**
+and **12 actual WebGL scenario assertions**. The latter includes an intentionally
+failing smoothness control: after an accepted action was both acknowledged and
+visible, the next GET body was delayed by 800 ms. Serial polling held ordinary
+motion for 333.3 ms; the bounded fallback had no measured hold and no forward
+burst, with maximum motion 8 m/s. The control also had no forward burst, showing
+the separate historical bridge preserves recovery continuity while its wait
+remains. Observed GET counts were 18 and 22 over their complete scenario windows;
+this is extra traffic, not a free latency improvement. All 773 observed renderer
+frames matched the recorded controller-command replay, and product source hashes
+were unchanged before/after. These are local real-assets/HTTP/WebGL observations,
+not device, public-host or sustained-network acceptance.
+
+The first draft injected its delayed GET while the action ACK was still in
+flight. That newer authority changed the control window, leaving a 99.9 ms hold
+and failing the required negative control. That failed run is retained; the
+second run waits for both ACK and applied authority before injection rather than
+loosening the 100 ms threshold. Final evidence:
+`review/release/run-freshness-integration-20261008-v2.tap` and
+`review/deployment/run-input-webgl-1791417598387-7b5fd5/webgl-input.json`.
+
+## Released simulation contract and timeline
+
+The 08 implementation extracts the existing per-runner simulation into
 `runner-physics.mjs`; the server still owns accepted inputs, events, ranks,
 deadlines, winners and settlement. Tests compare every state against a frozen
 pre-extraction engine, including complete races and collision boundaries.

@@ -15,19 +15,19 @@ import {createRunHeldBoostFixture} from './fixtures/run-timeline-race-fixture.mj
 const root=fileURLToPath(new URL('../',import.meta.url));
 const out=resolve(root,'review/deployment',`run-input-webgl-${Date.now()}-${Math.random().toString(16).slice(2,8)}`);
 await mkdir(out,{recursive:true});console.log(JSON.stringify({report_directory:out}));
-const sourceFiles=['arena/run/RunGame.jsx','arena/run/scene.mjs','arena/run/timeline.mjs','arena/run/self-projection.mjs','arena/run/runner-physics.mjs','arena/run/input-presentation.mjs','arena/run/presentation-events.mjs','arena/run/input-readiness.mjs','arena/run/frame-trace.mjs','arena/run/presentation.mjs','arena/run/atlas-characters.mjs','arena/run/characters.mjs','arena/run/engine.mjs','shared/run-action-receipt.mjs','tests/fixtures/run-timeline-race-fixture.mjs'];
+const sourceFiles=['arena/run/RunGame.jsx','arena/run/scene.mjs','arena/run/timeline.mjs','arena/run/self-projection.mjs','arena/run/runner-physics.mjs','arena/run/input-presentation.mjs','arena/run/presentation-events.mjs','arena/run/input-readiness.mjs','arena/run/frame-trace.mjs','arena/run/presentation.mjs','arena/run/atlas-characters.mjs','arena/run/characters.mjs','arena/run/engine.mjs','arena/shared/room-poller.mjs','arena/shared/run-room-poller.mjs','shared/run-action-receipt.mjs','tests/fixtures/run-timeline-race-fixture.mjs'];
 const hashes=async()=>Object.fromEntries(await Promise.all(sourceFiles.map(async file=>[file,createHash('sha256').update(await readFile(resolve(root,file))).digest('hex')])));
 const report={scope:'Local Chrome with actual RunGame, scene, GLB/WebP assets and WebGL renderer. Isolated real HTTP wrapper and pinned engine; controlled ACK/publication delays, not Arena backend, device, public-host, FPS or full-round acceptance.',harness_sha256:createHash('sha256').update(await readFile(fileURLToPath(import.meta.url))).digest('hex'),cases:[],errors:[],source_hashes:await hashes(),passed:false};
 const source=`
 import React,{useEffect,useRef,useState} from 'react';import{createRoot}from'react-dom/client';
-import RunGame from './arena/run/RunGame.jsx';import{startRoomPolling}from'./arena/shared/room-poller.mjs';
+import RunGame from './arena/run/RunGame.jsx';import{startRoomPolling}from'./arena/shared/room-poller.mjs';import{startRunRoomPolling}from'./arena/shared/run-room-poller.mjs';
 import{readRunActionReceipt}from'./shared/run-action-receipt.mjs';
 window.inputWebgl={requests:[],frames:[],timelineCommands:[],timelineSampleNo:0,droppedFrames:0,audio:[],effects:[],returned:false};
 const freeze=x=>{if(x&&typeof x==='object'){for(const v of Object.values(x))freeze(v);Object.freeze(x)}return x};
 function App(){const[room,setRoom]=useState(null),[requestState,setRequestState]=useState('idle'),[shown,setShown]=useState(true),roomRef=useRef(null),inFlight=useRef(false);
  window.inputWebgl.dispose=()=>setShown(false);
  const accept=raw=>{const old=roomRef.current;if(old?.id===raw.id&&old.version>raw.version)return old;const next=freeze(raw);roomRef.current=next;setRoom(next);return next;};
- useEffect(()=>startRoomPolling({initialDelay:0,interval:()=>150,read:async signal=>{const r=await fetch('/room',{signal});if(!r.ok)throw Error('Room read failed');return r.json()},onRoom:accept,onError:e=>window.inputWebgl.pollError=String(e)}),[]);
+ useEffect(()=>(window.useRunFreshnessPoller?startRunRoomPolling:startRoomPolling)({initialDelay:0,interval:()=>150,roomId:'webgl-run-room',playerKey:'p0',rateScope:JSON.stringify(['webgl-fixture','p0']),readVersion:()=>roomRef.current?.version??-1,readRoom:()=>roomRef.current,read:async signal=>{const r=await fetch('/room',{signal});if(!r.ok)throw Error('Room read failed');return r.json()},onRoom:accept,onError:e=>window.inputWebgl.pollError=String(e)}),[]);
  async function onAction(action,{onDispatch}={}){if(inFlight.current)throw Error('Previous request is pending');const r=roomRef.current,request_id=crypto.randomUUID().replaceAll('-',''),seq=r.me_last_seq+1;
   const dispatch={roomId:r.id,playerKey:r.me,request_id,seq,type:action.type,ruleVersion:r.game.ruleVersion};
   const row={...dispatch,dispatch_at:performance.now()};window.inputWebgl.requests.push(row);inFlight.current=true;setRequestState('sending');
@@ -50,11 +50,11 @@ function instrumentScene(content){
  }if(mine&&!readyAnnounced)`);
 }
 let server,browser,timer,publicationTimer,context;
-const httpEvents=[];let scenario,state,version=0,sequence=0,heldUntil=0,heldReadBody=null,readHeldUntil=0;
+const httpEvents=[];let scenario,state,version=0,sequence=0,heldUntil=0,heldReadBody=null,readHeldUntil=0,slowReadsRemaining=0;
 const players=[{key:'p0',name:'Local human',seatIndex:0,isBot:false},{key:'p1',name:'Declared BOT',seatIndex:1,isBot:true}];
 const snap=()=>({id:'webgl-run-room',game_id:'run',me:'p0',me_last_seq:sequence,version,status:state.status==='active'?'active':'settled',practice:true,capacity:2,entry_minor:'0',prize_minor:'0',server_now:Date.now(),starts_at:state.phase==='arming'?null:state.startedAt,players:players.map(p=>({external_user_id:p.key,name:p.name,bot:p.isBot,seat_index:p.seatIndex})),start_protocol:{kind:engine.RUN_SCENE_READY_POLICY,phase:state.phase,ready_count:state.phase==='arming'?0:1,human_count:1,ready_deadline_at:state.armingDeadlineAt,starts_at:state.phase==='arming'?null:state.startedAt},game:engine.view(state,'p0')});
 function advance(){if(!state||state.phase==='arming'||Date.now()<heldUntil)return;engine.tick(state,Date.now());version++;}
-function reset(next){clearTimeout(publicationTimer);scenario=next;state=next.midRace?createRunHeldBoostFixture({startedAt:Date.now()-22500,playerKey:'p0',botKey:'p1'}).state:engine.createState('02'.repeat(32),Date.now(),{players,ruleVersion:engine.PRACTICE_RULE_VERSION,startPolicy:engine.RUN_SCENE_READY_POLICY});sequence=0;version++;heldUntil=0;heldReadBody=null;readHeldUntil=0;}
+function reset(next){clearTimeout(publicationTimer);scenario=next;state=next.midRace?createRunHeldBoostFixture({startedAt:Date.now()-22500,playerKey:'p0',botKey:'p1'}).state:engine.createState('02'.repeat(32),Date.now(),{players,ruleVersion:engine.PRACTICE_RULE_VERSION,startPolicy:engine.RUN_SCENE_READY_POLICY});sequence=0;version++;heldUntil=0;heldReadBody=null;readHeldUntil=0;slowReadsRemaining=0;}
 try{
  const bundle=await build({stdin:{contents:source,resolveDir:root,sourcefile:'run-input-webgl-entry.jsx',loader:'jsx'},bundle:true,write:false,outdir:'/virtual-run-input-webgl',jsx:'automatic',format:'esm',logLevel:'silent',loader:{'.glb':'file','.webp':'file'},plugins:[{name:'real-assets-readonly-observation',setup(b){
   b.onResolve({filter:/\.(glb|webp)\?url$/},a=>({path:resolve(a.resolveDir,a.path.slice(0,-4))}));
@@ -77,9 +77,11 @@ export function createRunTimeline(...factoryArgs){const inner=createRunTimelineI
   if(path==='/app.js'){res.setHeader('content-type','text/javascript');res.end(js);return;}
   if(path==='/app.css'){res.setHeader('content-type','text/css');res.end(css);return;}
   if(path==='/favicon.ico'){res.statusCode=204;res.end();return;}
-  if(path==='/'){res.setHeader('content-type','text/html');res.end('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><link rel="stylesheet" href="/app.css"><style>html,body{margin:0;background:#102d37}#root{max-width:460px;margin:auto}</style></head><body><div id="root"></div><script type="module" src="/app.js"></script>');return;}
+  if(path==='/'){res.setHeader('content-type','text/html');res.end('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><link rel="stylesheet" href="/app.css"><style>html,body{margin:0;background:#102d37}#root{max-width:460px;margin:auto}</style></head><body><div id="root"></div><script>window.useRunFreshnessPoller='+JSON.stringify(!!scenario.useHedge)+'</script><script type="module" src="/app.js"></script>');return;}
   res.setHeader('content-type','application/json');
-  if(path==='/room'){const body=heldReadBody&&Date.now()<readHeldUntil?heldReadBody:JSON.stringify(snap());if(scenario.readDelay)await new Promise(resolve=>setTimeout(resolve,scenario.readDelay));res.end(body);return;}
+  if(path==='/room'){const body=heldReadBody&&Date.now()<readHeldUntil?heldReadBody:JSON.stringify(snap()),delay=slowReadsRemaining>0?(slowReadsRemaining--,scenario.singleSlowReadMs):scenario.readDelay??0;
+   const event={case:scenario.name,kind:'read',received_at:Date.now(),version:JSON.parse(body).version,tick:JSON.parse(body).game.snapshotTick,delay_ms:delay};httpEvents.push(event);
+   if(delay)await new Promise(resolve=>setTimeout(resolve,delay));event.response_at=Date.now();res.end(body);return;}
   if(path==='/scene-ready'){if(state.phase==='arming'){engine.armStart(state,Date.now());version++;}res.end(JSON.stringify(snap()));return;}
   if(path==='/action'){
    let body='';for await(const chunk of req)body+=chunk;const payload=JSON.parse(body),received=Date.now(),caseName=scenario.name,ackDelay=payload.action.type===scenario.preAction?(scenario.preActionAck??scenario.ack):scenario.ack;
@@ -104,7 +106,9 @@ export function createRunTimeline(...factoryArgs){const inner=createRunTimelineI
  const cases=[{name:'jump-ack300-publish450',type:'jump',ack:300,publish:450},{name:'left-ack450-publish200',type:'left',ack:450,publish:200},{name:'jump-ack450-publish450',type:'jump',ack:450,publish:450},{name:'left-ack300-publish200',type:'left',ack:300,publish:200},{name:'left-rejected-ack450',type:'left',ack:450,publish:0,reject:true},{name:'jump-after-forward-hold',type:'jump',ack:300,publish:450,preHold:true},{name:'left-after-forward-hold',type:'left',ack:300,publish:450,preHold:true},
   {name:'mid-race-boost-ack150-read250',type:'item',ack:150,publish:0,readDelay:250,midRace:true},
   {name:'mid-race-jump-then-boost-ack450-read0',type:'item',preAction:'jump',preActionAck:150,ack:450,publish:0,readDelay:0,midRace:true,holdReadsDuringItemAck:true},
-  {name:'mid-race-boost-rejected-ack150-read250',type:'item',ack:150,publish:0,readDelay:250,midRace:true,reject:true}];
+  {name:'mid-race-boost-rejected-ack150-read250',type:'item',ack:150,publish:0,readDelay:250,midRace:true,reject:true},
+  {name:'single-slow-get-serial-baseline',type:'jump',ack:150,publish:0,singleSlowReadMs:800,useHedge:false},
+  {name:'single-slow-get-bounded-hedge',type:'jump',ack:150,publish:0,singleSlowReadMs:800,useHedge:true}];
  for(const current of cases){
   reset(current);const row={...current,errors:[],resources:[],passed:false};report.cases.push(row);
   row.trace_enabled=report.cases.length>1;
@@ -139,7 +143,10 @@ export function createRunTimeline(...factoryArgs){const inner=createRunTimelineI
   await page.screenshot({path:resolve(out,`${current.name}-immediate.png`)});
   await page.waitForFunction(()=>window.inputWebgl.requests[0]?.ack_at!==undefined,{},{timeout:4000});
   if(!current.reject)await page.waitForFunction(no=>window.inputWebgl.frames.some(f=>f.applied_input_no===no),initialInputNo+1,{timeout:4000});
-  await page.waitForTimeout(180);
+  // Start the read-only disturbance after the accepted action is visible;
+  // an overlapping delayed POST must not supply a fresh authority mid-control.
+  if(current.singleSlowReadMs){row.slow_read_armed_at=Date.now();slowReadsRemaining=1;}
+  await page.waitForTimeout(current.singleSlowReadMs?2500:180);
   row.observation=await page.evaluate(()=>{const {dispose,...observation}=window.inputWebgl;return structuredClone({...observation,frame_trace:document.querySelector('[data-testid=run-track]').__oasisRunFrameTrace?.read()??null});});
   const request=row.observation.requests[0],frames=row.observation.frames,first=frames.find(f=>f.at>=request.dispatch_at&&(current.type==='item'||f.feedback_state==='predicted'&&(current.type==='jump'?f.actual.y>0&&f.actual.clip==='jump':f.actual.x<-.001)&&f.applied_input_no===0)),applied=frames.find(f=>f.applied_input_no===initialInputNo+1);
   assert.equal(row.observation.requests.length,1);assert.ok(first,'real renderer must draw after dispatch');assert.ok(first.at<request.ack_at);
@@ -162,6 +169,17 @@ export function createRunTimeline(...factoryArgs){const inner=createRunTimelineI
    }
   }else assert.equal(row.observation.frame_trace,null);
   row.timing={dispatch_at:request.dispatch_at,first_render_at:first.at,diagnostic_feedback_at:Number(first.feedback_at),ack_at:request.ack_at,first_applied_at:applied?.at??null,visible_feedback_ms:current.type==='item'?null:first.at-request.dispatch_at,ack_ms:request.ack_at-request.dispatch_at};
+  if(current.singleSlowReadMs){
+   const motion=frames.filter(f=>f.at>=request.dispatch_at&&f.timeline.mode!=='fallback'&&f.timeline.reason!=='startup-buffer');
+   let previous=null,holdSince=null,maxHold=0,maxSpeed=0,forwardBursts=0;
+   for(const f of motion){assert.equal(f.authority.hits,0,'the slow-read fixture must not excuse stalls as collisions');if(previous){const dt=(f.raf_at-previous.raf_at)/1000,delta=previous.actual.z-f.actual.z;assert.ok(delta>=-1e-7,'recovery must not rewind');if(delta>9.6*dt+1e-6)forwardBursts++;if(dt>0)maxSpeed=Math.max(maxSpeed,delta/dt);if(Math.abs(delta)<1e-7){holdSince??=previous.raf_at;maxHold=Math.max(maxHold,f.raf_at-holdSince);}else holdSince=null;}previous=f;}
+   const reads=httpEvents.filter(e=>e.case===current.name&&e.kind==='read'),slow=reads.filter(e=>e.delay_ms===current.singleSlowReadMs);assert.equal(slow.length,1,'one controlled delayed HTTP body');
+   const overlaps=reads.filter(e=>e!==slow[0]&&e.received_at>slow[0].received_at&&e.received_at<slow[0].response_at);
+   assert.ok(motion.length>90,'observe a sustained window including expiry and recovery');
+   if(current.useHedge){assert.ok(overlaps.length>0,'the candidate must actually bypass a delayed read');assert.ok(maxHold<100,'a single delayed GET must not stop ordinary motion for 100 ms');assert.equal(forwardBursts,0,'freshness recovery cannot exceed real boost speed');}
+   else{assert.equal(overlaps.length,0,'baseline retains serial reads');assert.ok(maxHold>=100,'negative control must reproduce an ordinary hold');}
+   row.freshness={single_delay_ms:current.singleSlowReadMs,read_count:reads.length,reads_while_slow_pending:overlaps.length,frames:motion.length,max_hold_ms:maxHold,max_speed_mps:maxSpeed,forward_bursts:forwardBursts,performance_pass:!!current.useHedge&&maxHold<100&&forwardBursts===0,scope:current.useHedge?'One slow HTTP GET with normal later requests; not continuous weak network or device acceptance':'Expected failing serial control; protocol assertions passing are not smoothness acceptance'};
+  }
   if(current.type==='item'){
    const motion=frames.filter(f=>f.at>=request.dispatch_at);let previous=null,holdSince=null,maxHold=0,maxSpeed=0;
    for(const f of motion){assert.notEqual(f.timeline.mode,'resync','ordinary mid-race item must not force resynchronization');if(previous){const dt=(f.raf_at-previous.raf_at)/1000,delta=previous.actual.z-f.actual.z;assert.ok(delta>=-1e-7,'item motion cannot rewind');assert.ok(delta<=9.6*dt+1e-6,'item correction cannot exceed real boost speed');maxSpeed=Math.max(maxSpeed,delta/dt);if(Math.abs(delta)<1e-7){holdSince??=previous.raf_at;maxHold=Math.max(maxHold,f.raf_at-holdSince);}else holdSince=null;}previous=f;}

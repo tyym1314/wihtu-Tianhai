@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {EventEmitter} from 'node:events';
-import {terminateOwnedChild,ownedProcessTree,superviseOwnedProcessTree,parseOptions,compressionEligible,loopbackRequestHeaders,loopbackResponseHeaders} from '../scripts/profile-mobile-isolated.mjs';
+import {terminateOwnedChild,ownedProcessTree,superviseOwnedProcessTree,parseOptions,compressionEligible} from '../scripts/profile-mobile-isolated.mjs';
+import {createLoopbackCookieIsolation} from '../scripts/mobile-isolated-cookie.mjs';
 test('harness defaults perform no browser command',()=>{const p=parseOptions([]);assert.deepEqual(p.command,[]);assert.equal(p.holdSeconds,0);});
 test('explicit command is an argv array, not shell text',()=>assert.deepEqual(parseOptions(['--','node','scripts/profile-game-performance.mjs']).command,['node','scripts/profile-game-performance.mjs']));
 test('hold is bounded and cannot coexist with a supervised command',()=>{assert.throws(()=>parseOptions(['--hold-seconds','14401']));assert.throws(()=>parseOptions(['--hold-seconds','1','--','node','a.mjs']));});
@@ -13,7 +14,7 @@ test('gzip q=0 is never sent',()=>{assert(!compressionEligible(headers,{'accept-
 test('small/uncompressed images/not-modified responses are not gzipped',()=>{assert(!compressionEligible({...headers,'content-length':'10'},{'accept-encoding':'gzip'},200));assert(!compressionEligible({...headers,'content-type':'image/webp'},{'accept-encoding':'gzip'},200));assert(!compressionEligible(headers,{'accept-encoding':'gzip'},304));});
 test('existing encoding is preserved and no unsupported encoding is invented',()=>{assert(!compressionEligible({...headers,'content-encoding':'br'},{'accept-encoding':'gzip'},200));assert(!compressionEligible(headers,{},200));});
 
-test('loopback cookie adaptation retains signed value, HttpOnly and CSRF identity',()=>{const headers=loopbackResponseHeaders({'set-cookie':['__Host-oasis_demo=signed; Path=/; Secure; HttpOnly; SameSite=Lax','another=value; Secure']});assert.deepEqual(headers['set-cookie'],['oasis_quality_demo=signed; Path=/; HttpOnly; SameSite=Lax','another=value; Secure']);assert.equal(loopbackRequestHeaders({cookie:'oasis_quality_demo=signed; other=x'}).cookie,'__Host-oasis_demo=signed; other=x');});
+test('loopback cookie adaptation retains signed value, HttpOnly and CSRF identity',()=>{const isolation=createLoopbackCookieIsolation(),headers=isolation.responseHeaders({'set-cookie':['__Host-oasis_demo=signed; Path=/; Secure; HttpOnly; SameSite=Lax','another=value; Secure']});assert.deepEqual(headers['set-cookie'],[isolation.name+'=signed; Path=/; HttpOnly; SameSite=Lax','another=value; Secure']);assert.equal(isolation.requestHeaders({cookie:isolation.name+'=signed; other=x'}).cookie,'__Host-oasis_demo=signed; other=x');});
 
 test('owned child termination escalates without waiting for an unreachable finally',async()=>{const child=new EventEmitter(),signals=[];Object.assign(child,{exitCode:null,signalCode:null,kill:signal=>signals.push(signal)});const cancel=terminateOwnedChild(child,{graceMs:10});await new Promise(r=>setTimeout(r,20));cancel();assert.deepEqual(signals,['SIGTERM','SIGKILL']);});
 test('normal owned child exit cancels forced termination',async()=>{const child=new EventEmitter(),signals=[];Object.assign(child,{exitCode:null,signalCode:null,kill:signal=>signals.push(signal)});const cancel=terminateOwnedChild(child,{graceMs:10});child.exitCode=0;child.emit('exit',0,null);await new Promise(r=>setTimeout(r,20));cancel();assert.deepEqual(signals,['SIGTERM']);assert.equal(child.listenerCount('exit'),0);});

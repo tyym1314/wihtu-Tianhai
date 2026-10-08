@@ -6,6 +6,9 @@ import {RUN_RULES,runnerPose,stepRunnerInPlace} from './runner-physics.mjs';
 
 export const RUN_SELF_PROJECTION_SCHEMA='run-self-projection-v1';
 const HORIZON_TICKS=Math.round(RUN_PROJECTION_LIMIT_MS*RUN_RULES.hz/1000);
+// A proof of already received history has a separate work bound. It never
+// grants 120 ticks of future prediction: normal projections remain 39 ticks.
+export const RUN_CONFIRMED_HISTORY_LIMIT_TICKS=120;
 const LAST_TICK=RUN_RULES.durationMs*RUN_RULES.hz/1000;
 const integer=(n,min=0,max=LAST_TICK)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
 const close=(a,b)=>Number.isFinite(a)&&Math.abs(a-b)<=1e-7;
@@ -114,6 +117,70 @@ function frame(player,tick,boundary=null,authoritativeFinishTick=player.finishTi
   visualPlayer:Object.freeze({key:player.key,lane:player.lane,fromLane:player.fromLane,changeStartTick:player.changeStartTick,changeEndTick:player.changeEndTick,jumpStartTick:player.jumpStartTick,slideUntilTick:player.slideUntilTick,stunUntilTick:player.stunUntilTick,immuneUntilTick:player.immuneUntilTick,fallStartTick:player.fallStartTick,fallUntilTick:player.fallUntilTick,shieldUntilTick:player.shieldUntilTick,boostUntilTick:player.boostUntilTick,inventory:player.inventory,claimedItems:Object.freeze([...player.claimedItems]),forfeited:player.forfeited,finishTick:authoritativeFinishTick,predictionOnly:true})};
 }
 
+function replayFrames(restored,game,acceptedInputs,steps){
+ const {course,tick,player}=restored,authoritativeFinishTick=player.finishTick;
+ const history=acceptedHistory(acceptedInputs,player,tick,tick+steps);
+ if(history===null)return null;
+ const frames=[frame(player,tick)],states=[ownedState(player,tick)];
+ for(let offset=1;offset<=steps;offset++){
+  const current=tick+offset,wasStunned=current-1<player.stunUntilTick,resolvedCount=player.resolvedObstacles.length,input=history.get(current);
+  if(input){
+   if(!canInject(player,input))return null;
+   player.pendingInput={...input};player.inputNo=input.no;player.lastInputTick=current;
+   states[offset-1]=ownedState(player,current-1);
+  }
+  let boundary=null;
+  stepRunnerInPlace(player,current,course,{at:game.startedAt+current*1000/RUN_RULES.hz,emit(type){if(['hit','shield_hit','fall','respawn','finish'].includes(type))boundary=type;}});
+  if(boundary===null&&resolvedCount!==player.resolvedObstacles.length)boundary='collision';
+  if(boundary===null&&wasStunned&&current>=player.stunUntilTick)boundary='recovery';
+  frames.push(frame(player,current,boundary,authoritativeFinishTick));states.push(ownedState(player,current));
+ }
+ return{frames,states};
+}
+
+function sampleFrames(frames,sourceTick,version,elapsed,limitMs){
+ if(frames===null||!Number.isFinite(elapsed))return null;
+ let offset=Math.min(frames.length-1,clamp(elapsed,0,limitMs)*RUN_RULES.hz/1000);
+ // Snap arithmetic noise only, preserving the existing integer event rule.
+ const nearest=Math.round(offset);if(Math.abs(offset-nearest)<=Number.EPSILON*Math.max(1,offset)*4)offset=nearest;
+ const index=Math.floor(offset),left=frames[index],right=frames[Math.min(index+1,frames.length-1)],fraction=offset-index;
+ const mix=right.boundary===null?fraction:0;
+ return{...left,x:left.x+(right.x-left.x)*mix,y:left.y+(right.y-left.y)*mix,distance:left.distance+(right.distance-left.distance)*mix,scale:left.scale+(right.scale-left.scale)*mix,tick:sourceTick+offset,
+  projected:true,sourceTick,sourceVersion:version,boundary:fraction>0&&right.boundary!==null?right.boundary:left.boundary};
+}
+
+/** Prove a bounded historical interval between two received own snapshots.
+ * Nothing is returned for display until the entire endpoint is verified.
+ * The result has no authority lease, receipts, events, or future frames. */
+export function proveRunHistory(fromGame,toGame,playerKey,{roomId,fromVersion,toVersion,acceptedInputs=[]}={}){
+ const fail=reason=>({ok:false,reason});
+ if(typeof roomId!=='string'||!roomId||!integer(fromVersion,0,Number.MAX_SAFE_INTEGER)||!integer(toVersion,fromVersion+1,Number.MAX_SAFE_INTEGER))return fail('history-scope-invalid');
+ const from=restore(fromGame,playerKey),to=restore(toGame,playerKey);
+ if(!from||!to)return fail('history-state-invalid');
+ const steps=to.tick-from.tick;
+ if(steps<1||steps>RUN_CONFIRMED_HISTORY_LIMIT_TICKS)return fail('history-gap-too-large');
+ if(['ruleVersion','courseId','contentVersion','levelVersion','physicsVersion','startedAt','deadlineAt','phase','firstFinishTick'].some(field=>fromGame[field]!==toGame[field]))return fail('history-mapping-changed');
+ if(from.player.finishTick!==null||to.player.finishTick!==null||from.player.forfeited||to.player.forfeited)return fail('history-terminal');
+ const replay=replayFrames(from,fromGame,acceptedInputs,steps);
+ if(!replay)return fail('history-input-invalid');
+ const end=replay.states.at(-1),expected=to.player;
+ // Future pending input is independently validated against the replayed
+ // admission state. All already applied input numbers/times remain exact.
+ for(const field of Object.keys(expected)){
+  if(['inputNo','lastInputTick','pendingInput'].includes(field))continue;
+  if(JSON.stringify(end[field])!==JSON.stringify(expected[field]))return fail('history-endpoint-mismatch');
+ }
+ if(expected.pendingInput!==null){
+  if(!canInject(end,expected.pendingInput))return fail('history-pending-invalid');
+ }else if(end.inputNo!==expected.inputNo||end.lastInputTick!==expected.lastInputTick||end.pendingInput!==null)return fail('history-endpoint-mismatch');
+ const durationMs=steps*1000/RUN_RULES.hz;
+ const projection=Object.freeze({
+  stateAtTick(tick){return integer(tick,from.tick,to.tick)?replay.states[tick-from.tick]:null;},
+  sample(elapsed){return sampleFrames(replay.frames,from.tick,fromVersion,elapsed,durationMs);},
+ });
+ return Object.freeze({ok:true,projection,fromTick:from.tick,toTick:to.tick,acceptedInputCount:acceptedInputs.length});
+}
+
 /** Bounded visual projection. This object has no clock, requests, events or authority writes. */
 export function createRunSelfProjection(){
  let room=null,viewer=null,version=-1,sourceTick=-1,frames=null,states=null,profile=null;
@@ -132,30 +199,12 @@ export function createRunSelfProjection(){
    const nextProfile=[game.ruleVersion,game.courseId,game.contentVersion,game.levelVersion,game.physicsVersion].join('/');
    if(profile!==null&&nextProfile!==profile)return invalidate();
    profile=nextProfile;
-   const {course,tick,endTick,player}=restored,authoritativeFinishTick=player.finishTick;
+   const {tick,endTick}=restored;
    sourceTick=tick;
    const steps=Math.min(HORIZON_TICKS,endTick-tick);
-   const history=acceptedHistory(acceptedInputs,player,tick,tick+steps);
-   if(history===null)return invalidate();
-   const nextFrames=[frame(player,tick)],nextStates=[ownedState(player,tick)];
-   for(let offset=1;offset<=steps;offset++){
-    const current=tick+offset,wasStunned=current-1<player.stunUntilTick,resolvedCount=player.resolvedObstacles.length;
-    const input=history.get(current);
-    if(input){
-     if(!canInject(player,input))return invalidate();
-     player.pendingInput={...input};player.inputNo=input.no;player.lastInputTick=current;
-     // act accepts tick t at authority tick t-1. Save that exact accepted
-     // state as well as the subsequent applied state for timeline comparison.
-     nextStates[offset-1]=ownedState(player,current-1);
-    }
-    let boundary=null;
-    stepRunnerInPlace(player,current,course,{at:game.startedAt+current*1000/RUN_RULES.hz,emit(type){if(['hit','shield_hit','fall','respawn','finish'].includes(type))boundary=type;}});
-    if(boundary===null&&resolvedCount!==player.resolvedObstacles.length)boundary='collision';
-    if(boundary===null&&wasStunned&&current>=player.stunUntilTick)boundary='recovery';
-    nextFrames.push(frame(player,current,boundary,authoritativeFinishTick));
-    nextStates.push(ownedState(player,current));
-   }
-   frames=nextFrames;states=nextStates;
+   const replay=replayFrames(restored,game,acceptedInputs,steps);
+   if(!replay)return invalidate();
+   frames=replay.frames;states=replay.states;
    return true;
   },
   stateAtTick(tick){
@@ -163,18 +212,7 @@ export function createRunSelfProjection(){
    return states[tick-sourceTick];
   },
   sample(elapsed){
-   if(frames===null||!Number.isFinite(elapsed))return null;
-   let offset=Math.min(frames.length-1,clamp(elapsed,0,RUN_PROJECTION_LIMIT_MS)*RUN_RULES.hz/1000);
-   // Converting n * 1000 / 60 back to ticks can yield n - one ULP. Snap only
-   // that arithmetic noise so exact integer respawn/finish samples use n.
-   const nearest=Math.round(offset);if(Math.abs(offset-nearest)<=Number.EPSILON*Math.max(1,offset)*4)offset=nearest;
-   const index=Math.floor(offset),left=frames[index],right=frames[Math.min(index+1,frames.length-1)],fraction=offset-index;
-   // A collision, respawn, recovery or finish is an integer simulation event.
-   // Holding its left endpoint avoids blending through water, an obstacle or
-   // a checkpoint teleport before that event has happened.
-   const mix=right.boundary===null?fraction:0;
-   return{...left,x:left.x+(right.x-left.x)*mix,y:left.y+(right.y-left.y)*mix,distance:left.distance+(right.distance-left.distance)*mix,scale:left.scale+(right.scale-left.scale)*mix,tick:sourceTick+offset,
-    projected:true,sourceTick,sourceVersion:version,boundary:fraction>0&&right.boundary!==null?right.boundary:left.boundary};
+   return sampleFrames(frames,sourceTick,version,elapsed,RUN_PROJECTION_LIMIT_MS);
   },
  };
 }

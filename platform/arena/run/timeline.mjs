@@ -1,4 +1,4 @@
-import {createRunSelfProjection} from './self-projection.mjs';
+import {createRunSelfProjection,proveRunHistory} from './self-projection.mjs';
 import {projectedPose,RUN_PROJECTION_LIMIT_MS} from './presentation.mjs';
 import {runRequiresSceneReady} from './start-policy.mjs';
 import {resolveRunCourse} from './courses.mjs';
@@ -43,6 +43,12 @@ export function createRunTimeline(){
   return {game,version,tick:game.snapshotTick,receivedAtMs,firstReceivedAtMs,projection,course:resolveRunCourse(game)};
  }
  function sourcePose(entry,tick){return entry.projection.sample((tick-entry.tick)*MS_PER_TICK);}
+ function lastCoveredTick(entry){return entry.historyEndTick??entry.tick+HORIZON;}
+ function proveBridge(from,to){
+  const acceptedInputs=[...history.values()].filter(input=>input.tick>from.tick&&input.tick<=to.tick&&input.no>own(from.game,key).appliedInputNo).sort((a,b)=>a.tick-b.tick||a.no-b.no);
+  const proof=proveRunHistory(from.game,to.game,key,{roomId:room,fromVersion:from.version,toVersion:to.version,acceptedInputs});
+  return proof.ok?{...from,projection:proof.projection,historyEndTick:to.tick}:null;
+ }
  function rebase(entry,at,reason){
   startupUntil=null;pendingReconciliation=null;animationPhase=null;
   bases=entry?[entry]:[];invalidReason=entry?null:reason;
@@ -121,9 +127,11 @@ export function createRunTimeline(){
  function rebuild(reason='history-correction'){
   if(!bases.length)return false;
   const next=bases.map(entry=>build(entry.game,entry.version,entry.receivedAtMs,entry.firstReceivedAtMs));
-  if(next.some(entry=>!entry)){rebase(build(latest,latestVersion,lastObservedAt),lastObservedAt,'input-history-invalid');return false;}
+  for(let index=0;index<next.length-1;index++)if(next[index]&&next[index+1]&&next[index+1].tick>next[index].tick+HORIZON)next[index]=proveBridge(next[index],next[index+1]);
+  if(next.some(entry=>!entry)){rebase(build(latest,latestVersion,lastObservedAt,tickFirstObservedAt??lastObservedAt),lastObservedAt,'input-history-invalid');return false;}
+  for(let index=0;index<next.length-1;index++)if(!statesEqual(next[index].projection.stateAtTick(next[index+1].tick),next[index+1].projection.stateAtTick(next[index+1].tick))){rebase(next.at(-1),lastObservedAt,'input-history-divergence');return false;}
   const prior=bases[0],replacement=next[0];
-  if(displayTick!==null&&displayTick>=prior.tick&&displayTick<=prior.tick+HORIZON&&(!poseEqual(sourcePose(prior,displayTick),sourcePose(replacement,displayTick))||['hits','checkpointU','fallStartTick','fallUntilTick','stunUntilTick','finishTick','forfeited'].some(field=>prior.projection.stateAtTick(Math.floor(displayTick))?.[field]!==replacement.projection.stateAtTick(Math.floor(displayTick))?.[field]))){
+  if(displayTick!==null&&displayTick>=prior.tick&&displayTick<=lastCoveredTick(prior)&&(!poseEqual(sourcePose(prior,displayTick),sourcePose(replacement,displayTick))||['hits','checkpointU','fallStartTick','fallUntilTick','stunUntilTick','finishTick','forfeited'].some(field=>prior.projection.stateAtTick(Math.floor(displayTick))?.[field]!==replacement.projection.stateAtTick(Math.floor(displayTick))?.[field]))){
    const retimed=retimeAcceptedBoost(prior,replacement);
    if(!retimed?.ok){rebase(next.at(-1),lastObservedAt,retimed?.reason??reason);return false;}
   }
@@ -160,8 +168,15 @@ export function createRunTimeline(){
    trim();return true;
   }
   if(!rebuild()){trim();return true;}
-  const predecessor=bases.at(-1);
-  if(next.tick>predecessor.tick+HORIZON){rebase(next,receivedAtMs,'authority-gap');trim();return true;}
+  let predecessor=bases.at(-1);
+  if(next.tick>predecessor.tick+HORIZON){
+   // A proof may repair missing source overlap, not an arbitrarily delayed
+   // display. Keep the existing 39-tick outstanding display-lag bound.
+   if(next.tick-displayTick>HORIZON){rebase(next,receivedAtMs,'authority-gap');trim();return true;}
+   const bridge=proveBridge(predecessor,next);
+   if(!bridge){rebase(next,receivedAtMs,'authority-gap');trim();return true;}
+   bases[bases.length-1]=predecessor=bridge;
+  }
   if(next.tick-displayTick>HORIZON){rebase(next,receivedAtMs,'display-lag');trim();return true;}
   const priorState=predecessor.projection.stateAtTick(next.tick),newState=next.projection.stateAtTick(next.tick);
   if(!statesEqual(priorState,newState)){rebase(next,receivedAtMs,'authority-divergence');trim();return true;}
@@ -248,7 +263,7 @@ export function createRunTimeline(){
   const unknown=uncertain();let reason=null;
   while(true){
    const entry=bases[0],successor=bases[1],endTick=Math.round((entry.game.deadlineAt-entry.game.startedAt)/MS_PER_TICK);
-   let limit=Math.min(target,entry.tick+HORIZON,endTick,successor?.tick??Infinity);
+   let limit=Math.min(target,lastCoveredTick(entry),endTick,successor?.tick??Infinity);
    // A newer, reconciled authority proves the old trajectory through the
    // bridge endpoint. Its historical frames are not renewed extrapolation.
    if(at>=entry.firstReceivedAtMs+RUN_PROJECTION_LIMIT_MS&&!successor){
@@ -273,7 +288,7 @@ export function createRunTimeline(){
    if(reason)return result('hold',reason,entry);
    if(successor&&displayTick>=successor.tick){bases.shift();if(displayTick<target)continue;lastPose=sourcePose(bases[0],displayTick);return result('project',null);}
    if(displayTick>=endTick)return result('hold','race-deadline',entry);
-   if(displayTick>=entry.tick+HORIZON)return result('hold','projection-limit',entry);
+   if(displayTick>=lastCoveredTick(entry))return result('hold','projection-limit',entry);
    return result('project',null,entry);
   }
  }
