@@ -24,7 +24,7 @@ test('Run negotiated GETs preserve authentication, current outer fields and exac
  const admin=new pg.Pool({connectionString:adminUrl.href,max:1});let created=false,dir,db,child,lock,roomId,logs='';
  const out=resolve(root,'review/run-snapshot-transfer',new Date().toISOString().replaceAll(':','-')+'-'+uid());
  const report={schema:'run-snapshot-transfer-http-v1',scope:'Real isolated loopback API+PostgreSQL/authentication and current Run v2.2 practice room. Fixture tokens bypass launch only. Byte figures are actual HTTP JSON plus local gzip re-encoding, not captured gzip transport, Android 05 bodies or latency acceptance.',checks:[],requests:[],sizes:[],cleanup:{},source_sha256:{}};
- const port=await freePort(),origin='http://127.0.0.1:'+port,requestIds=new Set();
+ const port=await freePort(),origin='http://127.0.0.1:'+port,requestIds=new Set(),privateValues=[];
  async function request(path,{token,body,runKey,expected=200}={}){
   const method=body===undefined?'GET':'POST',response=await fetch(origin+path,{method,headers:{origin,'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{}),...(runKey?{'X-Oasis-Known-Run-Game':runKey}:{})},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(5000)}),raw=await response.text(),value=JSON.parse(raw);
   const timing=response.headers.get('server-timing'),requestId=response.headers.get('x-oasis-request-id');
@@ -39,13 +39,15 @@ test('Run negotiated GETs preserve authentication, current outer fields and exac
  async function unfreeze(){if(!lock)return;await lock.query('SELECT pg_advisory_unlock(hashtextextended($1,0))',['pvp:'+roomId]);lock.release();lock=null;}
  try{
   await admin.query(`CREATE DATABASE "${name}"`);created=true;dir=await mkdtemp(join(tmpdir(),'oasis-run-transfer-'));db=new pg.Pool({connectionString:url.href,max:3});
-  child=spawn(process.execPath,['--import','tsx','server/index.mjs'],{cwd:root,env:{...process.env,OASIS_ENVIRONMENT:'sandbox',OASIS_DATABASE_URL:url.href,OASIS_LOCAL_DIR:dir,OASIS_API_PORT:String(port),OASIS_START_WALLET:'0',OASIS_PUBLIC_ORIGIN:origin,OASIS_REFERENCE_WALLET_URL:origin+'/fixture-wallet-unused'},stdio:['ignore','pipe','pipe']});
+  child=spawn(process.execPath,['--import','tsx','server/index.mjs'],{cwd:root,env:{...process.env,OASIS_ENVIRONMENT:'sandbox',OASIS_DATABASE_URL:url.href,OASIS_LOCAL_DIR:dir,OASIS_API_PORT:String(port),OASIS_START_WALLET:'0',OASIS_PUBLIC_ORIGIN:origin,OASIS_REFERENCE_WALLET_URL:origin+'/fixture-wallet-unused',OASIS_ROOM_TIMING_FILE:join(dir,'room-timing.ndjson')},stdio:['ignore','pipe','pipe']});
   child.stdout.on('data',b=>logs+=b);child.stderr.on('data',b=>logs+=b);let ready=false;
   for(let i=0;i<100;i++){if(child.exitCode!==null)throw Error('Fixture server exited: '+logs);try{const r=await fetch(origin+'/health',{signal:AbortSignal.timeout(250)});if(r.ok){ready=true;break;}}catch{}await pause(50);}assert(ready,logs);
   assert.equal((await db.query('SELECT current_database() AS name')).rows[0].name,name);
   const apps=(await db.query('SELECT id FROM gp_apps ORDER BY id')).rows;assert(apps.length>=2);
   const own=await token(apps[0].id,'run_transfer_human'),outsider=await token(apps[0].id,'run_transfer_outsider'),foreign=await token(apps[1].id,'run_transfer_human');
+  privateValues.push(own,outsider,foreign,'run_transfer_human','run_transfer_outsider',url.href);
   const create={request_id:uid(),game_id:'run',capacity:2,practice:true};const made=await request('/api/pvp/rooms',{token:own,body:create,runKey:'full',expected:201});roomId=made.value.id;
+  privateValues.push(roomId);
   assert.equal(made.value.run_game_transfer,undefined);
   const path='/api/pvp/rooms/'+roomId,readied=await request(path+'/ready',{token:own,body:{request_id:uid()},runKey:'full'});assert.equal(readied.value.game.phase,'arming');assert.equal(readied.value.game.ruleVersion,'pvp-run-v2.2.0');assert.equal(readied.value.run_game_transfer,undefined);
   await freeze();
@@ -90,6 +92,27 @@ test('Run negotiated GETs preserve authentication, current outer fields and exac
  finally{
   const errors=[];try{await unfreeze();}catch(e){errors.push(e.message);}
   try{if(child&&child.exitCode===null){const done=new Promise(resolve=>child.once('exit',resolve));child.kill('SIGTERM');const timeout=setTimeout(()=>child.kill('SIGKILL'),5000);await done;clearTimeout(timeout);}report.cleanup.child_stopped=true;}catch(e){errors.push(e.message);}
+  try{if(report.passed){
+   assert.equal(child.exitCode,0,'API must finish its SIGTERM handler');assert.equal(child.signalCode,null,'SIGKILL fallback is not a clean diagnostic shutdown');
+   const closed=logs.split('\n').filter(line=>line.startsWith('{')).map(line=>{try{return JSON.parse(line);}catch{return null;}}).filter(row=>row?.event==='oasis.room_timing.closed');
+   assert.equal(closed.length,1);assert.equal(closed[0].state,'closed');assert.equal(closed[0].incomplete,false);
+   const raw=await readFile(join(dir,'room-timing.ndjson'),'utf8'),rows=raw.trim().split('\n').map(line=>JSON.parse(line)),requests=rows.filter(row=>row.kind==='request');
+   assert.equal(rows[0].kind,'start');assert.equal(rows.at(-1).kind,'end');assert.equal(rows.at(-1).complete,true);
+   assert.equal(closed[0].boot_id,rows[0].boot_id);assert.equal(closed[0].pid,rows[0].pid);assert.equal(rows[0].pid,child.pid);
+   assert(privateValues.every(value=>!raw.includes(value)),'Timing file must exclude tokens, room/player identity and DB connection');
+   assert.deepEqual(new Set(requests.map(row=>row.request_id)),requestIds);
+   for(const requestId of requestIds){
+    const phases=requests.filter(row=>row.request_id===requestId),expected=report.requests.find(row=>row.request_id===requestId);
+    assert.deepEqual(phases.map(row=>row.phase),['entry','headers','finish']);
+    assert.equal(phases[2].status,expected.status);
+    assert(phases.every(row=>Number.isFinite(row.epoch_ms)&&Number.isFinite(row.mono_ms)));
+    assert(phases[0].mono_ms<=phases[1].mono_ms&&phases[1].mono_ms<=phases[2].mono_ms);
+    assert(Math.abs(phases[1].app_ms-(phases[1].mono_ms-phases[0].mono_ms))<.001);
+   }
+   await mkdir(out,{recursive:true});await writeFile(join(out,'server-timing.ndjson'),raw,{flag:'wx',mode:0o600});
+   assert.equal(closed[0].confirmed_written_bytes,Buffer.byteLength(raw));assert.equal(closed[0].confirmed_written_records,rows.length);
+   report.timing={rid_joins:requestIds.size,request_phases:requests.length,complete:true,close_result:closed[0],graceful_exit:child.exitCode,private_values_absent:true,bytes:Buffer.byteLength(raw),sha256:hash(raw)};
+  }}catch(e){errors.push('Timing verification: '+e.message);}
   try{await db?.end();if(created){await dropOwnedTestDatabase(admin,name,{created});report.cleanup.database_dropped=true;}}catch(e){errors.push(e.message);}finally{await admin.end();}
   try{if(dir){await rm(dir,{recursive:true,force:true});report.cleanup.private_removed=true;}}catch(e){errors.push(e.message);}
   for(const file of ['shared/run-snapshot-transfer.mjs','arena/shared/snapshot-transfer.mjs','arena/shared/client.mjs','server/pvp/snapshot-transfer.mjs','server/index.mjs'])report.source_sha256[file]=hash(await readFile(resolve(root,file)));

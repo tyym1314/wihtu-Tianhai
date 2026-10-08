@@ -186,6 +186,7 @@ Local validation:
 
 ```sh
 python3 -B platform/deploy/mock-sandbox/test_profile_activation.py -v
+python3 -B platform/deploy/mock-sandbox/test_profile_activation_recovery.py -v
 python3 -B -m unittest discover -s platform/deploy/mock-sandbox -p test_upgrade.py -v
 python3 -B -m unittest discover -s platform/deploy/mock-sandbox -p test_install.py -v
 ```
@@ -199,3 +200,16 @@ rollback. They do not prove actual `pg_dump` restoration, kernel namespace
 isolation, installed permissions, production config loading, or APK quality.
 The earlier real 427-request HTTP route fixtures remain separate routing evidence,
 not evidence of this controller's execution.
+
+The additional local recovery fixtures exercise real temporary files and the
+unchanged controller with the same explicitly fake service adapter. They cover
+all three restoration journal phases, a crash after restoring the original file
+but before its next journal update, a failed original reload followed by recovery,
+unknown effective configuration, a corrupt original backup, rename and parent
+fsync failure. An open reader keeps the complete old inode while a new reader
+sees the complete replacement; file fsync precedes rename, which precedes parent
+fsync. A failed rename retains its owned temporary file as evidence and leaves
+the original effective file intact. It is not an automatically removed file or
+an installed profile. These tests do not simulate power-loss durability, native
+mount operations or an actual Nginx master. No activation is authorized solely
+by their result.

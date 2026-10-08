@@ -23,6 +23,16 @@ runtime inventory and the precise remaining gate are preserved separately in
 `platform/review/mock-linux-profile-20261008-v2/`; the first evidence remains
 unchanged. No image build, container, Linux fixture or Nginx operation occurred.
 
+A subsequent local read-only check on 2026-10-08 again found the Docker
+`desktop-linux` context, but `docker version --format '{{json .Server}}'`
+exceeded a six-second deadline. No start/restart was attempted. No Podman,
+Colima, Lima, QEMU system runtime, native Nginx, OrbStack, UTM or VirtualBox was
+found in the inspected PATH and standard application/runtime paths. Available
+local disk space was about 2.37 GB at observation; no runtime or image was
+downloaded. Evidence and the additional **local-only** rollback tests are in
+`platform/review/mock-profile-local-recovery-20261008/`. The kernel/HUP gate is
+still blocked; filesystem fixtures cannot substitute for it.
+
 `linux_profile_fixture.py` and `linux_profile_fixture.Dockerfile` provide a
 separate opt-in native test. They do not modify `profile_activation.py`. The
 fixture refuses macOS, non-root execution, execution outside the dedicated

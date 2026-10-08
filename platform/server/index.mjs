@@ -22,9 +22,11 @@ import {ApiRateLimits} from './rate-limit.mjs';
 import {activityTimeZone,migrateOverviewActivity,overviewActivity} from './overview-activity.mjs';
 import {clientAddress,adminSessionCookie} from './proxy-context.mjs';
 import {beginRoomReadTiming} from './request-timing.mjs';
+import {startRequestTimingSink} from './request-timing-sink.mjs';
 import {checkWalletDependencies} from './dependency-health.mjs';
 const PORT=Number(process.env.OASIS_API_PORT||8797),WALLET_PORT=Number(process.env.OASIS_WALLET_PORT||8798);
 const limiter=new ApiRateLimits();
+let roomTimingSink=null;
 function rate(req,key,limit){limiter.ip(clientAddress(req),key,limit);}
 const authenticated=(req,fn)=>limiter.authenticate(clientAddress(req),fn);
 function checkOrigin(req){if(req.headers.origin!==origin)fail(403,'ORIGIN_FORBIDDEN');}
@@ -78,7 +80,7 @@ async function adminRoutes(req,res,path,b){
   if(path==='/api/admin/profiles'&&req.method==='GET')return send(res,200,{profiles:['thunder','tiger'].flatMap(g=>['98','99'].map(p=>getProfile(g,p)))});
   fail(404,'NOT_FOUND');
 }
-export function createPlatformServer(){return createServer(async(req,res)=>{beginRoomReadTiming(req,res);try{
+export function createPlatformServer(){return createServer(async(req,res)=>{beginRoomReadTiming(req,res,{sink:roomTimingSink});try{
   const path=req.url||'/';if(path.includes('?')&&path.startsWith('/v1/'))fail(400,'INVALID_TARGET');
   if(path==='/health/ready'&&req.method==='GET'){await pool.query('SELECT 1');return send(res,200,{status:'ok',environment:runtime.environment});}
   if(path==='/health'&&req.method==='GET')return send(res,200,{status:'ok',environment:runtime.environment});
@@ -130,10 +132,21 @@ await preflightRuntime(pool);await migrateWallet(pool);await migratePlatform();a
 // Fail before listening if persisted credentials cannot be decrypted with this instance key.
 for(const key of (await pool.query('SELECT secret_enc FROM gp_keys')).rows)unseal(key.secret_enc);
 const wallet=process.env.OASIS_START_WALLET==='0'?null:createWalletServer(walletPool);if(wallet)await new Promise(r=>wallet.listen(WALLET_PORT,'127.0.0.1',r));
+roomTimingSink=await startRequestTimingSink().catch(()=>null);
+roomTimingSink?.closed.then(result=>console.log(JSON.stringify({event:'oasis.room_timing.closed',boot_id:result.boot_id,pid:result.pid,
+ state:result.state,reason:result.reason,incomplete:result.incomplete,confirmed_written_records:result.confirmed_written_records,
+ confirmed_written_bytes:result.confirmed_written_bytes,dropped:result.dropped}))).catch(()=>{});
 const server=createPlatformServer();await new Promise(r=>server.listen(PORT,'127.0.0.1',r));
 const timer=setInterval(()=>recoverPending().catch(e=>console.error('[recovery]',e.code||e.message)),3000);timer.unref();
 const pvpTimer=setInterval(()=>tickPvp().catch(e=>console.error('[arena recovery]',e.code||e.message)),250);pvpTimer.unref();
 const integrationTimer=setInterval(()=>recoverIntegrationChecks().catch(e=>console.error('[integration recovery]',e.code||e.message)),3000);integrationTimer.unref();
 console.log(`OASIS ${runtime.environment} API http://127.0.0.1:${PORT}; reference wallet http://127.0.0.1:${WALLET_PORT}`);
 console.log('Local admin credentials: platform/.local/development-credentials.json');
-async function stop(){clearInterval(timer);clearInterval(pvpTimer);clearInterval(integrationTimer);await Promise.all([new Promise(r=>server.close(r)),wallet?new Promise(r=>wallet.close(r)):Promise.resolve()]);await closeEnginePool();await closePools();process.exit(0);}process.on('SIGTERM',stop);process.on('SIGINT',stop);
+let stopping=false;
+async function stop(){
+ if(stopping)return;stopping=true;
+ clearInterval(timer);clearInterval(pvpTimer);clearInterval(integrationTimer);
+ await Promise.all([new Promise(r=>server.close(r)),wallet?new Promise(r=>wallet.close(r)):Promise.resolve()]);
+ await roomTimingSink?.close({reason:'shutdown'}).catch(()=>{});
+ await closeEnginePool();await closePools();process.exit(0);
+}process.on('SIGTERM',stop);process.on('SIGINT',stop);

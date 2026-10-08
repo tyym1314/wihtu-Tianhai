@@ -55,3 +55,13 @@ journalctl -u oasis-monitor.service --since today --no-pager
 ## 本地验证
 
 `node --test tests/monitor.test.mjs tests/dependency-health.test.mjs tests/operations-status.test.mjs` 覆盖配置、依赖、真实 loopback HTTP 与报告消费。`node --test tests/dependency-health.integration.test.mjs tests/runtime-isolation.test.mjs` 创建独立本地 PostgreSQL 数据库并启动真实 API，验证生产平台/外部混合模式、admin session 环境及错误依赖；结束必须删掉各自创建的库。测试不访问部署数据库、公网或设备。
+
+## 限时房间请求诊断
+
+默认不记录请求日志。仅在受控诊断启动时设置 `OASIS_ROOM_TIMING_FILE` 为专用绝对路径；父目录须已存在且允许 API 用户写入。文件以独占创建、禁止跟随文件软链和 `0600` 权限打开，已存在文件不会覆盖，创建失败不影响 API。不要使用网页目录，也不要复用旧诊断文件。配置本身不能绕过已有 systemd 写路径限制。
+
+只记录精确房间 GET 的随机响应 request ID、阶段、状态码、服务器 wall/monotonic 时间；不记录 URL、房间、玩家、请求头、令牌或正文。`entry` 是 Node handler 已经执行的时刻，`headers` 在 JSON 序列化之后，`finish` 表示 Node 已交给下层发送，`close` 表示在 finish 之前关闭；两者都不证明手机已收到。每秒及关闭时的 event-loop-delay 是进程区间聚合，不能归因给某一个请求，也不能测量进入 handler 前的网络、代理或调度排队。
+
+一个进程最多记录 120 秒、4096 总行、1 MiB（均含元数据）；队列及在途批次合计最多 128 条／64 KiB。写入异步执行，背压会丢弃并计数，达到总量上限会结束；失败不等待游戏请求。启动和关闭各最多等待一秒。末行 `complete` 仅描述封口之前记录，不能证明文件资源随后关闭成功；自动关窗或 SIGTERM 完成时的 `oasis.room_timing.closed` 固定字段日志提供真实关闭结果，用 `boot_id` 和 PID 与首行对应。分析前同时核对完整末行、关闭结果、丢弃计数、随机 ID 对应的请求阶段，保留失败和缺失，不把区间外请求或不完整记录算成性能通过。
+
+`node --test tests/request-timing.test.mjs tests/request-timing-sink.test.mjs tests/run-snapshot-transfer-http.test.mjs` 包含实际隔离 API/PostgreSQL 的 401/403/404、完整／省略快照和原 POST 回执验证，确认开启诊断后协议与权限不变，且每个响应 ID 对应真实阶段、优雅关闭后文件字节完整。公网、手机和完整性能验收仍需分别执行。
