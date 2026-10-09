@@ -281,6 +281,113 @@ The receipt explicitly states that a database policy may already be committed.
 If scope cannot be proved, record the refused cleanup; do not stop an unknown
 service. Recovery requires a separately reviewed exact phase and fresh evidence.
 
+## Optional reviewed static04 retention
+
+Omitting both new arguments preserves the original behavior: any change to the
+reviewed static HEAD refuses admission. Both arguments must be supplied together:
+
+```text
+--static-retention-review /opt/oasis/private/REVIEW-DIRECTORY/static-retention-review.json
+--static-retention-review-sha256 ROOT_INDEPENDENT_RAW_REVIEW_SHA256
+```
+
+The root-owned review and referenced BEFORE document must be single-link 0600
+regular files in root-owned 0700 directories, compact JSON of at most 16 MiB.
+Their file descriptors and all ancestor directory identities stay bound until
+controller exit. The shared `/opt/oasis/private` ancestor retains its original
+exact UID/GID 998, mode 0700, device 64515 and inode 934465; this option neither
+changes nor generally relaxes that parent. Leaf or parent replacement, including
+same-byte inode replacement, refuses the operation. Only the already-validated
+retirement-derived inventory can use this option; the eight original raw
+retirement documents and twenty original references remain required.
+
+The completed review has exactly these root fields:
+
+```text
+schema: 1
+kind: root-reviewed-static04-maintenance-v1
+phase: complete
+passed: true
+source: {release, runtime_source_commit, manifest_raw_sha256,
+         full_archive_raw_sha256, publisher_raw_sha256, selector_raw_sha256}
+retirement_raw_bindings: {historical_inventory_sha256, inventory_sha256,
+  source_audit_sha256, archive_proof_sha256,
+  root_independent_archive_review_sha256, check_sha256,
+  retirement_receipt_sha256, tool_sha256}
+before_capture: {path, raw_sha256}
+before: FULL_INDEPENDENT_BEFORE_DOCUMENT
+after: FULL_INDEPENDENT_AFTER_DOCUMENT
+official_expected: {required_assets, added_assets, receipt_raw_sha256,
+  receipt_bytes, head_raw_sha256, head_bytes, required_count, added_count,
+  added_bytes, before_assets, before_receipts, after_assets, after_receipts}
+publisher_result: ACTUAL_OFFICIAL_PUBLISHED_REPORT
+https_verification: {origin, assets: {URL: {status, bytes, sha256, content_type,
+  cache_control, head_status, not_modified_status, range_status, no_redirect}}}
+```
+
+`before` must equal the externally hash-bound raw independent capture, whose
+kind is `independent-static04-preappend-baseline-v1`, with `passed=true` and
+`read_only=true`. The AFTER kind is `independent-static04-postappend-observation-v1`.
+Both full documents retain `source`, `protected`, `upgrade04`
+and `retirement`. They add `guardian_protected` (the exact seven original
+Runtime.protect keys and 25 file pins), `static`, `static_directories` and
+`static_ancestors`. `static` has exactly `head`, `head_pin`, `receipts`,
+`registered`, `entries`, `receipts_count`, `registered_count` and `head_raw`
+(strict base64 of the complete canonical raw HEAD). Full file pins include
+UID/GID/mode/device/inode/kind/bytes/SHA/nlink/mtime_ns/ctime_ns. Full directory
+pins have the same fields except SHA. Directories are relative to the static
+store, including `.` and `.registry`; the exact ancestors are `/`, `/opt`,
+`/opt/oasis` and `/opt/oasis/private`. Existing directory identity, owner and
+permissions and nlink cannot change. Only the exact added-file parent
+directories (`.registry`, `arena/assets`, `assets`) and the HEAD parent
+`/opt/oasis/private` may have child-entry size/mtime/ctime changes; these remain
+recorded and do not authorize a directory replacement or a new directory.
+Every other directory pin stays completely equal.
+
+The historical before/after source, private, API, database and service facts
+must remain identical across publication, except the explicitly approved HEAD.
+Only `protected.units.*.observed_command_struct_sha256` and
+`protected.public_units.*.observed_command_struct_sha256` are observation-time
+hash projections: raw values remain in the evidence and report. Actual files,
+commands, command hashes, state and every other field remain exact. This
+historical publication proof does not freeze the old private operator or closed
+business state forever. Later approved operator uploads and free admission use
+the normal current Controller guards; this option freshly guards only approved
+immutable evidence and static retention, and does not authorize business changes.
+
+The source declaration remains runtime commit `63e44d330cf09c60eab0a08c03150b5f38d26ea7`,
+manifest `4b8c3b2820c271198563180983c72f25d088c63c872463704af632929adf3c0f`,
+full archive `240ca8d47f18be1f6f141a978a496bd017d015352fbbdac1de348c45fa9df0b6`.
+The actual immutable publisher and release selector are loaded from verified
+FD bytes; their one known import is replaced with the same verified definitions,
+without a path/pyc loader. Only their pure selection and registry functions run.
+The controller does not publish, write HEAD or copy a resource.
+
+Official selection must reproduce all 583 required URL/hash/byte pairs, exactly
+22 missing source-backed additions totaling 1,257,968 bytes, and the full
+583-resource receipt `f2050db36551c7e92146be235fda5d228e6bdcc70b08a73b69e5256675f6749b`
+(92,362 bytes). The original 936 resources and 22 raw receipt identities stay
+exact. The resulting 958-resource/23-receipt union must have HEAD
+`36ac71b64cb9de81e0765775043d982062315b3c5ad1b14981cbd8f9b195bed8`
+(1,741 bytes), on the original device and with a new approved inode. No special
+file, symlink, hardlink, nested mount, temporary/orphan file or new directory is
+accepted. Added source/store files and the new receipt cannot alias old inodes.
+Each added URL needs real strict HTTPS GET/hash/bytes, HEAD 200, validator 304,
+range 206, JavaScript media type, immutable cache and no-redirect evidence. The
+`content_type` field is the response media type before any optional charset;
+`cache_control` is exactly `public, max-age=31536000, immutable`.
+
+Only `derived.snapshot.files[/opt/oasis/private/static-assets-head.json]` is
+replaced. The other 24 pins and six protection groups stay exact, and the
+original guardian runs unchanged. Review/BEFORE pins are additive to
+`protection_files`; full static coverage is recorded under
+`source.static_maintenance`, outside the seven-key protected snapshot. Every
+normal fresh/final check rehashes all 958 bodies and 23 receipts, checks their
+full metadata and namespace enumeration, verifies HEAD/ancestor identities and
+rejects same-filesystem bind mounts. A second metadata/enumeration sample
+rejects replacement during hashing. This does not reopen finance, approve free
+play, alter any policy, or imply game/performance/device acceptance.
+
 ## Local verification
 
 ```text
@@ -300,7 +407,13 @@ changed argv/version, executable mutation/link/mapped-inode mismatch, inactive
 or extra consumers, legitimate CPU-stat changes, and refusal before systemctl
 stop. Private controller-origin evidence remains separate and cannot change
 the frozen runtime manifest, packaged-controller SHA or runtime commit.
-The lifecycle tests additionally exercise real directory-FD flock contention
+The optional retention tests exercise all 936 old identities and 583-resource
+receipt semantics in explicit synthetic isolated fixtures, 22 additions,
+source/raw-before/other-public-pin rejection, actual body and receipt tampering,
+unregistered files, same-byte held FD and parent replacement, HEAD mounts,
+paired arguments, default missing-proof refusal and verified pure helper loading
+without secondary path or cached-bytecode reads. They do not constitute a real
+production review. The lifecycle tests additionally exercise real directory-FD flock contention
 and replacement, shared-lock release before timer start, read-only audit/check,
 API-only startup, preserved API during open/close timer stops, observed vs never
 fired jobs, exact transient job identity, failed/nonzero/foreign/source/template

@@ -2,6 +2,7 @@
 """Upgrade one witnessed production source; independently approve free BOT admission."""
 import argparse
 import ast
+import base64
 import copy
 import datetime as dt
 import fcntl
@@ -33,6 +34,17 @@ OWN_TIMERS = ('oasis-production-instance-backup.timer','oasis-production-instanc
               'oasis-production-player-certificate.timer')
 OWN_JOBS = tuple(name.replace('.timer','.service') for name in OWN_TIMERS)
 ONESHOT_WAIT_SECONDS = 60
+STATIC_ROOT = Path('/opt/oasis/static-assets')
+STATIC_HEAD = Path('/opt/oasis/private/static-assets-head.json')
+STATIC_OLD_HEAD_SHA = 'e938ca059a937cf8f2a1b865295b589730020ae48620cafcaed921ba8a930522'
+STATIC_RECEIPT_SHA = 'f2050db36551c7e92146be235fda5d228e6bdcc70b08a73b69e5256675f6749b'
+STATIC_NEW_HEAD_SHA = '36ac71b64cb9de81e0765775043d982062315b3c5ad1b14981cbd8f9b195bed8'
+STATIC_FULL_ARCHIVE_SHA = '240ca8d47f18be1f6f141a978a496bd017d015352fbbdac1de348c45fa9df0b6'
+STATIC_PUBLISHER_SHA = '1cb4e709f4a0df001e45ad8f74ab9a57b5f23d385462fef4b53515b538fa5031'
+STATIC_SELECTOR_SHA = '9b4916b1af64f5dbbf6319c90ddb4d896589dbdf7edafd26c0c3fd5eb8759a23'
+STATIC_FILE_FIELDS = ('uid','gid','mode','device','inode','kind','bytes','sha256','nlink','mtime_ns','ctime_ns')
+STATIC_DIRECTORY_FIELDS = ('uid','gid','mode','device','inode','kind','bytes','nlink','mtime_ns','ctime_ns')
+STATIC_PROTECTED_GROUPS = {'files','services','containers','nginx','proxy_nginx_files','preserved_backup','public_pending_obligations'}
 HISTORICAL_INVENTORY_SHA = 'ac5c5769946b8ea08695c56d0106bb6c8d1f562b9e7ec152f3e83fb05375eeac'
 OBSOLETE_NAMES = ('20261008-23','20261008-24')
 OBSOLETE_REFS = tuple('/opt/oasis/releases/'+name+'/RELEASE-MANIFEST.json' for name in OBSOLETE_NAMES)
@@ -795,16 +807,370 @@ def retirement_evidence(args, bindings, inventory, inventory_pin):
          'archive_review_sha256':ARCHIVE_REVIEW_SHA,'obsolete_paths':list(OBSOLETE_REFS)}
 
 
+
+def static_json(value):
+ return (json.dumps(value,sort_keys=True,indent=2)+'\n').encode()
+
+
+def static_file_pin(identity):
+ return {'uid':identity['st_uid'],'gid':identity['st_gid'],'mode':stat.S_IMODE(identity['st_mode']),
+         'device':identity['st_dev'],'inode':identity['st_ino'],'kind':'file','bytes':identity['st_size'],
+         'sha256':identity['sha256'],'nlink':identity['st_nlink'],
+         'mtime_ns':identity['st_mtime_ns'],'ctime_ns':identity['st_ctime_ns']}
+
+
+def static_guardian_pin(value):
+ return {key:value[key] for key in ('uid','gid','mode','device','inode','kind','bytes','sha256')}
+
+
+def static_directory_pin(path):
+ path=Path(path);s=path.lstat()
+ require(stat.S_ISDIR(s.st_mode) and not s.st_mode&0o022,'ADMISSION_STATIC_DIRECTORY_UNSAFE')
+ return {'uid':s.st_uid,'gid':s.st_gid,'mode':stat.S_IMODE(s.st_mode),'device':s.st_dev,
+         'inode':s.st_ino,'kind':'directory','bytes':s.st_size,'nlink':s.st_nlink,'mtime_ns':s.st_mtime_ns,'ctime_ns':s.st_ctime_ns}
+
+
+def static_directory_identity(value):
+ require(isinstance(value,dict) and set(value)==set(STATIC_DIRECTORY_FIELDS)
+         and value['kind']=='directory' and all(type(value[key]) is int and value[key]>=0
+         for key in STATIC_DIRECTORY_FIELDS if key!='kind') and not value['mode']&0o022,
+         'ADMISSION_STATIC_DIRECTORY_PIN_INVALID')
+ return {key:value[key] for key in ('uid','gid','mode','device','inode','kind')}
+
+
+def static_full_file(value,mode):
+ require(isinstance(value,dict) and set(value)==set(STATIC_FILE_FIELDS) and value['kind']=='file'
+         and value['uid']==value['gid']==0 and value['mode']==mode and value['nlink']==1
+         and sha(value['sha256']) and all(type(value[key]) is int and value[key]>=0
+         for key in STATIC_FILE_FIELDS if key not in ('sha256','kind')),
+         'ADMISSION_STATIC_FILE_PIN_INVALID')
+ return value
+
+
+def static_public_source(public,selector):
+ try: name=selector.public_source(public)
+ except Exception:raise Refusal('ADMISSION_STATIC_URL_INVALID') from None
+ require(isinstance(public,str) and public.startswith('/') and not any(char in public for char in ('\\','%','?','#','\0'))
+         and not Path(public).name.startswith('.') and '..' not in Path(public).parts,'ADMISSION_STATIC_URL_INVALID')
+ return name
+
+
+def static_selector_modules(bindings):
+ """Use only the two exact immutable helpers; remove their one known path import."""
+ selector_path=TARGET/'platform/deploy/release_build.py';publisher_path=TARGET/'platform/deploy/publish-static-assets.py'
+ require(bindings.members.get('platform/deploy/release_build.py')==STATIC_SELECTOR_SHA
+         and bindings.members.get('platform/deploy/publish-static-assets.py')==STATIC_PUBLISHER_SHA,
+         'ADMISSION_STATIC_SELECTOR_BINDING_CHANGED')
+ build,build_pin=module_bytes(selector_path,STATIC_SELECTOR_SHA)
+ raw,publisher_pin=read_file(publisher_path,STATIC_PUBLISHER_SHA);tree=ast.parse(raw,filename=str(publisher_path))
+ signature=ast.parse('from release_build import (FINGERPRINT, RETAINED_LOCK, SHA256, STATIC_NAMESPACES, file_digest, regular_path, require, static_public_path, verify_retained_assets)').body[0]
+ matches=[index for index,node in enumerate(tree.body) if ast.dump(node,include_attributes=False)==ast.dump(signature,include_attributes=False)]
+ require(len(matches)==1,'ADMISSION_STATIC_SELECTOR_IMPORT_SHAPE_CHANGED');del tree.body[matches[0]]
+ require(not any(isinstance(node,ast.ImportFrom) and node.module=='release_build' for node in ast.walk(tree)),
+         'ADMISSION_STATIC_SELECTOR_UNBOUND_IMPORT')
+ module=types.ModuleType('oasis_static_verified_publisher');module.__file__=str(publisher_path)
+ module.__dict__.update({alias.name:getattr(build,alias.name) for alias in signature.names})
+ exec(compile(tree,str(publisher_path),'exec'),module.__dict__)
+ bindings.pins.update({str(selector_path):build_pin,str(publisher_path):publisher_pin})
+ require(pin(publisher_path)==publisher_pin,'ADMISSION_STATIC_SELECTOR_REPLACED_AFTER_IMPORT')
+ return module,build
+
+
+def static_selector(bindings):
+ module,build=static_selector_modules(bindings)
+ before={str(path):pin(path) for path in (TARGET/'RELEASE-MANIFEST.json',TARGET/build.RETAINED_LOCK)}
+ try:required,manifest=module.manifest_assets(TARGET)
+ except Exception:raise Refusal('ADMISSION_STATIC_OFFICIAL_SELECTION_FAILED') from None
+ require(manifest==RUNTIME_MANIFEST and all(pin(path)==value for path,value in before.items()),
+         'ADMISSION_STATIC_SELECTION_SOURCE_CHANGED')
+ require(len(required)==583,'ADMISSION_STATIC_REQUIRED_COUNT_CHANGED')
+ return module,required
+
+
+def static_retirement_bindings(args,bindings):
+ return {'historical_inventory_sha256':HISTORICAL_INVENTORY_SHA,'inventory_sha256':args.protected_inventory_sha256,
+         'source_audit_sha256':SOURCE_AUDIT_SHA,'archive_proof_sha256':ARCHIVE_PROOF_SHA,
+         'root_independent_archive_review_sha256':ARCHIVE_REVIEW_SHA,'check_sha256':args.retirement_check_sha256,
+         'retirement_receipt_sha256':args.retirement_receipt_sha256,
+         'tool_sha256':bindings.members['platform/deploy/retire-mock-sources.py']}
+
+
+def static_capture_invariants(capture):
+ """Ignore only the two explicit observation hashes, never actual commands/state."""
+ result={name:copy.deepcopy(capture[name]) for name in ('source','protected','upgrade04','retirement')}
+ # The original twenty-file reader also observes HEAD; this one authorized file
+ # is validated separately against the full body and the original guardian pin.
+ result['protected'].get('files',{}).pop(str(STATIC_HEAD),None)
+ for collection in ('units','public_units'):
+  for value in result['protected'].get(collection,{}).values():value.pop('observed_command_struct_sha256',None)
+ return result
+
+
+def validate_static_review(review,capture,derived,required,selector,expected_bindings):
+ """Pure, externally authorized, singleton HEAD transition; no publication."""
+ fields={'schema','kind','phase','passed','source','retirement_raw_bindings','before_capture','before','after',
+         'official_expected','publisher_result','https_verification'}
+ require(isinstance(review,dict) and set(review)==fields and type(review['schema']) is int and review['schema']==1
+         and review['kind']=='root-reviewed-static04-maintenance-v1' and review['phase']=='complete'
+         and review['passed'] is True,'ADMISSION_STATIC_COMPLETED_REVIEW_REQUIRED')
+ require(review['source']=={'release':str(TARGET),'runtime_source_commit':RUNTIME_SOURCE_COMMIT,
+        'manifest_raw_sha256':RUNTIME_MANIFEST,'full_archive_raw_sha256':STATIC_FULL_ARCHIVE_SHA,
+        'publisher_raw_sha256':STATIC_PUBLISHER_SHA,'selector_raw_sha256':STATIC_SELECTOR_SHA}
+        and review['retirement_raw_bindings']==expected_bindings,'ADMISSION_STATIC_REVIEW_SOURCE_CHANGED')
+ before=review['before'];after=review['after']
+ require(before==capture and before.get('kind')=='independent-static04-preappend-baseline-v1'
+         and before.get('passed') is True and before.get('read_only') is True
+         and after.get('kind')=='independent-static04-postappend-observation-v1'
+         and after.get('passed') is True and after.get('read_only') is True,'ADMISSION_STATIC_GENUINE_BEFORE_REQUIRED')
+ expected=derived['snapshot'];old=before.get('guardian_protected');new=after.get('guardian_protected')
+ require(set(expected)==STATIC_PROTECTED_GROUPS and isinstance(old,dict) and old==expected
+         and isinstance(new,dict) and set(new)==STATIC_PROTECTED_GROUPS
+         and len(expected['files'])==25 and str(STATIC_HEAD) in expected['files'],
+         'ADMISSION_STATIC_ORIGINAL_GUARDIAN_CHANGED')
+ other=copy.deepcopy(new);other['files'][str(STATIC_HEAD)]=expected['files'][str(STATIC_HEAD)]
+ require(other==expected,'ADMISSION_STATIC_NON_HEAD_PROTECTION_CHANGED')
+ require(static_capture_invariants(before)==static_capture_invariants(after),'ADMISSION_STATIC_PRODUCTION_INVARIANTS_CHANGED')
+ sb=before.get('static',{});sa=after.get('static',{})
+ static_keys={'head','head_pin','receipts','registered','entries','receipts_count','registered_count','head_raw'}
+ require(set(sb)==set(sa)==static_keys,'ADMISSION_STATIC_CAPTURE_SHAPE_CHANGED')
+ for sample in (sb,sa):
+  head=sample['head'];require(isinstance(head,dict) and set(head)=={'schema','receipts','pending'}
+       and head['schema']=='oasis-static-assets-head-v1' and head['pending'] is None
+       and head['receipts']==sorted(set(head['receipts'])) and all(sha(value) for value in head['receipts']),
+       'ADMISSION_STATIC_HEAD_INVALID')
+  try:body=base64.b64decode(sample['head_raw'],validate=True)
+  except Exception:raise Refusal('ADMISSION_STATIC_HEAD_RAW_INVALID') from None
+  require(body==static_json(head) and digest(body)==sample['head_pin']['sha256'],'ADMISSION_STATIC_HEAD_RAW_INVALID')
+  static_full_file(sample['head_pin'],0o600)
+  require(set(sample['entries'])==set(sample['registered']) and len(sample['registered'])==sample['registered_count']
+          and len(sample['receipts'])==sample['receipts_count']
+          and set(sample['receipts'])=={value+'.json' for value in head['receipts']},'ADMISSION_STATIC_STORE_COUNTS_CHANGED')
+  for public,value in sample['entries'].items():
+   static_public_source(public,selector);static_full_file(value,0o644)
+   require(sample['registered'][public]=={key:value[key] for key in ('sha256','bytes')},'ADMISSION_STATIC_REGISTERED_BODY_CHANGED')
+  for filename,value in sample['receipts'].items():
+   static_full_file(value,0o644);require(value['sha256']+'.json'==filename,'ADMISSION_STATIC_RECEIPT_BODY_CHANGED')
+ require(sb['head_pin']['sha256']==STATIC_OLD_HEAD_SHA and sb['head_pin']['bytes']==1669
+         and sb['registered_count']==936 and sb['receipts_count']==22
+         and static_guardian_pin(sb['head_pin'])==expected['files'][str(STATIC_HEAD)],
+         'ADMISSION_STATIC_ORIGINAL_HEAD_CHANGED')
+ wanted={url:{key:item[key] for key in ('sha256','bytes')} for url,item in required.items()}
+ for url,item in wanted.items():
+  static_public_source(url,selector)
+  require(url not in sb['registered'] or sb['registered'][url]==item,'ADMISSION_STATIC_OLD_URL_CONFLICT')
+ added={url:required[url] for url in wanted if url not in sb['registered']}
+ require(len(wanted)==583 and len(added)==22 and sum(value['bytes'] for value in added.values())==1257968,
+         'ADMISSION_STATIC_ADDITIONS_CHANGED')
+ receipt={'schema':'oasis-static-assets-v1','release':TARGET.name,'manifest_sha256':RUNTIME_MANIFEST,'assets':wanted}
+ payload=static_json(receipt);head={**sb['head'],'receipts':sorted([*sb['head']['receipts'],digest(payload)])}
+ head_body=static_json(head)
+ require(digest(payload)==STATIC_RECEIPT_SHA and len(payload)==92362 and digest(head_body)==STATIC_NEW_HEAD_SHA
+         and len(head_body)==1741,'ADMISSION_STATIC_OFFICIAL_RECEIPT_CHANGED')
+ require(sa['head']==head and sa['head_pin']['sha256']==STATIC_NEW_HEAD_SHA and sa['head_pin']['bytes']==1741
+         and sa['registered']=={**sb['registered'],**wanted} and sa['registered_count']==958 and sa['receipts_count']==23,
+         'ADMISSION_STATIC_FINAL_UNION_CHANGED')
+ require(all(sa['entries'].get(key)==value for key,value in sb['entries'].items())
+         and all(sa['receipts'].get(key)==value for key,value in sb['receipts'].items())
+         and set(sa['entries'])-set(sb['entries'])==set(added)
+         and set(sa['receipts'])-set(sb['receipts'])=={STATIC_RECEIPT_SHA+'.json'},
+         'ADMISSION_STATIC_OLD_FULL_IDENTITIES_CHANGED')
+ require(sa['receipts'][STATIC_RECEIPT_SHA+'.json']['bytes']==len(payload)
+         and static_guardian_pin(sa['head_pin'])==new['files'][str(STATIC_HEAD)]
+         and sa['head_pin']['device']==sb['head_pin']['device'] and sa['head_pin']['inode']!=sb['head_pin']['inode'],
+         'ADMISSION_STATIC_FINAL_HEAD_IDENTITY_CHANGED')
+ old_ids={(value['device'],value['inode']) for value in (*sb['entries'].values(),*sb['receipts'].values(),sb['head_pin'])}
+ new_ids=[(sa['entries'][url]['device'],sa['entries'][url]['inode']) for url in added]
+ new_ids += [(sa['receipts'][STATIC_RECEIPT_SHA+'.json']['device'],sa['receipts'][STATIC_RECEIPT_SHA+'.json']['inode']),
+             (sa['head_pin']['device'],sa['head_pin']['inode'])]
+ require(len(set(new_ids))==len(new_ids) and not old_ids&set(new_ids),'ADMISSION_STATIC_ADDED_FILE_IDENTITY_ALIAS')
+ for key in ('static_directories','static_ancestors'):
+  left=before.get(key);right=after.get(key)
+  require(isinstance(left,dict) and left and isinstance(right,dict) and set(left)==set(right)
+          and {path:static_directory_identity(value) for path,value in left.items()}==
+              {path:static_directory_identity(value) for path,value in right.items()},'ADMISSION_STATIC_DIRECTORY_REPLACED')
+ changed_directories={str(Path(url.lstrip('/')).parent) for url in added}|{'.registry'}
+ for key in ('static_directories','static_ancestors'):
+  for path,old_pin in before[key].items():
+   new_pin=after[key][path]
+   allowed=(path in changed_directories) if key=='static_directories' else path==str(STATIC_HEAD.parent)
+   require(new_pin['nlink']==old_pin['nlink'] and (allowed or new_pin==old_pin),
+           'ADMISSION_STATIC_UNRELATED_DIRECTORY_METADATA_CHANGED')
+ require('.' in before['static_directories'] and '.registry' in before['static_directories']
+         and set(before['static_ancestors'])=={str(path) for path in STATIC_ROOT.parents}|{str(STATIC_HEAD.parent)},
+         'ADMISSION_STATIC_DIRECTORY_SCOPE_CHANGED')
+ for path,value in before['static_ancestors'].items():
+  if path==str(STATIC_HEAD.parent):
+   require(static_directory_identity(value)==expected['files'][path],'ADMISSION_STATIC_SHARED_PRIVATE_PARENT_CHANGED')
+  else:require(value['uid']==value['gid']==0,'ADMISSION_STATIC_ANCESTOR_OWNER_CHANGED')
+ directories=before['static_directories']
+ for relative,value in directories.items():
+  require(not Path(relative).is_absolute() and '..' not in Path(relative).parts
+          and value['uid']==value['gid']==0,'ADMISSION_STATIC_DIRECTORY_SCOPE_CHANGED')
+ for public in added:
+  require(all(str(path) in directories for path in Path(public.lstrip('/')).parents),
+          'ADMISSION_STATIC_NEW_DIRECTORY_NOT_AUTHORIZED')
+ official={'required_assets':wanted,'added_assets':added,'receipt_raw_sha256':STATIC_RECEIPT_SHA,'receipt_bytes':92362,
+           'head_raw_sha256':STATIC_NEW_HEAD_SHA,'head_bytes':1741,'required_count':583,'added_count':22,'added_bytes':1257968,
+           'before_assets':936,'before_receipts':22,'after_assets':958,'after_receipts':23}
+ require(review['official_expected']==official,'ADMISSION_STATIC_OFFICIAL_PLAN_CHANGED')
+ report=review['publisher_result']
+ require(isinstance(report,dict) and report.get('status')=='published' and report.get('release')==str(TARGET)
+         and report.get('store')==str(STATIC_ROOT) and report.get('manifest_sha256')==RUNTIME_MANIFEST
+         and report.get('receipt_sha256')==STATIC_RECEIPT_SHA and report.get('required_assets')==583
+         and report.get('registered_assets')==936 and report.get('new_files')==22 and report.get('new_file_bytes')==1257968
+         and report.get('current_and_mock_unchanged') is True and report.get('coverage')=={
+          'required_assets':583,'registered_assets':958,'receipts':23,'head_sha256':STATIC_NEW_HEAD_SHA},
+         'ADMISSION_STATIC_PUBLISH_NOT_VERIFIED')
+ https=review['https_verification'];origin=after['upgrade04']['runtime_profile']['public_origin']
+ require(isinstance(https,dict) and set(https)=={'origin','assets'} and https['origin']==origin
+         and set(https['assets'])==set(added),'ADMISSION_STATIC_HTTPS_COVERAGE_CHANGED')
+ for url,value in https['assets'].items():
+  require(isinstance(value,dict) and set(value)=={'status','bytes','sha256','content_type','cache_control','head_status',
+          'not_modified_status','range_status','no_redirect'} and value['status']==value['head_status']==200
+          and value['not_modified_status']==304 and value['range_status']==206 and value['no_redirect'] is True
+          and value['bytes']==added[url]['bytes'] and value['sha256']==added[url]['sha256']
+          and value['content_type'] in ('application/javascript','text/javascript')
+          and value['cache_control']=='public, max-age=31536000, immutable','ADMISSION_STATIC_HTTPS_ASSET_INVALID')
+ derived=copy.deepcopy(derived);derived['snapshot']['files'][str(STATIC_HEAD)]=copy.deepcopy(new['files'][str(STATIC_HEAD)])
+ return derived,{'required':required,'receipt':receipt,'before':before,'after':after,
+                 'official_expected':official,'observed_command_metadata_only':{
+                   group:{name:{'before':value.get('observed_command_struct_sha256'),
+                                'after':after['protected'][group][name].get('observed_command_struct_sha256')}
+                          for name,value in before['protected'].get(group,{}).items()}
+                   for group in ('units','public_units')}}
+
+
+class StaticRetentionReview:
+ """Keep approved evidence descriptors open, and rehash the entire store fresh."""
+ def __init__(self,args,bindings,derived,evidence):
+  self.descriptors=[];self.parents={};self.files={};self.b=bindings
+  try:
+   path=Path(args.static_retention_review)
+   raw=self.open_evidence(path,args.static_retention_review_sha256)
+   review=json.loads(raw);reference=review.get('before_capture',{})
+   require(isinstance(reference,dict) and set(reference)=={'path','raw_sha256'} and sha(reference['raw_sha256'])
+           and isinstance(reference['path'],str) and Path(reference['path']).is_absolute(),
+           'ADMISSION_STATIC_BEFORE_RAW_REQUIRED')
+   before_raw=self.open_evidence(Path(reference['path']),reference['raw_sha256'])
+   require(not set(self.files)&set(evidence),'ADMISSION_STATIC_EVIDENCE_PATH_ALIAS')
+   self.selector,required=static_selector(bindings)
+   self.derived,self.plan=validate_static_review(review,json.loads(before_raw),derived,required,self.selector,
+                                                static_retirement_bindings(args,bindings))
+   self.review_sha=args.static_retention_review_sha256
+   self.verify()
+  except Exception:self.close();raise
+
+ def open_evidence(self,path,expected):
+  require(str(path) not in self.files and path.is_absolute() and '..' not in path.parts,
+          'ADMISSION_STATIC_EVIDENCE_PATH_ALIAS')
+  raw,identity=read_file(path,expected,private=True,limit=16<<20)
+  require(len(raw)<=16<<20,'ADMISSION_STATIC_REVIEW_TOO_LARGE')
+  immediate=path.parent.lstat()
+  require(immediate.st_uid==immediate.st_gid==0 and stat.S_IMODE(immediate.st_mode)==0o700,
+          'ADMISSION_STATIC_EVIDENCE_PARENT_UNSAFE')
+  self.b.p.no_mount(path.parent)
+  for parent in path.parents:
+   if parent not in self.parents:
+    value=parent.lstat();fd=os.open(parent,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+    identity_parent={key:getattr(value,key) for key in ('st_dev','st_ino','st_uid','st_gid','st_mode')}
+    self.parents[parent]=(fd,identity_parent)
+  fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+  self.descriptors.append((fd,path,identity));self.files[str(path)]=identity
+  self.evidence_guard();return raw
+
+ def evidence_guard(self):
+  for parent,(fd,value) in self.parents.items():
+   require(all(getattr(os.fstat(fd),key)==getattr(parent.lstat(),key)==item for key,item in value.items()),
+           'ADMISSION_STATIC_EVIDENCE_PARENT_REPLACED')
+  for fd,path,identity in self.descriptors:lock_guard(fd,path,identity)
+
+ def verify(self):
+  self.evidence_guard();sample=self.plan['after'];static=sample['static'];self.b.p.no_mount(STATIC_ROOT);self.b.p.no_mount(STATIC_HEAD)
+  actual_directories={'.':static_directory_pin(STATIC_ROOT)};actual_files={}
+  for parent,dirs,files in os.walk(STATIC_ROOT,followlinks=False):
+   for name in sorted(dirs):
+    path=Path(parent)/name;actual_directories[path.relative_to(STATIC_ROOT).as_posix()]=static_directory_pin(path)
+   for name in sorted(files):
+    path=Path(parent)/name;relative=path.relative_to(STATIC_ROOT).as_posix()
+    raw,identity=read_file(path,limit=256<<20);value=static_file_pin(identity)
+    expected=static['receipts'].get(Path(relative).name) if str(Path(relative).parent)=='.registry' else static['entries'].get('/'+relative)
+    require(value==expected,'ADMISSION_STATIC_LIVE_BODY_OR_IDENTITY_CHANGED');actual_files[relative]=value
+    if str(Path(relative).parent)=='.registry':
+     receipt=json.loads(raw)
+     require(digest(raw)+'.json'==Path(relative).name and receipt.get('schema')=='oasis-static-assets-v1'
+             and isinstance(receipt.get('assets'),dict),'ADMISSION_STATIC_LIVE_RECEIPT_CHANGED')
+  require(set(actual_files)=={url.lstrip('/') for url in static['entries']}|{'.registry/'+name for name in static['receipts']}
+          and set(actual_directories)==set(sample['static_directories']),'ADMISSION_STATIC_UNREGISTERED_ENTRY')
+  require({key:static_directory_identity(value) for key,value in actual_directories.items()}==
+          {key:static_directory_identity(value) for key,value in sample['static_directories'].items()},
+          'ADMISSION_STATIC_LIVE_DIRECTORY_CHANGED')
+  for path,expected in sample['static_ancestors'].items():
+   require(static_directory_identity(static_directory_pin(path))==static_directory_identity(expected),
+           'ADMISSION_STATIC_LIVE_ANCESTOR_CHANGED')
+  raw,identity=read_file(STATIC_HEAD,STATIC_NEW_HEAD_SHA,private=True)
+  require(static_file_pin(identity)==static['head_pin'] and json.loads(raw)==static['head'],
+          'ADMISSION_STATIC_LIVE_HEAD_CHANGED')
+  # Official registration checks every receipt's raw hash, exact union, every
+  # namespace and each old/new body. No temp, orphan, link, or mount is allowed.
+  try:registered,receipts=self.selector.load_registry(STATIC_ROOT,static['head'])
+  except Exception:raise Refusal('ADMISSION_STATIC_LIVE_REGISTRY_CHANGED') from None
+  require(registered==static['registered'] and set(receipts)=={value[:-5] for value in static['receipts']},
+          'ADMISSION_STATIC_LIVE_REGISTRY_CHANGED')
+  new_raw,_=read_file(STATIC_ROOT/'.registry'/(STATIC_RECEIPT_SHA+'.json'),STATIC_RECEIPT_SHA)
+  require(new_raw==static_json(self.plan['receipt']),'ADMISSION_STATIC_LIVE_OFFICIAL_RECEIPT_CHANGED')
+  self.b.p.no_mount(STATIC_ROOT);self.b.p.no_mount(STATIC_HEAD)
+  second_directories={'.':static_directory_pin(STATIC_ROOT)};second_files={}
+  for parent,dirs,files in os.walk(STATIC_ROOT,followlinks=False):
+   for name in dirs:
+    path=Path(parent)/name;second_directories[path.relative_to(STATIC_ROOT).as_posix()]=static_directory_pin(path)
+   for name in files:
+    path=Path(parent)/name;value=path.lstat();relative=path.relative_to(STATIC_ROOT).as_posix()
+    require(stat.S_ISREG(value.st_mode),'ADMISSION_STATIC_ENTRY_CHANGED_DURING_READ')
+    expected=actual_files.get(relative)
+    require(expected is not None and all(getattr(value,key)==expected[name] for key,name in (
+           ('st_dev','device'),('st_ino','inode'),('st_uid','uid'),('st_gid','gid'),('st_nlink','nlink'),
+           ('st_size','bytes'),('st_mtime_ns','mtime_ns'),('st_ctime_ns','ctime_ns')))
+           and stat.S_IMODE(value.st_mode)==expected['mode'],'ADMISSION_STATIC_ENTRY_CHANGED_DURING_READ')
+    second_files[relative]=expected
+  require(second_files==actual_files and
+          {key:static_directory_identity(value) for key,value in second_directories.items()}==
+          {key:static_directory_identity(value) for key,value in actual_directories.items()},
+          'ADMISSION_STATIC_ENTRY_CHANGED_DURING_READ')
+  self.evidence_guard()
+  return {'review_sha256':self.review_sha,'evidence_pins':self.files,
+          'official_expected':self.plan['official_expected'],'static_fullpins_sha256':digest(canonical(static)),
+          'directory_identity_sha256':digest(canonical({key:static_directory_identity(value)
+                   for key,value in sample['static_directories'].items()})),
+          'observed_command_metadata_only':self.plan['observed_command_metadata_only']}
+
+ def close(self):
+  for fd,_,_ in self.descriptors:os.close(fd)
+  for fd,_ in self.parents.values():os.close(fd)
+  self.descriptors=[];self.parents={}
+
+def static_review_option(args):
+ path=getattr(args,'static_retention_review',None);expected=getattr(args,'static_retention_review_sha256',None)
+ require(bool(path)==bool(expected) and (path is None or sha(expected)),
+         'ADMISSION_STATIC_PAIRED_EXTERNAL_REVIEW_REQUIRED')
+ return path
+
+
 def make_guardian(args,bindings,runtime,inventory,inventory_pin):
+ static_review_option(args)
  p=bindings.p
  if inventory.get('kind')=='production-protected-inventory':
+  require(not getattr(args,'static_retention_review',None),'ADMISSION_STATIC_RETIRED_GUARDIAN_REQUIRED')
   p.validate_protected(inventory)
   guardian=p.Provisioner.__new__(p.Provisioner);guardian.args=args;guardian.runtime=runtime
   guardian.release=TARGET;guardian.protected=inventory;guardian.receipt=None
   return guardian,{str(Path(args.protected_inventory)):inventory_pin},None
  derived,evidence,retired=retirement_evidence(args,bindings,inventory,inventory_pin)
+ static_review=None
+ if getattr(args,'static_retention_review',None):
+  static_review=StaticRetentionReview(args,bindings,derived,evidence)
+  derived=static_review.derived;evidence={**evidence,**static_review.files}
  guardian=p.Provisioner.__new__(p.Provisioner);guardian.args=args;guardian.runtime=runtime
- guardian.release=TARGET;guardian.protected=derived;guardian.receipt=None
+ guardian.release=TARGET;guardian.protected=derived;guardian.receipt=None;guardian.static_retention=static_review
  # Execute the original guard unchanged, including public DB, proxy, static,
  # TLS, current/previous releases and strict retired-Mock 410 routes.
  return guardian,evidence,retired
@@ -819,7 +1185,10 @@ class Controller:
   self.global_locks_held=False;self.directory_lease=None;self.waited_jobs={}
   protected_raw,self.protected_pin=read_file(args.protected_inventory,args.protected_inventory_sha256,private=True)
   self.guardian,self.protection_files,self.retired_protection=make_guardian(args,bindings,self.runtime,json.loads(protected_raw),self.protected_pin)
-  require(pin(args.protected_inventory)==self.protected_pin,'ADMISSION_PROTECTED_INPUT_CHANGED')
+  try:require(pin(args.protected_inventory)==self.protected_pin,'ADMISSION_PROTECTED_INPUT_CHANGED')
+  except Exception:
+   if getattr(self.guardian,'static_retention',None):self.guardian.static_retention.close()
+   raise
 
  def source_guard(self):
   self.p.verify_release(TARGET,self.args.manifest_sha256)
@@ -831,7 +1200,8 @@ class Controller:
   require(all(pin(path)==expected for path,expected in self.protection_files.items()),'ADMISSION_RETIRED_EVIDENCE_CHANGED')
   require(all(pin(Path(path))==value for path,value in self.b.pins.items()),'ADMISSION_SOURCE_PIN_CHANGED')
   return {**controller_guard(self.args,self.b),'runtime_dependencies':self.b.dependencies,
-          'retired_protection':self.retired_protection,'protection_files':self.protection_files}
+          'retired_protection':self.retired_protection,'protection_files':self.protection_files,
+          **({'static_maintenance':self.guardian.static_retention.verify()} if getattr(self.guardian,'static_retention',None) else {})}
 
  def installed_units(self,marker,*,pending_jobs=False,cleanup=False):
   require(not pending_jobs or not self.global_locks_held,'ADMISSION_TIMER_TAIL_REQUIRES_UNLOCKED')
@@ -1304,6 +1674,7 @@ def parser():
  for name in ('audit','audit-sha256','approval','approval-sha256','check','check-sha256'):value.add_argument('--'+name)
  for name in ('source-audit','archive-proof','archive-review','retirement-check','retirement-receipt'):
   value.add_argument('--'+name);value.add_argument('--'+name+'-sha256')
+ value.add_argument('--static-retention-review');value.add_argument('--static-retention-review-sha256')
  value.add_argument('--capacity-budget-bytes',type=int,required=True)
  return value
 
@@ -1332,6 +1703,7 @@ def main(argv=None):
   if args.mode!='audit':require(args.audit and sha(args.audit_sha256) and args.approval and sha(args.approval_sha256),
                               'ADMISSION_AUDIT_AND_ROOT_PROOF_REQUIRED')
   if args.mode=='apply':require(args.check and sha(args.check_sha256),'ADMISSION_CHECK_SHA_REQUIRED')
+  static_review_option(args)
   bindings=load_bindings(args);bindings.p.validate_origin(args.origin);controller=Controller(args,bindings)
   expected=None
   if args.mode=='apply':
@@ -1353,6 +1725,8 @@ def main(argv=None):
    result.update(receipt=str(controller.directory/'receipt.json'),phase=controller.receipt.get('phase'),
                  cleanup_error_code=controller.receipt.get('cleanup_error_code'))
   print(json.dumps(result,sort_keys=True));return 2
+ finally:
+  if controller and getattr(controller.guardian,'static_retention',None):controller.guardian.static_retention.close()
 
 
 if __name__=='__main__':raise SystemExit(main())

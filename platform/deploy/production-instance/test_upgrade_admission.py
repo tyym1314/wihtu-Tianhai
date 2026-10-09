@@ -1,5 +1,6 @@
 """Local contracts and real temporary files; never approves a production policy."""
 import copy
+import base64
 import datetime as dt
 import importlib.machinery
 import importlib.util
@@ -845,6 +846,302 @@ class FailureContracts(unittest.TestCase):
   controller.stop_writers.assert_not_called();controller.restart_writers.assert_not_called()
   approvals=controller.marker_replace.call_args.args[0]['release_history'][0]['policy_approvals']
   self.assertEqual([item['revision'] for item in approvals],['2','3'])
+
+
+@contextmanager
+def static_fixture(*,live=False):
+ """Synthetic isolated 936/22 contract, never production approval/evidence."""
+ with tempfile.TemporaryDirectory() as directory,ExitStack() as stack:
+  root=Path(directory).resolve();store=root/'static-assets';private=root/'private';store.mkdir();private.mkdir(mode=0o700)
+  head_path=private/'static-assets-head.json';registry=store/'.registry';registry.mkdir(mode=0o700)
+  stack.enter_context(patch.object(u,'STATIC_ROOT',store));stack.enter_context(patch.object(u,'STATIC_HEAD',head_path))
+  counter=500
+  def filepin(body,mode=0o644,path=None):
+   nonlocal counter
+   counter+=1
+   if path is not None:
+    path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(body);path.chmod(mode)
+    raw,identity=u.read_file(path);value=u.static_file_pin(identity);value.update(uid=0,gid=0);return value
+   return {'uid':0,'gid':0,'mode':mode,'device':17,'inode':counter,'kind':'file','bytes':len(body),
+           'sha256':u.digest(body),'nlink':1,'mtime_ns':1,'ctime_ns':1}
+  urls=[];bodies={};required={}
+  for index in range(583):
+   padding='q'*(9 if index<567 else 8)
+   url=f'/assets/{padding}fixture{index:04d}-{index:08d}.js'
+   body=b'x' if index<561 else b'z'*(57188 if index==582 else 57180)
+   urls.append(url);bodies[url]=body;required[url]={'sha256':u.digest(body),'bytes':len(body),'source':'platform/dist'+url}
+  for index in range(375):
+   url=f'/assets/oldfixture{index:04d}-{index+600:08d}.js';urls.append(url);bodies[url]=b'x'
+  old_urls=urls[:561]+urls[583:];old_registered={url:{'bytes':len(bodies[url]),'sha256':u.digest(bodies[url])} for url in old_urls}
+  old_entries={url:filepin(bodies[url],path=store/url.lstrip('/') if live else None) for url in old_urls}
+  old_receipts={};receipt_bodies={}
+  for index in range(22):
+   receipt={'schema':'oasis-static-assets-v1','release':f'20261008-{index+1:02d}',
+       'manifest_sha256':u.OLD_MANIFEST,'assets':{url:old_registered[url] for at,url in enumerate(old_urls) if at%22==index}}
+   body=u.static_json(receipt);name=u.digest(body)+'.json';receipt_bodies[name]=body
+   old_receipts[name]=filepin(body,path=registry/name if live else None)
+  old_head={'schema':'oasis-static-assets-head-v1','receipts':sorted(name[:-5] for name in old_receipts),'pending':None}
+  old_head_body=u.static_json(old_head);old_head_pin=filepin(old_head_body,0o600,path=head_path if live else None)
+  wanted={url:{key:value[key] for key in ('bytes','sha256')} for url,value in required.items()}
+  receipt={'schema':'oasis-static-assets-v1','release':u.TARGET.name,'manifest_sha256':u.RUNTIME_MANIFEST,'assets':wanted}
+  new_body=u.static_json(receipt);new_hash=u.digest(new_body)
+  new_head={**old_head,'receipts':sorted([*old_head['receipts'],new_hash])};new_head_body=u.static_json(new_head)
+  assert len(old_head_body)==1669 and len(new_body)==92362 and len(new_head_body)==1741
+  stack.enter_context(patch.object(u,'STATIC_OLD_HEAD_SHA',u.digest(old_head_body)))
+  stack.enter_context(patch.object(u,'STATIC_RECEIPT_SHA',new_hash))
+  stack.enter_context(patch.object(u,'STATIC_NEW_HEAD_SHA',u.digest(new_head_body)))
+  added={url:required[url] for url in required if url not in old_registered}
+  new_entries={**old_entries,**{url:filepin(bodies[url],path=store/url.lstrip('/') if live else None) for url in added}}
+  new_receipts={**old_receipts,new_hash+'.json':filepin(new_body,path=registry/(new_hash+'.json') if live else None)}
+  if live:head_path.unlink()
+  new_head_pin=filepin(new_head_body,0o600,path=head_path if live else None)
+  dir_paths=['.','.registry','assets']
+  def dirpin(path):
+   # Synthetic ancestors are virtual /opt identities. Never chmod shared /tmp.
+   value=Path(path).lstat();return {'uid':0,'gid':0,'mode':stat.S_IMODE(value.st_mode)&~0o022,
+        'device':value.st_dev,'inode':value.st_ino,'kind':'directory','bytes':value.st_size,'nlink':value.st_nlink,
+        'mtime_ns':value.st_mtime_ns,'ctime_ns':value.st_ctime_ns}
+  directories={name:dirpin(store/name) for name in dir_paths if (store/name).exists()}
+  if not live:
+   value=u.static_directory_pin(store);value.update(uid=0,gid=0)
+   directories={name:{**value,'inode':8000+index} for index,name in enumerate(dir_paths)}
+  ancestors={str(path):dirpin(path) for path in set(store.parents)|{private}}
+  protected={'files':{str(head_path):u.static_guardian_pin(old_head_pin),str(private):u.static_directory_identity(ancestors[str(private)]),
+                     **{f'/opt/oasis/synthetic-public-{index}':{'bound':index} for index in range(23)}},
+             **{name:{'bound':name} for name in u.STATIC_PROTECTED_GROUPS if name!='files'}}
+  before_static={'head':old_head,'head_pin':old_head_pin,'receipts':old_receipts,'registered':old_registered,'entries':old_entries,
+                'receipts_count':22,'registered_count':936,'head_raw':base64.b64encode(old_head_body).decode()}
+  after_static={'head':new_head,'head_pin':new_head_pin,'receipts':new_receipts,'registered':{**old_registered,**wanted},'entries':new_entries,
+               'receipts_count':23,'registered_count':958,'head_raw':base64.b64encode(new_head_body).decode()}
+  before={'kind':'independent-static04-preappend-baseline-v1','passed':True,'read_only':True,
+          'source':{'bound':'old03'},'protected':{'files':{str(head_path):u.static_guardian_pin(old_head_pin)},
+                 'units':{'own.service':{'observed_command_struct_sha256':'a'*64,'effective_commands':['exact'],'state':{'MainPID':'0'}}},
+                 'public_units':{}},'upgrade04':{'runtime_profile':{'public_origin':'https://isolated.example.test'},'bound':'04'},
+          'retirement':{'bound':'8docs'},'guardian_protected':protected,'static':before_static,
+          'static_directories':directories,'static_ancestors':ancestors}
+  after=copy.deepcopy(before);after['kind']='independent-static04-postappend-observation-v1';after['static']=after_static;after['guardian_protected']['files'][str(head_path)]=u.static_guardian_pin(new_head_pin)
+  after['protected']['files'][str(head_path)]=u.static_guardian_pin(new_head_pin)
+  expected={'required_assets':wanted,'added_assets':added,'receipt_raw_sha256':new_hash,'receipt_bytes':92362,
+        'head_raw_sha256':u.STATIC_NEW_HEAD_SHA,'head_bytes':1741,'required_count':583,'added_count':22,'added_bytes':1257968,
+        'before_assets':936,'before_receipts':22,'after_assets':958,'after_receipts':23}
+  report={'status':'published','release':str(u.TARGET),'store':str(store),'manifest_sha256':u.RUNTIME_MANIFEST,
+          'receipt_sha256':new_hash,'required_assets':583,'registered_assets':936,'new_files':22,'new_file_bytes':1257968,
+          'current_and_mock_unchanged':True,'coverage':{'required_assets':583,'registered_assets':958,'receipts':23,'head_sha256':u.STATIC_NEW_HEAD_SHA}}
+  review={'schema':1,'kind':'root-reviewed-static04-maintenance-v1','phase':'complete','passed':True,
+          'source':{'release':str(u.TARGET),'runtime_source_commit':u.RUNTIME_SOURCE_COMMIT,'manifest_raw_sha256':u.RUNTIME_MANIFEST,
+                    'full_archive_raw_sha256':u.STATIC_FULL_ARCHIVE_SHA,'publisher_raw_sha256':u.STATIC_PUBLISHER_SHA,'selector_raw_sha256':u.STATIC_SELECTOR_SHA},
+          'retirement_raw_bindings':{'synthetic-isolated-only':True},'before_capture':{'path':str(private/'before.json'),'raw_sha256':'c'*64},
+          'before':before,'after':after,'official_expected':expected,'publisher_result':report,
+          'https_verification':{'origin':'https://isolated.example.test','assets':{url:{'status':200,'head_status':200,'not_modified_status':304,
+             'range_status':206,'no_redirect':True,'bytes':item['bytes'],'sha256':item['sha256'],'content_type':'application/javascript',
+             'cache_control':'public, max-age=31536000, immutable'} for url,item in added.items()}}}
+  # Read the two real helper bodies, never import by path or execute publisher.
+  build,_=u.module_bytes(HERE/'../release_build.py',u.STATIC_SELECTOR_SHA)
+  source=(HERE/'../publish-static-assets.py').read_bytes();tree=u.ast.parse(source)
+  tree.body=[node for node in tree.body if not isinstance(node,u.ast.ImportFrom) or node.module!='release_build']
+  selector=types.ModuleType('synthetic_static_selector');selector.__file__=str(HERE/'../publish-static-assets.py')
+  selector.__dict__.update({name:getattr(build,name) for name in ('FINGERPRINT','RETAINED_LOCK','SHA256','STATIC_NAMESPACES','file_digest','regular_path','require','static_public_path','verify_retained_assets')})
+  exec(compile(tree,selector.__file__,'exec'),selector.__dict__)
+  f=types.SimpleNamespace(root=root,store=store,head=head_path,private=private,review=review,before=before,
+       derived={'paths':list(protected['files']),'snapshot':protected},required=required,selector=selector,bindings=review['retirement_raw_bindings'],
+       old_urls=old_urls,added=added,receipt=receipt,receipt_bodies=receipt_bodies)
+  def validate(value=None,capture=None):
+   return u.validate_static_review(value or review,capture or before,f.derived,required,selector,f.bindings)
+  f.validate=validate;f.directory_pin=dirpin
+  yield f
+
+
+class StaticRetentionContracts(unittest.TestCase):
+ def test_pure_exact_full_append_changes_only_derived_head(self):
+  with static_fixture() as f:
+   result,plan=f.validate();self.assertEqual(len(result['snapshot']['files']),25)
+   old=copy.deepcopy(f.derived);old['snapshot']['files'][str(f.head)]=result['snapshot']['files'][str(f.head)]
+   self.assertEqual(old,result);self.assertNotEqual(f.derived,result);self.assertEqual(len(plan['required']),583)
+   self.assertEqual(len(f.review['after']['static']['registered']),958)
+
+ def test_real_before_document_and_exact_source_release_are_required(self):
+  with static_fixture() as f:
+   for field in ('release','runtime_source_commit','manifest_raw_sha256','full_archive_raw_sha256','publisher_raw_sha256','selector_raw_sha256'):
+    value=copy.deepcopy(f.review);value['source'][field]='foreign'
+    with self.subTest(field=field),self.assertRaisesRegex(u.Refusal,'SOURCE_CHANGED'):f.validate(value)
+   value=copy.deepcopy(f.review);value['retirement_raw_bindings']={}
+   with self.assertRaisesRegex(u.Refusal,'SOURCE_CHANGED'):f.validate(value)
+   capture=copy.deepcopy(f.before);capture['source']['bound']='forged'
+   with self.assertRaisesRegex(u.Refusal,'GENUINE_BEFORE'):f.validate(capture=capture)
+
+ def test_all_other24_pins_and_six_groups_are_immutable(self):
+  with static_fixture() as f:
+   for group in u.STATIC_PROTECTED_GROUPS:
+    value=copy.deepcopy(f.review)
+    if group=='files':value['after']['guardian_protected']['files']['/opt/oasis/synthetic-public-0']={'changed':True}
+    else:value['after']['guardian_protected'][group]={'changed':True}
+    with self.subTest(group=group),self.assertRaisesRegex(u.Refusal,'NON_HEAD_PROTECTION'):f.validate(value)
+   value=copy.deepcopy(f.review);value['after']['guardian_protected']['files'].pop('/opt/oasis/synthetic-public-0')
+   with self.assertRaisesRegex(u.Refusal,'NON_HEAD_PROTECTION'):f.validate(value)
+
+ def test_changed_old_body_receipt_or_inode_is_refused(self):
+  with static_fixture() as f:
+   for collection in ('entries','receipts'):
+    for field in ('sha256','inode','mtime_ns','mode','nlink'):
+     value=copy.deepcopy(f.review);first=next(iter(value['after']['static'][collection]))
+     value['after']['static'][collection][first][field]='f'*64 if field=='sha256' else 999
+     with self.subTest(collection=collection,field=field),self.assertRaises(u.Refusal):f.validate(value)
+
+ def test_official583_receipt_cannot_be_replaced_with_only22_or_wrong_new_url(self):
+  with static_fixture() as f:
+   for field in ('required_assets','added_assets','receipt_raw_sha256','head_raw_sha256'):
+    value=copy.deepcopy(f.review);value['official_expected'][field]={} if field.endswith('assets') else 'f'*64
+    with self.subTest(field=field),self.assertRaisesRegex(u.Refusal,'OFFICIAL_PLAN'):f.validate(value)
+   value=copy.deepcopy(f.review);url=next(iter(f.added));value['after']['static']['registered'].pop(url)
+   with self.assertRaises(u.Refusal):f.validate(value)
+   value=copy.deepcopy(f.review);value['after']['static']['head_raw']=base64.b64encode(b'{}').decode()
+   with self.assertRaisesRegex(u.Refusal,'HEAD_RAW'):f.validate(value)
+
+ def test_directories_ancestors_head_device_and_unknown_public_change_are_refused(self):
+  with static_fixture() as f:
+   for collection in ('static_directories','static_ancestors'):
+    for field in ('inode','device','uid','mode','kind'):
+     value=copy.deepcopy(f.review);first=next(iter(value['after'][collection]))
+     value['after'][collection][first][field]='symlink' if field=='kind' else 999
+     with self.subTest(collection=collection,field=field),self.assertRaises(u.Refusal):f.validate(value)
+   value=copy.deepcopy(f.review);value['after']['static']['head_pin']['device']+=1
+   value['after']['guardian_protected']['files'][str(f.head)]['device']+=1
+   with self.assertRaisesRegex(u.Refusal,'HEAD_IDENTITY'):f.validate(value)
+   value=copy.deepcopy(f.review);value['after']['protected']['units']['own.service']['effective_commands']=['foreign']
+   with self.assertRaisesRegex(u.Refusal,'PRODUCTION_INVARIANTS'):f.validate(value)
+
+ def test_observed_command_clock_hash_has_only_the_two_explicit_projections(self):
+  with static_fixture() as f:
+   value=copy.deepcopy(f.review);value['after']['protected']['units']['own.service']['observed_command_struct_sha256']='b'*64
+   _,plan=f.validate(value);self.assertEqual(plan['observed_command_metadata_only']['units']['own.service']['after'],'b'*64)
+   value['after']['upgrade04']['observed_command_struct_sha256']='b'*64
+   with self.assertRaisesRegex(u.Refusal,'PRODUCTION_INVARIANTS'):f.validate(value)
+
+ def test_https_each_new_asset_body_cache_and_response_contract_is_required(self):
+  with static_fixture() as f:
+   for field in ('sha256','bytes','cache_control','range_status','head_status','no_redirect','content_type'):
+    value=copy.deepcopy(f.review);first=next(iter(value['https_verification']['assets']))
+    value['https_verification']['assets'][first][field]='foreign'
+    with self.subTest(field=field),self.assertRaisesRegex(u.Refusal,'HTTPS_ASSET'):f.validate(value)
+   value=copy.deepcopy(f.review);value['https_verification']['assets'].pop(next(iter(f.added)))
+   with self.assertRaisesRegex(u.Refusal,'HTTPS_COVERAGE'):f.validate(value)
+
+ def test_live_full_store_rehashes_every_old_body_receipt_and_rejects_extras(self):
+  with static_fixture(live=True) as f:
+   derived,plan=f.validate();checker=object.__new__(u.StaticRetentionReview)
+   checker.plan=plan;checker.selector=f.selector;checker.b=types.SimpleNamespace(p=types.SimpleNamespace(no_mount=Mock()))
+   checker.evidence_guard=Mock();checker.files={};checker.review_sha='f'*64
+   original=u.read_file;directory_original=u.static_directory_pin
+   def synthetic_root_read(path,*aa,**kw):
+    kw.pop('private',None)
+    with patch.object(Path,'lstat',real_lstat):raw,identity=original(path,*aa,**kw)
+    identity.update(st_uid=0,st_gid=0);return raw,identity
+   def directory(path):return f.directory_pin(path)
+   real_lstat=Path.lstat
+   def root_lstat(path):
+    value=real_lstat(path)
+    if Path(path).is_relative_to(f.store):
+     return types.SimpleNamespace(**{key:(0 if key in ('st_uid','st_gid') else getattr(real_lstat(path),key)) for key in
+         ('st_mode','st_ino','st_dev','st_nlink','st_uid','st_gid','st_size','st_mtime_ns','st_ctime_ns')})
+    return value
+   with patch.object(u,'read_file',side_effect=synthetic_root_read),patch.object(u,'static_directory_pin',side_effect=directory),patch.object(Path,'lstat',root_lstat):
+    self.assertEqual(checker.verify()['official_expected']['after_assets'],958)
+    checker.b.p.no_mount.assert_any_call(f.head)
+    old=f.store/f.old_urls[0].lstrip('/');old.write_bytes(b'y')
+    with self.assertRaisesRegex(u.Refusal,'LIVE_BODY'):checker.verify()
+    old.write_bytes(b'x')
+    # Refresh only this synthetic expected fingerprint; never refresh an actual proof.
+    raw,identity=synthetic_root_read(old);plan['after']['static']['entries'][f.old_urls[0]]=u.static_file_pin(identity)
+    orphan=f.store/'assets/orphan-00000000.js';orphan.write_bytes(b'x')
+    with self.assertRaisesRegex(u.Refusal,'LIVE_BODY'):checker.verify()
+
+ def test_held_review_fd_and_parent_identity_reject_same_bytes_replacement(self):
+  with tempfile.TemporaryDirectory() as directory:
+   parent=Path(directory).resolve()/'review';parent.mkdir(mode=0o700);file=parent/'approved.json';file.write_bytes(b'{}');file.chmod(0o600)
+   raw,identity=u.read_file(file);fd=os.open(file,os.O_RDONLY|os.O_NOFOLLOW);parent_fd=os.open(parent,os.O_RDONLY|os.O_DIRECTORY)
+   checker=object.__new__(u.StaticRetentionReview);checker.descriptors=[(fd,file,identity)];s=parent.lstat()
+   checker.parents={parent:(parent_fd,{name:getattr(s,name) for name in ('st_dev','st_ino','st_uid','st_gid','st_mode')})}
+   try:
+    checker.evidence_guard();file.unlink();file.write_bytes(b'{}');file.chmod(0o600)
+    with self.assertRaisesRegex(u.Refusal,'LOCK_REPLACED'):checker.evidence_guard()
+    checker.descriptors=[];os.close(fd)
+    moved=parent.with_name('former');parent.rename(moved);parent.mkdir(mode=0o700)
+    with self.assertRaisesRegex(u.Refusal,'PARENT_REPLACED'):checker.evidence_guard()
+   finally:checker.close()
+
+ def test_default_missing_proof_keeps_old_guard_and_pairs_are_explicit(self):
+  aa=args();aa.protected_inventory='/isolated/original.json'
+  prior={'kind':'production-protected-inventory','paths':['head'],'snapshot':{'files':{'head':'old'}}}
+  pp=types.SimpleNamespace(validate_protected=Mock(),Provisioner=p.Provisioner)
+  guardian,files,_=u.make_guardian(aa,types.SimpleNamespace(p=pp),object(),prior,{'pin':'original'})
+  self.assertEqual(guardian.protected,prior);self.assertEqual(files,{'/isolated/original.json':{'pin':'original'}})
+  aa.static_retention_review='/isolated/proof.json';aa.static_retention_review_sha256='a'*64
+  with self.assertRaisesRegex(u.Refusal,'RETIRED_GUARDIAN'):u.make_guardian(aa,types.SimpleNamespace(p=pp),object(),prior,{'pin':'original'})
+  parsed=u.parser().parse_args(['audit','--action','approve',*[item for key in ('release','manifest-sha256','controller-sha256','source-commit','controller-origin-commit','app-id','origin','protected-inventory','protected-inventory-sha256') for item in ('--'+key,'test')],
+           '--capacity-budget-bytes',str(1<<30),'--static-retention-review','only-one'])
+  self.assertIsNone(parsed.static_retention_review_sha256)
+  with self.assertRaisesRegex(u.Refusal,'PAIRED_EXTERNAL_REVIEW'):u.static_review_option(parsed)
+  parsed.static_retention_review=None;parsed.static_retention_review_sha256='f'*64
+  with self.assertRaisesRegex(u.Refusal,'PAIRED_EXTERNAL_REVIEW'):u.static_review_option(parsed)
+  parsed.static_retention_review='approved.json';self.assertEqual(u.static_review_option(parsed),'approved.json')
+
+
+ def test_real_official_helper_chain_uses_verified_bytes_without_secondary_loader(self):
+  with tempfile.TemporaryDirectory() as directory,ExitStack() as stack:
+   target=Path(directory).resolve();deploy=target/'platform/deploy';deploy.mkdir(parents=True)
+   for name in ('release_build.py','publish-static-assets.py'):
+    source=HERE/'..'/name;(deploy/name).write_bytes(source.read_bytes())
+   bindings=types.SimpleNamespace(members={'platform/deploy/release_build.py':u.STATIC_SELECTOR_SHA,
+                      'platform/deploy/publish-static-assets.py':u.STATIC_PUBLISHER_SHA},pins={})
+   stack.enter_context(patch.object(u,'TARGET',target))
+   stack.enter_context(patch.object(importlib.machinery.SourceFileLoader,'exec_module',side_effect=AssertionError('no path import/pyc')))
+   selector,build=u.static_selector_modules(bindings)
+   self.assertEqual(selector.FINGERPRINT,build.FINGERPRINT)
+   self.assertEqual(set(bindings.pins),{str(deploy/'release_build.py'),str(deploy/'publish-static-assets.py')})
+   self.assertEqual(selector.public_source('/assets/test-00000000.js'),'platform/dist/assets/test-00000000.js')
+   (deploy/'publish-static-assets.py').write_bytes(b'import release_build\n')
+   with self.assertRaisesRegex(u.Refusal,'EXTERNAL_HASH'):u.static_selector_modules(bindings)
+
+ def test_live_receipt_raw_body_symlink_and_head_mount_are_refused(self):
+  with static_fixture(live=True) as f:
+   _,plan=f.validate();checker=object.__new__(u.StaticRetentionReview)
+   checker.plan=plan;checker.selector=f.selector;checker.b=types.SimpleNamespace(p=types.SimpleNamespace(no_mount=Mock()))
+   checker.evidence_guard=Mock();checker.files={};checker.review_sha='f'*64
+   original=u.read_file
+   def synthetic(path,*aa,**kw):
+    kw.pop('private',None);raw,identity=original(path,*aa,**kw);identity.update(st_uid=0,st_gid=0);return raw,identity
+   with patch.object(u,'read_file',side_effect=synthetic):
+    name=next(iter(f.before['static']['receipts']));file=f.store/'.registry'/name;file.write_bytes(b'{}')
+    with self.assertRaisesRegex(u.Refusal,'LIVE_BODY'):checker.verify()
+    file.unlink();file.symlink_to(f.head)
+    with self.assertRaises((u.Refusal,OSError)):checker.verify()
+    checker.b.p.no_mount=Mock(side_effect=lambda path:u.require(path!=f.head,'FIXTURE_STATIC_HEAD_MOUNTED'))
+    with self.assertRaisesRegex(u.Refusal,'STATIC_HEAD_MOUNTED'):checker.verify()
+
+ def test_original_guard_default_no_review_rejects_changed_head(self):
+  with tempfile.TemporaryDirectory() as directory:
+   root=Path(directory).resolve();release=root/'releases/old';release.mkdir(parents=True);private=root/'private';private.mkdir()
+   (root/'current').symlink_to(release);last=private/'last-release.json';retire=private/'retire.json'
+   last.write_text(json.dumps({'current':str(release),'previous':'old-prev','health':'passed'}));retire.write_text(json.dumps({'passed':True,'phase':'complete'}))
+   snapshot={'files':{'/opt/oasis/private':{'uid':998,'gid':998,'mode':0o700},str(u.STATIC_HEAD):{'sha256':'old'}}}
+   live=copy.deepcopy(snapshot);live['files'][str(u.STATIC_HEAD)]['sha256']='unauthorized-new'
+   guardian=p.Provisioner.__new__(p.Provisioner);guardian.protected={'current':str(release),'previous':'old-prev','paths':list(snapshot['files']),'snapshot':snapshot}
+   guardian.runtime=types.SimpleNamespace(protect=Mock(return_value=live))
+   def fingerprint(path):
+    return {'sha256':p.RETIRE_SHA if path==retire else '543967ae6c8beafdeb601278234b993cb8af776da3a0de546e6f1a181b994628' if path.name=='master.key' else 'a4a65fc07047dd14e343909e67b2089193b4b4a0e824a51b22e1d4992689096b'}
+   with patch.object(p,'BASE',root),patch.object(p,'RETIRE',retire),patch.object(p,'fingerprint',side_effect=fingerprint),self.assertRaisesRegex(p.Refusal,'INVENTORY_SNAPSHOT_CHANGED'):
+    guardian.guard()
+
+
+ def test_directory_metadata_exceptions_are_only_exact_added_file_parents(self):
+  with static_fixture() as f:
+   for key,path in (('static_directories','.'),('static_ancestors',str(f.root))):
+    value=copy.deepcopy(f.review);value['after'][key][path]['ctime_ns']+=1
+    with self.subTest(key=key),self.assertRaisesRegex(u.Refusal,'UNRELATED_DIRECTORY'):f.validate(value)
+   for key,path in (('static_directories','.registry'),('static_ancestors',str(f.private))):
+    value=copy.deepcopy(f.review);value['after'][key][path]['ctime_ns']+=1;f.validate(value)
+    value['after'][key][path]['nlink']+=1
+    with self.assertRaisesRegex(u.Refusal,'UNRELATED_DIRECTORY'):f.validate(value)
 
 
 if __name__=='__main__':unittest.main()
