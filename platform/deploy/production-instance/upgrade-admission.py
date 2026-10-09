@@ -21,6 +21,14 @@ from contextlib import contextmanager
 OLD = Path('/opt/oasis/releases/20261010-03')
 TARGET = Path('/opt/oasis/releases/20261010-04')
 OLD_MANIFEST = '901d4285c22db46c11f50b6015e7f233ae65f8c17d951e5e0cf58438d4ad2a0d'
+RUNTIME_MANIFEST = '4b8c3b2820c271198563180983c72f25d088c63c872463704af632929adf3c0f'
+RUNTIME_SOURCE_COMMIT = '63e44d330cf09c60eab0a08c03150b5f38d26ea7'
+PACKAGED_CONTROLLER_SHA = '9149342b52872518ff1372f398afa8d25526369820bc4fe6f4befa47281848c5'
+PROC_ROOT = Path('/proc')
+NODE_EXE = Path('/usr/bin/node')
+NODE_SHA = '6295488653f0d93b0a157841746fef7e72cc4328cfb60c4bbe0ca2668a836ffd'
+ESBUILD_SHA = 'e1698a3d5c6c0798fee4fd3b5cc816651f460c63d390a7a26ea4beb0b1884100'
+API_CGROUP = '0::/system.slice/oasis-production-api.service\n'
 HISTORICAL_INVENTORY_SHA = 'ac5c5769946b8ea08695c56d0106bb6c8d1f562b9e7ec152f3e83fb05375eeac'
 OBSOLETE_NAMES = ('20261008-23','20261008-24')
 OBSOLETE_REFS = tuple('/opt/oasis/releases/'+name+'/RELEASE-MANIFEST.json' for name in OBSOLETE_NAMES)
@@ -186,12 +194,20 @@ def dependency_tree(p,release):
  return {'entries':len(result),'sha256':digest(canonical(result))}
 
 
+def runtime_controller_binding(args,members):
+ require(args.manifest_sha256==RUNTIME_MANIFEST and args.source_commit==RUNTIME_SOURCE_COMMIT
+         and members.get('platform/deploy/production-instance/upgrade-admission.py')==PACKAGED_CONTROLLER_SHA,
+         'ADMISSION_FROZEN_RUNTIME_CONTROLLER_OR_SOURCE_CHANGED')
+ return PACKAGED_CONTROLLER_SHA
+
+
 def load_bindings(args):
  require(Path(args.release)==TARGET and sha(args.manifest_sha256),'ADMISSION_TARGET_REQUIRED')
  old,oldpin=manifest_bytes(OLD,OLD_MANIFEST);new,newpin=manifest_bytes(TARGET,args.manifest_sha256)
  prefix='platform/deploy/production-instance/'
  require(all(old.get(prefix+name)==value for name,value in OLD_HELPERS.items()),'ADMISSION_ORIGINAL_SOURCE_CHANGED')
- require(new.get(prefix+'upgrade-admission.py')==args.controller_sha256,'ADMISSION_CONTROLLER_NOT_IN_TARGET')
+ packaged_sha=runtime_controller_binding(args,new)
+ _,packaged_pin=read_file(TARGET/(prefix+'upgrade-admission.py'),packaged_sha)
  p,ppin=module_bytes(TARGET/(prefix+'provision.py'),new[prefix+'provision.py']);p.Refusal=Refusal
  a,apin=module_bytes(TARGET/(prefix+'admission-runtime.py'),new[prefix+'admission-runtime.py'])
  ops,opin=module_bytes(TARGET/(prefix+'operations.py'),new[prefix+'operations.py'],inject={'p':p,'a':a},strip_loaders=True)
@@ -204,7 +220,8 @@ def load_bindings(args):
        str(TARGET/(prefix+'operations.py')):opin,str(OLD/(prefix+'provision.py')):oldppin,
        str(OLD/(prefix+'operations.py')):oldopin,str(TARGET/'platform/deploy/production-ingress.py'):ipin,
        str(TARGET/'platform/deploy/production-ingress-units.py'):upin,str(TARGET/'platform/deploy/retire-mock-sources.py'):rpin,
-       str(OLD/'RELEASE-MANIFEST.json'):oldpin,str(TARGET/'RELEASE-MANIFEST.json'):newpin}
+       str(OLD/'RELEASE-MANIFEST.json'):oldpin,str(TARGET/'RELEASE-MANIFEST.json'):newpin,
+       str(TARGET/(prefix+'upgrade-admission.py')):packaged_pin}
  p.verify_release(TARGET,args.manifest_sha256);p.verify_historical_release(OLD,OLD_MANIFEST,OLD_HELPERS)
  complete_members(p,TARGET,new);complete_members(p,OLD,old)
  dependencies=dependency_tree(p,OLD)
@@ -215,7 +232,9 @@ def load_bindings(args):
 
 def controller_guard(args, bindings):
  require(Path(__file__).absolute()==TOOL and sha(args.controller_sha256)
-         and re.fullmatch('[a-f0-9]{40}',args.source_commit or ''),'ADMISSION_CONTROLLER_LOCATION_OR_PROVENANCE_INVALID')
+         and args.source_commit==RUNTIME_SOURCE_COMMIT and args.manifest_sha256==RUNTIME_MANIFEST
+         and isinstance(args.controller_origin_commit,str) and re.fullmatch('[a-f0-9]{40}',args.controller_origin_commit),
+         'ADMISSION_CONTROLLER_LOCATION_OR_PROVENANCE_INVALID')
  body,identity=read_file(TOOL,args.controller_sha256,private=True)
  directory=pin(TOOL.parent)
  require(stat.S_ISDIR(directory['st_mode']) and directory['st_uid']==directory['st_gid']==0
@@ -223,6 +242,8 @@ def controller_guard(args, bindings):
  bindings.p.no_mount(TOOL.parent)
  require(all(pin(Path(path))==value for path,value in bindings.pins.items()),'ADMISSION_EXECUTING_HELPER_CHANGED')
  return {'tool_sha256':digest(body),'tool_pin':identity,'directory_pin':directory,'source_commit':args.source_commit,
+         'runtime_source_commit':args.source_commit,'controller_origin_commit':args.controller_origin_commit,
+         'packaged_controller_sha256':PACKAGED_CONTROLLER_SHA,
          'bindings':bindings.pins}
 
 
@@ -506,17 +527,92 @@ def source_entry(marker, release, manifest, helpers, profile, approvals):
          'runtime_profile':copy.deepcopy(profile),'policy_approvals':copy.deepcopy(approvals)}
 
 
-def consumer_guard(units):
- process=units['states']['oasis-production-api.service'].get('process')
- allowed={process['pid']} if process else set()
- for item in Path('/proc').iterdir():
-  if not item.name.isdecimal():continue
-  try:
-   status=(item/'status').read_text();uid=int(status.split('Uid:')[1].split()[0]);cwd=os.readlink(item/'cwd')
-  except FileNotFoundError:continue
-  except PermissionError:raise Refusal('ADMISSION_PROCESS_CONSUMER_UNREADABLE') from None
+def process_uids(status):
+ rows=[line.split()[1:] for line in status.splitlines() if line.startswith('Uid:')]
+ require(len(rows)==1 and len(rows[0])==4 and all(re.fullmatch('[0-9]+',value) for value in rows[0]),
+         'ADMISSION_PROCESS_UID_INVALID')
+ return [int(value) for value in rows[0]]
+
+
+def process_identity(item):
+ """A PID name never substitutes for a stable Linux process identity."""
+ try:
+  before=(item/'stat').read_text();fields=before.rsplit(')',1)[1].split()
+  require(before.split(' ',1)[0]==item.name and len(fields)>19 and re.fullmatch('[0-9]+',fields[1])
+          and re.fullmatch('[0-9]+',fields[19]),'ADMISSION_PROCESS_STAT_INVALID')
+  command=(item/'cmdline').read_bytes()
+  require(command.endswith(b'\0') and not b'\0\0' in command,'ADMISSION_PROCESS_ARGV_INVALID')
+  result={'pid':int(item.name),'ppid':int(fields[1]),'start_ticks':fields[19],
+          'uids':process_uids((item/'status').read_text()),'cwd':os.readlink(item/'cwd'),
+          'exe':os.readlink(item/'exe'),'argv':command[:-1].decode('utf-8').split('\0'),
+          'cgroup':(item/'cgroup').read_text()}
+  after=(item/'stat').read_text();after_fields=after.rsplit(')',1)[1].split()
+  require(after.split(' ',1)[0]==item.name and len(after_fields)>19
+          and (after_fields[1],after_fields[19])==(fields[1],fields[19]),
+          'ADMISSION_PROCESS_CHANGED_DURING_READ')
+  return result
+ except (OSError,ValueError,UnicodeError,IndexError):raise Refusal('ADMISSION_PROCESS_CONSUMER_UNREADABLE') from None
+
+
+def executable_guard(path,expected):
+ _,identity=read_file(path,expected,limit=256<<20)
+ require(identity['st_uid']==identity['st_gid']==0 and identity['st_nlink']==1
+         and stat.S_IMODE(identity['st_mode'])==0o755,'ADMISSION_PROCESS_EXECUTABLE_UNSAFE')
+ return identity
+
+
+def consumer_snapshot():
+ result={}
+ for item in PROC_ROOT.iterdir():
+  if not re.fullmatch('[1-9][0-9]*',item.name):continue
+  try:uids=process_uids((item/'status').read_text());cwd=os.readlink(item/'cwd')
+  except FileNotFoundError:continue # Unrelated processes may exit during enumeration.
+  except OSError:raise Refusal('ADMISSION_PROCESS_CONSUMER_UNREADABLE') from None
   own_source=any(cwd==str(release) or cwd.startswith(str(release)+'/') for release in (OLD,TARGET))
-  if uid==997 or own_source:require(int(item.name) in allowed,'ADMISSION_FOREIGN_SOURCE_OR_UID_CONSUMER')
+  if 997 in uids or own_source:
+   row=process_identity(item)
+   require(row['uids']==uids and row['cwd']==cwd,'ADMISSION_PROCESS_CHANGED_DURING_READ')
+   result[row['pid']]=row
+ return result
+
+
+def consumer_guard(units,release):
+ require(release in (OLD,TARGET),'ADMISSION_PROCESS_RELEASE_INVALID')
+ api=units['states']['oasis-production-api.service'];process=api.get('process')
+ if api.get('ActiveState')=='active':
+  require(isinstance(process,dict) and type(process.get('pid')) is int and process['pid']>0
+          and isinstance(process.get('start_ticks'),str) and re.fullmatch('[0-9]+',process['start_ticks'])
+          and process.get('uid')=='997' and process.get('cwd')==str(release/'platform')
+          and process.get('exe')==str(NODE_EXE),'ADMISSION_API_PROCESS_CHANGED')
+ else:require(not process and api.get('MainPID') in ('0',None),'ADMISSION_INACTIVE_API_HAS_PROCESS')
+ before=consumer_snapshot();executables={}
+ if process:
+  main=before.get(process['pid'])
+  require(main is not None and main['start_ticks']==process['start_ticks'] and main['ppid']==1
+          and main['uids']==[997]*4 and main['cwd']==process['cwd'] and main['exe']==str(NODE_EXE)
+          and main['argv']==[str(NODE_EXE),'--import','tsx','server/index.mjs'] and main['cgroup']==API_CGROUP,
+          'ADMISSION_API_PROCESS_CHANGED')
+  executables[str(NODE_EXE)]=executable_guard(NODE_EXE,NODE_SHA)
+  esbuild=release/'platform/node_modules/@esbuild/linux-x64/bin/esbuild'
+  for pid,row in before.items():
+   if pid==main['pid']:continue
+   # EnginePool uses worker_threads, so no standalone Node descendant is valid.
+   require(row['uids']==[997]*4 and row['ppid']==main['pid'] and int(row['start_ticks'])>=int(main['start_ticks'])
+           and row['cwd']==main['cwd'] and row['cgroup']==main['cgroup'] and row['exe']==str(esbuild)
+           and row['argv']==[str(esbuild),'--service=0.28.2','--ping'],
+           'ADMISSION_FOREIGN_SOURCE_OR_UID_CONSUMER')
+   if str(esbuild) not in executables:executables[str(esbuild)]=executable_guard(esbuild,ESBUILD_SHA)
+ else:require(not before,'ADMISSION_FOREIGN_SOURCE_OR_UID_CONSUMER')
+ for pid,row in before.items():
+  try:mapped=os.stat(PROC_ROOT/str(pid)/'exe')
+  except OSError:raise Refusal('ADMISSION_PROCESS_CHANGED_DURING_READ') from None
+  require(all(getattr(mapped,key)==executables[row['exe']][key] for key in
+              ('st_dev','st_ino','st_uid','st_gid','st_mode','st_nlink','st_size','st_mtime_ns','st_ctime_ns')),
+          'ADMISSION_PROCESS_EXECUTABLE_MAPPING_CHANGED')
+ require(consumer_snapshot()==before,'ADMISSION_PROCESS_CHANGED_DURING_READ')
+ require(all(executable_guard(Path(path),identity['sha256'])==identity for path,identity in executables.items()),
+         'ADMISSION_PROCESS_EXECUTABLE_CHANGED')
+ return {'processes':[before[pid] for pid in sorted(before)],'executables':executables}
 
 
 def source_history_guard(marker, bindings):
@@ -683,7 +779,8 @@ class Controller:
   if api.get('ActiveState')=='active':
    require(process.get('uid')=='997' and process.get('cwd')==str(release/'platform')
            and process.get('exe')=='/usr/bin/node','ADMISSION_API_PROCESS_CHANGED')
-  return {'files':files,'states':states}
+  units={'files':files,'states':states}
+  return {**units,'consumers':consumer_guard(units,release)}
 
  def scope(self, *, public_expected=None, require_active=True):
   source=self.source_guard()
@@ -701,7 +798,6 @@ class Controller:
           'ADMISSION_GENERIC_GATE_OR_ORIGIN_CHANGED')
   require(profile['profile']=='closed' or profile['app_id']==self.args.app_id,'ADMISSION_CONFIG_APP_CHANGED')
   units=self.installed_units(marker)
-  consumer_guard(units)
   if require_active:require(units['states']['oasis-production-api.service']['ActiveState']=='active','ADMISSION_API_NOT_ACTIVE')
   bootstrap_raw,bootstrap_pin=read_file(self.p.PRIVATE/'bootstrap.json',private=True)
   bootstrap=json.loads(bootstrap_raw)
@@ -749,7 +845,8 @@ class Controller:
   else:require(before['runtime_profile']['profile']=='firstparty-free-v1','ADMISSION_APPROVED_PROFILE_REQUIRED')
   return {'schema':1,'kind':'production-admission-audit','passed':True,'at':utcnow(),'action':self.args.action,
           'scope_kind':'source-upgrade' if self.args.action=='upgrade' else 'firstparty-free-only',
-          'tool_sha256':self.args.controller_sha256,'source_commit':self.args.source_commit,'release':str(TARGET),
+          'tool_sha256':self.args.controller_sha256,'source_commit':self.args.source_commit,
+          'runtime_source_commit':self.args.source_commit,'controller_origin_commit':self.args.controller_origin_commit,'release':str(TARGET),
           'manifest_sha256':self.args.manifest_sha256,'app_id':self.args.app_id,'state':before,'database':data,
           'locks':self.locks,
           'capacity':capacity,
@@ -764,7 +861,8 @@ class Controller:
   actual=self.audit()
   require(stable_capsule(actual)==stable_capsule(original),'ADMISSION_AUDIT_STATE_CHANGED')
   return {'schema':1,'kind':'production-admission-check','passed':True,'at':utcnow(),'action':self.args.action,
-          'tool_sha256':self.args.controller_sha256,'source_commit':self.args.source_commit,'release':str(TARGET),
+          'tool_sha256':self.args.controller_sha256,'source_commit':self.args.source_commit,
+          'runtime_source_commit':self.args.source_commit,'controller_origin_commit':self.args.controller_origin_commit,'release':str(TARGET),
           'manifest_sha256':self.args.manifest_sha256,'audit_sha256':digest(audit_raw),'audit_pin':audit_pin,
           'approval_sha256':digest(proof_raw),'approval_pin':proof_pin,'approval':approval,'audit':actual}
 
@@ -798,7 +896,9 @@ class Controller:
        'action':self.args.action,'scope_kind':self.capsule['approval']['scope_kind'],
        'check_sha256':self.args.check_sha256,'audit_sha256':self.args.audit_sha256,
        'approval_sha256':self.args.approval_sha256,'controller_sha256':self.args.controller_sha256,
-       'source_commit':self.args.source_commit,'target_release':str(TARGET),
+       'source_commit':self.args.source_commit,'runtime_source_commit':self.args.source_commit,
+       'controller_origin_commit':self.args.controller_origin_commit,'packaged_controller_sha256':PACKAGED_CONTROLLER_SHA,
+       'target_release':str(TARGET),
        'target_manifest_sha256':self.args.manifest_sha256,'container_id':CID,'owner':OWNER,'network_id':NETWORK,
        'history':[],'original':current,
        'acceptance_scope':'This operation grants neither financial nor paid/probability/third-party/performance/device admission.'}
@@ -1043,7 +1143,7 @@ class Controller:
 def parser():
  value=argparse.ArgumentParser(description=__doc__)
  value.add_argument('mode',choices=('audit','check','apply'));value.add_argument('--action',choices=ACTIONS,required=True)
- for name in ('release','manifest-sha256','controller-sha256','source-commit','app-id','origin',
+ for name in ('release','manifest-sha256','controller-sha256','source-commit','controller-origin-commit','app-id','origin',
               'protected-inventory','protected-inventory-sha256'):value.add_argument('--'+name,required=True)
  for name in ('audit','audit-sha256','approval','approval-sha256','check','check-sha256'):value.add_argument('--'+name)
  for name in ('source-audit','archive-proof','archive-review','retirement-check','retirement-receipt'):

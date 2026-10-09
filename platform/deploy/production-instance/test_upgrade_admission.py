@@ -12,6 +12,7 @@ import tarfile
 import tempfile
 import types
 import unittest
+from contextlib import contextmanager,ExitStack
 from unittest.mock import Mock,patch
 
 HERE=Path(__file__).resolve().parent
@@ -26,7 +27,7 @@ M='a'*64
 
 def args(action='upgrade'):
  return types.SimpleNamespace(action=action,release=str(u.TARGET),manifest_sha256=M,
-        controller_sha256='b'*64,source_commit='c'*40,app_id='app_fixture_actual',
+        controller_sha256='b'*64,source_commit='c'*40,controller_origin_commit='e'*40,app_id='app_fixture_actual',
         origin='https://isolated.example.test',capacity_budget_bytes=1<<30)
 
 def db(action='upgrade'):
@@ -135,6 +136,31 @@ class FileContracts(unittest.TestCase):
 
 
 class LoaderContracts(unittest.TestCase):
+ def test_private_patch_never_changes_frozen_runtime_controller_or_commit(self):
+  aa=args();aa.manifest_sha256=u.RUNTIME_MANIFEST;aa.source_commit=u.RUNTIME_SOURCE_COMMIT
+  members={'platform/deploy/production-instance/upgrade-admission.py':u.PACKAGED_CONTROLLER_SHA}
+  self.assertNotEqual(aa.controller_sha256,u.PACKAGED_CONTROLLER_SHA)
+  self.assertEqual(u.runtime_controller_binding(aa,members),u.PACKAGED_CONTROLLER_SHA)
+  for changed in ('manifest_sha256','source_commit'):
+   bad=copy.copy(aa);setattr(bad,changed,'f'*(64 if changed=='manifest_sha256' else 40))
+   with self.assertRaisesRegex(u.Refusal,'FROZEN_RUNTIME'):u.runtime_controller_binding(bad,members)
+  with self.assertRaisesRegex(u.Refusal,'FROZEN_RUNTIME'):
+   u.runtime_controller_binding(aa,{next(iter(members)):aa.controller_sha256})
+
+ def test_private_controller_origin_is_explicit_separate_and_capsule_bound(self):
+  aa=args();aa.manifest_sha256=u.RUNTIME_MANIFEST;aa.source_commit=u.RUNTIME_SOURCE_COMMIT
+  with patch.object(u,'__file__',str(u.TOOL)),patch.object(u,'read_file',return_value=(b'private version',{'synthetic':True})), \
+       patch.object(u,'pin',return_value={'st_mode':stat.S_IFDIR|0o700,'st_uid':0,'st_gid':0}):
+   result=u.controller_guard(aa,types.SimpleNamespace(p=types.SimpleNamespace(no_mount=lambda path:None),pins={}))
+   self.assertEqual(result['runtime_source_commit'],u.RUNTIME_SOURCE_COMMIT)
+   self.assertEqual(result['controller_origin_commit'],aa.controller_origin_commit)
+   self.assertEqual(result['packaged_controller_sha256'],u.PACKAGED_CONTROLLER_SHA)
+   for origin in ('','unknown','f'*39,'F'*40,True):
+    aa.controller_origin_commit=origin
+    with self.assertRaises(u.Refusal):u.controller_guard(aa,types.SimpleNamespace())
+  first={'controller_origin_commit':'a'*40};second={'controller_origin_commit':'b'*40}
+  self.assertNotEqual(u.stable_capsule(first),u.stable_capsule(second))
+
  def test_real_current_operations_imports_verified_modules_without_loader_reads(self):
   p=types.SimpleNamespace(DATABASE='oasis_production',PRIVATE=Path('/isolated'),Refusal=u.Refusal)
   path=HERE/'operations.py';body=path.read_bytes()
@@ -155,6 +181,178 @@ class LoaderContracts(unittest.TestCase):
   with tempfile.TemporaryDirectory() as directory:
    file=Path(directory).resolve()/'helper.py';file.write_text('raise AssertionError("must not execute")\n')
    with self.assertRaisesRegex(u.Refusal,'LOADER_SHAPE'):u.module_bytes(file,u.digest(file.read_bytes()),inject={'p':object()},strip_loaders=True)
+
+
+@contextmanager
+def process_fixture(release_name='old'):
+ """Synthetic /proc files and real executable inodes, not a live approval."""
+ with tempfile.TemporaryDirectory() as directory:
+  root=Path(directory).resolve();proc=root/'proc';proc.mkdir();old=root/'03';target=root/'04'
+  for release in (old,target):(release/'platform/node_modules/@esbuild/linux-x64/bin').mkdir(parents=True)
+  release=old if release_name=='old' else target
+  node=root/'node';node.write_bytes(b'isolated owned Node');node.chmod(0o755)
+  esbuild=release/'platform/node_modules/@esbuild/linux-x64/bin/esbuild';esbuild.write_bytes(b'isolated esbuild');esbuild.chmod(0o755)
+  def write(pid,ppid=1,start='100',exe=None,cwd=None,uids=None,argv=None,cgroup=u.API_CGROUP):
+   item=proc/str(pid);item.mkdir(exist_ok=True);exe=exe or node;cwd=cwd or release/'platform'
+   fields=['S',str(ppid)]+['0']*18;fields[19]=str(start)
+   (item/'stat').write_text(str(pid)+' (isolated process) '+' '.join(fields)+'\n')
+   (item/'status').write_text('Name:\tisolated\nUid:\t'+'\t'.join(str(x) for x in (uids or [997]*4))+'\n')
+   (item/'cmdline').write_bytes(('\0'.join(argv or [str(node),'--import','tsx','server/index.mjs'])+'\0').encode())
+   (item/'cgroup').write_text(cgroup)
+   for name,to in [('cwd',cwd),('exe',exe)]:
+    path=item/name
+    if os.path.lexists(path):path.unlink()
+    path.symlink_to(to)
+   return item
+  write(101)
+  for pid in (102,103):write(pid,ppid=101,start=str(pid),exe=esbuild,argv=[str(esbuild),'--service=0.28.2','--ping'])
+  units={'states':{'oasis-production-api.service':{'ActiveState':'active','MainPID':'101',
+      'process':{'pid':101,'start_ticks':'100','cwd':str(release/'platform'),'exe':str(node),'uid':'997'}}}}
+  original_read=u.read_file;original_stat=u.os.stat
+  def bound(path,*aa,**kw):
+   body,identity=original_read(path,*aa,**kw)
+   if Path(path) in (node,esbuild):identity={**identity,'st_uid':0,'st_gid':0}
+   return body,identity
+  def mapped(path,*aa,**kw):
+   value=original_stat(path,*aa,**kw)
+   if Path(path).parent.parent==proc and Path(path).name=='exe':
+    return types.SimpleNamespace(**{key:(0 if key in ('st_uid','st_gid') else getattr(value,key)) for key in
+        ('st_dev','st_ino','st_uid','st_gid','st_mode','st_nlink','st_size','st_mtime_ns','st_ctime_ns')})
+   return value
+  with ExitStack() as stack:
+   for name,value in {'OLD':old,'TARGET':target,'PROC_ROOT':proc,'NODE_EXE':node,
+                      'NODE_SHA':u.digest(node.read_bytes()),'ESBUILD_SHA':u.digest(esbuild.read_bytes())}.items():
+    stack.enter_context(patch.object(u,name,value))
+   stack.enter_context(patch.object(u,'read_file',side_effect=bound));stack.enter_context(patch.object(u.os,'stat',side_effect=mapped))
+   yield types.SimpleNamespace(root=root,proc=proc,release=release,node=node,esbuild=esbuild,write=write,units=units)
+
+
+class ConsumerContracts(unittest.TestCase):
+ def test_both_sources_accept_only_actual_main_and_two_direct_esbuild_helpers(self):
+  for source in ('old','target'):
+   with self.subTest(source=source),process_fixture(source) as f:
+    proof=u.consumer_guard(f.units,f.release)
+    self.assertEqual([row['pid'] for row in proof['processes']],[101,102,103])
+    self.assertEqual(proof['processes'][1]['ppid'],101)
+    self.assertEqual(set(proof['executables']),{str(f.node),str(f.esbuild)})
+
+ def test_main_api_without_helpers_is_valid_and_inactive_has_no_consumers(self):
+  with process_fixture() as f:
+   for pid in (102,103):shutil.rmtree(f.proc/str(pid))
+   self.assertEqual(len(u.consumer_guard(f.units,f.release)['processes']),1)
+   f.units['states']['oasis-production-api.service']={'ActiveState':'inactive','MainPID':'0'}
+   with self.assertRaisesRegex(u.Refusal,'FOREIGN_SOURCE'):u.consumer_guard(f.units,f.release)
+   shutil.rmtree(f.proc/'101');self.assertEqual(u.consumer_guard(f.units,f.release)['processes'],[])
+
+ def test_foreign_uid_source_cgroup_parent_exe_and_arguments_all_refused(self):
+  for change in ('foreign-cwd','other-source','uid','saved-uid','cgroup','parent','older','node','version','extra','unrelated-node'):
+   with self.subTest(change=change),process_fixture() as f:
+    values={'ppid':101,'start':'102','exe':f.esbuild,'argv':[str(f.esbuild),'--service=0.28.2','--ping']}
+    if change=='foreign-cwd':values['cwd']=f.root
+    elif change=='other-source':values['cwd']=u.TARGET/'platform'
+    elif change=='uid':values['uids']=[0]*4
+    elif change=='saved-uid':values['uids']=[997,997,0,997]
+    elif change=='cgroup':values['cgroup']='0::/system.slice/foreign.service\n'
+    elif change=='parent':values['ppid']=103
+    elif change=='older':values['start']='99'
+    elif change=='node':values.update(exe=f.node,argv=[str(f.node),'server/pvp/engine-worker.mjs'])
+    elif change=='version':values['argv']=[str(f.esbuild),'--service=9.9.9','--ping']
+    elif change=='extra':values['argv'].append('--foreign')
+    elif change=='unrelated-node':values.update(exe=f.node,ppid=1,argv=[str(f.node),'foreign.mjs'])
+    f.write(102,**values)
+    with self.assertRaisesRegex(u.Refusal,'FOREIGN_SOURCE'):u.consumer_guard(f.units,f.release)
+
+ def test_actual_thread_worker_contract_does_not_authorize_a_separate_node_pid(self):
+  code=(HERE/'../../server/pvp/engine-pool.mjs').resolve().read_text()
+  self.assertIn("import {Worker} from 'node:worker_threads'",code)
+  self.assertIn('new Worker(workerUrl,{execArgv:[]})',code)
+  self.assertNotIn('child_process',code)
+  with process_fixture() as f:
+   f.write(104,ppid=101,start='104',exe=f.node,argv=[str(f.node),'server/pvp/engine-worker.mjs'])
+   with self.assertRaisesRegex(u.Refusal,'FOREIGN_SOURCE'):u.consumer_guard(f.units,f.release)
+
+ def test_stale_main_start_identity_fake_pid_parent_or_command_is_refused(self):
+  for change in ('start','pid','parent','argv','uids','cgroup'):
+   with self.subTest(change=change),process_fixture() as f:
+    if change=='start':f.units['states']['oasis-production-api.service']['process']['start_ticks']='99'
+    elif change=='pid':f.units['states']['oasis-production-api.service']['process']['pid']=100
+    else:
+     fields={'ppid':1}
+     if change=='parent':fields['ppid']=2
+     elif change=='argv':fields['argv']=[str(f.node),'--import','tsx','foreign.mjs']
+     elif change=='uids':fields['uids']=[997,0,997,997]
+     elif change=='cgroup':fields['cgroup']='0::/system.slice/foreign.service\n'
+     f.write(101,**fields)
+    with self.assertRaisesRegex(u.Refusal,'API_PROCESS_CHANGED'):u.consumer_guard(f.units,f.release)
+
+ def test_pid_reuse_or_new_foreign_consumer_between_full_samples_is_refused(self):
+  for change in ('pid-reuse','new-process'):
+   with self.subTest(change=change),process_fixture() as f:
+    original=u.consumer_snapshot;count=0
+    def sample():
+     nonlocal count
+     result=original();count+=1
+     if count==1:
+      if change=='pid-reuse':f.write(102,ppid=101,start='999',exe=f.esbuild,argv=[str(f.esbuild),'--service=0.28.2','--ping'])
+      else:f.write(104,ppid=1,start='104',argv=[str(f.node),'foreign.mjs'])
+     return result
+    with patch.object(u,'consumer_snapshot',side_effect=sample),self.assertRaisesRegex(u.Refusal,'PROCESS_CHANGED'):
+     u.consumer_guard(f.units,f.release)
+
+ def test_cpu_stat_changes_are_not_mistaken_for_pid_reuse(self):
+  with process_fixture() as f:
+   original=Path.read_text;count=0
+   def read(path,*aa,**kw):
+    nonlocal count
+    body=original(path,*aa,**kw)
+    if path==f.proc/'101/stat':
+     count+=1;fields=body.rsplit(')',1)[1].split();fields[11]=str(count)
+     return body.rsplit(')',1)[0]+') '+' '.join(fields)+'\n'
+    return body
+   with patch.object(Path,'read_text',autospec=True,side_effect=read):self.assertEqual(len(u.consumer_guard(f.units,f.release)['processes']),3)
+
+ def test_changed_executable_mode_body_link_or_mapped_inode_is_refused(self):
+  for change in ('mode','body','hardlink','mapped-inode','replace-after-read'):
+   with self.subTest(change=change),process_fixture() as f:
+    if change=='mode':f.esbuild.chmod(0o775)
+    elif change=='body':f.esbuild.write_bytes(b'foreign body')
+    elif change=='hardlink':os.link(f.esbuild,f.root/'external-link')
+    elif change=='mapped-inode':
+     original=u.os.stat
+     def mapped(path,*aa,**kw):
+      value=original(path,*aa,**kw)
+      if Path(path)==f.proc/'102/exe':value=copy.copy(value);value.st_ino+=1
+      return value
+     with patch.object(u.os,'stat',side_effect=mapped),self.assertRaisesRegex(u.Refusal,'MAPPING_CHANGED'):
+      u.consumer_guard(f.units,f.release)
+     continue
+    elif change=='replace-after-read':
+     original=u.consumer_snapshot;count=0
+     def sample():
+      nonlocal count
+      value=original();count+=1
+      if count==2:
+       body=f.esbuild.read_bytes();f.esbuild.unlink();f.esbuild.write_bytes(body);f.esbuild.chmod(0o755)
+      return value
+     with patch.object(u,'consumer_snapshot',side_effect=sample),self.assertRaisesRegex(u.Refusal,'EXECUTABLE_CHANGED'):
+      u.consumer_guard(f.units,f.release)
+     continue
+    with self.assertRaises(u.Refusal):u.consumer_guard(f.units,f.release)
+
+ def test_foreign_consumer_refusal_precedes_actual_owned_unit_stop(self):
+  controller=object.__new__(u.Controller);controller.b=types.SimpleNamespace(oldp=None,
+      ingress=types.SimpleNamespace(configurations=lambda binding:{'/etc/systemd/system/cert.service':'expected','/etc/systemd/system/cert.timer':'expected'}),
+      units=types.SimpleNamespace(UNIT_NAMES=('cert.service','cert.timer'),namespace_guard=lambda *aa,**kw:None,loaded_guard=lambda *aa,**kw:None))
+  names=('oasis-production-api.service','backup.timer','backup.service','monitor.timer','monitor.service')
+  controller.p=types.SimpleNamespace(unit_templates=lambda *aa:dict.fromkeys(names,'expected'),unit_namespace_guard=lambda templates:None,
+      expected_commands=lambda body:{},UNITS=names)
+  controller.runtime=types.SimpleNamespace(service=lambda name:{'FragmentPath':'/etc/systemd/system/'+name,'DropInPaths':'','NeedDaemonReload':'no','ActiveState':'inactive','MainPID':'0'},
+      loaded_commands=lambda name:{},command=Mock())
+  controller.fresh=Mock();controller.event=Mock()
+  with patch.object(u,'pin',return_value={'st_uid':0,'st_gid':0,'st_mode':stat.S_IFREG|0o644,'sha256':u.digest(b'expected')}), \
+       patch.object(u,'consumer_guard',side_effect=u.Refusal('ADMISSION_FOREIGN_SOURCE_OR_UID_CONSUMER')), \
+       self.assertRaisesRegex(u.Refusal,'FOREIGN_SOURCE'):controller.stop_writers({'release':str(u.TARGET),'manifest_sha256':M})
+  controller.runtime.command.assert_not_called();controller.fresh.assert_not_called()
 
 
 class RuntimeContracts(unittest.TestCase):

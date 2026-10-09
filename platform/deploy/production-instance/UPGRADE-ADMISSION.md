@@ -9,10 +9,21 @@ financial, paid, probability, third-party, performance, or device admission.
 Deploy the controller separately at
 `/opt/oasis/private/production-admission-20261010/upgrade-admission.py`, with
 root ownership, mode 0600 and a root-owned 0700 parent. Invoke it with the
-absolute `/usr/bin/python3 -I -B`. Its bytes must also be present in the 04
-manifest; provide the external controller SHA and the independently recorded
-master source commit. Neither a local fixture nor an arbitrary file location
-can pass an actual controller check.
+absolute `/usr/bin/python3 -I -B`. This privately deployed controller revision
+is separate from the immutable runtime package. The witnessed 04 manifest is
+`4b8c3b2820c271198563180983c72f25d088c63c872463704af632929adf3c0f`,
+its runtime source commit is
+`63e44d330cf09c60eab0a08c03150b5f38d26ea7`, and its original packaged
+controller remains byte for byte at SHA
+`9149342b52872518ff1372f398afa8d25526369820bc4fe6f4befa47281848c5`.
+The packaged controller is FD-pinned as historical runtime provenance, never
+rewritten to match this private correction. Supply the new private controller's
+external SHA and actual `--controller-origin-commit` separately; `--source-commit`
+continues to name the runtime commit. Audit, check and operation receipts record
+both identities. Neither a fixture nor an arbitrary file location passes an
+actual controller check. Preserve the old private controller, provenance and
+failed audit before replacing only the witnessed private tool and provenance;
+create fresh audit/proof/check evidence for the new version.
 
 ## Four independent actions
 
@@ -70,7 +81,7 @@ action's declared `scope_kind`, not formal launch acceptance:
   "audit_sha256": "<actual independently read audit SHA>",
   "release": "/opt/oasis/releases/20261010-04",
   "manifest_sha256": "<actual 04 manifest SHA>",
-  "source_commit": "<actual master commit>",
+  "source_commit": "<actual immutable runtime source commit>",
   "app_id": "<existing bootstrap App ID>",
   "scope": {
     "partner_id": "partner_oasis_platform",
@@ -106,7 +117,8 @@ Common arguments to all three modes:
 --release /opt/oasis/releases/20261010-04
 --manifest-sha256 ACTUAL_04_MANIFEST_SHA
 --controller-sha256 ACTUAL_CONTROLLER_SHA
---source-commit ACTUAL_MASTER_COMMIT
+--source-commit ACTUAL_IMMUTABLE_RUNTIME_COMMIT
+--controller-origin-commit ACTUAL_PRIVATE_CONTROLLER_ORIGIN_COMMIT
 --app-id ACTUAL_EXISTING_BOOTSTRAP_APP_ID
 --origin ACTUAL_PRODUCTION_HTTPS_ORIGIN
 --protected-inventory ROOT_REVIEWED_PROTECTED_INVENTORY_JSON
@@ -176,6 +188,22 @@ shared Nginx, retired Mock 410, and protected historical inventory remain
 bound. Capacity retains a minimum 1 GiB action budget plus the established
 3 GiB / 15% reserve.
 
+Every effective-unit check also samples all processes consuming either source
+or UID 997 twice. The main API must match the systemd MainPID/start ticks,
+four UID fields, exact Node command, source working directory and dedicated
+API cgroup. Only direct esbuild children of that same witnessed main identity
+are allowed: start ticks cannot precede the parent; all UIDs, cwd and cgroup
+must match; the exact source-local executable must be root-owned, single-link,
+mode 0755 with the witnessed SHA and mapped inode; arguments must be exactly
+`--service=0.28.2 --ping`. The system Node executable is likewise SHA/inode
+checked. Process identity and executable fingerprints must remain unchanged
+across both samples, including before any owned-unit stop/start. CPU counters
+are not process identity. An inactive API admits no remaining UID/source
+consumers. EnginePool uses `node:worker_threads` with `execArgv: []`; its workers
+share the API PID. No standalone Node child, arbitrary descendant, foreign
+source/cgroup or unknown executable is authorized. This gate does not kill
+normal esbuild processes to manufacture an empty consumer inventory.
+
 `release_history` has exactly one entry per source/manifest. Each entry binds
 helpers, all four private pins, inspection contract, public runtime profile and
 all real policy approval snapshots. `approve` adds the prior three-field
@@ -215,7 +243,13 @@ strict root-proof scope, closed/open/closed metadata, transaction ordering,
 source/proof preservation, no environment rewrite on close, cleanup failure
 separation, failure-after-completion, exact retired-source evidence, a third
 public pin omission, a false/partial retirement receipt, missing raw recovery
-pins, public/owned scope mixing and unknown cached `ExecStartPre`. An independent
+pins, public/owned scope mixing and unknown cached `ExecStartPre`. It also tests
+the exact main/esbuild contract in real temporary proc files and executable
+inodes for both sources, PID/start-tick reuse, wrong ancestor/UID/cwd/cgroup,
+changed argv/version, executable mutation/link/mapped-inode mismatch, inactive
+or extra consumers, legitimate CPU-stat changes, and refusal before systemctl
+stop. Private controller-origin evidence remains separate and cannot change
+the frozen runtime manifest, packaged-controller SHA or runtime commit. An independent
 owned-loopback PG run checks official schema snapshots, approve/open/close
 revisions and source/proof preservation, stale-revision rollback, and an actual
 accepted Golf BOT room: closing rejects new launch/room, preserves original
