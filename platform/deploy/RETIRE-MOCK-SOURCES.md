@@ -147,6 +147,11 @@ A mid-delete failure retains an honest `passed:false` report and the exact list
 of fully removed roots; recovery materials remain complete. Successful apply
 also verifies protected state and reports actual free bytes before/after.
 
+Loaded units include legal dash-leading names such as `-.mount`. The read-only
+`systemctl show` invocation places its fixed options first, then `--`, then every
+loaded unit operand. No mount/unit is dropped to bypass an argument-parser error;
+an obsolete-source reference from any such unit still refuses retirement.
+
 Later source upgrades must explicitly use this reviewed retirement receipt and
 complete archive proof to replace the two obsolete manifest references in a new
 protected inventory. The old historical inventory must not be edited or silently
@@ -196,12 +201,14 @@ new04 deployment or gameplay acceptance result.
 python3 -B deploy/test_retire_mock_sources.py
 ```
 
-These 23 tests use real temporary tar/gzip bodies, dependency links, checksums,
+These 24 tests use real temporary tar/gzip bodies, dependency links, checksums,
 directory/raw file FDs, same-byte replacements and contending original locks.
 They verify poisoned bytecode is ignored, exact raw AST loader closure, private
 parent identity, root independent archive review and the pure replacement chain.
 They also reject any wrong public ancestor path/UID/GID/mode/device/inode and
 missing/tampered original20 authority or retained protection.
+They inspect the collector's actual systemctl argument vector for `--` and
+`-.mount`, retain all other loaded names, and reject a reference from that mount.
 Root ownership, consumer/host services, Linux xattrs and external approval pins
 are explicitly modeled for macOS; remote snapshots used actual Linux inspection.
 They do not execute server deletion or prove production apply succeeded.

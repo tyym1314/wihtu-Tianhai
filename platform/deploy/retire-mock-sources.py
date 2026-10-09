@@ -290,7 +290,7 @@ def consumer_snapshot(runtime,roots,proc=Path('/proc'),config_roots=(Path('/etc/
     names=[row.split()[0] for row in loaded if row.split()]
     require(len(names)<=4096 and all(re.fullmatch(r'[A-Za-z0-9@_.:\\-]+',name) for name in names),'LOADED_UNIT_LIST_INVALID')
     if names:
-        state=runtime.command(['systemctl','show',*names,'--no-pager','--property=Id,ExecStartPre,ExecStart,ExecStartPost,ExecStop,ExecStopPost,WorkingDirectory,RootDirectory,FragmentPath,DropInPaths'])
+        state=runtime.command(['systemctl','show','--no-pager','--property=Id,ExecStartPre,ExecStart,ExecStartPost,ExecStop,ExecStopPost,WorkingDirectory,RootDirectory,FragmentPath,DropInPaths','--',*names])
         if references(state,roots):units.append('loaded-unit-reference')
     proxy=runtime.inspect('container','proxy-nginx')['Id']
     scan=runtime.command(['docker','exec',proxy,'sh','-c',"find /etc/nginx -type f -exec sh -c 'for path do grep -F -l -e /opt/oasis/releases/20261008-23 -e /opt/oasis/releases/20261008-24 \"$path\"; rc=$?; [ \"$rc\" -le 1 ] || exit \"$rc\"; done' sh {} +"])

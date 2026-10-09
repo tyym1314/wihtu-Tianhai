@@ -161,6 +161,33 @@ class LockAndDelete(LinuxXattrFixture):
             mutation.assert_not_called()
 
 class ConsumersAndAuthority(unittest.TestCase):
+    def test_systemctl_unit_operand_boundary_keeps_dash_mount_and_every_loaded_unit(self):
+        names=['-.mount','oasis-api.service',r'dev-disk-by\x2dUUID\x2dabc.device']
+        class Runtime:
+            def __init__(self,reference=False):self.reference=reference;self.show=[]
+            def command(self,args,**kw):
+                if args[:3]==['docker','container','ls']:return ''
+                if args[:2]==['systemctl','list-units']:return '\n'.join(name+' loaded active running' for name in names)
+                if args[:2]==['systemctl','show']:
+                    self.show.append(args)
+                    # Model CLI option parsing faithfully: a dash operand must
+                    # occur after --, never before options or without delimiter.
+                    if '--' not in args or args.index('--')!=4:raise AssertionError('unit interpreted as option')
+                    if args[2]!='--no-pager' or not args[3].startswith('--property='):raise AssertionError('fixed options missing')
+                    if args[5:]!=names:raise AssertionError('a loaded unit was skipped')
+                    return 'Id=-.mount\nWorkingDirectory=/opt/oasis/releases/20261008-24/platform\n' if self.reference else 'Id=-.mount\nWorkingDirectory=/\n'
+                if args[:2]==['docker','exec']:return ''
+                raise AssertionError(args)
+            def inspect(self,kind,name):return {'Id':'proxy','Mounts':[],'Config':{}}
+        with tempfile.TemporaryDirectory() as temp:
+            base=Path(temp);(base/'releases').mkdir();proc=base/'proc';proc.mkdir();roots=[Path('/opt/oasis/releases/'+name) for name in t.ALLOW]
+            for reference in (False,True):
+                runtime=Runtime(reference)
+                with patch.object(t,'BASE',base),patch.object(t,'process_consumers',return_value=[]):
+                    if reference:
+                        with self.assertRaisesRegex(t.Refusal,'HAS_CONSUMER'):t.consumer_snapshot(runtime,roots,proc,())
+                    else:self.assertEqual(t.consumer_snapshot(runtime,roots,proc,())['loaded_units'],[])
+                self.assertEqual(runtime.show[0][5:],names);self.assertIn('-.mount',runtime.show[0])
     def test_pure_replacement_requires_entire_external_receipt_check_recovery_chain(self):
         obsolete=[str(t.BASE/'releases'/name/'RELEASE-MANIFEST.json') for name in t.ALLOW]
         kept=[path for path in t.ORIGINAL_PATHS if path not in obsolete];original=str(t.ORIGINAL_INVENTORY_PATH)
