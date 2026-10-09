@@ -93,13 +93,22 @@ Manual root operations (all scope-bound to the installation marker, source manif
 
 Operations serialize on a private root-only lock. Restore checks every backup checksum, the exact three-member non-link private archive, production runtime/database/owner/container/source identity, schema/ledger scope invariants and actual backup-key decryption. Only the exact new root-owned drill DB/OID with zero consumers may be dropped; no `FORCE`, session termination, live-DB rename/drop or pre-existing drill adoption is used. The tool assumes host root/DB superuser is the trusted authority; it cannot promise protection against a malicious root changing resources between instructions.
 
-Runtime/master/operator pins intentionally remain frozen to this **closed** phase. Root's later controlled admission/origin/credential change must use independently reviewed fresh identity and acceptance evidence and update the associated pins through a separate scoped phase; editing the env alone makes future backup checks refuse. It is not safe to silently accept a new secret or point at a different database. Root owns staged HTTPS, real first-party account creation, zero-balance free-practice validation, stable-origin migration, physical Android/APK and actual funding/partner integration. Legacy probability games remain blocked by existing production math admission.
+Generic production admission remains disabled. A separately reviewed first-party free profile admits real players and zero-fee BOT practice for the eleven arena games; it does not approve transfers, paid rooms or probability games. Only the four scoped admission environment fields can change through the controlled phase. PostgreSQL, master-key and operator credential pins stay fixed; editing environment values alone cannot approve a policy or silently accept a different database.
+
+Closed schema1 backups retain their original five-helper source and inspection contract. Schema2 backups bind the six-helper source, actual runtime configuration and independently approved policy snapshots. Real players, sessions and completed free BOT rooms may be present; all pending obligations, financial balances and integrity errors must remain zero. The actual restored dump must pass its inspection independently of observations made before and after pg_dump.
+
+The root-approved installation history preserves source manifests and prior configurations. A closed-to-free configuration change retains the prior configuration in `configuration_history`; open/close transitions preserve all approved policy revisions. A backup can select an already approved historical configuration, but cannot approve itself. Android/APK, physical performance, probability math and actual partner funding remain separate acceptance gates.
 
 ## Local checks
 
 ```sh
 python3 -B platform/deploy/production-instance/test_production_instance.py
 node --test platform/deploy/production-instance/production-instance.test.mjs
+python3 -B platform/deploy/production-instance/test_admission_runtime.py
+python3 -B platform/deploy/production-instance/test_historical_source.py
+node --test platform/deploy/production-instance/production-admission-backup.test.mjs
 ```
 
 These are only local adversarial temp-FS/synthetic protocol/real encryption tests. They cover bind mounts, links/hardlinks, umask, foreign containers/volumes/networks, image/port/pin drift, requested-versus-actual Docker publication, exact bridge options, TCP refusal preventing mutations and socket cleanup, wrong runtime scope, Docker's observed Created metadata and strict pre-start exceptions, real dynamic-import exception classification, preserved primary/secondary failure receipts, restore interruption/unknown CREATE/foreign DB/active consumers/OID replacement, private archive rejection/cleanup, fresh checks, effective systemd commands/reference lifecycle, dedicated monitor dependencies, no seeded money and strict production master decryption. They do not run Docker, SSH, systemd, a browser, an API, or a production database.
+
+`production-admission-backup.integration.test.mjs` additionally uses an explicitly isolated loopback PostgreSQL database: official player registration and launch, all eleven free BOT room flows, durable Run input, actual pg_dump and restoration into another owned database. It checks roster/account/request relations and rejects altered profile, proof, balances and durable input. These local SQL/API tests do not certify the public deployment or physical-device performance.

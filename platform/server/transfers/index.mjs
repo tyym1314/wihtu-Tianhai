@@ -27,8 +27,11 @@ export async function migrateTransfers(pool){
 
 /** adapters is a trusted, code-reviewed registry, never request/config code.
  * No real partner protocol is assumed or registered by the service default. */
-export function createTransferService({pool,adapters={},environment='sandbox',timeoutMs=3000}={}){
- if(!pool||!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>10000)throw Error('INVALID_TRANSFER_SERVICE');
+export function createTransferService({pool,adapters={},environment='sandbox',timeoutMs=3000,admitNew}={}){
+ if(!pool||!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>10000||(admitNew!==undefined&&typeof admitNew!=='function'))throw Error('INVALID_TRANSFER_SERVICE');
+ // Financial admission is a trusted service dependency, never a request field
+ // or an environment switch. The shipped service has no admitted partner yet.
+ const newAdmission=admitNew||(()=>fail(403,'TRANSFER_ADMISSION_CLOSED'));
  const registry=new Map(Object.entries(adapters)),active=new Map(),physical=new Map();let recoveryTask=null,closed=false;
  const adapterFor=b=>{
   const a=registry.get(b.adapter_id);
@@ -60,6 +63,7 @@ export function createTransferService({pool,adapters={},environment='sandbox',ti
   return withTransferLedger(pool,s,tid,async c=>{
    const old=(await c.db.query('SELECT * FROM gp_transfers WHERE app_id=$1 AND request_id=$2',[app.id,requestId])).rows[0];
    if(old){await authorize(c.db,app,keyId,old.binding_id,old.direction);if(old.request_body!==raw)fail(409,'IDEMPOTENCY_CONFLICT');return publicOrder(old);}
+   await newAdmission(c.db,app);
    const account=(await c.db.query('SELECT * FROM gp_transfer_accounts WHERE id=$1 AND app_id=$2 FOR SHARE',[body.account_id,app.id])).rows[0];
    if(!account||!account.active||!account.verified_by||!account.proof||!Object.keys(account.proof).length)fail(403,'TRANSFER_ACCOUNT_UNVERIFIED');
    const b=await authorize(c.db,app,keyId,account.binding_id,body.direction,{admit:true});adapterFor(b);

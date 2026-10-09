@@ -17,7 +17,7 @@ before(async()=>{
  const scopeId=[fixture.app.partner_id,fixture.app.id,'production',fixture.app.wallet_scope_id,'COIN'].join(':');
  await fixture.pool.query("INSERT INTO gp_transfer_bindings(id,app_id,scope_id,issuer,merchant,adapter_id,config,approved_by) VALUES($1,$2,$3,'issuer','merchant','unconfigured','{}','synthetic_operator')",[binding,fixture.app.id,scopeId]);
  await fixture.pool.query("INSERT INTO gp_transfer_accounts(id,binding_id,app_id,player_id,external_user_id,partner_account,proof,verified_by,active) VALUES($1,$2,$3,$4,$5,'remote','{\"proof\":\"synthetic\"}','synthetic_operator',true)",[account,binding,fixture.app.id,player.id,mapped]);
- service=createTransferService({pool:fixture.pool,environment:'production'});
+ service=createTransferService({pool:fixture.pool,environment:'production',admitNew:async()=>{}});
  server=createServer(async(req,res)=>{try{const{raw,body}=await security.readBody(req);const app=await platform.authenticatePartner(req,raw,body);const result=await routeTransfers(service,app,req,req.url,{raw});security.send(res,result?.status||404,result?.body||{code:'NOT_FOUND'});}catch(e){security.send(res,e.status||500,{code:e.code||'INTERNAL_ERROR'});}});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));base='http://127.0.0.1:'+server.address().port;
 });
@@ -38,7 +38,7 @@ test('replayed network authentication nonce is rejected before intent handling',
 test('reviewed synthetic adapter over real authenticated HTTP exposes only the exact original receipt and reconcilable ledger',async()=>{
  await service.close();let calls=0;
  const adapter={idempotentReplay:true,authoritativeQuery:true,validateBinding:()=>true,submit:async h=>{calls++;return{...h.operation,body_sha256:h.body_sha256,state:'SUCCEEDED',transaction_id:'synthetic_'+h.operation.operation_id};},query:async()=>{throw Error('unexpected original-order query');}};
- service=createTransferService({pool:fixture.pool,environment:'production',adapters:{unconfigured:adapter}});
+ service=createTransferService({pool:fixture.pool,environment:'production',adapters:{unconfigured:adapter},admitNew:async()=>{}});
  await fixture.pool.query('UPDATE gp_transfer_bindings SET capabilities=$2 WHERE id=$1',[binding,{[key]:['IN','READ','RECONCILE']}]);
  const body={request_id:uid('request'),account_id:account,direction:'IN',amount_minor:'100',currency_id:'COIN'};
  const first=await fetch(base+'/v1/transfers',signed(body));assert.equal(first.status,202);const admitted=await first.json();assert.equal(calls,0);

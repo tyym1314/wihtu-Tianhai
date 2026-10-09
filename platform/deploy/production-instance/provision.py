@@ -40,7 +40,8 @@ RETIRE = BASE / 'private/mock-retirement-20261010/receipt.json'
 UNITS = ('oasis-production-db.service', 'oasis-production-api.service',
          'oasis-production-instance-backup.service', 'oasis-production-instance-backup.timer',
          'oasis-production-instance-monitor.service', 'oasis-production-instance-monitor.timer')
-HELPERS = ('provision.py', 'bootstrap.mjs', 'operations.py', 'inspect-backup.mjs', 'monitor.mjs')
+LEGACY_HELPERS = ('provision.py', 'bootstrap.mjs', 'operations.py', 'inspect-backup.mjs', 'monitor.mjs')
+HELPERS = (*LEGACY_HELPERS, 'admission-runtime.py')
 PUBLIC_UNITS = ('oasis-api.service', 'oasis-demo.service', 'nginx.service', 'oasis-production.service')
 REQUIRED_PINS = (
  '/opt/oasis/current', '/opt/oasis/private', '/opt/oasis/private/runtime.env',
@@ -368,7 +369,7 @@ def owned_namespace_free(runtime):
         s = runtime.service(unit)
         require(not s.get('FragmentPath') and not s.get('DropInPaths') and not int(s.get('MainPID') or 0), 'PRODUCTION_LOADED_UNIT_EXISTS')
 
-def verify_release(release, manifest_sha):
+def verified_release_members(release, manifest_sha, helper_names):
     require(re.fullmatch(r'/opt/oasis/releases/\d{8}-\d{2}', str(release)) and not release.is_symlink(), 'IMMUTABLE_RELEASE_REQUIRED')
     manifest = fingerprint(release / 'RELEASE-MANIFEST.json')
     require(manifest['sha256'] == manifest_sha, 'RELEASE_MANIFEST_CHANGED')
@@ -378,7 +379,8 @@ def verify_release(release, manifest_sha):
             for name,value in members.items()),'RELEASE_MANIFEST_MEMBER_INVALID')
     required = ['platform/server/index.mjs', 'platform/server/runtime-mode.mjs', 'platform/server/platform.mjs',
                 'platform/server/db.mjs', 'platform/server/schema.sql', 'platform/package-lock.json',
-                *['platform/deploy/production-instance/' + name for name in HELPERS]]
+                'platform/deploy/restore-drill.mjs',
+                *['platform/deploy/production-instance/' + name for name in helper_names]]
     # Verify every executable/schema/config source the listening backend may import.
     # Built media retains the root release/artifact verification; it is not rehashed each phase.
     required=list(set(required)|{name for name in members if name.startswith(('platform/server/','platform/shared/','src/','platform/arena/','platform/specs/'))
@@ -386,10 +388,34 @@ def verify_release(release, manifest_sha):
     for name in required:
         p = release / name
         require(name in members and fingerprint(p)['sha256'] == members[name], 'RELEASE_MEMBER_CHANGED')
+    require((release / 'platform/node_modules/tsx/dist/loader.mjs').is_file(), 'RELEASE_RUNTIME_DEPENDENCIES_MISSING')
+    return members
+
+def verify_release(release, manifest_sha):
+    members = verified_release_members(release, manifest_sha, HELPERS)
     here = Path(__file__).resolve().parent
     require(all(digest((here / name).read_bytes()) == members['platform/deploy/production-instance/' + name] for name in HELPERS), 'CONTROLLER_NOT_RELEASE_BOUND')
-    require((release / 'platform/node_modules/tsx/dist/loader.mjs').is_file(), 'RELEASE_RUNTIME_DEPENDENCIES_MISSING')
     return {'manifest_sha256': manifest_sha, 'helpers': {name: members['platform/deploy/production-instance/' + name] for name in HELPERS}}
+
+def verify_historical_release(release, manifest_sha, approved_helpers):
+    # The caller must obtain this exact closure from the independently approved
+    # installation history. A backup cannot supply its own approval or helpers.
+    require(isinstance(approved_helpers, dict)
+            and set(approved_helpers) in (set(LEGACY_HELPERS), set(HELPERS))
+            and all(isinstance(value, str) and re.fullmatch('[a-f0-9]{64}', value)
+                    for value in approved_helpers.values()), 'HISTORICAL_RELEASE_APPROVAL_INVALID')
+    members = verified_release_members(release, manifest_sha, tuple(approved_helpers))
+    require(all(members['platform/deploy/production-instance/' + name] == sha
+                for name, sha in approved_helpers.items()), 'HISTORICAL_HELPER_CLOSURE_CHANGED')
+    closure = ['platform/deploy/production-instance/inspect-backup.mjs',
+               'platform/deploy/restore-drill.mjs', 'platform/server/transfers/audit.mjs']
+    if set(approved_helpers) == set(HELPERS):
+        closure += ['platform/shared/games.mjs', 'platform/shared/run-practice-profiles.mjs',
+                    'platform/server/production-admission.mjs']
+    require(all(name in members and fingerprint(release / name)['sha256'] == members[name]
+                for name in closure), 'HISTORICAL_INSPECTION_IMPORT_CHANGED')
+    return {'manifest_sha256': manifest_sha, 'helpers': dict(approved_helpers),
+            'inspection_closure': {name: members[name] for name in closure}}
 
 class Provisioner:
     def __init__(self, args, runtime=None):

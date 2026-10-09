@@ -162,12 +162,21 @@ durable cross-system intent, idempotent authoritative query and reconciliation.
 
 ## Internal adapter interface
 
-`createTransferService({pool, adapters, environment, timeoutMs})` exposes
+`createTransferService({pool, adapters, environment, timeoutMs, admitNew})` exposes
 `create`, `read`, `advance`, `recoverPending`, `statement`, `state` and `close`.
 `adapters` is a trusted code registry, not dynamic code or an endpoint supplied by
 an HTTP caller. Every adapter must declare `idempotentReplay: true` and
 `authoritativeQuery: true`, implement synchronous `validateBinding(binding)`, and
 implement `submit(handle,{signal})` / `query(handle,{signal})`.
+
+New IN and OUT orders are closed by default (`TRANSFER_ADMISSION_CLOSED`),
+before account holds, new ledger entries or outbox creation. `admitNew(db, app)`
+is an optional trusted service dependency for a reviewed financial admission
+policy; request bodies, partner configuration and environment variables cannot
+supply it. The deployed API does not supply this dependency or register a real
+partner adapter. First-party free BOT practice does not approve money transfers.
+Exact accepted-request replay, reading and original-obligation recovery retain
+their original authentication, immutable binding and reconciliation checks.
 
 The deeply immutable handle has the pinned binding, original normalized operation,
 its raw bytes and SHA. The adapter maps the **actual agreed partner protocol** into

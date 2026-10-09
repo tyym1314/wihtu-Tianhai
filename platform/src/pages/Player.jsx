@@ -135,6 +135,7 @@ export default function Player(){
     {!metadata.admission_open&&<p className="player-notice" role="status">此应用暂未开放新游戏和注册。已有未完成对局的玩家可登录后恢复对局。</p>}
     {!session?<Credentials client={client} canRegister={metadata.admission_open} onLogin={login}/>:<>
      <p className="player-welcome">{session.player.username}，选择一款游戏开始。</p>
+     {metadata.free_training_only&&<p role="status">免费练习 · 对手为 BOT · 不扣金币</p>}
      <MoneyBalance wallet={wallet} loading={walletLoading} error={walletError} onRetry={()=>setWalletRevision(value=>value+1)}/>
      {changingPassword?<PasswordChange client={client} onCancel={()=>setChangingPassword(false)} onComplete={notice=>{setChangingPassword(false);setAccountNotice(notice);setSession(null);setRecoverable([]);setReauth(false);}}/>:<>
      <button disabled={busy} onClick={()=>{setAccountNotice('');setChangingPassword(true);}}>修改密码</button>

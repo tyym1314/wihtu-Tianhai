@@ -17,6 +17,7 @@ import {migrateWalletBindings} from './wallet-binding.mjs';
 import {routeIntegration} from './integration-routes.mjs';
 import {migrateIntegrationChecks,recoverIntegrationChecks} from './integration-checks.mjs';
 import {operationsStatus} from './operations-status.mjs';
+import {publicAdmissionStatus} from './admission-status.mjs';
 import {enginePoolStats,closeEnginePool} from './pvp/engine-pool.mjs';
 import {runtime,preflightRuntime,migrateRuntime,assertProductionAppReady} from './runtime-mode.mjs';
 import {migrateCredentials,routeCredentials} from './credentials.mjs';
@@ -56,7 +57,7 @@ async function adminRoutes(req,res,path,b){
       {request:async(url,{timeoutMs})=>{const r=await fetch(url,{signal:AbortSignal.timeout(timeoutMs),redirect:'error',cache:'no-store'});return{status:r.status,body:await r.json()};}});
     }catch{dependencies={status:'failed',codes:['DEPENDENCY_READ_FAILED']};}
     return send(res,200,{api:'ok',database:'ok',wallet:dependencies.status==='ok'?'ok':'unavailable',wallet_dependencies:dependencies,
-      engine_pool:enginePoolStats(),environment:runtime.environment,production_enabled:runtime.production&&runtime.admissionEnabled});
+      engine_pool:enginePoolStats(),environment:runtime.environment,production_enabled:runtime.production&&runtime.admissionEnabled,admission:await publicAdmissionStatus()});
   }
   if(path==='/api/admin/apps'&&req.method==='GET')return send(res,200,{apps:(await pool.query('SELECT * FROM gp_apps ORDER BY created_at')).rows});
   if(path==='/api/admin/apps'&&req.method==='POST'){if(Object.keys(b).some(k=>k!=='name'))fail(400,'INVALID_REQUEST');return send(res,201,await createApp(b.name));}
@@ -70,7 +71,7 @@ async function adminRoutes(req,res,path,b){
       if(b.game_ids!==undefined&&(!Array.isArray(b.game_ids)||b.game_ids.some(g=>!RELEASED_IDS.includes(g))||new Set(b.game_ids).size!==b.game_ids.length))fail(400,'INVALID_GAMES');
       if(b.math_profile!==undefined&&!['98','99'].includes(b.math_profile))fail(400,'INVALID_PROFILE');
       if(b.competitive_fee_bps!==undefined&&![300,500,800,1000].includes(b.competitive_fee_bps))fail(400,'INVALID_FEE');
-      const updated=await tx(async c=>{const locked=(await c.query('SELECT * FROM gp_apps WHERE id=$1 FOR UPDATE',[app.id])).rows[0];if(b.status==='active'||(locked.status==='active'&&(b.game_ids||b.math_profile)))await assertProductionAppReady(c,{...locked,...b});const changed=(await c.query('UPDATE gp_apps SET name=$1,status=$2,game_ids=$3,math_profile=$4,competitive_fee_bps=$6 WHERE id=$5 RETURNING *',[b.name?.trim()||locked.name,b.status||locked.status,JSON.stringify(b.game_ids||locked.game_ids),b.math_profile||locked.math_profile,app.id,b.competitive_fee_bps??locked.competitive_fee_bps])).rows[0];await audit(user.id,'app.configured',app.id,b,c);return changed;});return send(res,200,{app:updated});
+      const updated=await tx(async c=>{const locked=(await c.query('SELECT * FROM gp_apps WHERE id=$1 FOR UPDATE',[app.id])).rows[0];if(b.status==='active'||(locked.status==='active'&&(b.game_ids||b.math_profile)))await assertProductionAppReady(c,{...locked,...b},{intent:'activate'});const changed=(await c.query('UPDATE gp_apps SET name=$1,status=$2,game_ids=$3,math_profile=$4,competitive_fee_bps=$6 WHERE id=$5 RETURNING *',[b.name?.trim()||locked.name,b.status||locked.status,JSON.stringify(b.game_ids||locked.game_ids),b.math_profile||locked.math_profile,app.id,b.competitive_fee_bps??locked.competitive_fee_bps])).rows[0];await audit(user.id,'app.configured',app.id,b,c);return changed;});return send(res,200,{app:updated});
     }
   }
   if(path==='/api/admin/overview'&&req.method==='GET'){
@@ -122,6 +123,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
     const active=(await pool.query('SELECT r.id,r.game_id FROM pvp_active_users u JOIN pvp_rooms r ON r.id=u.room_id WHERE u.app_id=$1 AND u.external_user_id=$2',[s.app_id,s.external_user_id])).rows[0];
     let balance=null,balance_error=null;try{balance=await walletBalance(app,s.external_user_id);}catch(e){balance_error='BALANCE_UNAVAILABLE';}
     return send(res,200,{session_id:s.id,external_user_id:s.external_user_id,game_id:s.game_id,scope:scope(app),balance,balance_error,competitive_fee_bps:app.competitive_fee_bps,
+      ...(s.admission_profile==='firstparty-free-v1'?{admission_profile:s.admission_profile,admission_revision:String(s.admission_revision),free_training_only:true,financial_admission_enabled:false,allowed_room_modes:['bot-practice']}:{}),
       ...(s.game_id==='run'?{run_practice_input_protocol:RUN_PRACTICE_INPUT_PROTOCOL,run_practice_input_profiles:runPracticeProfileCapability(),run_practice_courses:runPracticeCourseCapability()}:{}),
       active_room_id:active?.game_id===s.game_id?active.id:null,other_active_game:active&&active.game_id!==s.game_id?active.game_id:null});
   }

@@ -41,7 +41,9 @@ before(async()=>{
  await migrateTransfers(pool);
 });
 after(async()=>{await Promise.all(services.map(s=>s.close()));await pool?.end();if(created){await dropOwnedTestDatabase(admin,name,{created});console.log(JSON.stringify({cleanup:'owned-transfer-database-removed',name}));}await admin?.end();if(scratch)await rm(scratch,{recursive:true,force:true});});
-function service(adapters={}){const s=createTransferService({pool,adapters,environment:'production'});services.push(s);return s;}
+// Explicitly admitted synthetic protocol in this loopback-only owned database.
+// The real service defaults to closed and never installs this test dependency.
+function service(adapters={},admitNew=async()=>{}){const s=createTransferService({pool,adapters,environment:'production',admitNew});services.push(s);return s;}
 function synthetic(){
  const records=new Map(),calls=[],behavior={lost:false,reject:false,pending:false,corrupt:false,transaction:null,wait:null};
  const result=(h,state='SUCCEEDED')=>({...h.operation,body_sha256:h.body_sha256,state,...(state==='SUCCEEDED'?{transaction_id:behavior.transaction||uid('external')}:{final:true,rejection_code:'DECLINED'})});
@@ -153,6 +155,18 @@ test('audit failure rolls back money and terminal receipt; later original query 
 test('pause rejects new admission but accepted replay, read and recovery preserve original obligation',async()=>{
  const f=await fixture(),body=f.body(),t=await f.create(body);await pool.query("UPDATE gp_transfer_bindings SET status='disabled' WHERE id=$1",[f.binding]);await pool.query("UPDATE gp_apps SET status='paused' WHERE id=$1",[f.app.id]);
  assert.equal((await f.create(body)).transfer_id,t.transfer_id);await assert.rejects(f.create(),{code:'TRANSFER_ADMISSION_CLOSED'});assert.equal((await f.api.read(f.app,t.transfer_id,{keyId:f.key})).state,'PENDING');assert.equal((await f.api.advance(t.transfer_id)).state,'SUCCEEDED');
+});
+test('default financial admission creates no money or outbox, while an accepted request can still replay and recover',async()=>{
+ const f=await fixture(),body=f.body(),accepted=await f.create(body);
+ const closed=createTransferService({pool,adapters:{synthetic:f.remote.adapter},environment:'production'});services.push(closed);
+ const tables=['gp_transfers','gp_transfer_outbox','wallet_ledger','wallet_transfer_clearing'];
+ const counts=async()=>Object.fromEntries(await Promise.all(tables.map(async name=>[name,(await pool.query(`SELECT count(*)::int AS n FROM ${name}`)).rows[0].n])));
+ const before=await counts(),balance=await f.balance(),calls=f.remote.calls.length;
+ for(const direction of ['IN','OUT'])await assert.rejects(f.create(f.body(direction,'1'),closed),{code:'TRANSFER_ADMISSION_CLOSED'});
+ assert.deepEqual(await counts(),before);assert.deepEqual(await f.balance(),balance);assert.equal(f.remote.calls.length,calls);
+ assert.equal((await f.create(body,closed)).transfer_id,accepted.transfer_id);
+ assert.equal((await closed.read(f.app,accepted.transfer_id,{keyId:f.key})).state,'PENDING');
+ assert.equal((await closed.advance(accepted.transfer_id)).state,'SUCCEEDED');await cleanAudit();
 });
 test('binding destination mutation blocks recovery without releasing or redirecting accepted money',async()=>{
  const f=await fixture(),t=await f.create();await pool.query("UPDATE gp_transfer_bindings SET merchant='changed' WHERE id=$1",[f.binding]);await assert.rejects(f.api.advance(t.transfer_id),{code:'TRANSFER_BINDING_CHANGED'});assert.equal(f.remote.calls.length,0);assert.equal((await f.balance()).credit_pending,'100');

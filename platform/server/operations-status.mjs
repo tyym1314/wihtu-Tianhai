@@ -2,6 +2,7 @@ import {readFile} from 'node:fs/promises';
 import {basename,isAbsolute,normalize} from 'node:path';
 import {runtime} from './runtime-mode.mjs';
 import {enginePoolStats} from './pvp/engine-pool.mjs';
+import {publicAdmissionStatus} from './admission-status.mjs';
 
 async function report(path){try{const raw=await readFile(path,'utf8');if(raw.length>262144)return null;return JSON.parse(raw);}catch{return null;}}
 const names=new Set(['database','api','wallet','ingress','demo','systemd','backup','disks','certificate','report_history']);
@@ -70,7 +71,7 @@ export async function operationsStatus(){
   report(process.env.OASIS_ANDROID_STATUS_FILE||'/opt/oasis/private/android-validation.json'),
  ]);
  const androidReport=publicAndroidReport(android,basename(release?.current||''));
- return {environment:runtime.environment,production_admission_enabled:runtime.production&&runtime.admissionEnabled,
+ return {environment:runtime.environment,production_admission_enabled:runtime.production&&runtime.admissionEnabled,admission:await publicAdmissionStatus(),
   monitor:publicMonitorReport(monitor,Date.now(),runtime.environment),
   release:release?{version:basename(release.current||''),previous:basename(release.previous||''),activated_at:release.activated_at,health:release.health}:null,
   engine_pool:enginePoolStats(),capacity:publicCapacityReport(capacity,basename(release?.current||'')),
