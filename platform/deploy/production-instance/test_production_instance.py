@@ -554,7 +554,9 @@ class RestoreCleanup(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);backup=root/'backup';backup.mkdir();(backup/'database.dump').write_bytes(b'PGDMPdata')
             marker={'release':str(root),'container_id':'c'*64,'owner':'a'*32,'manifest_sha256':'f'*64}
-            identity={'master_key_sha256':p.digest(b'x'*32)}
+            identity={'schema':1,'master_key_sha256':p.digest(b'x'*32),
+                      'approved_source':{'release':str(root),'manifest_sha256':'f'*64,
+                                         'inspection_contract':'production-closed-v1','inspection_closure':{}}}
             db_created=False
             def sql(runtime,mark,database,body):
                 nonlocal db_created
@@ -578,7 +580,8 @@ class RestoreCleanup(unittest.TestCase):
             def extract(archive,destination):
                 if archive_failure:raise o.p.Refusal('ARCHIVE_INVALID')
                 with patch.object(o.p.os,'fchown'):o.p.exclusive(destination,b'x'*32)
-            with patch.object(o,'owned_resources'),patch.object(o,'validate_backup',return_value=identity),patch.object(o,'extract_master',side_effect=extract),patch.object(o,'sql',side_effect=sql),patch.object(o.p,'PRIVATE',root),patch.object(o.p,'no_mount'),patch.object(o.p.os,'fchown'):
+            verified={'environment':'production','master_key_sha256':identity['master_key_sha256'],'audit':{'active_rooms':0}}
+            with patch.object(o,'owned_resources'),patch.object(o,'validate_backup',return_value=identity),patch.object(o,'extract_master',side_effect=extract),patch.object(o,'inspect_database',return_value=verified),patch.object(o,'sql',side_effect=sql),patch.object(o.p,'PRIVATE',root),patch.object(o.p,'no_mount'),patch.object(o.p.os,'fchown'):
                 result=o.restore(marker,backup,Runtime())
             return result,db_created
     def test_actual_restore_success_drops_own_oid(self):

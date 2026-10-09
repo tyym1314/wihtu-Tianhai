@@ -16,6 +16,12 @@ from contextlib import contextmanager
 
 spec=importlib.util.spec_from_file_location('oasis_provision',Path(__file__).with_name('provision.py'))
 p=importlib.util.module_from_spec(spec);spec.loader.exec_module(p)
+admission_spec=importlib.util.spec_from_file_location('oasis_admission_runtime',Path(__file__).with_name('admission-runtime.py'))
+a=importlib.util.module_from_spec(admission_spec);admission_spec.loader.exec_module(a)
+
+def contract(call,*args,**kwargs):
+    try:return call(*args,**kwargs)
+    except ValueError as error:raise p.Refusal(str(error)) from None
 
 def load_marker():
     marker=json.loads((p.PRIVATE/'installation.json').read_text())
@@ -104,15 +110,16 @@ def owned_resources(marker,runtime,*,created_prestart=False):
     env=p.parse_env(p.PRIVATE/'runtime.env')
     from urllib.parse import urlsplit,unquote
     url=urlsplit(env.get('OASIS_DATABASE_URL',''))
+    profile=contract(a.runtime_profile,env,expected_release=marker.get('release'),expected_manifest=marker.get('manifest_sha256'))
     p.require(env['OASIS_ENVIRONMENT']=='production' and env['OASIS_START_WALLET']=='0'
-              and env['OASIS_PRODUCTION_ADMISSION_ENABLED']=='0' and env['OASIS_PUBLIC_ORIGIN']==marker['origins'][0]
+              and env['OASIS_PUBLIC_ORIGIN']==marker['origins'][0]
               and env['OASIS_API_PORT']=='18891' and env['OASIS_LOCAL_DIR']==str(p.PRIVATE/'state')+'/'
               and url.scheme=='postgres' and url.hostname=='127.0.0.1' and url.port==18893 and url.path=='/'+p.DATABASE
               and unquote(url.username or '')==p.DB_APP and url.password and not url.query and not url.fragment,
               'PRODUCTION_RUNTIME_CONFIG_CHANGED')
     return {'container_id':cid,'volume':{'name':v['Name'],'created_at':v['CreatedAt'],'driver':v['Driver'],'options':v.get('Options')},
             'network_id':n['Id'],'image':c['Image'],'running':c['State']['Running'],
-            'created_prestart':created_prestart}
+            'created_prestart':created_prestart,'runtime_profile':profile}
 
 def sql(runtime,marker,database,body):
     p.require(database==p.DATABASE or re.fullmatch(r'oasis_prod_restore_\d{8}_[a-f0-9]{16}',database),'PRODUCTION_DATABASE_NAME_INVALID')
@@ -129,9 +136,67 @@ ARCHIVE_MEMBERS={'production-instance-private/state/master.key':'state/master.ke
                  'production-instance-private/postgres.env':'postgres.env'}
 BACKUP_FILES=('database.dump','private-config.tar.gz','release.txt','database-contents.txt','runtime-identity.json')
 
+def backup_source(marker,release,manifest,**selector):
+    source=contract(a.approved_source,marker,release,manifest,**selector)
+    verification=p.verify_historical_release(Path(release),manifest,source['helpers'])
+    p.require(verification['helpers']==source['helpers'] and verification.get('inspection_closure'),
+              'PRODUCTION_BACKUP_HELPER_CLOSURE_CHANGED')
+    return {**source,'inspection_closure':verification['inspection_closure']}
+
+def inspect_database(marker,runtime,database,source,master):
+    helper=Path(source['release'])/'platform/deploy/production-instance/inspect-backup.mjs'
+    p.require(p.fingerprint(helper)['sha256']==source['helpers']['inspect-backup.mjs'],'PRODUCTION_INSPECTION_HELPER_CHANGED')
+    expected=contract(a.inspection_expectation,source)
+    options={'input':json.dumps({'expected':expected})} if source['inspection_contract']=='production-free-v2' else {}
+    query=runtime.command(['/usr/bin/node',str(helper),'sql'],**options)
+    rows=[json.loads(row) for row in sql(runtime,marker,database,query).splitlines() if row.startswith('{')]
+    p.require(len(rows)==2 and rows[1].get('database')==database,'PRODUCTION_RESTORE_RESPONSE_INVALID')
+    payload={'data':rows[0],'identity':rows[1]}
+    if source['inspection_contract']=='production-free-v2':payload['expected']=expected
+    verified=json.loads(runtime.command(['/usr/bin/node',str(helper),'verify',str(master)],input=json.dumps(payload)))
+    p.require(verified['environment']=='production' and verified['master_key_sha256']==source['private_pins']['state/master.key']['sha256'],
+              'PRODUCTION_RESTORE_VERIFY_IDENTITY_INVALID')
+    p.require(isinstance(verified.get('audit'),dict) and verified['audit']
+              and all(type(value) is int and value==0 for value in verified['audit'].values()),
+              'PRODUCTION_RESTORE_PENDING_OBLIGATIONS')
+    if source['inspection_contract']=='production-free-v2':
+        p.require(verified.get('inspection_contract')==source['inspection_contract']
+                  and verified.get('profile_snapshot',{}).get('runtime_profile')==source['runtime_profile']
+                  and re.fullmatch('[a-f0-9]{64}',verified.get('profile_snapshot_sha256','')),
+                  'PRODUCTION_RESTORE_PROFILE_VERIFY_INVALID')
+    again=p.verify_historical_release(Path(source['release']),source['manifest_sha256'],source['helpers'])
+    p.require(again.get('inspection_closure')==source['inspection_closure'], 'PRODUCTION_INSPECTION_SOURCE_CHANGED')
+    return verified
+
+def archive_identity(archive,source,current_env):
+    """Return only public proof; archive bytes/secrets stay in this process."""
+    with tarfile.open(archive,'r:gz') as tar:
+        members=tar.getmembers();p.require(len(members)==3 and {member.name for member in members}==set(ARCHIVE_MEMBERS),
+                                        'PRODUCTION_BACKUP_PRIVATE_ARCHIVE_INVALID')
+        saved={}
+        for member in members:
+            private_name=ARCHIVE_MEMBERS[member.name];pin=source['private_pins'][private_name]
+            p.require(member.isfile() and member.mode==0o600 and 0<member.size<=16384
+                      and member.size==pin['bytes'] and member.uid==pin['uid'] and member.gid==pin['gid'],
+                      'PRODUCTION_BACKUP_PRIVATE_ARCHIVE_INVALID')
+            body=tar.extractfile(member).read();p.require(p.digest(body)==pin['sha256'],'PRODUCTION_BACKUP_ARCHIVED_CONFIG_CHANGED')
+            saved[private_name]=body
+        p.require(len(saved['state/master.key'])==32,'PRODUCTION_BACKUP_MASTER_INVALID')
+        env=contract(a.parse_env_text,saved['runtime.env'].decode('utf8'))
+        contract(a.archive_runtime,env,current_env,source['runtime_profile'])
+        postgres=contract(a.parse_env_text,saved['postgres.env'].decode('utf8'))
+        p.require(postgres.get('POSTGRES_USER')==p.DB_OWNER and postgres.get('POSTGRES_DB')==p.DATABASE
+                  and bool(postgres.get('POSTGRES_PASSWORD')),'PRODUCTION_ARCHIVE_POSTGRES_SCOPE_INVALID')
+        return {'master_key_sha256':p.digest(saved['state/master.key']),
+                'runtime_env_sha256':p.digest(saved['runtime.env']),'postgres_env_sha256':p.digest(saved['postgres.env']),
+                'runtime_profile':source['runtime_profile']}
+
 def backup(marker,runtime):
     resources=owned_resources(marker,runtime);p.require(resources['running'],'PRODUCTION_PG_NOT_RUNNING')
     identity=database_identity(marker,runtime)
+    source=backup_source(marker,marker['release'],marker['manifest_sha256'])
+    p.require(source['private_pins']==marker['private_pins'],'PRODUCTION_CURRENT_HISTORY_PINS_CHANGED')
+    before=inspect_database(marker,runtime,p.DATABASE,source,p.PRIVATE/'state/master.key')
     timestamp=dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     final=p.BACKUPS/timestamp
     backupdir=p.BACKUPS/('.building-'+timestamp+'-'+secrets.token_hex(8))
@@ -144,17 +209,26 @@ def backup(marker,runtime):
     p.exclusive(backupdir/'database.dump',dump)
     archive=backupdir/'private-config.tar.gz'
     with tarfile.open(archive,'x:gz') as tar:
-        for name,source in ARCHIVE_MEMBERS.items():
-            file=p.PRIVATE/source;meta=p.fingerprint(file)
+        for name,private_name in ARCHIVE_MEMBERS.items():
+            file=p.PRIVATE/private_name;meta=p.fingerprint(file)
             p.require(meta['mode']==0o600,'PRODUCTION_BACKUP_PRIVATE_MODE_INVALID')
             tar.add(file,arcname=name,recursive=False)
     os.chmod(archive,0o600)
     p.exclusive(backupdir/'release.txt',(marker['release']+'\n').encode())
     contents=runtime.command(['docker','exec','-i',marker['container_id'],'pg_restore','--list'],input=dump,binary=True,timeout=60)
     p.require(contents,'PRODUCTION_BACKUP_CONTENTS_EMPTY');p.exclusive(backupdir/'database-contents.txt',contents)
-    receipt={'schema':1,'at':p.now(),'environment':'production','database':p.DATABASE,**identity,
+    after=inspect_database(marker,runtime,p.DATABASE,source,p.PRIVATE/'state/master.key')
+    p.require(before.get('profile_snapshot_sha256')==after.get('profile_snapshot_sha256'),
+              'PRODUCTION_BACKUP_ADMISSION_CHANGED')
+    archived=archive_identity(archive,source,p.parse_env(p.PRIVATE/'runtime.env'))
+    receipt={'schema':2,'at':p.now(),'environment':'production','database':p.DATABASE,**identity,
              'owner':marker['owner'],'container_id':marker['container_id'],'release':marker['release'],
-             'manifest_sha256':marker['manifest_sha256'],'master_key_sha256':p.fingerprint(p.PRIVATE/'state/master.key')['sha256']}
+             'manifest_sha256':marker['manifest_sha256'],'master_key_sha256':p.fingerprint(p.PRIVATE/'state/master.key')['sha256'],
+             'inspection_contract':source['inspection_contract'],'helpers':source['helpers'],
+             'inspection_closure':source['inspection_closure'],'runtime_profile':source['runtime_profile'],
+             'archive_identity':archived,'profile_snapshot_sha256':after.get('profile_snapshot_sha256'),
+             'live_before':before,'live_after':after,
+             'snapshot_scope':'Live before/after observations are not the pg_dump snapshot; the restored dump must independently pass its bound inspection.'}
     p.exclusive(backupdir/'runtime-identity.json',p.canonical(receipt))
     checks=''.join(p.fingerprint(backupdir/name)['sha256']+'  '+name+'\n' for name in BACKUP_FILES)
     owned_resources(marker,runtime)
@@ -173,6 +247,9 @@ def validate_backup(marker,backupdir):
     p.no_mount(backupdir)
     s=backupdir.lstat();p.require(stat.S_ISDIR(s.st_mode) and s.st_uid==0 and stat.S_IMODE(s.st_mode)==0o700,'PRODUCTION_BACKUP_DIRECTORY_UNSAFE')
     p.require({x.name for x in backupdir.iterdir()}==set(BACKUP_FILES)|{'SHA256SUMS'},'PRODUCTION_BACKUP_UNKNOWN_MEMBER')
+    checksum_meta=p.fingerprint(backupdir/'SHA256SUMS')
+    p.require(checksum_meta['uid']==0 and checksum_meta['mode']==0o600 and checksum_meta['bytes']>0,
+              'PRODUCTION_BACKUP_CHECKSUM_FILE_UNSAFE')
     checks={}
     for row in (backupdir/'SHA256SUMS').read_text().splitlines():
         m=re.fullmatch('([a-f0-9]{64})  ([a-zA-Z0-9.-]+)',row)
@@ -182,10 +259,26 @@ def validate_backup(marker,backupdir):
     for name,expected in checks.items():
         meta=p.fingerprint(backupdir/name);p.require(meta['sha256']==expected and meta['mode']==0o600 and meta['uid']==0,'PRODUCTION_BACKUP_CHECKSUM_OR_MODE_INVALID')
     identity=json.loads((backupdir/'runtime-identity.json').read_text())
-    p.require(identity['environment']=='production' and identity['database']==p.DATABASE
+    p.require(identity.get('schema') in (1,2) and identity['environment']=='production' and identity['database']==p.DATABASE
               and identity['owner']==marker['owner'] and identity['container_id']==marker['container_id']
-              and identity['release']==marker['release'] and identity['manifest_sha256']==marker['manifest_sha256'],'PRODUCTION_BACKUP_IDENTITY_MISMATCH')
-    return identity
+              and identity['master_key_sha256']==marker['private_pins']['state/master.key']['sha256'],
+              'PRODUCTION_BACKUP_IDENTITY_MISMATCH')
+    p.require((backupdir/'release.txt').read_text()==identity['release']+'\n','PRODUCTION_BACKUP_RELEASE_FILE_CHANGED')
+    selector={}
+    if identity['schema']==2:
+        archived_selector=identity.get('archive_identity')
+        p.require(isinstance(archived_selector,dict),'PRODUCTION_BACKUP_CONFIGURATION_SELECTOR_REQUIRED')
+        selector={'runtime_env_sha':archived_selector.get('runtime_env_sha256'),
+                  'runtime_profile_selector':identity.get('runtime_profile')}
+    source=backup_source(marker,identity['release'],identity['manifest_sha256'],**selector)
+    archived=archive_identity(backupdir/'private-config.tar.gz',source,p.parse_env(p.PRIVATE/'runtime.env'))
+    p.require(archived['master_key_sha256']==identity['master_key_sha256'],'PRODUCTION_BACKUP_MASTER_MISMATCH')
+    if identity['schema']==1:p.require(source['inspection_contract']=='production-closed-v1','PRODUCTION_LEGACY_BACKUP_CONTRACT_CHANGED')
+    else:
+        p.require(identity.get('inspection_contract')==source['inspection_contract'] and identity.get('helpers')==source['helpers']
+                  and identity.get('inspection_closure')==source['inspection_closure'] and identity.get('runtime_profile')==source['runtime_profile']
+                  and identity.get('archive_identity')==archived,'PRODUCTION_BACKUP_PROFILE_OR_HELPER_CHANGED')
+    return {**identity,'approved_source':source}
 
 def extract_master(archive,destination):
     with tarfile.open(archive,'r:gz') as tar:
@@ -211,12 +304,11 @@ def restore(marker,backupdir,runtime):
         created_oid=sql(runtime,marker,p.DATABASE,f"SELECT oid FROM pg_database WHERE datname='{name}';").strip()
         p.require(re.fullmatch('[0-9]+',created_oid),'PRODUCTION_RESTORE_CREATE_UNCONFIRMED');result['cleanup']['database_created']=True
         runtime.command(['docker','exec','-i',marker['container_id'],'pg_restore','--exit-on-error','--single-transaction','--no-owner','--no-acl','-U',p.DB_OWNER,'-d',name],input=(backupdir/'database.dump').read_bytes(),binary=True,timeout=180)
-        helper=Path(marker['release'])/'platform/deploy/production-instance/inspect-backup.mjs'
-        inspect_sql=runtime.command(['/usr/bin/node',str(helper),'sql'])
-        rows=[json.loads(row) for row in sql(runtime,marker,name,inspect_sql).splitlines() if row.startswith('{')]
-        p.require(len(rows)==2 and rows[1].get('database')==name,'PRODUCTION_RESTORE_RESPONSE_INVALID')
-        verified=json.loads(runtime.command(['/usr/bin/node',str(helper),'verify',str(temporary/'master.key')],input=json.dumps({'data':rows[0],'identity':rows[1]})))
-        p.require(verified['environment']=='production' and verified['master_key_sha256']==identity['master_key_sha256'],'PRODUCTION_RESTORE_VERIFY_IDENTITY_INVALID')
+        source=identity['approved_source'];verified=inspect_database(marker,runtime,name,source,temporary/'master.key')
+        if identity['schema']==2:p.require(verified.get('profile_snapshot_sha256')==identity.get('profile_snapshot_sha256'),
+                                         'PRODUCTION_RESTORE_PROFILE_SNAPSHOT_CHANGED')
+        result.update(inspection_contract=source['inspection_contract'],source_release=source['release'],
+                      source_manifest_sha256=source['manifest_sha256'],inspection_closure=source['inspection_closure'])
         result['checks']=verified;result['passed']=True
     except Exception as error:
         result['error_code']=str(error) if isinstance(error,p.Refusal) else 'PRODUCTION_RESTORE_FAILED'
