@@ -19,6 +19,7 @@ import time
 import urllib.request
 import urllib.error
 import ssl
+import socket
 
 BASE = Path('/opt/oasis')
 PRIVATE = BASE / 'production-instance-private'
@@ -28,6 +29,8 @@ OWNER = 'oasis-prod'
 CONTAINER = 'oasis-production-postgres'
 VOLUME = 'oasis-production-pgdata'
 NETWORK = 'oasis-production-internal'
+NETWORK_OPTIONS = {'com.docker.network.bridge.host_binding_ipv4':'127.0.0.1'}
+PG_PORT_BINDINGS = {'5432/tcp':[{'HostIp':'127.0.0.1','HostPort':'18893'}]}
 DATABASE = 'oasis_production'
 DB_OWNER = 'oasis_prod_owner'
 DB_APP = 'oasis_prod_app'
@@ -61,6 +64,15 @@ class Refusal(Exception):
 def require(condition, code):
     if not condition:
         raise Refusal(code)
+
+def require_pg_host_tcp():
+    # Verify the same host endpoint used by Node, rather than a container socket
+    # or the temporary Unix-only server used by the PostgreSQL entrypoint.
+    try:
+        with socket.create_connection(('127.0.0.1',18893),timeout=3):
+            pass
+    except OSError:
+        raise Refusal('PRODUCTION_PG_HOST_TCP_NOT_READY') from None
 
 def digest(value):
     return hashlib.sha256(value).hexdigest()
@@ -589,7 +601,8 @@ class Provisioner:
         exclusive(PRIVATE / 'operator-credentials.json',canonical({'username':'operator','password':secrets.token_urlsafe(48)}))
         labels = ['--label',LABEL+'='+self.marker['owner']]
         self.runtime.command(['docker','volume','create',*labels,VOLUME])
-        self.runtime.command(['docker','network','create','--internal',*labels,NETWORK])
+        self.runtime.command(['docker','network','create','--driver','bridge','--opt',
+            'com.docker.network.bridge.host_binding_ipv4=127.0.0.1',*labels,NETWORK])
         cid = self.runtime.command(['docker','create','--name',CONTAINER,*labels,'--network',NETWORK,
             '--publish','127.0.0.1:18893:5432','--mount',f'type=volume,source={VOLUME},target=/var/lib/postgresql/data',
             '--env-file',str(PRIVATE / 'postgres.env'),'--memory','1g','--cpus','2','--pids-limit','256',
@@ -605,7 +618,7 @@ class Provisioner:
         self.fresh(created_prestart=True); self.runtime.command(['docker','start',cid])
         for _ in range(30):
             try:
-                self.runtime.command(['docker','exec',cid,'pg_isready','-U',DB_OWNER,'-d',DATABASE]);break
+                self.runtime.command(['docker','exec',cid,'pg_isready','-h','127.0.0.1','-U',DB_OWNER,'-d',DATABASE]);break
             except Refusal:
                 time.sleep(1)
         else:
@@ -613,6 +626,7 @@ class Provisioner:
         # The empty endpoint exception ends at start. Verify assigned networking
         # and all protected identities again before any role/seed mutation.
         self.fresh()
+        require_pg_host_tcp()
         # Password travels only through private stdin, never argv/report/stdout.
         sql=f"CREATE ROLE {DB_APP} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 96 PASSWORD '{passwords['app']}';\nREVOKE CONNECT ON DATABASE postgres,template0,template1 FROM PUBLIC;\nREVOKE ALL ON DATABASE {DATABASE} FROM PUBLIC;\nGRANT CONNECT,TEMPORARY ON DATABASE {DATABASE} TO {DB_APP};\nALTER SCHEMA public OWNER TO {DB_APP};\nREVOKE ALL ON SCHEMA public FROM PUBLIC;\n"
         self.runtime.command(['docker','exec','-i',cid,'psql','-X','-v','ON_ERROR_STOP=1','-U',DB_OWNER,'-d',DATABASE],input=sql)

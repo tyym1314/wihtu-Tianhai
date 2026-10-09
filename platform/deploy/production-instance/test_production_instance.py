@@ -11,6 +11,7 @@ import unittest
 import sys
 import types
 import copy
+import socket
 from unittest.mock import patch
 
 HERE=Path(__file__).parent
@@ -21,6 +22,21 @@ p=load('provision_test','provision.py')
 o=load('operations_test','operations.py')
 
 class Guards(unittest.TestCase):
+    def test_host_tcp_check_uses_node_endpoint_and_closes_connection(self):
+        connected,peer=socket.socketpair()
+        try:
+            with patch.object(p.socket,'create_connection',return_value=connected) as connect:
+                p.require_pg_host_tcp()
+            connect.assert_called_once_with(('127.0.0.1',18893),timeout=3)
+            self.assertEqual(connected.fileno(),-1)
+        finally:
+            connected.close();peer.close()
+
+    def test_host_tcp_refusal_has_safe_stable_code(self):
+        with patch.object(p.socket,'create_connection',side_effect=ConnectionRefusedError('private transport detail')):
+            with self.assertRaises(p.Refusal) as caught:p.require_pg_host_tcp()
+        self.assertEqual(str(caught.exception),'PRODUCTION_PG_HOST_TCP_NOT_READY')
+
     def test_explicit_mode_survives_private_umask(self):
         with tempfile.TemporaryDirectory() as temp:
             old=os.umask(0o077)
@@ -172,9 +188,13 @@ class Resources(unittest.TestCase):
             'volume_identity':{'Name':p.VOLUME,'CreatedAt':'2026-10-10T00:00:00Z','Driver':'local','Options':None,'Mountpoint':'/docker/own'}}
         self.c={'Id':self.cid,'Name':'/'+p.CONTAINER,'Image':self.marker['pg_image'],'Config':{'Labels':{p.LABEL:self.marker['owner']}},
             'Mounts':[{'Name':p.VOLUME,'Type':'volume','Destination':'/var/lib/postgresql/data','RW':True}],
-            'NetworkSettings':{'Networks':{p.NETWORK:{'NetworkID':self.marker['network_id']}}},'HostConfig':{'NetworkMode':p.NETWORK,'PortBindings':{'5432/tcp':[{'HostIp':'127.0.0.1','HostPort':'18893'}]}},'State':{'Running':True,'Status':'running'}}
+            'NetworkSettings':{'Networks':{p.NETWORK:{'NetworkID':self.marker['network_id']}},
+                'Ports':{'5432/tcp':[{'HostIp':'127.0.0.1','HostPort':'18893'}]}},
+            'HostConfig':{'NetworkMode':p.NETWORK,'PortBindings':{'5432/tcp':[{'HostIp':'127.0.0.1','HostPort':'18893'}]}},'State':{'Running':True,'Status':'running'}}
         self.v={**self.marker['volume_identity'],'Labels':{p.LABEL:self.marker['owner']}}
-        self.n={'Id':self.marker['network_id'],'Internal':True,'Labels':{p.LABEL:self.marker['owner']},'Containers':{self.cid:{}}}
+        self.n={'Id':self.marker['network_id'],'Driver':'bridge','Internal':False,
+            'Options':{'com.docker.network.bridge.host_binding_ipv4':'127.0.0.1'},
+            'Labels':{p.LABEL:self.marker['owner']},'Containers':{self.cid:{}}}
         self.other={'Id':'d'*64,'Mounts':[],'NetworkSettings':{'Networks':{}}}
         self.r=type('Runtime',(),{'inspect':lambda _,kind,name:self.c if kind=='container' and name==self.cid else self.other if kind=='container' else self.v if kind=='volume' else self.n,
              'command':lambda _,args:self.cid+'\n'+'d'*64+'\n'})()
@@ -208,6 +228,44 @@ class Resources(unittest.TestCase):
     def test_public_pg_exposure_refused(self):
         self.c['HostConfig']['PortBindings']['5432/tcp'][0]['HostIp']='0.0.0.0'
         with self.assertRaisesRegex(o.p.Refusal,'PORT'):o.owned_resources(self.marker,self.r)
+
+    def test_bridge_driver_internal_and_binding_options_are_exact(self):
+        original=copy.deepcopy(self.n)
+        mutations=({'Driver':'host'},{'Internal':True},{'Internal':None},{'Options':{}},
+                   {'Options':{'com.docker.network.bridge.host_binding_ipv4':'0.0.0.0'}},
+                   {'Options':{**original['Options'],'unknown-setting':'unsafe'}})
+        for change in mutations:
+            with self.subTest(change=change):
+                self.n={**copy.deepcopy(original),**change}
+                with self.assertRaisesRegex(o.p.Refusal,'OWNERSHIP'):o.owned_resources(self.marker,self.r)
+
+    def test_running_host_network_mode_cannot_disagree_with_attachment(self):
+        self.c['HostConfig']['NetworkMode']='foreign-network'
+        with self.assertRaisesRegex(o.p.Refusal,'RESOURCE_SCOPE'):o.owned_resources(self.marker,self.r)
+
+    def test_running_requested_loopback_does_not_prove_actual_publication(self):
+        # Observed deployment defect: configured publish is correct, actual port is null.
+        for ports in ({'5432/tcp':None},{},None,
+                      {'5432/tcp':[{'HostIp':'0.0.0.0','HostPort':'18893'}]},
+                      {'5432/tcp':[{'HostIp':'127.0.0.1','HostPort':'18894'}]},
+                      {'5432/tcp':[{'HostIp':'127.0.0.1','HostPort':'18893'},
+                                   {'HostIp':'::','HostPort':'18893'}]}):
+            with self.subTest(ports=ports):
+                self.c['NetworkSettings']['Ports']=ports
+                with self.assertRaisesRegex(o.p.Refusal,'ACTUAL_PORT'):o.owned_resources(self.marker,self.r)
+        del self.c['NetworkSettings']['Ports']
+        with self.assertRaisesRegex(o.p.Refusal,'ACTUAL_PORT'):o.owned_resources(self.marker,self.r)
+
+    def test_stopped_ports_can_be_unassigned_but_not_exposed_or_missing(self):
+        self.c['State']={'Status':'exited','Running':False}
+        for ports in ({},{'5432/tcp':None},copy.deepcopy(p.PG_PORT_BINDINGS)):
+            self.c['NetworkSettings']['Ports']=ports
+            self.assertFalse(o.owned_resources(self.marker,self.r)['running'])
+        self.c['NetworkSettings']['Ports']={'5432/tcp':[{'HostIp':'0.0.0.0','HostPort':'18893'}]}
+        with self.assertRaisesRegex(o.p.Refusal,'ACTUAL_PORT'):o.owned_resources(self.marker,self.r)
+        del self.c['NetworkSettings']['Ports']
+        with self.assertRaisesRegex(o.p.Refusal,'ACTUAL_PORT'):o.owned_resources(self.marker,self.r)
+
     def test_foreign_additional_mount_refused(self):
         self.c['Mounts'].append({'Type':'bind','Source':'/opt/oasis/private'})
         with self.assertRaisesRegex(o.p.Refusal,'SCOPE'):o.owned_resources(self.marker,self.r)
@@ -228,6 +286,7 @@ class Resources(unittest.TestCase):
             'Aliases':None,'DNSNames':None,'DriverOpts':None,'EndpointID':'','Gateway':'',
             'GlobalIPv6Address':'','GlobalIPv6PrefixLen':0,'GwPriority':0,'IPAMConfig':None,
             'IPAddress':'','IPPrefixLen':0,'IPv6Gateway':'','Links':None,'MacAddress':'','NetworkID':''}
+        self.c['NetworkSettings']['Ports']={}
         self.n['Containers']={}
 
     def test_actual_docker_created_shape_allowed_only_at_explicit_prestart(self):
@@ -317,7 +376,7 @@ class Resources(unittest.TestCase):
 
 
 class ProvisionFailure(unittest.TestCase):
-    def test_initial_prestart_exception_ends_before_role_and_bootstrap_mutations(self):
+    def initial_provision(self,calls,*,tcp_error=None):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);private=root/'production-instance-private';private.mkdir()
             public=root/'private/state';public.mkdir(parents=True);(public/'master.key').write_bytes(b'p'*32)
@@ -326,7 +385,7 @@ class ProvisionFailure(unittest.TestCase):
             tool.marker={'owner':'a'*32,'origins':['https://stage.example.com','https://game.tianyahuyu.com']}
             (private/'installation.json').write_bytes(p.canonical(tool.marker))
             tool.receipt={'phase':'namespace_created','history':[],'passed':False}
-            cid='c'*64;calls=[]
+            cid='c'*64
             user=types.SimpleNamespace(pw_uid=os.getuid(),pw_gid=os.getgid())
             group=types.SimpleNamespace(gr_gid=os.getgid())
             class Runtime:
@@ -342,22 +401,42 @@ class ProvisionFailure(unittest.TestCase):
                         'Driver':'local','Options':None,'Mountpoint':str(root/'volume')}
             tool.runtime=Runtime()
             def fresh(*,created_prestart=False):calls.append(('fresh',created_prestart))
+            def tcp_probe():
+                calls.append(('host_tcp',))
+                if tcp_error:raise tcp_error
             with patch.object(p,'BASE',root),patch.object(p,'PRIVATE',private),patch.object(p,'PIN',root/'production-current'),\
                  patch.object(p.pwd,'getpwnam',return_value=user),patch.object(p.pwd,'getpwall',return_value=[user]),\
                  patch.object(p.grp,'getgrnam',return_value=group),patch.object(p.os,'chown'),patch.object(p.os,'fchown'),\
-                 patch.object(tool,'fresh',side_effect=fresh):
+                 patch.object(tool,'fresh',side_effect=fresh),\
+                 patch.object(p,'require_pg_host_tcp',side_effect=tcp_probe):
                 previous=os.umask(0o077)
                 try:
                     tool.provision_resources()
                 finally:
                     os.umask(previous)
             self.assertEqual(stat.S_IMODE((private/'monitor').stat().st_mode),0o750)
-            start=next(i for i,v in enumerate(calls) if v==('docker','start',cid))
-            sql=next(i for i,v in enumerate(calls) if 'psql' in v)
-            bootstrap=next(i for i,v in enumerate(calls) if v[0]=='/usr/bin/node')
-            pre=calls.index(('fresh',True));post=calls.index(('fresh',False))
-            self.assertLess(pre,start);self.assertLess(start,post);self.assertLess(post,sql);self.assertLess(sql,bootstrap)
-            self.assertEqual([v for v in calls if v[0]=='fresh'],[('fresh',True),('fresh',False)])
+
+    def test_initial_prestart_exception_ends_before_role_and_bootstrap_mutations(self):
+        calls=[];self.initial_provision(calls)
+        start=next(i for i,v in enumerate(calls) if v==('docker','start','c'*64))
+        sql=next(i for i,v in enumerate(calls) if 'psql' in v)
+        bootstrap=next(i for i,v in enumerate(calls) if v[0]=='/usr/bin/node')
+        pre=calls.index(('fresh',True));post=calls.index(('fresh',False))
+        tcp=calls.index(('host_tcp',))
+        self.assertLess(pre,start);self.assertLess(start,post);self.assertLess(post,tcp);self.assertLess(tcp,sql);self.assertLess(sql,bootstrap)
+        self.assertEqual([v for v in calls if v[0]=='fresh'],[('fresh',True),('fresh',False)])
+        network=next(v for v in calls if v[:3]==('docker','network','create'))
+        self.assertNotIn('--internal',network)
+        self.assertEqual(network[3:7],('--driver','bridge','--opt','com.docker.network.bridge.host_binding_ipv4=127.0.0.1'))
+        ready=next(v for v in calls if 'pg_isready' in v)
+        self.assertEqual(ready[3:6],('pg_isready','-h','127.0.0.1'))
+
+    def test_failed_host_tcp_prevents_role_or_node_mutation(self):
+        calls=[]
+        with self.assertRaisesRegex(p.Refusal,'HOST_TCP_NOT_READY'):
+            self.initial_provision(calls,tcp_error=p.Refusal('PRODUCTION_PG_HOST_TCP_NOT_READY'))
+        self.assertIn(('fresh',False),calls);self.assertIn(('host_tcp',),calls)
+        self.assertFalse(any('psql' in call or call[0]=='/usr/bin/node' for call in calls))
 
     def test_real_dynamic_import_refusal_is_same_controller_class(self):
         tool=object.__new__(p.Provisioner)

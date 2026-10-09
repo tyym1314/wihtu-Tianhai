@@ -46,7 +46,9 @@ def owned_resources(marker,runtime,*,created_prestart=False):
     p.require(c['Id']==cid and c['Name']=='/'+p.CONTAINER and c['Image']==marker['pg_image']
               and c['Config'].get('Labels',{}).get(p.LABEL)==owner
               and v.get('Labels',{}).get(p.LABEL)==owner and n.get('Labels',{}).get(p.LABEL)==owner
-              and v.get('Driver')=='local' and not v.get('Options') and n.get('Internal') is True,'PRODUCTION_RESOURCE_OWNERSHIP_CHANGED')
+              and v.get('Driver')=='local' and not v.get('Options')
+              and n.get('Driver')=='bridge' and n.get('Internal') is False
+              and n.get('Options')==p.NETWORK_OPTIONS,'PRODUCTION_RESOURCE_OWNERSHIP_CHANGED')
     mounts=c['Mounts'];networks=c['NetworkSettings']['Networks']
     p.require(len(mounts)==1 and mounts[0].get('Type')=='volume' and mounts[0].get('Name')==p.VOLUME
               and mounts[0].get('Destination')=='/var/lib/postgresql/data' and mounts[0].get('RW') is True
@@ -73,6 +75,7 @@ def owned_resources(marker,runtime,*,created_prestart=False):
                   and n.get('Containers',{})=={},'PRODUCTION_CREATED_PRESTART_STATE_CHANGED')
     else:
         p.require(c.get('State',{}).get('Status')!='created'
+                  and c['HostConfig'].get('NetworkMode')==p.NETWORK
                   and attachment.get('NetworkID')==n['Id'],'PRODUCTION_RESOURCE_SCOPE_CHANGED')
     p.require(set(n.get('Containers',{}))<= {cid},'PRODUCTION_NETWORK_FOREIGN_CONSUMER')
     p.require(marker.get('network_id')==n['Id'] and marker.get('volume_identity')=={key:v.get(key) for key in ('Name','CreatedAt','Driver','Options','Mountpoint')},'PRODUCTION_VOLUME_OR_NETWORK_REPLACED')
@@ -83,7 +86,14 @@ def owned_resources(marker,runtime,*,created_prestart=False):
             p.require(not any(row.get('Name')==p.VOLUME for row in other.get('Mounts',[]))
                       and p.NETWORK not in other.get('NetworkSettings',{}).get('Networks',{}),'PRODUCTION_FOREIGN_CONSUMER')
     ports=c['HostConfig'].get('PortBindings',{})
-    p.require(ports=={'5432/tcp':[{'HostIp':'127.0.0.1','HostPort':'18893'}]},'PRODUCTION_PG_PORT_CHANGED')
+    p.require(ports==p.PG_PORT_BINDINGS,'PRODUCTION_PG_PORT_CHANGED')
+    # Requested publish settings are not proof that Docker created the host
+    # listener. In particular an internal bridge can keep Ports[5432/tcp]=null.
+    actual_ports=c['NetworkSettings'].get('Ports')
+    p.require(type(c['State'].get('Running')) is bool
+              and (actual_ports==p.PG_PORT_BINDINGS if c['State']['Running']
+                   else actual_ports in ({},{'5432/tcp':None},p.PG_PORT_BINDINGS)),
+              'PRODUCTION_PG_ACTUAL_PORT_CHANGED')
     s=p.PRIVATE.lstat();p.require(stat.S_ISDIR(s.st_mode) and s.st_uid==0 and s.st_gid==marker['gid'] and stat.S_IMODE(s.st_mode)==0o750,'PRODUCTION_PRIVATE_OWNERSHIP_CHANGED')
     p.require(set(marker.get('private_pins',{}))=={'runtime.env','postgres.env','operator-credentials.json','state/master.key'}
               and all(p.fingerprint(p.PRIVATE/name)==expected for name,expected in marker['private_pins'].items()),'PRODUCTION_PRIVATE_CONFIG_CHANGED')
