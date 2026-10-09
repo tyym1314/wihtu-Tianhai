@@ -44,7 +44,12 @@ against the known SHA values and immutable manifest:
 Helper file descriptors are read and hashed before executing those verified
 bytes; a changed file is rejected before its module body can run. The old
 `recover-created.py` is bound to its unchanged SHA and contributes only
-private-file readers. Its recovery methods are never called. No full release
+private-file readers. The controller matches and removes exactly its three
+known provision-loader AST statements, then executes the remaining verified
+AST with the already verified provision module injected. The real old reader
+chain is tested with both loader execution and bytecode/source reads forbidden;
+no second provision loader or global import hook is used. Its recovery methods
+are never called. No full release
 copy or 03 manifest change is needed. The existing official normal network,
 actual loopback port, UID/GID, private configuration and sole-consumer guards
 remain mandatory.

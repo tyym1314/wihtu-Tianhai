@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """Finish only the witnessed 03 address-format guard failure, with admission closed."""
 import argparse
+import ast
 import copy
 import hashlib
 import importlib.util
@@ -31,7 +32,19 @@ HELPERS = {'bootstrap.mjs': '754397b8b4604a66bbcaf5010e1a13ae21675dd024f00b72928
 HELPER_ROOT = RELEASE / 'platform/deploy/production-instance' if Path(__file__).absolute() == TOOL else Path(__file__).resolve().parent
 
 
-def load(name, filename):
+def reader_ast(body, path):
+    tree = ast.parse(body, filename=str(path))
+    known = ast.parse("spec = importlib.util.spec_from_file_location('oasis_created_provision', HERE / 'provision.py')\np = importlib.util.module_from_spec(spec)\nspec.loader.exec_module(p)").body
+    expected = [ast.dump(node, include_attributes=False) for node in known]
+    matches = [index for index in range(len(tree.body) - 2)
+               if [ast.dump(node, include_attributes=False) for node in tree.body[index:index + 3]] == expected]
+    if len(matches) != 1:
+        raise ValueError('TAIL_READER_IMPORT_SHAPE_INVALID')
+    del tree.body[matches[0]:matches[0] + 3]
+    return tree
+
+
+def load(name, filename, provision_module=None):
     path = HELPER_ROOT / filename
     expected = HELPERS.get(filename, PREVIOUS_TOOL if filename == 'recover-created.py' else None)
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
@@ -56,13 +69,21 @@ def load(name, filename):
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
     # Execute the verified FD bytes, rather than rereading a replaceable name.
-    exec(compile(body, str(path), 'exec'), module.__dict__)
+    code = body
+    if filename == 'recover-created.py':
+        if provision_module is None or Path(provision_module.__file__).absolute() != HELPER_ROOT / 'provision.py':
+            raise ValueError('TAIL_READER_PROVISION_MODULE_INVALID')
+        # The fixed old reader imports provision by path. Remove only that
+        # exact known loader block and reuse the already verified module.
+        code = reader_ast(body, path)
+        module.__dict__['p'] = provision_module
+    exec(compile(code, str(path), 'exec'), module.__dict__)
     return module
 
 
 p = load('oasis_tail_provision', 'provision.py')
-r = load('oasis_tail_private_reader', 'recover-created.py')
-r.p = p  # Only read_bound and parse_private_env are reused, never its recovery.
+r = load('oasis_tail_private_reader', 'recover-created.py', provision_module=p)
+# Only read_bound and parse_private_env are reused, never its recovery.
 PRIOR = p.PRIVATE / 'recovery-bootstrap-network-20261010'
 RECOVERY = p.PRIVATE / 'recovery-bootstrap-tail-20261010'
 PIN_META = {'uid': 0, 'gid': 0, 'mode': 0o777, 'device': 64515, 'inode': 1025182,

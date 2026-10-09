@@ -294,6 +294,26 @@ class ControllerAndNormalScope(unittest.TestCase):
             module = t.load('verified_fd_provision', 'provision.py')
         self.assertEqual(module.NETWORK_OPTIONS, p.NETWORK_OPTIONS)
 
+    def test_actual_reader_chain_reuses_verified_provision_without_nested_loader_read(self):
+        with patch.object(t, 'HELPER_ROOT', HERE.resolve()), patch.object(importlib.machinery.SourceFileLoader, 'exec_module', side_effect=AssertionError('must not reread')), patch.object(importlib.machinery.SourceFileLoader, 'get_data', side_effect=AssertionError('must not read nested provision')):
+            module = t.load('verified_actual_private_reader', 'recover-created.py', provision_module=p)
+        self.assertIs(module.p, p)
+        self.assertTrue(issubclass(module.Recovery, p.Provisioner))
+        self.assertEqual(module.CID, r.CID)
+        self.assertEqual(module.parse_private_env(b'KEY=value\n'), {'KEY': 'value'})
+
+    def test_actual_reader_requires_exact_already_loaded_provision_origin(self):
+        for module in (None, types.SimpleNamespace(__file__='/untrusted/provision.py')):
+            with patch.object(t, 'HELPER_ROOT', HERE.resolve()), self.assertRaisesRegex(ValueError, 'READER_PROVISION_MODULE_INVALID'):
+                t.load('never_loaded_reader', 'recover-created.py', provision_module=module)
+
+    def test_reader_ast_rejects_missing_modified_or_duplicated_known_loader(self):
+        original = (HERE / 'recover-created.py').read_text()
+        loader = "spec = importlib.util.spec_from_file_location('oasis_created_provision', HERE / 'provision.py')\np = importlib.util.module_from_spec(spec)\nspec.loader.exec_module(p)"
+        for body in (original.replace(loader, ''), original.replace("'oasis_created_provision'", "'foreign_provision'"), original + '\n' + loader):
+            with self.assertRaisesRegex(ValueError, 'READER_IMPORT_SHAPE_INVALID'):
+                t.reader_ast(body, HERE / 'recover-created.py')
+
     def test_normal_guard_has_no_legacy_exception_and_exact_owned_ids(self):
         tool = instance(); ops = Mock(); tool.load_operations = Mock(return_value=ops)
         ops.owned_resources.return_value = {'container_id': r.CID, 'network_id': t.NEW_ID, 'running': False}
