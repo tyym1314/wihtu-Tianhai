@@ -8,6 +8,8 @@ import os
 from pathlib import Path
 import stat
 import shutil
+import subprocess
+import sys
 import tarfile
 import tempfile
 import types
@@ -151,7 +153,7 @@ class LoaderContracts(unittest.TestCase):
   aa=args();aa.manifest_sha256=u.RUNTIME_MANIFEST;aa.source_commit=u.RUNTIME_SOURCE_COMMIT
   with patch.object(u,'__file__',str(u.TOOL)),patch.object(u,'read_file',return_value=(b'private version',{'synthetic':True})), \
        patch.object(u,'pin',return_value={'st_mode':stat.S_IFDIR|0o700,'st_uid':0,'st_gid':0}):
-   result=u.controller_guard(aa,types.SimpleNamespace(p=types.SimpleNamespace(no_mount=lambda path:None),pins={}))
+   result=u.controller_guard(aa,types.SimpleNamespace(p=types.SimpleNamespace(no_mount=lambda path:None),pins={},job_executables={}))
    self.assertEqual(result['runtime_source_commit'],u.RUNTIME_SOURCE_COMMIT)
    self.assertEqual(result['controller_origin_commit'],aa.controller_origin_commit)
    self.assertEqual(result['packaged_controller_sha256'],u.PACKAGED_CONTROLLER_SHA)
@@ -340,19 +342,212 @@ class ConsumerContracts(unittest.TestCase):
     with self.assertRaises(u.Refusal):u.consumer_guard(f.units,f.release)
 
  def test_foreign_consumer_refusal_precedes_actual_owned_unit_stop(self):
-  controller=object.__new__(u.Controller);controller.b=types.SimpleNamespace(oldp=None,
-      ingress=types.SimpleNamespace(configurations=lambda binding:{'/etc/systemd/system/cert.service':'expected','/etc/systemd/system/cert.timer':'expected'}),
-      units=types.SimpleNamespace(UNIT_NAMES=('cert.service','cert.timer'),namespace_guard=lambda *aa,**kw:None,loaded_guard=lambda *aa,**kw:None))
-  names=('oasis-production-api.service','backup.timer','backup.service','monitor.timer','monitor.service')
+  controller=object.__new__(u.Controller);controller.b=types.SimpleNamespace(oldp=None,job_executables={},
+      ingress=types.SimpleNamespace(configurations=lambda binding:{'/etc/systemd/system/'+name:'expected' for name in (u.OWN_JOBS[2],u.OWN_TIMERS[2])}),
+      units=types.SimpleNamespace(UNIT_NAMES=(u.OWN_JOBS[2],u.OWN_TIMERS[2]),namespace_guard=lambda *aa,**kw:None,loaded_guard=lambda *aa,**kw:None))
+  names=('oasis-production-api.service',u.OWN_TIMERS[0],u.OWN_JOBS[0],u.OWN_TIMERS[1],u.OWN_JOBS[1])
   controller.p=types.SimpleNamespace(unit_templates=lambda *aa:dict.fromkeys(names,'expected'),unit_namespace_guard=lambda templates:None,
       expected_commands=lambda body:{},UNITS=names)
-  controller.runtime=types.SimpleNamespace(service=lambda name:{'FragmentPath':'/etc/systemd/system/'+name,'DropInPaths':'','NeedDaemonReload':'no','ActiveState':'inactive','MainPID':'0'},
+  controller.runtime=types.SimpleNamespace(service=lambda name:{'FragmentPath':'/etc/systemd/system/'+name,'DropInPaths':'','NeedDaemonReload':'no','ActiveState':'inactive','MainPID':'0',
+      'SubState':'dead','ControlPID':'0','Result':'success','ExecMainStatus':'0','ExecMainCode':'1'},
       loaded_commands=lambda name:{},command=Mock())
   controller.fresh=Mock();controller.event=Mock()
   with patch.object(u,'pin',return_value={'st_uid':0,'st_gid':0,'st_mode':stat.S_IFREG|0o644,'sha256':u.digest(b'expected')}), \
        patch.object(u,'consumer_guard',side_effect=u.Refusal('ADMISSION_FOREIGN_SOURCE_OR_UID_CONSUMER')), \
        self.assertRaisesRegex(u.Refusal,'FOREIGN_SOURCE'):controller.stop_writers({'release':str(u.TARGET),'manifest_sha256':M})
   controller.runtime.command.assert_not_called();controller.fresh.assert_not_called()
+
+
+class TimerLifecycleContracts(unittest.TestCase):
+ def controller(self):
+  controller=object.__new__(u.Controller);controller.args=args('approve');controller.global_locks_held=False
+  controller.directory_lease=(11,Path('/isolated/private'),{'isolated':True});controller.locks={}
+  controller.authored_marker={'release':str(u.TARGET),'manifest_sha256':M};controller.capsule={}
+  controller.receipt={'passed':False,'phase':'verified_pending_owned_timers'}
+  controller.waited_jobs={}
+  controller.fresh=Mock();controller.event=Mock();controller.b=types.SimpleNamespace(ops=types.SimpleNamespace(owned_resources=Mock()))
+  controller.runtime=types.SimpleNamespace(command=Mock());return controller
+
+ def unit_states(self,busy=()):
+  states={name:{'ActiveState':'active','MainPID':'0'} for name in u.OWN_TIMERS}
+  states.update({name:{'ActiveState':'inactive','MainPID':'0','SubState':'dead','Result':'success','ExecMainCode':'0','ExecMainStatus':'0'} for name in u.OWN_JOBS})
+  for name in busy:states[name]={'ActiveState':'activating','MainPID':'201','process':{'pid':201,'start_ticks':'100','uid':'0'}}
+  return {'pending_jobs':list(busy),'states':states}
+
+ def test_real_directory_fd_flock_serializes_operations_and_refuses_name_replacement(self):
+  with tempfile.TemporaryDirectory() as directory:
+   root=Path(directory).resolve();root.chmod(0o700);tool=root/'controller.py';tool.write_bytes(b'isolated');tool.chmod(0o600)
+   original_pin=u.pin;original_fstat=u.os.fstat
+   def rooted(path,*aa,**kw):return {**original_pin(path,*aa,**kw),'st_uid':0,'st_gid':0}
+   def descriptor(fd):
+    actual=original_fstat(fd)
+    return types.SimpleNamespace(**{key:(0 if key in ('st_uid','st_gid') else getattr(actual,key)) for key in
+        ('st_dev','st_ino','st_uid','st_gid','st_mode','st_nlink','st_size','st_mtime_ns','st_ctime_ns')})
+   with patch.object(u,'TOOL',tool),patch.object(u,'controller_guard',return_value={}), \
+        patch.object(u,'pin',side_effect=rooted),patch.object(u.os,'fstat',side_effect=descriptor):
+    with u.controller_directory_lock(args(),object()) as lease:
+     code='import fcntl,os,sys;fd=os.open(sys.argv[1],os.O_RDONLY|os.O_DIRECTORY)\ntry:fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)\nexcept BlockingIOError:sys.exit(0)\nsys.exit(3)'
+     result=subprocess.run([sys.executable,'-I','-B','-c',code,str(root)],capture_output=True)
+     self.assertEqual(result.returncode,0)
+     u.directory_lock_guard(*lease)
+    # The lease releases on exit and does not write metadata.
+    fd=os.open(root,os.O_RDONLY|os.O_DIRECTORY)
+    try:u.fcntl.flock(fd,u.fcntl.LOCK_EX|u.fcntl.LOCK_NB)
+    finally:os.close(fd)
+    original=rooted(root);fd=os.open(root,os.O_RDONLY|os.O_DIRECTORY);renamed=root.with_name(root.name+'-old')
+    try:
+     root.rename(renamed);root.mkdir(mode=0o700)
+     with self.assertRaisesRegex(u.Refusal,'DIRECTORY_LOCK_REPLACED'):u.directory_lock_guard(fd,root,original)
+    finally:os.close(fd);root.rmdir();renamed.rename(root)
+
+ def test_execute_apply_releases_both_locks_before_timer_tail_and_never_passes_early(self):
+  order=[];controller=self.controller();aa=args();aa.mode='apply'
+  @contextmanager
+  def directory(*_):order.append('directory-acquired');yield controller.directory_lease;order.append('directory-released')
+  @contextmanager
+  def locks(*_):order.append('shared-ops-acquired');yield {};order.append('shared-ops-released')
+  def apply():
+   self.assertTrue(controller.global_locks_held);self.assertFalse(controller.receipt['passed']);order.append('pending-verified');return controller.receipt
+  def tail():
+   self.assertFalse(controller.global_locks_held);self.assertIn('shared-ops-released',order)
+   self.assertFalse(controller.receipt['passed']);order.append('timer-start-idle-final-guards');controller.receipt['passed']=True;return controller.receipt
+  controller.apply=apply;controller.finish_after_unlock=tail
+  with patch.object(u,'controller_directory_lock',side_effect=directory),patch.object(u,'locked_files',side_effect=locks):
+   result=u.execute_lifecycle(controller,aa,types.SimpleNamespace(p=object()),None)
+  self.assertTrue(result['passed']);self.assertEqual(order,['directory-acquired','shared-ops-acquired','pending-verified','shared-ops-released','timer-start-idle-final-guards','directory-released'])
+
+ def test_audit_and_check_remain_read_only_without_timer_activation(self):
+  @contextmanager
+  def directory(*_):yield (11,Path('/isolated'),{})
+  @contextmanager
+  def locks(*_):yield {}
+  for mode in ('audit','check'):
+   controller=self.controller();aa=args();aa.mode=mode;controller.audit=Mock(return_value={'passed':True});controller.check=Mock(return_value={'passed':True})
+   controller.finish_after_unlock=Mock()
+   with patch.object(u,'controller_directory_lock',side_effect=directory),patch.object(u,'locked_files',side_effect=locks):
+    u.execute_lifecycle(controller,aa,types.SimpleNamespace(p=object()),None)
+   controller.finish_after_unlock.assert_not_called();controller.runtime.command.assert_not_called()
+
+ def test_restart_under_locks_starts_api_only_and_real_ready_no_timer_commands(self):
+  controller=self.controller();controller.global_locks_held=True;controller.installed_units=Mock();controller.runtime.http=Mock()
+  controller.restart_writers(controller.authored_marker)
+  controller.runtime.command.assert_called_once_with(['systemctl','start','oasis-production-api.service'],timeout=60)
+  controller.runtime.http.assert_called_once_with('http://127.0.0.1:18891/health/ready',200,'production')
+  controller.event.assert_called_once_with('owned_api_ready_timers_deferred')
+
+ def test_open_close_stop_only_exact_timers_and_preserve_api(self):
+  controller=self.controller();controller.installed_units=Mock()
+  controller.runtime.service=Mock(return_value={'ActiveState':'inactive','MainPID':'0'})
+  controller.stop_timers(controller.authored_marker)
+  controller.runtime.command.assert_called_once_with(['systemctl','stop',*u.OWN_TIMERS],timeout=60)
+  self.assertNotIn('oasis-production-api.service',controller.runtime.command.call_args.args[0])
+
+ def test_timer_tail_starts_exact_timers_only_after_pending_verification_and_success_marks_complete(self):
+  controller=self.controller();order=[]
+  def verified(*,complete):
+   order.append('complete' if complete else 'pending');self.assertFalse(controller.global_locks_held)
+   self.assertFalse(controller.receipt['passed']);controller.receipt['passed']=complete
+  def started(command,**kw):
+   self.assertEqual(order,['pending']);self.assertEqual(command,['systemctl','start',*u.OWN_TIMERS]);self.assertFalse(controller.receipt['passed']);order.append('timer-start')
+  controller.verify_finished=verified;controller.runtime.command=started
+  def idle(*_):order.append('exact-jobs-success');return self.unit_states()
+  controller.wait_owned_jobs=Mock(side_effect=idle)
+  with patch.object(u,'directory_lock_guard',return_value=None):result=controller.finish_after_unlock()
+  self.assertTrue(result['passed']);self.assertEqual(order,['pending','timer-start','exact-jobs-success','complete'])
+  self.assertEqual(result['timer_tail']['observed_running_invocations'],{})
+  self.assertTrue(all(value['ExecMainCode']=='0' for value in result['timer_tail']['idle_job_status'].values()))
+  self.assertIn('not fresh backup',result['timer_tail']['claim'])
+  controller.global_locks_held=True
+  with self.assertRaisesRegex(u.Refusal,'REQUIRES_UNLOCKED'):controller.finish_after_unlock()
+  with self.assertRaisesRegex(u.Refusal,'COMPLETION_REQUIRES_UNLOCKED'):u.Controller.verify_finished(controller,complete=True)
+  controller.global_locks_held=False;controller.directory_lease=None
+  with self.assertRaisesRegex(u.Refusal,'COMPLETION_REQUIRES_UNLOCKED'):u.Controller.verify_finished(controller,complete=True)
+
+ def test_transient_known_job_waits_and_never_mutates_or_marks_complete_while_busy(self):
+  controller=self.controller();clock=[0.0]
+  controller.installed_units=Mock(side_effect=[self.unit_states((u.OWN_JOBS[1],)),self.unit_states()])
+  with patch.object(u.time,'monotonic',side_effect=lambda:clock[0]),patch.object(u.time,'sleep',side_effect=lambda seconds:clock.__setitem__(0,clock[0]+seconds)):
+   result=controller.wait_owned_jobs(controller.authored_marker,60)
+  self.assertEqual(result['pending_jobs'],[]);self.assertEqual(controller.installed_units.call_count,2)
+  self.assertEqual(set(controller.waited_jobs),{u.OWN_JOBS[1]})
+  self.assertFalse(controller.receipt['passed']);controller.runtime.command.assert_not_called()
+  self.assertEqual(controller.fresh.call_count,2);self.assertEqual(controller.b.ops.owned_resources.call_count,2)
+
+ def test_timeout_failed_nonzero_foreign_template_or_source_error_never_becomes_success(self):
+  for code in ('ADMISSION_OWN_ONESHOT_FAILED','ADMISSION_FOREIGN_SOURCE_OR_UID_CONSUMER','ADMISSION_OWN_UNIT_CHANGED','ADMISSION_OWN_UNIT_CACHED_COMMAND_CHANGED','ADMISSION_SOURCE_PIN_CHANGED'):
+   controller=self.controller();controller.installed_units=Mock(side_effect=u.Refusal(code))
+   with self.subTest(code=code),self.assertRaisesRegex(u.Refusal,code):controller.wait_owned_jobs(controller.authored_marker,u.time.monotonic()+60)
+   self.assertFalse(controller.receipt['passed']);controller.runtime.command.assert_not_called()
+  controller=self.controller();clock=[0.0];controller.installed_units=Mock(return_value=self.unit_states((u.OWN_JOBS[0],)))
+  with patch.object(u.time,'monotonic',side_effect=lambda:clock[0]),patch.object(u.time,'sleep',side_effect=lambda seconds:clock.__setitem__(0,clock[0]+seconds)),self.assertRaisesRegex(u.Refusal,'ONESHOT_TIMEOUT'):
+   controller.wait_owned_jobs(controller.authored_marker,60)
+  self.assertEqual(clock[0],60);self.assertFalse(controller.receipt['passed'])
+
+ def test_timer_tail_job_or_final_guard_failure_remains_failed_and_cleanup_distinct(self):
+  for where in ('jobs','final'):
+   controller=self.controller();controller.verify_finished=Mock(side_effect=[None,u.Refusal('ADMISSION_SOURCE_PIN_CHANGED')] if where=='final' else None)
+   controller.wait_owned_jobs=Mock(side_effect=u.Refusal('ADMISSION_OWN_ONESHOT_FAILED') if where=='jobs' else None,return_value=self.unit_states())
+   with self.subTest(where=where),self.assertRaises(u.Refusal):controller.finish_after_unlock()
+   self.assertFalse(controller.receipt['passed'])
+  @contextmanager
+  def directory(*_):yield (11,Path('/isolated'),{})
+  @contextmanager
+  def locks(*_):yield {}
+  controller=self.controller();aa=args();aa.mode='apply';controller.apply=Mock(return_value=controller.receipt)
+  controller.finish_after_unlock=Mock(side_effect=u.Refusal('ADMISSION_OWN_ONESHOT_FAILED'))
+  controller.safe_stop_api=Mock(side_effect=u.Refusal('ADMISSION_FOREIGN_SOURCE_OR_UID_CONSUMER'))
+  with patch.object(u,'controller_directory_lock',side_effect=directory),patch.object(u,'locked_files',side_effect=locks),self.assertRaisesRegex(u.Refusal,'ONESHOT_FAILED'):
+   u.execute_lifecycle(controller,aa,types.SimpleNamespace(p=object()),None)
+  self.assertFalse(controller.receipt['passed']);self.assertEqual(controller.receipt['error_code'],'ADMISSION_OWN_ONESHOT_FAILED')
+  self.assertEqual(controller.receipt['cleanup_error_code'],'ADMISSION_FOREIGN_SOURCE_OR_UID_CONSUMER')
+
+ def test_timeout_with_still_busy_owned_job_does_not_claim_api_stopped_or_force_unknown_cleanup(self):
+  controller=self.controller();controller.directory_lease=None;controller.source_guard=Mock();controller.guardian=types.SimpleNamespace(guard=Mock())
+  controller.capsule={'audit':{'state':{'protected':{},'production_pin':{'target':str(u.TARGET)}}}}
+  controller.authored_paths={};controller.p=types.SimpleNamespace(PIN=Path('/isolated/PIN'),PRIVATE=Path('/isolated/private'))
+  controller.b.oldops=None;controller.installed_units=Mock(side_effect=u.Refusal('ADMISSION_OWN_ONESHOT_BUSY'))
+  with patch.object(u,'pin',return_value={'target':str(u.TARGET)}):controller.fail_closed(u.Refusal('ADMISSION_OWN_ONESHOT_TIMEOUT'))
+  self.assertFalse(controller.receipt['passed']);self.assertFalse(controller.receipt['closed_runtime_confirmed'])
+  self.assertEqual(controller.receipt['cleanup_error_code'],'ADMISSION_OWN_ONESHOT_BUSY')
+  self.assertNotIn('cleanup',controller.receipt);controller.runtime.command.assert_not_called()
+
+ def test_exact_busy_job_process_identity_and_failed_status_guard(self):
+  with process_fixture('target') as f:
+   name=u.OWN_JOBS[1];argv=[str(f.node),str(f.release/'platform/deploy/production-instance/monitor.mjs')]
+   f.write(201,ppid=1,start='201',uids=[0]*4,argv=argv,cgroup='0::/system.slice/'+name+'\n')
+   state={'MainPID':'201','ActiveState':'activating','SubState':'start','ControlPID':'0','Result':'success','ExecMainStatus':'0','ExecMainCode':'0',
+          'process':{'pid':201,'start_ticks':'201','uid':'0','cwd':str(f.release/'platform'),'exe':str(f.node)}}
+   body='WorkingDirectory='+str(f.release/'platform')+'\nExecStart='+' '.join(argv)+'\n';executables={str(f.node):u.executable_guard(f.node,u.NODE_SHA)}
+   self.assertTrue(u.oneshot_guard(name,state,body,f.release,executables))
+   for field,value in [('Result','exit-code'),('ExecMainStatus','1'),('ControlPID','99'),('SubState','foreign')]:
+    with self.subTest(field=field),self.assertRaises(u.Refusal):u.oneshot_guard(name,{**state,field:value},body,f.release,executables)
+   for change in ('uid','cgroup','argv','parent','tick'):
+    fields={'ppid':1,'start':'201','uids':[0]*4,'argv':argv,'cgroup':'0::/system.slice/'+name+'\n'}
+    if change=='uid':fields['uids']=[997]*4
+    elif change=='cgroup':fields['cgroup']='0::/system.slice/foreign.service\n'
+    elif change=='argv':fields['argv']=[str(f.node),'foreign.mjs']
+    elif change=='parent':fields['ppid']=101
+    else:fields['start']='999'
+    f.write(201,**fields)
+    with self.subTest(change=change),self.assertRaisesRegex(u.Refusal,'ONESHOT_PROCESS_CHANGED'):
+     u.oneshot_guard(name,state,body,f.release,executables)
+   idle={'MainPID':'0','ActiveState':'inactive','SubState':'dead','ControlPID':'0','Result':'success','ExecMainStatus':'0','ExecMainCode':'1'}
+   self.assertFalse(u.oneshot_guard(name,idle,body,f.release,executables))
+   failed={**idle,'ActiveState':'failed','SubState':'failed','Result':'exit-code','ExecMainStatus':'1'}
+   with self.assertRaisesRegex(u.Refusal,'ONESHOT_FAILED'):u.oneshot_guard(name,failed,body,f.release,executables)
+   self.assertFalse(u.oneshot_guard(name,failed,body,f.release,executables,cleanup=True))
+
+ def test_oneshot_runtime_sampler_requires_real_status_fields_and_retries_only_pid_transition(self):
+  class Base:
+   def service(self,name):return {'MainPID':'0','ActiveState':'inactive'}
+  runtime=u.make_runtime(types.SimpleNamespace(Runtime=Base));name=u.OWN_JOBS[0]
+  valid='MainPID=0\nActiveState=inactive\nSubState=dead\nResult=success\nExecMainStatus=0\nExecMainCode=1\nControlPID=0\n'
+  runtime.command=Mock(return_value=valid);result=runtime.service(name);self.assertEqual(result['ExecMainStatus'],'0')
+  for raw in (valid.replace('Result=success\n',''),valid+'Result=success\n'):
+   runtime.command=Mock(return_value=raw)
+   with self.assertRaisesRegex(u.Refusal,'STATUS_INVALID'):runtime.service(name)
+  runtime.command=Mock(side_effect=[valid.replace('MainPID=0','MainPID=201'),valid])
+  self.assertEqual(runtime.service(name)['MainPID'],'0');self.assertEqual(runtime.command.call_count,2)
 
 
 class RuntimeContracts(unittest.TestCase):

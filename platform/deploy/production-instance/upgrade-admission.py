@@ -29,6 +29,10 @@ NODE_EXE = Path('/usr/bin/node')
 NODE_SHA = '6295488653f0d93b0a157841746fef7e72cc4328cfb60c4bbe0ca2668a836ffd'
 ESBUILD_SHA = 'e1698a3d5c6c0798fee4fd3b5cc816651f460c63d390a7a26ea4beb0b1884100'
 API_CGROUP = '0::/system.slice/oasis-production-api.service\n'
+OWN_TIMERS = ('oasis-production-instance-backup.timer','oasis-production-instance-monitor.timer',
+              'oasis-production-player-certificate.timer')
+OWN_JOBS = tuple(name.replace('.timer','.service') for name in OWN_TIMERS)
+ONESHOT_WAIT_SECONDS = 60
 HISTORICAL_INVENTORY_SHA = 'ac5c5769946b8ea08695c56d0106bb6c8d1f562b9e7ec152f3e83fb05375eeac'
 OBSOLETE_NAMES = ('20261008-23','20261008-24')
 OBSOLETE_REFS = tuple('/opt/oasis/releases/'+name+'/RELEASE-MANIFEST.json' for name in OBSOLETE_NAMES)
@@ -226,8 +230,10 @@ def load_bindings(args):
  complete_members(p,TARGET,new);complete_members(p,OLD,old)
  dependencies=dependency_tree(p,OLD)
  require(dependency_tree(p,TARGET)==dependencies,'ADMISSION_RUNTIME_DEPENDENCIES_CHANGED')
+ job_executables={str(path):executable_guard(path,expected) for path,expected in
+                  ((NODE_EXE,NODE_SHA),(Path('/usr/bin/python3').resolve(strict=True),None))}
  return types.SimpleNamespace(p=p,a=a,ops=ops,oldp=op,oldops=oldops,ingress=ingress,units=units,retirement=retirement,
-                              members=new,old_members=old,pins=pins,dependencies=dependencies)
+                              members=new,old_members=old,pins=pins,dependencies=dependencies,job_executables=job_executables)
 
 
 def controller_guard(args, bindings):
@@ -241,10 +247,12 @@ def controller_guard(args, bindings):
          and stat.S_IMODE(directory['st_mode'])==0o700,'ADMISSION_CONTROLLER_DIRECTORY_UNSAFE')
  bindings.p.no_mount(TOOL.parent)
  require(all(pin(Path(path))==value for path,value in bindings.pins.items()),'ADMISSION_EXECUTING_HELPER_CHANGED')
+ require(all(executable_guard(Path(path),value['sha256'])==value for path,value in bindings.job_executables.items()),
+         'ADMISSION_JOB_EXECUTABLE_CHANGED')
  return {'tool_sha256':digest(body),'tool_pin':identity,'directory_pin':directory,'source_commit':args.source_commit,
          'runtime_source_commit':args.source_commit,'controller_origin_commit':args.controller_origin_commit,
          'packaged_controller_sha256':PACKAGED_CONTROLLER_SHA,
-         'bindings':bindings.pins}
+         'bindings':bindings.pins,'job_executables':bindings.job_executables}
 
 
 def edit_runtime(original, fields):
@@ -307,9 +315,40 @@ def lock_guard(fd,path,expected):
          and pin(path)==expected,'ADMISSION_LOCK_REPLACED')
 
 
+def directory_lock_guard(fd,path,expected):
+ actual=os.fstat(fd)
+ require(stat.S_ISDIR(actual.st_mode) and actual.st_uid==actual.st_gid==0
+         and stat.S_IMODE(actual.st_mode)==0o700 and all(getattr(actual,key)==expected[key] for key in expected)
+         and pin(path)==expected,'ADMISSION_DIRECTORY_LOCK_REPLACED')
+
+
+@contextmanager
+def controller_directory_lock(args,bindings):
+ controller_guard(args,bindings);path=TOOL.parent;expected=pin(path)
+ fd=os.open(path,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+ try:
+  directory_lock_guard(fd,path,expected)
+  fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB);directory_lock_guard(fd,path,expected)
+  yield fd,path,expected
+  directory_lock_guard(fd,path,expected)
+ finally:os.close(fd)
+
+
 def make_runtime(p):
  class OperatorRuntime(p.Runtime):
   diagnostics=None
+  def service(self,name):
+   if name not in OWN_JOBS:return super().service(name)
+   for attempt in range(3):
+    try:result=super().service(name)
+    except FileNotFoundError:continue
+    raw=self.command(['systemctl','show',name,'--no-pager','--property=MainPID,ActiveState,SubState,Result,ExecMainStatus,ExecMainCode,ControlPID'])
+    rows=[line.split('=',1) for line in raw.splitlines() if '=' in line]
+    extra=dict(rows)
+    require(len(rows)==len(extra) and set(extra)=={'MainPID','ActiveState','SubState','Result','ExecMainStatus','ExecMainCode','ControlPID'},
+            'ADMISSION_ONESHOT_STATUS_INVALID')
+    if all(result.get(key)==extra[key] for key in ('MainPID','ActiveState')):return {**result,**extra}
+   raise Refusal('ADMISSION_ONESHOT_TRANSITION')
   def command(self,args,*,input=None,env=None,timeout=60,binary=False):
    executables={'docker':'/usr/bin/docker','systemctl':'/usr/bin/systemctl',
                 '/usr/bin/node':'/usr/bin/node','/usr/sbin/runuser':'/usr/sbin/runuser'}
@@ -615,6 +654,48 @@ def consumer_guard(units,release):
  return {'processes':[before[pid] for pid in sorted(before)],'executables':executables}
 
 
+def oneshot_guard(name,state,body,release,executables,*,cleanup=False):
+ """Busy is an unfinished exact job, never successful operation evidence."""
+ require(name in OWN_JOBS and state.get('ControlPID')=='0'
+         and state.get('ExecMainCode') in ('0','1','2','3') and isinstance(state.get('ExecMainStatus'),str)
+         and re.fullmatch('[0-9]+',state['ExecMainStatus']), 'ADMISSION_ONESHOT_STATUS_INVALID')
+ idle=state.get('MainPID')=='0' and not state.get('process')
+ failed=state.get('ActiveState')=='failed' or state.get('Result')!='success' or state['ExecMainStatus']!='0'
+ if failed:
+  require(cleanup and idle and (state.get('ActiveState'),state.get('SubState')) in (('inactive','dead'),('failed','failed')),
+          'ADMISSION_OWN_ONESHOT_FAILED')
+  return False
+ if state.get('ActiveState')=='inactive':
+  require(idle and state.get('SubState')=='dead','ADMISSION_ONESHOT_STATUS_INVALID');return False
+ require(state.get('ActiveState')=='activating' and state.get('SubState')=='start', 'ADMISSION_ONESHOT_STATUS_INVALID')
+ process=state.get('process')
+ require(isinstance(process,dict) and type(process.get('pid')) is int and process['pid']>0
+         and state.get('MainPID')==str(process['pid']), 'ADMISSION_ONESHOT_TRANSITION')
+ commands=[line.partition('=')[2] for line in body.splitlines() if line.startswith('ExecStart=')]
+ cwd=[line.partition('=')[2] for line in body.splitlines() if line.startswith('WorkingDirectory=')]
+ require(len(commands)==1 and len(cwd)<=1,'ADMISSION_ONESHOT_COMMAND_INVALID')
+ # Unit templates are already disk- and typed-command-verified; these arguments
+ # contain no shell syntax and all three witnessed commands are space separated.
+ argv=commands[0].split();exe=Path(argv[0]).resolve(strict=True)
+ require(str(exe) in executables,'ADMISSION_ONESHOT_EXECUTABLE_UNBOUND')
+ require(executable_guard(exe,executables[str(exe)]['sha256'])==executables[str(exe)],
+         'ADMISSION_JOB_EXECUTABLE_CHANGED')
+ try:row=process_identity(PROC_ROOT/str(process['pid']));mapped=os.stat(PROC_ROOT/str(process['pid'])/'exe')
+ except Refusal as error:
+  if str(error)=='ADMISSION_PROCESS_CONSUMER_UNREADABLE':raise Refusal('ADMISSION_ONESHOT_TRANSITION') from None
+  raise
+ except FileNotFoundError:raise Refusal('ADMISSION_ONESHOT_TRANSITION') from None
+ expected=executables[str(exe)]
+ require(row['start_ticks']==process.get('start_ticks') and row['ppid']==1 and row['uids']==[0]*4
+         and process.get('uid')=='0' and row['cwd']==(cwd[0] if cwd else '/') and row['argv']==argv
+         and row['exe']==str(exe) and process.get('exe')==str(exe) and process.get('cwd')==row['cwd']
+         and row['cgroup']=='0::/system.slice/'+name+'\n'
+         and all(getattr(mapped,key)==expected[key] for key in
+                 ('st_dev','st_ino','st_uid','st_gid','st_mode','st_nlink','st_size','st_mtime_ns','st_ctime_ns')),
+         'ADMISSION_ONESHOT_PROCESS_CHANGED')
+ return True
+
+
 def source_history_guard(marker, bindings):
  a=bindings.a
  if marker['release']==str(OLD):
@@ -735,6 +816,7 @@ class Controller:
   self.receipt=None;self.receipt_pin=None;self.directory=None;self.expected=None
   self.authored_marker=None;self.authored_pin=None
   self.locks={}
+  self.global_locks_held=False;self.directory_lease=None;self.waited_jobs={}
   protected_raw,self.protected_pin=read_file(args.protected_inventory,args.protected_inventory_sha256,private=True)
   self.guardian,self.protection_files,self.retired_protection=make_guardian(args,bindings,self.runtime,json.loads(protected_raw),self.protected_pin)
   require(pin(args.protected_inventory)==self.protected_pin,'ADMISSION_PROTECTED_INPUT_CHANGED')
@@ -751,10 +833,11 @@ class Controller:
   return {**controller_guard(self.args,self.b),'runtime_dependencies':self.b.dependencies,
           'retired_protection':self.retired_protection,'protection_files':self.protection_files}
 
- def installed_units(self,marker):
+ def installed_units(self,marker,*,pending_jobs=False,cleanup=False):
+  require(not pending_jobs or not self.global_locks_held,'ADMISSION_TIMER_TAIL_REQUIRES_UNLOCKED')
   release=Path(marker['release']);provision=self.b.oldp if release==OLD else self.p
   templates=provision.unit_templates(release,CID);self.p.unit_namespace_guard(templates)
-  states={};files={}
+  states={};files={};bodies=dict(templates)
   for name,body in templates.items():
    path=Path('/etc/systemd/system')/name;files[name]=pin(path)
    require(files[name]['st_uid']==files[name]['st_gid']==0 and stat.S_IMODE(files[name]['st_mode'])==0o644
@@ -768,19 +851,21 @@ class Controller:
   binding={'release':str(release),'manifest_sha256':marker['manifest_sha256']}
   configs=self.b.ingress.configurations(binding)
   cert={name:configs[str(Path('/etc/systemd/system')/name)] for name in self.b.units.UNIT_NAMES}
+  bodies.update({name:body.decode() if isinstance(body,bytes) else body for name,body in cert.items()})
   try:self.b.units.namespace_guard(cert,self.runtime,installed=True);self.b.units.loaded_guard(cert,self.runtime)
   except RuntimeError as error:raise Refusal(str(error)) from None
   for name in cert:files[name]=pin(Path('/etc/systemd/system')/name);states[name]=self.runtime.service(name)
-  for name in (self.p.UNITS[2],self.p.UNITS[4],self.b.units.UNIT_NAMES[0]):
-   require(states[name].get('MainPID') in ('0',None) and states[name].get('ActiveState')=='inactive',
-           'ADMISSION_OWN_ONESHOT_BUSY')
+  busy=[name for name in OWN_JOBS if oneshot_guard(name,states[name],bodies[name],release,self.b.job_executables,cleanup=cleanup)]
+  require(not busy or pending_jobs,'ADMISSION_OWN_ONESHOT_BUSY')
   api=states['oasis-production-api.service'];process=api.get('process',{})
   require(api.get('ActiveState') in ('active','inactive','failed'),'ADMISSION_API_STATE_UNKNOWN')
   if api.get('ActiveState')=='active':
    require(process.get('uid')=='997' and process.get('cwd')==str(release/'platform')
            and process.get('exe')=='/usr/bin/node','ADMISSION_API_PROCESS_CHANGED')
   units={'files':files,'states':states}
-  return {**units,'consumers':consumer_guard(units,release)}
+  # No process receives a consumer exemption. During a bounded read-only wait,
+  # complete consumer acceptance is deferred until all exact jobs are idle.
+  return {**units,'pending_jobs':busy,'consumers':{'pending':True} if busy else consumer_guard(units,release)}
 
  def scope(self, *, public_expected=None, require_active=True):
   source=self.source_guard()
@@ -875,6 +960,8 @@ class Controller:
 
  def fresh(self):
   self.source_guard();capacity_guard(self.p,self.args.capacity_budget_bytes);self.guardian.guard(self.capsule['audit']['state']['protected'])
+  if self.directory_lease:directory_lock_guard(*self.directory_lease)
+  for path,expected in self.locks.items():require(pin(path)==expected,'ADMISSION_LOCK_REPLACED')
   for path,expected in self.immutable_evidence.items():require(pin(Path(path))==expected,'ADMISSION_OPERATION_EVIDENCE_CHANGED')
   for path,expected in self.authored_paths.items():require(pin(Path(path),symlink=path==str(self.p.PIN))==expected,
                                                          'ADMISSION_AUTHORED_FILE_CHANGED')
@@ -932,6 +1019,14 @@ class Controller:
                                           'ADMISSION_WRITER_NOT_STOPPED')
   self.installed_units(marker);self.event('owned_writers_stopped')
 
+ def stop_timers(self,marker):
+  self.installed_units(marker);self.fresh()
+  self.runtime.command(['systemctl','stop',*OWN_TIMERS],timeout=60)
+  for name in OWN_TIMERS:
+   state=self.runtime.service(name)
+   require(state.get('ActiveState')=='inactive' and state.get('MainPID') in ('0',None),'ADMISSION_TIMER_NOT_STOPPED')
+  self.installed_units(marker);self.event('owned_timers_stopped_api_preserved')
+
  def replace_units(self,marker):
   old_files=self.capsule['audit']['state']['units']['files']
   templates={name:body.encode() for name,body in self.p.unit_templates(TARGET,CID).items()}
@@ -986,9 +1081,54 @@ class Controller:
     if attempt==19:raise
     time.sleep(0.5)
   self.installed_units(marker)
-  self.runtime.command(['systemctl','start','oasis-production-instance-backup.timer',
-           'oasis-production-instance-monitor.timer','oasis-production-player-certificate.timer'])
-  self.installed_units(marker);self.event('owned_runtime_started')
+  self.event('owned_api_ready_timers_deferred')
+
+ def wait_owned_jobs(self,marker,deadline):
+  require(not self.global_locks_held,'ADMISSION_TIMER_TAIL_REQUIRES_UNLOCKED')
+  while True:
+   require(time.monotonic()<deadline,'ADMISSION_OWN_ONESHOT_TIMEOUT')
+   self.fresh()
+   self.b.ops.owned_resources(marker,self.runtime)
+   try:units=self.installed_units(marker,pending_jobs=True)
+   except Refusal as error:
+    if str(error)!='ADMISSION_ONESHOT_TRANSITION':raise
+    units=None
+   require(time.monotonic()<deadline,'ADMISSION_OWN_ONESHOT_TIMEOUT')
+   if units is not None:
+    for name in units['pending_jobs']:
+     observed=units['states'][name]['process']
+     self.waited_jobs.setdefault(name,[])
+     if observed not in self.waited_jobs[name]:self.waited_jobs[name].append(copy.deepcopy(observed))
+   if units is not None and not units['pending_jobs']:
+    require(all(units['states'][name].get('ActiveState')=='active' and units['states'][name].get('MainPID') in ('0',None)
+                for name in OWN_TIMERS),'ADMISSION_TIMER_NOT_ACTIVE')
+    return units
+   # No more mutations or completion are allowed while a verified job is busy.
+   time.sleep(min(0.25,max(0,deadline-time.monotonic())))
+
+ def finish_after_unlock(self):
+  require(not self.global_locks_held and self.directory_lease is not None,'ADMISSION_TIMER_TAIL_REQUIRES_UNLOCKED')
+  marker=self.authored_marker or self.capsule['audit']['state']['marker']
+  self.verify_finished(complete=False)
+  self.event('shared_operation_locks_released_timers_pending')
+  self.waited_jobs={}
+  deadline=time.monotonic()+ONESHOT_WAIT_SECONDS
+  self.runtime.command(['systemctl','start',*OWN_TIMERS],timeout=30)
+  self.event('owned_timers_started_completion_pending')
+  while True:
+   jobs=self.wait_owned_jobs(marker,deadline)
+   self.receipt['timer_tail']={'timers_active':list(OWN_TIMERS),'max_wait_seconds':ONESHOT_WAIT_SECONDS,
+       'shared_operation_locks_released':True,'observed_running_invocations':copy.deepcopy(self.waited_jobs),
+       'idle_job_status':{name:{key:jobs['states'][name].get(key) for key in
+                              ('ActiveState','SubState','MainPID','Result','ExecMainCode','ExecMainStatus')} for name in OWN_JOBS},
+       'claim':'Timers are active and exact jobs are idle. Only observed running invocations are fresh execution evidence; never-fired calendar jobs are not fresh backup or certificate proof.'}
+   self.event('owned_jobs_idle_final_verification_pending')
+   try:self.verify_finished(complete=True);break
+   except Refusal as error:
+    if str(error) not in ('ADMISSION_OWN_ONESHOT_BUSY','ADMISSION_ONESHOT_TRANSITION'):raise
+    require(time.monotonic()<deadline,'ADMISSION_OWN_ONESHOT_TIMEOUT')
+  directory_lock_guard(*self.directory_lease)
+  return self.receipt
 
  def upgrade(self):
   marker=copy.deepcopy(self.capsule['audit']['state']['marker'])
@@ -1067,8 +1207,13 @@ class Controller:
   self.run_inspection(marker,allow_free_active=action in ('open','close'))
   if action=='approve':self.restart_writers(marker)
 
- def verify_finished(self):
+ def verify_finished(self,*,complete=True):
+  require(type(complete) is bool and (not complete or (not self.global_locks_held and self.directory_lease is not None)),
+          'ADMISSION_COMPLETION_REQUIRES_UNLOCKED')
   self.fresh();state=self.scope(public_expected=self.capsule['audit']['state']['protected'])
+  require(all(state['units']['states'][name].get('ActiveState')==('active' if complete else 'inactive')
+              and state['units']['states'][name].get('MainPID') in ('0',None) for name in OWN_TIMERS),
+          'ADMISSION_FINAL_TIMER_STATE_CHANGED')
   expected_profile='closed' if self.args.action=='upgrade' else 'firstparty-free-v1'
   require(state['runtime_profile']['profile']==expected_profile,'ADMISSION_FINAL_PROFILE_CHANGED')
   ops=self.b.ops;exists=ops.sql(self.runtime,state['marker'],self.p.DATABASE,"SELECT to_regclass('public.gp_production_admission') IS NOT NULL;").strip()
@@ -1083,12 +1228,18 @@ class Controller:
            and data['policy']['state']==wanted and data['nonzero_money']==data['financial_rows']==0,
            'ADMISSION_FINAL_POLICY_CHANGED')
   self.runtime.http(self.args.origin+'/health/ready',200,'production')
+  self.fresh()
+  require(self.scope(public_expected=self.capsule['audit']['state']['protected'])==state,'ADMISSION_FINAL_STATE_CHANGED')
   self.receipt['final']={'state':state,'database':data,'financial_admission_enabled':False,
                          'probability_admission_enabled':False,'thirdparty_financial_admission_enabled':False}
-  self.receipt['passed']=True;self.event('complete_'+('closed' if self.args.action in ('upgrade','approve','close') else 'free_open'))
+  self.receipt['passed']=complete
+  self.event(('complete_'+('closed' if self.args.action in ('upgrade','approve','close') else 'free_open'))
+             if complete else 'verified_pending_owned_timers')
 
  def safe_stop_api(self):
   self.source_guard();self.guardian.guard(self.capsule['audit']['state']['protected'])
+  if self.directory_lease:directory_lock_guard(*self.directory_lease)
+  for path,expected in self.locks.items():require(pin(path)==expected,'ADMISSION_LOCK_REPLACED')
   marker=self.authored_marker or copy.deepcopy(self.capsule['audit']['state']['marker'])
   # Reconcile only a file this operation itself wrote; no newly observed pin
   # becomes authority. Original secrets, CID/network/volume and loaded units
@@ -1103,17 +1254,20 @@ class Controller:
   marker['release']=production_pin['target']
   marker['manifest_sha256']=OLD_MANIFEST if marker['release']==str(OLD) else self.args.manifest_sha256
   (self.b.oldops if marker['release']==str(OLD) else self.b.ops).owned_resources(marker,self.runtime)
-  self.installed_units(marker)
-  self.runtime.command(['systemctl','stop','oasis-production-api.service'],timeout=90)
+  self.installed_units(marker,cleanup=True)
+  self.runtime.command(['systemctl','stop',*OWN_TIMERS,'oasis-production-api.service'],timeout=90)
   stopped=self.runtime.service('oasis-production-api.service')
   require(stopped.get('ActiveState')=='inactive' and stopped.get('MainPID') in ('0',None),'ADMISSION_FAILURE_API_NOT_STOPPED')
-  return {'api_stopped':True,'database_container_stopped':False,'data_deleted':False,
+  return {'api_stopped':True,'timers_stopped':True,'database_container_stopped':False,'data_deleted':False,
           'database_policy_may_be_committed':bool(self.receipt.get('committed_policy'))}
 
  def fail_closed(self,error):
   self.receipt['passed']=False;self.receipt['failed_at_phase']=self.receipt.get('phase')
+  self.receipt['closed_runtime_confirmed']=False
   self.receipt['error_code']=str(error) if isinstance(error,Refusal) and re.fullmatch('[A-Z0-9_]+',str(error)) else 'ADMISSION_OPERATION_FAILED'
-  try:self.receipt['cleanup']=self.safe_stop_api()
+  try:
+   self.receipt['cleanup']=self.safe_stop_api()
+   self.receipt['closed_runtime_confirmed']=self.receipt['cleanup'].get('api_stopped') is True
   except Exception as cleanup:
    self.receipt['cleanup_error_code']=str(cleanup) if isinstance(cleanup,Refusal) and re.fullmatch('[A-Z0-9_]+',str(cleanup)) else 'ADMISSION_FAILURE_STOP_REFUSED'
   self.event('failed_closed')
@@ -1133,8 +1287,10 @@ class Controller:
   self.preserve()
   try:
    if self.args.action=='upgrade':self.upgrade()
-   else:self.change_policy()
-   self.verify_finished()
+   else:
+    if self.args.action in ('open','close'):self.stop_timers(self.capsule['audit']['state']['marker'])
+    self.change_policy()
+   self.verify_finished(complete=False)
   except Exception as error:
    self.fail_closed(error);raise
   return self.receipt
@@ -1152,6 +1308,21 @@ def parser():
  return value
 
 
+def execute_lifecycle(controller,args,bindings,expected):
+ with controller_directory_lock(args,bindings) as lease:
+  controller.directory_lease=lease
+  try:
+   with locked_files(bindings.p,expected) as locks:
+    controller.locks=locks;controller.global_locks_held=True
+    result=controller.audit() if args.mode=='audit' else controller.check() if args.mode=='check' else controller.apply()
+  finally:controller.global_locks_held=False
+  if args.mode=='apply':
+   try:result=controller.finish_after_unlock()
+   except Exception as error:
+    controller.fail_closed(error);raise
+ return result
+
+
 def main(argv=None):
  args=parser().parse_args(argv);os.umask(0o077);controller=None
  try:
@@ -1166,9 +1337,7 @@ def main(argv=None):
   if args.mode=='apply':
    raw,_=read_file(args.check,args.check_sha256,private=True);expected=json.loads(raw).get('audit',{}).get('locks')
    require(isinstance(expected,dict) and len(expected)==2,'ADMISSION_CHECK_LOCK_PINS_REQUIRED')
-  with locked_files(bindings.p,expected) as locks:
-   controller.locks=locks
-   result=controller.audit() if args.mode=='audit' else controller.check() if args.mode=='check' else controller.apply()
+  result=execute_lifecycle(controller,args,bindings,expected)
   if args.mode=='apply':
    print(json.dumps({'passed':result['passed'],'phase':result['phase'],'action':args.action,
                      'receipt':str(controller.directory/'receipt.json'),'receipt_sha256':pin(controller.directory/'receipt.json')['sha256']}))

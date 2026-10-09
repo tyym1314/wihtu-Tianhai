@@ -36,9 +36,11 @@ create fresh audit/proof/check evidence for the new version.
    server. Advance the owned production symlink and installation marker,
    retaining the 03 source, original four private pins and historical restore
    contract. Load the six owned unit templates and two certificate unit
-   templates from 04. Start the API and timers only after typed loaded-command,
-   database, profile and source checks. The App remains paused and there is no
-   policy row.
+   templates from 04. Start only the API under the two shared locks, prove actual
+   ready/HTTPS, and write a verified pending receipt with `passed=false`. Release
+   both shared locks before activating the three exact timers and completing
+   the bounded lifecycle described below. The App remains paused and there is
+   no policy row.
 2. `approve`: separately review the actual 04 source and App metadata, all 11
    arena games, platform binding, currency scale, exact HTTPS origins, and zero
    financial state. Stop the owned writers before committing a closed policy at
@@ -46,17 +48,21 @@ create fresh audit/proof/check evidence for the new version.
    keeping generic admission exactly `0`. Save the complete original closed-04
    configuration in independently approved `configuration_history`; preserve
    the other three secret fingerprints. Record the real policy snapshot, then
-   verify the database and restart the owned runtime. The App remains paused.
+   verify the database and restart only the owned API under shared locks. The
+   same post-lock timer tail must finish before success. The App remains paused.
 3. `open`: lock App → policy → binding → wallet scope, check the exact previous
    metadata and revision, then atomically activate the App and change the
    policy to open at the next revision. Keep its source, original approval
    proof and environment unchanged. Append the actual committed snapshot to
-   the marker. Only zero-entry BOT training is admitted by the backend.
+   the marker. Temporarily stop only the three owned timers, preserving the API
+   and accepted games; reactivate them through the same post-lock tail. Only
+   zero-entry BOT training is admitted by the backend.
 4. `close`: use the same transaction and next revision to pause the App and
    close the policy. Keep the environment and all source/proof fields unchanged.
    Existing accepted games, recovery and exit remain the backend's authority;
    this action does not clear rooms, sessions, identities or wallets and does
-   not stop the API on success.
+   not stop the API on success. The three owned timers follow the same temporary
+   stop and post-lock activation, without rewriting runtime bytes.
 
 For every action, use a new read-only `audit`, a new root approval for exactly
 that action, a fresh `check`, an independent external SHA readback, and one
@@ -65,6 +71,46 @@ Both the global release lock and the production operations lock bind path,
 opened FD, inode, device, owner, mode and bytes before and after flock and again
 at completion. An already attempted check hash has its own exclusive receipt
 directory and cannot be retried automatically.
+
+An additional nonblocking flock on the existing root-owned 0700 controller
+parent directory FD serializes private admission operations across both
+phases. It creates no lock file and changes no directory metadata. The FD and
+path must retain their exact device/inode/owner/mode/fingerprint until exit.
+Audit and check take these read-only locks without changing timers or services.
+Deployment of another private controller version must respect this same
+directory lock.
+
+## Completion after shared locks are released
+
+The backup job takes the production operations lock and certificate renewal
+takes the global release lock, both nonblocking. Starting their timers while
+holding those same locks can fail normal scheduled work. The controller never
+starts any of the three timers inside its shared-lock scope.
+
+After the source/policy change and API readiness are verified, the receipt stays
+pending and false. On releasing both shared locks, recheck the controller,
+helpers, source, evidence, all private/resource/namespace/unit identities,
+retained lock-file fingerprints, database, profile and strict HTTPS. The parent
+directory lease remains held. Only then start exactly the backup, monitor and
+certificate timers. For no more than 60 seconds, resample their immediate
+oneshot work. Each sample still verifies source, evidence, authored files,
+public protection, physical resource ownership, the directory lease and eight
+disk/loaded unit contracts. Busy work must match its exact witnessed command,
+root UID fields, systemd PID/start ticks, dedicated cgroup, cwd and FD-pinned
+mapped executable. The system Node and Python executable fingerprints are
+included in the audit/check bindings. Only an exact metadata transition may be
+resampled; failed/nonzero results, unknown status, foreign process identity,
+changed templates/commands/executables or timeout refuse completion.
+
+A busy sample grants no consumer exemption and performs no further mutation.
+Full consumer acceptance is deferred until all exact jobs are idle, at which
+point the original two-sample foreign-consumer gate must pass. Final timers
+must be active; jobs must be inactive/PID 0 with successful status; database,
+policy, HTTPS and full scope are checked again, including scope equality across
+the final readback. Only this post-lock success sets the original receipt to
+`passed=true` and `complete_*`. `timer_tail` separates observed running
+invocations from idle default `ExecMainCode=0`: a calendar job that never fired
+is not fresh backup or certificate execution evidence.
 
 ## Root approval document
 
@@ -224,7 +270,11 @@ contains a sanitized code. Primary and cleanup failures remain separate.
 
 Failure always invalidates `passed`, including a final lock failure after a
 nominal completion. When normal physical ownership, original secrets, authored
-pins and effective units can still be proved, stop only the owned API. Do not
+pins and effective units can still be proved, stop only the three exact timers
+and owned API. Idle failed jobs may permit this verified cleanup, but cannot
+make the operation successful. A still-busy or foreign job refuses unsafe
+cleanup; `closed_runtime_confirmed=false` and the separate cleanup error make
+clear that an API stop was not proved. Do not
 stop or recreate the database container, remove data, restore a live database,
 reverse a committed policy revision, or pretend schema/source rolled back.
 The receipt explicitly states that a database policy may already be committed.
@@ -249,7 +299,13 @@ inodes for both sources, PID/start-tick reuse, wrong ancestor/UID/cwd/cgroup,
 changed argv/version, executable mutation/link/mapped-inode mismatch, inactive
 or extra consumers, legitimate CPU-stat changes, and refusal before systemctl
 stop. Private controller-origin evidence remains separate and cannot change
-the frozen runtime manifest, packaged-controller SHA or runtime commit. An independent
+the frozen runtime manifest, packaged-controller SHA or runtime commit.
+The lifecycle tests additionally exercise real directory-FD flock contention
+and replacement, shared-lock release before timer start, read-only audit/check,
+API-only startup, preserved API during open/close timer stops, observed vs never
+fired jobs, exact transient job identity, failed/nonzero/foreign/source/template
+rejection, bounded timeout, final verification before success and honest
+refused cleanup when a task remains busy. An independent
 owned-loopback PG run checks official schema snapshots, approve/open/close
 revisions and source/proof preservation, stale-revision rollback, and an actual
 accepted Golf BOT room: closing rejects new launch/room, preserves original
