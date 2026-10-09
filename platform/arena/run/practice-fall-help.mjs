@@ -1,4 +1,4 @@
-import {RUN_PRACTICE_INPUT_PROTOCOL,RUN_PRACTICE_INPUT_RULE_VERSION} from './start-policy.mjs';
+import {readRunPracticeOwnEvents} from './practice-own-events.mjs';
 const integer=n=>Number.isSafeInteger(n)&&n>=0;
 const identity=e=>JSON.stringify([e.playerKey,e.tick,e.type,e.checkpoint]);
 // Help observes committed authority only. It owns neither a simulation clock
@@ -7,16 +7,16 @@ export function createRunPracticeFallHelp({roomId,playerKey,clockEpoch}){
  let revision=-1,committed=-1,checkpoint=null,count=0,fingerprint=null;
  const seen=new Set();
  function receive(room){
-  const a=room?.run_inputs,g=room?.game,anchor=a?.selfReplay;
+  const a=room?.run_inputs,g=room?.game,anchor=a?.selfReplay,retained=readRunPracticeOwnEvents(room);
   if(room?.id!==roomId||room.me!==playerKey||room.game_id!=='run'||room.practice!==true||room.entry_minor!=='0'
-   ||a?.roomId!==roomId||a.playerKey!==playerKey||a.clockEpoch!==clockEpoch||a.protocol!==RUN_PRACTICE_INPUT_PROTOCOL
-   ||a.ruleVersion!==RUN_PRACTICE_INPUT_RULE_VERSION||g?.ruleVersion!==a.ruleVersion||g.me!==playerKey
+   ||a?.roomId!==roomId||a.playerKey!==playerKey||a.clockEpoch!==clockEpoch||!retained
+   ||g?.ruleVersion!==a.ruleVersion||g.me!==playerKey
    ||!integer(a.revision)||a.revision<revision||!integer(a.headTick)||a.headTick!==g.snapshotTick
    ||!integer(a.committedThroughTick)||a.committedThroughTick<committed
    ||anchor?.schema!=='run-practice-self-replay-v1'||!integer(anchor.anchorTick)||anchor.anchorTick>a.committedThroughTick
    ||anchor.player?.key!==playerKey||!integer(anchor.player.checkpointU)||anchor.player.checkpointU%9000!==0
-   ||!Array.isArray(g.events)||g.events.length>48)return false;
-  const falls=g.events.filter(e=>e?.playerKey===playerKey&&e.type==='fall');
+   )return false;
+  const falls=[...new Map(retained.events.filter(e=>e?.playerKey===playerKey&&e.type==='fall').map(e=>[identity(e),e])).values()];
   if(falls.some(e=>!integer(e.tick)||e.tick>a.headTick||!integer(e.checkpoint)||e.checkpoint%30!==0))return false;
   const nextFingerprint=JSON.stringify([a.headTick,a.committedThroughTick,anchor.anchorTick,anchor.player.checkpointU,falls.map(identity).sort()]);
   if(a.revision===revision)return fingerprint===nextFingerprint;

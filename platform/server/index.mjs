@@ -1,3 +1,4 @@
+import {runPracticeProfileCapability} from '../shared/run-practice-profiles.mjs';
 import {createServer} from 'node:http';
 import {serveGameAsset as serveLegacy} from './game-assets.mjs';
 import {pool,walletPool,tx,closePools} from './db.mjs';
@@ -121,7 +122,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
     const active=(await pool.query('SELECT r.id,r.game_id FROM pvp_active_users u JOIN pvp_rooms r ON r.id=u.room_id WHERE u.app_id=$1 AND u.external_user_id=$2',[s.app_id,s.external_user_id])).rows[0];
     let balance=null,balance_error=null;try{balance=await walletBalance(app,s.external_user_id);}catch(e){balance_error='BALANCE_UNAVAILABLE';}
     return send(res,200,{session_id:s.id,external_user_id:s.external_user_id,game_id:s.game_id,scope:scope(app),balance,balance_error,competitive_fee_bps:app.competitive_fee_bps,
-      ...(s.game_id==='run'?{run_practice_input_protocol:RUN_PRACTICE_INPUT_PROTOCOL,run_practice_courses:runPracticeCourseCapability()}:{}),
+      ...(s.game_id==='run'?{run_practice_input_protocol:RUN_PRACTICE_INPUT_PROTOCOL,run_practice_input_profiles:runPracticeProfileCapability(),run_practice_courses:runPracticeCourseCapability()}:{}),
       active_room_id:active?.game_id===s.game_id?active.id:null,other_active_game:active&&active.game_id!==s.game_id?active.game_id:null});
   }
   if(path.startsWith('/api/pvp/')){if(req.method==='POST')checkOrigin(req);const session=await authenticated(req,()=>playSession(req));limiter.player(session,'pvp',req.method,path);const r=await routePvp(session,req.method,path,body);if(!r)fail(404,'NOT_FOUND');return send(res,r.status,req.method==='GET'&&r.status===200?compactRoomSnapshot(r.body,req.headers['x-oasis-known-actions'],{runKey:req.headers['x-oasis-known-run-game'],session}):r.body);}

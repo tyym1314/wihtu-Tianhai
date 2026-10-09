@@ -15,9 +15,10 @@ import {PRACTICE_RULE_VERSION as RUN_PRACTICE_RULE_VERSION,PRACTICE_INPUT_RULE_V
 import {runRequiresSceneReady} from '../../arena/run/start-policy.mjs';
 import {newRunPracticeCourseOptions,storedRunPracticeCourse} from './run-course-policy.mjs';
 import {newTowerPracticeStartOptions,roomStartDelayMs} from './tower-start-policy.mjs';
+import {RUN_PRACTICE_PROFILES,resolveRunPracticeProfile} from '../../shared/run-practice-profiles.mjs';
 import {makeRunActionReceipt} from '../../shared/run-action-receipt.mjs';
 import {walletRetryNotDue} from './retry-time.mjs';
-import {RUN_PRACTICE_INPUT_PROTOCOL,isRunInputRoom,initializeRunInputRoom,advanceRunInputRoom,runInputResultCommitted,runInputAuthority,prepareRunInputBatch,persistRunInputBatch,shiftRunInputRoom} from './run-practice-protocol.mjs';
+import {assertRunInputRoomBinding,runInputRoomProfile,isRunInputRoom,initializeRunInputRoom,advanceRunInputRoom,runInputResultCommitted,runInputAuthority,prepareRunInputBatch,persistRunInputBatch,shiftRunInputRoom} from './run-practice-protocol.mjs';
 const terminal=new Set(['settled','voided','cancelled']);
 const RUN_SCENE_READY_PRESENCE_MS=2000;
 function runSceneReadyFresh(p,now,heartbeatKey){
@@ -74,7 +75,14 @@ function checkSession(s){if(!s||!engines[s.game_id]||typeof s.external_user_id!=
 function checkNew(app,game){if(!app||app.status!=='active')fail(409,'APP_PAUSED');if(!app.game_ids.includes(game))fail(403,'GAME_NOT_ENABLED');}
 function exactRecords(actual,expected){return Array.isArray(actual)&&actual.length===expected.length&&new Set(actual.map(p=>p.external_user_id)).size===actual.length&&new Set(actual.map(p=>p.seat_index)).size===actual.length&&expected.every(p=>actual.some(v=>Object.keys(v).length===Object.keys(p).length&&Object.keys(p).every(k=>v[k]===p[k])));}
 function roster(r){return r.players.map(p=>({external_user_id:p.external_user_id,seat_index:p.seat_index,reservation_id:`res_${r.id}_${p.seat_index}`,entry_minor:r.entry_minor,...(r.terms.team_size===2?{team_id:p.team_id}:{})}));}
+function assertRunV2Room(r){
+ if(r.game_id==='run'&&(r.rule_version===RUN_PRACTICE_PROFILES.v2.ruleVersion||r.terms?.run_input_profile!=null||r.terms?.run_input_protocol===RUN_PRACTICE_PROFILES.v2.protocol||r.run_input_state?.profileId!=null||r.run_input_state?.protocol===RUN_PRACTICE_PROFILES.v2.protocol)){
+  if(!runInputRoomProfile(r)||r.game_state&&r.game_state.ruleVersion!==r.rule_version||r.status==='active'&&r.game_state?.phase!=='arming'&&!r.run_input_state)fail(503,'INVALID_PRACTICE_SCOPE');
+  if(r.run_input_state)assertRunInputRoomBinding(r);
+ }
+}
 function personal(r,s,now=Date.now()){
+ assertRunV2Room(r);
  const rankings=r.result?.rankings||(r.game_state&&supportsRules(engines[r.game_id],r.rule_version)?engines[r.game_id].rank(r.game_state):[]),byKey=new Map(rankings.map(p=>[p.playerKey,p]));
  const mine=r.players.find(p=>p.external_user_id===s.external_user_id);
  const total=BigInt(r.entry_minor)*BigInt(r.capacity),fee=total*BigInt(r.fee_bps)/10000n;
@@ -84,6 +92,7 @@ function personal(r,s,now=Date.now()){
  if(r.game_id==='run'){const course=storedRunPracticeCourse(r);if(course)view.run_course=course;}
  if(r.game_id==='towerlink'){view.room_mode=r.practice?'practice':walletless(r)?'social':'competitive';view.training_lesson_id=r.game_options?.training_lesson_id||null;}
  if(r.game_id==='run'&&runRequiresSceneReady(r.rule_version)){const humans=r.players.filter(p=>!p.bot);view.start_protocol={kind:RUN_SCENE_READY_POLICY,phase:r.game_state?.phase||null,ready_count:humans.filter(p=>r.game_state?.phase==='arming'?runSceneReadyFresh(p,now):!!p.scene_ready_at).length,human_count:humans.length,ready_deadline_at:r.game_state?.armingDeadlineAt??null,starts_at:r.starts_at};}
+ const inputProfile=runInputRoomProfile(r);if(inputProfile)view.run_input_profile={rule_version:inputProfile.ruleVersion,protocol:inputProfile.protocol,profile_id:inputProfile.profileId};
  if(isRunInputRoom(r)&&r.run_input_state){
   view.run_inputs=runInputAuthority(r);
   if(view.game&&!r.result&&!runInputResultCommitted(r)){
@@ -139,12 +148,13 @@ function fixResult(r,now,resolution='completed',reason){
  const payouts=r.players.map(p=>{const rank=ranking.find(v=>v.playerKey===p.external_user_id),index=ordered.findIndex(v=>v.external_user_id===p.external_user_id);return{external_user_id:p.external_user_id,seat_index:p.seat_index,...(resolution==='completed'?{rank:rank?.forfeited?r.capacity:rank?.rank||r.capacity}:{}),payout_minor:(resolution==='void'?BigInt(r.entry_minor):index<0?0n:prize/count+(BigInt(index)<prize%count?1n:0n)).toString()};});
  r.result={resolution,reason:reason||null,rankings:ranking,payouts,fee_minor:fee.toString(),pool_minor:total.toString(),fixed_at:now,rule_version:r.rule_version};r.result_hash=hash(JSON.stringify(r.result));r.result.result_hash=r.result_hash;r.status=walletless(r)?(resolution==='void'?'voided':'settled'):(resolution==='void'?'voiding':'settling');r.end_at=now;r.error=null;
 }
-function startGame(r,now){const fairRun=r.game_id==='run'&&runRequiresSceneReady(r.rule_version),startAt=now+roomStartDelayMs(r),practiceCourse=r.game_id==='run'?storedRunPracticeCourse(r):null;r.game_state=engines[r.game_id].createState(unseal(r.seed_enc),now,{ruleVersion:r.rule_version,players:r.players.map(p=>({key:p.external_user_id,seatIndex:p.seat_index,name:p.name,isBot:p.bot,teamId:p.team_id})),...(fairRun?{startPolicy:RUN_SCENE_READY_POLICY}:{}),...(practiceCourse?{practiceCourseId:practiceCourse.id}:{}),...(r.game_id==='towerlink'?{startAt,...(r.game_options?.training_lesson_id?{trainingLessonId:r.game_options.training_lesson_id}:{})}:{})});r.status='active';r.starts_at=fairRun?null:startAt;r.end_at=fairRun?r.game_state.armingDeadlineAt:r.game_id==='towerlink'?r.game_state.deadlineAt:startAt+ARENA_GAMES[r.game_id].duration;r.last_tick_at=now;for(const p of r.players)p.last_seen_at=now;r.error=null;}
+function startGame(r,now){assertRunV2Room(r);const fairRun=r.game_id==='run'&&runRequiresSceneReady(r.rule_version),startAt=now+roomStartDelayMs(r),practiceCourse=r.game_id==='run'?storedRunPracticeCourse(r):null;r.game_state=engines[r.game_id].createState(unseal(r.seed_enc),now,{ruleVersion:r.rule_version,players:r.players.map(p=>({key:p.external_user_id,seatIndex:p.seat_index,name:p.name,isBot:p.bot,teamId:p.team_id})),...(fairRun?{startPolicy:RUN_SCENE_READY_POLICY}:{}),...(practiceCourse?{practiceCourseId:practiceCourse.id}:{}),...(r.game_id==='towerlink'?{startAt,...(r.game_options?.training_lesson_id?{trainingLessonId:r.game_options.training_lesson_id}:{})}:{})});r.status='active';r.starts_at=fairRun?null:startAt;r.end_at=fairRun?r.game_state.armingDeadlineAt:r.game_id==='towerlink'?r.game_state.deadlineAt:startAt+ARENA_GAMES[r.game_id].duration;r.last_tick_at=now;for(const p of r.players)p.last_seen_at=now;r.error=null;}
 function allRunHumansPresent(r,now,heartbeatKey){
  return r.players.filter(p=>!p.bot).every(p=>runSceneReadyFresh(p,now,heartbeatKey));
 }
 function armRun(r,now){engines.run.armStart(r.game_state,now);r.starts_at=r.game_state.startedAt;r.end_at=r.game_state.deadlineAt;if(isRunInputRoom(r))initializeRunInputRoom(r);}
 async function advance(r,now,{skipGap=false,forfeitKeys=[],heartbeat,ignorePresence=false}={}){
+ assertRunV2Room(r);
  const persist=async()=>{if(heartbeat){const p=r.players.find(p=>p.external_user_id===heartbeat.key);if(p)p.last_seen_at=now;heartbeat.written=true;}await save(r);};
  if(terminal.has(r.status))return r;if(r.status==='active'&&r.game_state&&(!supportsRules(engines[r.game_id],r.rule_version)||r.game_state.ruleVersion!==r.rule_version)){r.status='fault';r.fault_at??=now;r.error={code:'PINNED_RULE_UNAVAILABLE'};await persist();}let app;const walletApp=async()=>app??=await appById(r.app_id);const base={...r.scope,match_id:r.id};
  try{
@@ -228,8 +238,9 @@ export async function routePvp(session,method,path,body={},options={}){
  if(method==='POST'&&path==='/api/pvp/rooms'){
   if(body.game_id!==s.game_id||!allowedCapacity(s.game_id,body.capacity)||typeof body.practice!=='undefined'&&typeof body.practice!=='boolean')fail(400,'INVALID_ROOM');
   const practice=body.practice===true,entry=practice?'0':body.entry_minor,social=s.game_id==='towerlink'&&!practice&&entry==='0';if(!practice&&!social&&!['1000','5000','10000','20000','50000'].includes(entry))fail(400,'INVALID_ENTRY');
-  const inputProtocol=body.run_input_protocol;
-  if(inputProtocol!==undefined&&(inputProtocol!==RUN_PRACTICE_INPUT_PROTOCOL||s.game_id!=='run'||!practice||(body.entry_minor!==undefined&&body.entry_minor!=='0')))fail(400,'INVALID_INPUT_PROTOCOL');
+  const inputProtocol=body.run_input_protocol,profileId=body.run_input_profile;
+  const inputProfile=inputProtocol===undefined?null:resolveRunPracticeProfile({ruleVersion:inputProtocol===RUN_PRACTICE_PROFILES.v2.protocol?RUN_PRACTICE_PROFILES.v2.ruleVersion:RUN_INPUT_RULE_VERSION,protocol:inputProtocol,profileId});
+  if(inputProtocol===undefined&&profileId!==undefined||inputProtocol!==undefined&&(!inputProfile||s.game_id!=='run'||!practice||(body.entry_minor!==undefined&&body.entry_minor!=='0')))fail(400,'INVALID_INPUT_PROTOCOL');
   if(s.game_id==='towerlink'&&!practice&&!social&&body.capacity!==2)fail(400,'TOWERLINK_PAID_1V1_ONLY');
   const gameOptions=newRunPracticeCourseOptions(s.game_id,practice,body);
   if(body.training_lesson_id!==undefined){
@@ -244,8 +255,8 @@ export async function routePvp(session,method,path,body={},options={}){
    const now=roomNow(null,options.now),fee=practice||social?0:Number(app.competitive_fee_bps??500);if(!practice&&!social&&![300,500,800,1000].includes(fee))fail(409,'INVALID_APP_FEE');
    const players=[player(s,0,now)];if(practice)for(let i=1;i<body.capacity;i++)players.push(player({external_user_id:`bot_${i}_${randomBytes(12).toString('hex')}`},i,now,true));
    const teamSize=teamSizeFor(s.game_id,body.capacity);if(teamSize===2)players.forEach((p,i)=>p.team_id=i%2?'team_b':'team_a');
-   const ruleVersion=s.game_id==='run'&&practice?(inputProtocol?RUN_INPUT_RULE_VERSION:RUN_PRACTICE_RULE_VERSION):engines[s.game_id].RULE_VERSION;
-   const terms={game_id:s.game_id,rule_version:ruleVersion,payout_template_version:teamSize===2?'team-share-v1':'winner-all-v1',fee_bps:fee,entry_minor:entry,player_count:body.capacity,team_size:teamSize};
+   const ruleVersion=s.game_id==='run'&&practice?(inputProfile?inputProfile.ruleVersion:RUN_PRACTICE_RULE_VERSION):engines[s.game_id].RULE_VERSION;
+   const terms={game_id:s.game_id,rule_version:ruleVersion,payout_template_version:teamSize===2?'team-share-v1':'winner-all-v1',fee_bps:fee,entry_minor:entry,player_count:body.capacity,team_size:teamSize,...(inputProfile?.profileId?{run_input_protocol:inputProfile.protocol,run_input_profile:inputProfile.profileId}:{} )};
    // Freeze a server-owned policy only on new eligible BOT-practice rooms.
    // Existing waiting/funding rooms retain their stored options and default 3s.
    Object.assign(gameOptions,newTowerPracticeStartOptions({game_id:s.game_id,practice,entry_minor:entry,fee_bps:fee,capacity:body.capacity,players,terms,rule_version:ruleVersion}));
@@ -268,7 +279,7 @@ export async function routePvp(session,method,path,body={},options={}){
  // or sampling the action clock. All authority checks stay below the lock.
  const preparation=prepareBowling?bowlingPreparations.begin({room:initial,session:s,body,digest}):null;
  try{return await locked('pvp:'+initial.id,async()=>{
-  let r=hydrate(await getRoom(initial.id));const now=roomNow(r,options.now),member=r.players.find(p=>p.external_user_id===s.external_user_id);
+  let r=hydrate(await getRoom(initial.id));assertRunV2Room(r);const now=roomNow(r,options.now),member=r.players.find(p=>p.external_user_id===s.external_user_id);
   if(method==='GET'&&!verb){if(!member)fail(403,'NOT_A_PLAYER');if(!terminal.has(r.status)){
    const heartbeat={key:s.external_user_id,written:false},lastSeen=member.last_seen_at;
    await advance(r,now,{skipGap:options.skipGap,heartbeat,ignorePresence:options.now!==undefined});member.last_seen_at=now;

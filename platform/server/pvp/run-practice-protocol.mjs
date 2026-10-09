@@ -1,27 +1,35 @@
 import {fail} from '../security.mjs';
 import {PRACTICE_INPUT_RULE_VERSION,RULES} from '../../arena/run/engine.mjs';
-import {RUN_PRACTICE_INPUT_PROTOCOL,createRunPracticeInputs,compactRunPracticeDecisions} from './run-practice-inputs.mjs';
+import {RUN_PRACTICE_INPUT_PROTOCOL,createRunPracticeInputs,compactRunPracticeDecisions,validRunPracticeOwnJournal} from './run-practice-inputs.mjs';
+import {resolveRunPracticeProfile} from '../../shared/run-practice-profiles.mjs';
 import {runEngineTask} from './engine-pool.mjs';
 
 export {RUN_PRACTICE_INPUT_PROTOCOL};
-export function isRunInputRoom(r){
-  return r.game_id==='run'&&r.rule_version===PRACTICE_INPUT_RULE_VERSION&&r.practice===true&&String(r.entry_minor)==='0'&&r.fee_bps===0
-    &&r.terms?.rule_version===PRACTICE_INPUT_RULE_VERSION&&Array.isArray(r.players)&&r.players.length>=2&&r.players.length<=4
-    &&r.players.filter(p=>!p.bot).length===1&&r.players.every(p=>typeof p.bot==='boolean');
+export function runInputRoomProfile(r){
+  const profile=resolveRunPracticeProfile({ruleVersion:r?.rule_version,protocol:r?.terms?.run_input_protocol??(r?.rule_version===PRACTICE_INPUT_RULE_VERSION?RUN_PRACTICE_INPUT_PROTOCOL:undefined),profileId:r?.terms?.run_input_profile});
+  if(!profile||r.game_id!=='run'||r.practice!==true||String(r.entry_minor)!=='0'||r.fee_bps!==0||r.terms?.rule_version!==r.rule_version
+    ||!Array.isArray(r.players)||r.players.length<2||r.players.length>4||r.players.filter(p=>p.bot===false).length!==1||!r.players.every(p=>typeof p.bot==='boolean'))return null;
+  // Preserve old fixtures/rows; new tuples must bind every frozen free-room term.
+  if(profile.profileId&&(String(r.terms.entry_minor)!=='0'||r.terms.fee_bps!==0||r.terms.game_id!=='run'||r.terms.player_count!==r.capacity||r.players.length!==r.capacity
+    ||new Set(r.players.map(p=>p.external_user_id)).size!==r.capacity||new Set(r.players.map(p=>p.seat_index)).size!==r.capacity
+    ||r.players.some(p=>!Number.isSafeInteger(p.seat_index)||p.seat_index<0||p.seat_index>=r.capacity)))return null;
+  return profile;
 }
+export const isRunInputRoom=r=>!!runInputRoomProfile(r);
 const keyOf=r=>r.players.find(p=>!p.bot).external_user_id;
 const selfFields=['key','distanceU','checkpointU','lane','fromLane','changeStartTick','changeEndTick','jumpStartTick','slideUntilTick','stunUntilTick','immuneUntilTick','fallStartTick','fallUntilTick','shieldUntilTick','boostUntilTick','inventory','claimedItems','resolvedObstacles','hits','inputNo','appliedInputNo','lastInputTick','pendingInput','finishTick','finishedAt','forfeited'];
 function assertBinding(r){
-  const e=r.run_input_state;
-  if(!isRunInputRoom(r)||!e||e.roomId!==r.id||e.playerKey!==keyOf(r)||e.protocol!==RUN_PRACTICE_INPUT_PROTOCOL)fail(503,'INVALID_PRACTICE_SCOPE');
+  const e=r.run_input_state,profile=runInputRoomProfile(r);
+  if(!profile||!e||e.roomId!==r.id||e.playerKey!==keyOf(r)||e.practice!==true||e.entryMinor!=='0'||e.protocol!==profile.protocol||(profile.profileId?e.profileId!==profile.profileId||e.feeBps!==0:e.profileId!=null))fail(503,'INVALID_PRACTICE_SCOPE');
   for(const state of [e.anchor,e.current]){
-    if(state?.ruleVersion!==r.rule_version||state.players?.length!==r.players.length||r.players.some(p=>!state.players.some(q=>q.key===p.external_user_id&&q.seatIndex===p.seat_index&&q.isBot===p.bot)))fail(503,'INVALID_PRACTICE_SCOPE');
+    if(state?.ruleVersion!==r.rule_version||!validRunPracticeOwnJournal(state,profile,e.playerKey)||state.players?.length!==r.players.length||r.players.some(p=>!state.players.some(q=>q.key===p.external_user_id&&q.seatIndex===p.seat_index&&q.isBot===p.bot)))fail(503,'INVALID_PRACTICE_SCOPE');
   }
 }
-const job=(r,operation,extra={})=>({kind:'run-practice-inputs',gameId:'run',ruleVersion:PRACTICE_INPUT_RULE_VERSION,operation,envelope:r.run_input_state,...extra});
+export {assertBinding as assertRunInputRoomBinding};
+const job=(r,operation,extra={})=>({kind:'run-practice-inputs',gameId:'run',ruleVersion:r.rule_version,operation,envelope:r.run_input_state,...extra});
 export function initializeRunInputRoom(r){
-  if(!isRunInputRoom(r)||r.run_input_state)fail(503,'INVALID_PRACTICE_SCOPE');
-  r.run_input_state=createRunPracticeInputs({roomId:r.id,playerKey:keyOf(r),practice:true,entryMinor:'0',clockEpoch:1,state:r.game_state}).envelope;
+  const profile=runInputRoomProfile(r);if(!profile||r.run_input_state)fail(503,'INVALID_PRACTICE_SCOPE');
+  r.run_input_state=createRunPracticeInputs({roomId:r.id,playerKey:keyOf(r),practice:true,entryMinor:'0',clockEpoch:1,state:r.game_state,protocol:profile.protocol,...(profile.profileId?{profileId:profile.profileId,feeBps:0}:{} )}).envelope;
   r.game_state=r.run_input_state.current;
 }
 export function runInputResultCommitted(r){
@@ -35,7 +43,7 @@ export async function shiftRunInputRoom(r,pauseMs){
 export async function advanceRunInputRoom(r,now){
   assertBinding(r);
   if(now<r.last_tick_at)fail(400,'CLOCK_REWIND');
-  const target=Math.min(6120,Math.max(0,Math.floor((now-r.run_input_state.anchor.startedAt)*RULES.hz/1000)));
+  const target=Math.min(runInputRoomProfile(r).serverMaxTick,Math.max(0,Math.floor((now-r.run_input_state.anchor.startedAt)*RULES.hz/1000)));
   // Normal ticks catch up at most a five-second coordinator gap. Larger real
   // shared pauses must rotate the clock epoch before reaching this function.
   if(target-r.run_input_state.serverTick>360){const e=new Error('Replay catch-up requires clock recovery');Object.assign(e,{code:'RUN_REPLAY_CATCHUP_REQUIRED',status:503,engineUnavailable:true});throw e;}
@@ -49,7 +57,7 @@ export function runInputAuthority(r,decisions=[],correction=null){
   const e=r.run_input_state;if(!e)return null;
   assertBinding(r);
   const mine=e.current.players.find(p=>p.key===e.playerKey),committed=runInputResultCommitted(r);
-  return {protocol:RUN_PRACTICE_INPUT_PROTOCOL,ruleVersion:PRACTICE_INPUT_RULE_VERSION,roomId:r.id,playerKey:e.playerKey,clockEpoch:e.clockEpoch,
+  return {protocol:e.protocol,ruleVersion:r.rule_version,...(e.profileId?{profileId:e.profileId,committedOwnEvents:structuredClone(e.anchor.practiceOwnEvents.filter(event=>event.playerKey===e.playerKey&&event.tick<=e.committedThroughTick))}:{}),roomId:r.id,playerKey:e.playerKey,clockEpoch:e.clockEpoch,
     revision:e.revision,headTick:e.current.tick,serverTick:e.serverTick,committedThroughTick:e.committedThroughTick,
     processedThroughCommandSeq:e.lastCommandSeq,acceptedInputNo:mine.inputNo,decisions,correction,
     // Only this authenticated runner's replay proof. A head-only snapshot

@@ -1,4 +1,5 @@
 import {parentPort} from 'node:worker_threads';
+import {resolveRunPracticeProfile} from '../../shared/run-practice-profiles.mjs';
 import {engines} from './engines.mjs';
 import {supportsRules} from './rule-support.mjs';
 import {runRequiresSceneReady} from '../../arena/run/start-policy.mjs';
@@ -9,7 +10,7 @@ import {applyRunPracticeInputs,advanceRunPracticeInputs,shiftRunPracticeInputs} 
 export function executeEngineTask(job){
   const engine=engines[job.gameId];
   if(job.kind==='run-practice-inputs'){
-    if(job.gameId!=='run'||job.ruleVersion!==engines.run.PRACTICE_INPUT_RULE_VERSION||job.envelope?.anchor?.ruleVersion!==job.ruleVersion){const e=new Error('Pinned input rules unavailable');e.code='PINNED_RULE_UNAVAILABLE';e.status=503;throw e;}
+    if(job.gameId!=='run'||!resolveRunPracticeProfile({ruleVersion:job.ruleVersion,protocol:job.envelope?.protocol,profileId:job.envelope?.profileId})||job.envelope?.anchor?.ruleVersion!==job.ruleVersion){const e=new Error('Pinned input rules unavailable');e.code='PINNED_RULE_UNAVAILABLE';e.status=503;throw e;}
     if(job.operation==='apply')return applyRunPracticeInputs(job.envelope,job.request,job.serverTick);
     if(job.operation==='advance')return advanceRunPracticeInputs(job.envelope,job.serverTick);
     if(job.operation==='shift')return shiftRunPracticeInputs(job.envelope,job.pause);

@@ -1,13 +1,13 @@
 import {createHash} from 'node:crypto';
 import * as engine from '../../arena/run/engine.mjs';
+import {RUN_PRACTICE_PROFILES,resolveRunPracticeProfile} from '../../shared/run-practice-profiles.mjs';
 
-// Server-internal core for the explicit V2.3 HTTP opt-in (not yet deployed;
-// the default UI still uses the previous profile).
+// Server-internal core for explicitly negotiated HTTP BOT-practice inputs.
 // The coordinator must persist the returned envelope and decisions atomically.
 // Never accept an envelope, serverTick, stakes or roster from a client.
 // The unkeyed integrity hash detects damaged/incomplete stored history; it is
 // not a client authentication mechanism. New public rooms must use the explicit
-// V2.3 input rule; V2.2 remains allowed for mechanism fixtures only, never auto-
+// exact input tuple; V2.2 remains allowed for mechanism fixtures only, never auto-
 // adopted/upgraded by this core. Pause/epoch rotation is a trusted server call.
 // A full decision tail fails closed. Only the server coordinator's explicit
 // same-transaction durable-prefix declaration can compact it; old retries then
@@ -15,8 +15,12 @@ import * as engine from '../../arena/run/engine.mjs';
 export const RUN_PRACTICE_INPUT_PROTOCOL='run-practice-inputs-v1';
 export const RUN_PRACTICE_REPLAY_LIMITS=Object.freeze({historyTicks:120,advanceTicks:120,batch:8,decisions:128,revisions:128,envelopeBytes:262144});
 export const RUN_PRACTICE_WORK_LIMITS=Object.freeze({ticks:240,admissions:1024,botDecisions:768,temporaryStates:12});
-const L=RUN_PRACTICE_REPLAY_LIMITS,MAX_TICK=6000,types=new Set(['left','right','jump','slide','item']);
-const practiceRules=new Set([engine.PRACTICE_RULE_VERSION,engine.PRACTICE_INPUT_RULE_VERSION].filter(v=>typeof v==='string'));
+const eventTypes=new Set(['left','right','jump','slide','item_used','item_pickup','item_skipped','hit','shield_hit','fall','respawn','finish','forfeit']);
+const MAX_TICK=6000,types=new Set(['left','right','jump','slide','item']);
+// V2.2 is retained only for the original internal mechanism fixtures. Public
+// coordination/worker admission still requires a fully negotiated public tuple.
+function profileOf(e){return resolveRunPracticeProfile({ruleVersion:e?.anchor?.ruleVersion,protocol:e?.protocol,profileId:e?.profileId})
+ ??(e?.anchor?.ruleVersion===engine.PRACTICE_RULE_VERSION&&e?.protocol===RUN_PRACTICE_INPUT_PROTOCOL&&e?.profileId==null?RUN_PRACTICE_PROFILES.v1:null);}
 const copy=value=>structuredClone(value);
 const integer=(n,min=0,max=Number.MAX_SAFE_INTEGER)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
 const id=s=>typeof s==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(s);
@@ -29,19 +33,25 @@ const at=(s,tick)=>Math.ceil(s.startedAt+tick*1000/engine.RULES.hz);
 const canonicalJSON=value=>JSON.stringify(value,(_key,v)=>v&&typeof v==='object'&&!Array.isArray(v)
  ?Object.fromEntries(Object.keys(v).sort().map(key=>[key,v[key]])):v);
 const digest=e=>createHash('sha256').update(canonicalJSON(e)).digest('hex');
-function seal(e){delete e.integrity;const text=JSON.stringify(e);if(Buffer.byteLength(text)>L.envelopeBytes)fail('HISTORY_CAPACITY');return {...e,integrity:digest(e)};}
+function seal(e){const L=profileOf(e);if(!L)fail('INVALID_HISTORY');delete e.integrity;const text=JSON.stringify(e);if(Buffer.byteLength(text)>L.envelopeBytes)fail('HISTORY_CAPACITY');return {...e,integrity:digest(e)};}
 function scope(e){
- const s=e.anchor,players=s?.players;
- return e.protocol===RUN_PRACTICE_INPUT_PROTOCOL&&e.practice===true&&e.entryMinor==='0'&&id(e.roomId)&&id(e.playerKey)
-  &&practiceRules.has(s?.ruleVersion)&&Array.isArray(players)&&players.length>=2&&players.length<=4
+ const s=e.anchor,players=s?.players,profile=profileOf(e);
+ return !!profile&&(profile===RUN_PRACTICE_PROFILES.v1||e.feeBps===0)&&e.practice===true&&e.entryMinor==='0'&&id(e.roomId)&&id(e.playerKey)
+  &&Array.isArray(players)&&players.length>=2&&players.length<=4
   &&players.filter(p=>p.isBot===false).length===1&&players.some(p=>p.key===e.playerKey&&p.isBot===false)
   &&players.every(p=>p.key===e.playerKey||p.isBot===true);
 }
+export function validRunPracticeOwnJournal(state,profile,key){
+ if(!profile.profileId)return true;
+ const events=state?.practiceOwnEvents;
+ return integer(state?.tick,0,MAX_TICK)&&integer(state?.eventSerial)&&Array.isArray(events)&&events.length<=profile.ownEventLimit&&events.every((event,i)=>event&&event.playerKey===key&&integer(event.id,1,state.eventSerial)&&integer(event.tick,Math.max(0,state.tick-profile.ownEventTicks),state.tick)&&eventTypes.has(event.type)&&Number.isFinite(event.at)&&(i===0||event.id>events[i-1].id&&event.tick>=events[i-1].tick));
+}
 function validate(input,work){
  if(!input||typeof input!=='object')fail('INVALID_HISTORY');
+ const L=profileOf(input);if(!L)fail('INVALID_HISTORY');
  const {integrity,...raw}=input;
  if(Buffer.byteLength(JSON.stringify(raw))>L.envelopeBytes||integrity!==digest(raw))fail('INVALID_HISTORY');
- if(!scope(raw)||!integer(raw.clockEpoch,1)||!integer(raw.serverTick,0,MAX_TICK+L.historyTicks)||!integer(raw.revision)
+ if(!scope(raw)||raw.current?.ruleVersion!==raw.anchor.ruleVersion||!validRunPracticeOwnJournal(raw.anchor,L,raw.playerKey)||!validRunPracticeOwnJournal(raw.current,L,raw.playerKey)||!integer(raw.clockEpoch,1)||!integer(raw.serverTick,0,MAX_TICK+L.historyTicks)||!integer(raw.revision)
   ||!integer(raw.lastCommandSeq)||!integer(raw.durableThrough,0,raw.lastCommandSeq)||!integer(raw.committedThroughTick,0,raw.serverTick)||!Array.isArray(raw.commands)||raw.commands.length>L.decisions
   ||!Array.isArray(raw.decisions)||raw.decisions.length>L.decisions||!Array.isArray(raw.revisions)||raw.revisions.length>L.revisions)fail('INVALID_HISTORY');
  if(raw.decisions.length!==raw.lastCommandSeq-raw.durableThrough||raw.decisions.some((d,i)=>d.commandSeq!==raw.durableThrough+i+1
@@ -50,14 +60,15 @@ function validate(input,work){
  return copy(raw);
 }
 function own(s,key){return s.players.find(p=>p.key===key);}
-function workContext(options={}){
- const maxTicks=options.maxWorkTicks??RUN_PRACTICE_WORK_LIMITS.ticks;
- if(!integer(maxTicks,0,RUN_PRACTICE_WORK_LIMITS.ticks)||options.measureWorkBytes!==undefined&&typeof options.measureWorkBytes!=='boolean')fail('INVALID_WORK_LIMIT');
+function workContext(options={},profile=RUN_PRACTICE_PROFILES.v1){
+ if(!profile)fail('INVALID_HISTORY');
+ const maxTicks=options.maxWorkTicks??profile.workTicks;
+ if(!integer(maxTicks,0,profile.workTicks)||options.measureWorkBytes!==undefined&&typeof options.measureWorkBytes!=='boolean')fail('INVALID_WORK_LIMIT');
  const stats={ticks:0,admissions:0,botDecisions:0,stateCopies:0,temporaryStatesPeak:0,copiedStateBytes:options.measureWorkBytes?0:null,temporaryStateBytesPeak:options.measureWorkBytes?0:null};
  const recordCopy=s=>{if(s?.players){stats.stateCopies++;if(options.measureWorkBytes)stats.copiedStateBytes+=Buffer.byteLength(JSON.stringify(s));}};
- return {stats,recordCopy,measureBytes:options.measureWorkBytes===true,charge(key){stats[key]++;if(stats[key]>(key==='ticks'?maxTicks:RUN_PRACTICE_WORK_LIMITS[key]))fail('WORK_BUDGET_EXCEEDED');},
+ return {stats,recordCopy,measureBytes:options.measureWorkBytes===true,charge(key){stats[key]++;if(stats[key]>(key==='ticks'?maxTicks:profile[key]))fail('WORK_BUDGET_EXCEEDED');},
   clone(s){recordCopy(s);return copy(s);},
-  live(n,states=[]){stats.temporaryStatesPeak=Math.max(stats.temporaryStatesPeak,n);if(n>RUN_PRACTICE_WORK_LIMITS.temporaryStates)fail('WORK_BUDGET_EXCEEDED');
+  live(n,states=[]){stats.temporaryStatesPeak=Math.max(stats.temporaryStatesPeak,n);if(n>profile.temporaryStates)fail('WORK_BUDGET_EXCEEDED');
    if(options.measureWorkBytes)stats.temporaryStateBytesPeak=Math.max(stats.temporaryStateBytesPeak,[...new Set(states)].reduce((sum,s)=>sum+Buffer.byteLength(JSON.stringify(s)),0));}};
 }
 // Stable human-first then BOT seat order. BOT decisions happen every six ticks,
@@ -82,7 +93,7 @@ function step(s,work){work.charge('ticks');engine.tick(s,at(s,s.tick+1));}
 // state for every tick. Ordered commands traverse the mutable suffix once.
 // A later rejected command may precede an earlier accepted tick in seq order;
 // preserve that business rule, invalidate its future checkpoints, and charge
-// any repeated work to the SAME 240-tick atomic budget.
+// any repeated work to the SAME negotiated atomic budget.
 function cursor(e,points,work){
  let current=work.clone(e.anchor);prepare(e,current,work);
  const wanted=new Set(points),checkpoints=new Map();
@@ -113,6 +124,7 @@ function result(e,decisions=[],correction=null,work){
    outcome:e.current.outcome,winnerKeys:copy(e.current.winnerKeys),ranks:engine.rank(e.current)}:null};
 }
 function refreshAnchor(e,serverTick,work){
+ const L=profileOf(e);
  if(!integer(serverTick,e.serverTick,Math.min(MAX_TICK+L.historyTicks,e.serverTick+L.advanceTicks)))fail('INVALID_SERVER_TICK');
  const watermark=Math.max(e.committedThroughTick,serverTick-L.historyTicks);
  if(watermark>e.anchor.tick){
@@ -124,18 +136,20 @@ function refreshAnchor(e,serverTick,work){
  e.commands=e.commands.filter(c=>c.executeTick>e.anchor.tick);
  e.revisions=e.revisions.filter(r=>r.serverTick>=e.committedThroughTick);
 }
-function publish(e){e.revision++;e.revisions.push({revision:e.revision,serverTick:e.serverTick});e.revisions=e.revisions.slice(-L.revisions);}
+function publish(e){const L=profileOf(e);e.revision++;e.revisions.push({revision:e.revision,serverTick:e.serverTick});e.revisions=e.revisions.slice(-L.revisions);}
 
 /** New server-created, already armed tick-zero free BOT rooms only. Existing
  * active rooms cannot be adopted without their real history. An outer new
- * V2.3 pinned profile must opt in; V2.2 acceptance is for local mechanism tests.
+ * negotiated pinned profile must opt in; V2.2 acceptance is for local mechanism tests.
  */
-export function createRunPracticeInputs({roomId,playerKey,practice,entryMinor,clockEpoch,state}={},options={}){
- const work=workContext(options);
- const e={protocol:RUN_PRACTICE_INPUT_PROTOCOL,roomId,playerKey,practice,entryMinor,clockEpoch,
+export function createRunPracticeInputs({roomId,playerKey,practice,entryMinor,clockEpoch,state,protocol=RUN_PRACTICE_INPUT_PROTOCOL,profileId,feeBps}={},options={}){
+ const profile=profileOf({anchor:state,protocol,profileId});
+ if(!profile)fail('INVALID_PRACTICE_SCOPE');
+ const work=workContext(options,profile);
+ const e={protocol,...(profile.profileId?{profileId,feeBps}:{} ),roomId,playerKey,practice,entryMinor,clockEpoch,
   revision:0,serverTick:0,committedThroughTick:0,lastCommandSeq:0,durableThrough:0,lastAcceptedExecuteTick:0,
   anchor:work.clone(state),current:work.clone(state),commands:[],decisions:[],revisions:[{revision:0,serverTick:0}]};
- if(!scope(e)||!integer(clockEpoch,1))fail('INVALID_PRACTICE_SCOPE');
+ if(!scope(e)||!validRunPracticeOwnJournal(state,profile,playerKey)||!integer(clockEpoch,1))fail('INVALID_PRACTICE_SCOPE');
  if(state.tick!==0||state.status!=='active'||state.phase!=='racing'||state.now!==state.startedAt
   ||state.players.some(p=>p.inputNo!==0||p.pendingInput!==null||p.distanceU!==0||p.forfeited||p.finishTick!==null))fail('MISSING_INITIAL_HISTORY');
  e.current=cursor(e,[],work).read(0);
@@ -143,7 +157,7 @@ export function createRunPracticeInputs({roomId,playerKey,practice,entryMinor,cl
 }
 
 export function advanceRunPracticeInputs(input,serverTick,options={}){
- const work=workContext(options),e=validate(input,work),changed=serverTick!==e.serverTick;
+ const work=workContext(options,profileOf(input)),e=validate(input,work),changed=serverTick!==e.serverTick;
  refreshAnchor(e,serverTick,work);e.current=cursor(e,[],work).read(Math.min(serverTick,MAX_TICK));if(changed)publish(e);
  return result(e,[],null,work);
 }
@@ -162,7 +176,7 @@ export function advanceRunPracticeInputs(input,serverTick,options={}){
  * must first validate the old prefix and pass only the remaining tail here.
  */
 export function compactRunPracticeDecisions(input,declaration,options={}){
- const work=workContext(options),e=validate(input,work);
+ const work=workContext(options,profileOf(input)),e=validate(input,work);
  if(!exact(declaration,['throughSeq'])||!integer(declaration.throughSeq,e.durableThrough,e.lastCommandSeq))fail('INVALID_DURABLE_PREFIX');
  work.live(2,work.measureBytes?[e.anchor,e.current]:[]);
  e.decisions=e.decisions.slice(declaration.throughSeq-e.durableThrough);
@@ -178,7 +192,7 @@ export function compactRunPracticeDecisions(input,declaration,options={}){
  * coordinator must finish an already committed terminal instead of pausing it.
  */
 export function shiftRunPracticeInputs(input,declaration,options={}){
- const work=workContext(options),e=validate(input,work);
+ const work=workContext(options,profileOf(input)),e=validate(input,work);
  if(!declaration||typeof declaration!=='object'||Array.isArray(declaration)
   ||Object.keys(declaration).some(k=>!['pauseMs','clockEpoch'].includes(k))||!integer(declaration.pauseMs,1,60000))fail('INVALID_PAUSE');
  const epoch=declaration.clockEpoch===undefined?e.clockEpoch+1:declaration.clockEpoch;
@@ -197,7 +211,7 @@ export function shiftRunPracticeInputs(input,declaration,options={}){
  * executeTick may be the next tick, but never a more distant client future.
  */
 export function applyRunPracticeInputs(input,request,serverTick,options={}){
- const work=workContext(options),e=validate(input,work);
+ const work=workContext(options,profileOf(input)),e=validate(input,work),L=profileOf(e);
  if(!exact(request,['roomId','playerKey','clockEpoch','baseRevision','commands'])||request.roomId!==e.roomId||request.playerKey!==e.playerKey)fail('INVALID_INPUT_SCOPE');
  if(request.clockEpoch!==e.clockEpoch)fail('STALE_CLOCK_EPOCH');
  if(!integer(request.baseRevision)||request.baseRevision>e.revision)fail('UNKNOWN_BASE_REVISION');

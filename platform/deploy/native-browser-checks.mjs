@@ -416,7 +416,7 @@ export function observeNativeBrowser(page,{origin,state,result,clean=String,reme
    const body=request.postDataJSON();
    entry.inputs={...row(entry),request_id:body?.request_id,commands:body?.commands,status:null,validated:false};state.inputsRequests.push(entry.inputs);
    assert.equal(state.game,'run','Only Run supports input batches');assert.ok(entry.game_frame_request,'Input batch is outside the game frame');
-   entry.inputBaseline=runPracticeInputBaseline(state.room);assert.ok(entry.inputBaseline,'Input batch has no explicit V2.3 before snapshot');
+   entry.inputBaseline=runPracticeInputBaseline(state.room);assert.ok(entry.inputBaseline,'Input batch has no explicit negotiated practice before snapshot');
    assert.equal(entry.path,`/api/pvp/rooms/${entry.inputBaseline.roomId}/inputs`,'Input path differs from owned room');
    assert.equal(entry.inputBaseline.playerKey,state.playerId,'Input player differs from the original session');
    entry.inputBody=structuredClone(body);

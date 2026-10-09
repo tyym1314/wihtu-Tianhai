@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {requestId} from '../shared/client.mjs';
-import {RUN_PRACTICE_INPUT_RULE_VERSION} from './start-policy.mjs';
+import {readRunPracticeRoomProfile,runInputRule} from './practice-profile-contract.mjs';
 import {createRunPracticeController} from './practice-controller.mjs';
 import {createRunPracticeTransport} from './practice-input-transport.mjs';
 
@@ -8,12 +8,12 @@ import {createRunPracticeTransport} from './practice-input-transport.mjs';
 // Room polling remains owned by Arena. Only validated, advancing authority
 // may refresh the controller; HTTP retries and visibility cannot do so.
 export function useRunPractice({room,me,owner,authorization,onBatch,onRoom,onError}){
- const enabled=room?.game?.ruleVersion===RUN_PRACTICE_INPUT_RULE_VERSION;
+ const enabled=runInputRule(room?.game?.ruleVersion),profile=readRunPracticeRoomProfile(room);
  const epoch=room?.run_inputs?.clockEpoch;
  const callbacks=useRef({onBatch,onRoom,onError});callbacks.current={onBatch,onRoom,onError};
- const controller=useMemo(()=>enabled&&owner&&room?.id&&me&&Number.isSafeInteger(epoch)&&epoch>0
-  ?createRunPracticeController({roomId:room.id,playerKey:me,clockEpoch:epoch,makeRequestId:requestId}):null,
- [enabled,owner,room?.id,me,epoch]);
+ const controller=useMemo(()=>enabled&&profile&&owner&&room?.id&&me&&Number.isSafeInteger(epoch)&&epoch>0
+  ?createRunPracticeController({roomId:room.id,playerKey:me,clockEpoch:epoch,profile,makeRequestId:requestId}):null,
+ [enabled,owner,room?.id,me,epoch,profile?.ruleVersion,profile?.protocol,profile?.profileId]);
  const transport=useRef(null);
  const verifiedAuthorization=useRef(authorization),[transportError,setTransportError]=useState(null);
  useEffect(()=>{

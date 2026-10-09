@@ -3,6 +3,7 @@
 // here. The caller supplies executeTick once and must enforce both its authority
 // freshness and provisional-simulation budgets before enqueueing/sending.
 import {RUN_PRACTICE_INPUT_PROTOCOL,RUN_PRACTICE_INPUT_RULE_VERSION} from './start-policy.mjs';
+import {resolveRunPracticeProfile} from '../../shared/run-practice-profiles.mjs';
 export const RUN_PRACTICE_OUTBOX_PROTOCOL=RUN_PRACTICE_INPUT_PROTOCOL;
 export const RUN_PRACTICE_OUTBOX_RULE_VERSION=RUN_PRACTICE_INPUT_RULE_VERSION;
 export const RUN_PRACTICE_OUTBOX_LIMITS=Object.freeze({pendingCommands:32,batchCommands:8,inFlight:2,retainedBatches:32,attemptsPerBatch:8});
@@ -21,13 +22,13 @@ const fail=reason=>Object.freeze({ok:false,reason});
 const sameDecision=(a,b)=>decisionKeys.every(k=>k==='duplicate'||a[k]===b[k]);
 
 function copyScope(s){
- if(!record(s)||s.protocol!==RUN_PRACTICE_OUTBOX_PROTOCOL||s.ruleVersion!==RUN_PRACTICE_OUTBOX_RULE_VERSION
+ if(!record(s)||!resolveRunPracticeProfile(s)
   ||s.practice!==true||s.entryMinor!=='0'||!id(s.roomId)||!id(s.playerKey)||!int(s.clockEpoch,1)
   ||!Array.isArray(s.players)||s.players.length<2||s.players.length>4
   ||s.players.some(p=>!record(p)||!id(p.key)||typeof p.isBot!=='boolean')
   ||new Set(s.players.map(p=>p.key)).size!==s.players.length
   ||s.players.filter(p=>!p.isBot).length!==1||!s.players.some(p=>p.key===s.playerKey&&!p.isBot))throw new TypeError('INVALID_PRACTICE_SCOPE');
- return freeze({protocol:s.protocol,ruleVersion:s.ruleVersion,roomId:s.roomId,playerKey:s.playerKey,clockEpoch:s.clockEpoch,
+ return freeze({protocol:s.protocol,ruleVersion:s.ruleVersion,...(s.profileId?{profileId:s.profileId}:{}),roomId:s.roomId,playerKey:s.playerKey,clockEpoch:s.clockEpoch,
   practice:true,entryMinor:'0',players:s.players.map(p=>({key:p.key,isBot:p.isBot}))});
 }
 
@@ -47,6 +48,7 @@ function copyScope(s){
  */
 export function createRunPracticeInputOutbox({scope,makeRequestId,initial={lastCommandSeq:0,acceptedInputNo:0,revision:0}}={}){
  const bound=copyScope(scope);
+ const profile=resolveRunPracticeProfile(bound),L={...RUN_PRACTICE_OUTBOX_LIMITS,pendingCommands:profile.pendingCommands};
  if(typeof makeRequestId!=='function')throw new TypeError('REQUEST_ID_FACTORY_REQUIRED');
  if(!exact(initial,['lastCommandSeq','acceptedInputNo','revision'])||!int(initial.lastCommandSeq)
   ||!int(initial.acceptedInputNo,0,initial.lastCommandSeq)||!int(initial.revision))throw new TypeError('INVALID_INITIAL_SEQUENCE');
@@ -117,7 +119,7 @@ export function createRunPracticeInputOutbox({scope,makeRequestId,initial={lastC
  function validateReceipt(batch,receipt){
   const r=receipt?.run_inputs,commands=batch.handle.payload.commands;
   if(!record(receipt)||receipt.request_id!==batch.handle.requestId||!record(r)
-   ||['protocol','ruleVersion','roomId','playerKey','clockEpoch'].some(k=>r[k]!==bound[k])
+   ||['protocol','ruleVersion','roomId','playerKey','clockEpoch'].some(k=>r[k]!==bound[k])||(r.profileId??null)!==profile.profileId
    ||!int(r.revision,batch.handle.payload.baseRevision)
    ||!int(r.processedThroughCommandSeq,commands.at(-1).commandSeq,lastCommandSeq)
    ||!Array.isArray(r.decisions)||r.decisions.length!==commands.length)return null;
@@ -125,7 +127,7 @@ export function createRunPracticeInputOutbox({scope,makeRequestId,initial={lastC
   for(let i=0;i<commands.length;i++){
    const d=r.decisions[i],c=commands[i];
    if(!exact(d,decisionKeys)||d.commandSeq!==c.commandSeq||d.type!==c.type||d.executeTick!==c.executeTick
-    ||d.clockEpoch!==bound.clockEpoch||!int(d.decidedAtServerTick,0,6120)||!int(d.revision,1,r.revision)
+    ||d.clockEpoch!==bound.clockEpoch||!int(d.decidedAtServerTick,0,profile.serverMaxTick)||!int(d.revision,1,r.revision)
     ||typeof d.duplicate!=='boolean')return null;
    if(d.outcome==='accepted'){
     if(d.code!==null||!int(d.acceptedInputNo,1)||d.executeTick>d.decidedAtServerTick+1)return null;

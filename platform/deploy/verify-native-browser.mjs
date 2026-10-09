@@ -129,8 +129,8 @@ try{
     state.phase='playing';
     const action=await runNativeActionOnce(()=>playOneArenaAction(frame,state.game,()=>state.room),result,clean);
     await drain({final:false});
-    if(action.protocol==='run-practice-inputs-v1'){
-     assert.equal(state.actionRequests.length,0,'V2.3 must not submit legacy actions');
+    if(['run-practice-inputs-v1','run-practice-inputs-v2'].includes(action.protocol)){
+     assert.equal(state.actionRequests.length,0,'Negotiated practice must not submit legacy actions');
      assert.equal(state.inputsRequests.length,1,'Expected exactly one UI input batch; no hidden retry');
      const observed=state.inputsRequests[0];assert.equal(observed.status,action.httpStatus);assert.equal(observed.validated,true,'Exact POST receipt was not validated');
      assert.deepEqual(observed.proof,action.inputEvidence,'UI response and independently observed input receipt differ');

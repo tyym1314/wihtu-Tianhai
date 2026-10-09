@@ -96,7 +96,7 @@ const sameIdentity=state=>{
  for(const field of ['game','sessionId','playerId','appId'])assert.equal(state[field],baseline[field],'ORIGINAL_ANDROID_SESSION_CHANGED');
 };
 export function assertAndroidOneAction(state,action){
- if(action.protocol==='run-practice-inputs-v1'){
+ if(['run-practice-inputs-v1','run-practice-inputs-v2'].includes(action.protocol)){
   assert.equal(state.actionRequests.length,0);assert.equal(state.inputsRequests.length,1,'EXPECTED_ONE_INPUT_BATCH_NO_RETRY');
   const observed=state.inputsRequests[0];assert.equal(observed.status,action.httpStatus);assert.equal(observed.validated,true);
   assert.deepEqual(observed.proof,action.inputEvidence,'INDEPENDENT_INPUT_RECEIPT_MISMATCH');
