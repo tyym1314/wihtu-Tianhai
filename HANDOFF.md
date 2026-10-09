@@ -39,6 +39,8 @@
 
 大体积原始测试证据位于执行电脑被忽略的 `platform/review/`，不在 GitLab 中。本文件给出可跨电脑使用的结论与限制；如需复查录像/原始证据，应通过受控渠道转交并先检查脱敏，不要将带会话信息的 private 目录整包上传。
 
+后续应用户要求完成了全 13 款引擎/渲染/资源审计，详见根目录 [ENGINE_AUDIT.md](ENGINE_AUDIT.md)。引擎组合基本适用，仍有同步、GPU、加载和重复 UI 更新优化空间；新增隔离渲染和 Blender 源模型检查不替代公网/手机上线验收。该审计只增加文档，游戏运行代码及部署版本保持上述状态。
+
 证据索引（执行电脑本地路径）：
 
 - `platform/review/release/public-20261009-02-preparation/completion.json`
