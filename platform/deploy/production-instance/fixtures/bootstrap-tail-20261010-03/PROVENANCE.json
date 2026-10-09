@@ -1,0 +1,13 @@
+{
+  "kind": "frozen-public-source-fixture",
+  "source_commit": "fac0cade33477b8d65bd454f362507464b1a8b3c",
+  "runtime_release": "20261010-03",
+  "sha256": {
+    "provision.py": "00203af2bf2c727fcbcee2b5288da91af584f5fb4dd252de56e18e7c3be1e5cd",
+    "operations.py": "9631ba7693914ec08a11d8bb1c42c6a6b001cf9b2985b5a4ba2c3ac51ba2da76",
+    "bootstrap.mjs": "754397b8b4604a66bbcaf5010e1a13ae21675dd024f00b729289019e301abe5a",
+    "inspect-backup.mjs": "07adc794f4fdceb393ca9c59f0a70235a34bb444ba3f4e16a2559e1211350c23",
+    "monitor.mjs": "a846a8958d1e29ad8ee4785512642ffc52ce709816a685166c4d95685005afa5",
+    "recover-created.py": "7b4a37d681122d7d4fc50e812b16d4d44a69aedaf3ec056a7bba15d1a0335239"
+  }
+}

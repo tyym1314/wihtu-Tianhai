@@ -18,6 +18,7 @@ spec = importlib.util.spec_from_file_location('tail_recovery_test', HERE / 'reco
 t = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(t)
 p, r = t.p, t.r
+FROZEN_HELPERS = t.HELPER_ROOT.resolve()
 
 
 def row():
@@ -207,7 +208,7 @@ class ControllerAndNormalScope(unittest.TestCase):
     def fixture(self, root):
         release = root / 'releases/20261010-03'; helpers = release / 'platform/deploy/production-instance'; helpers.mkdir(parents=True)
         for name in (*t.HELPERS, 'recover-created.py'):
-            (helpers / name).write_bytes((HERE / name).read_bytes())
+            (helpers / name).write_bytes((FROZEN_HELPERS / name).read_bytes())
         private = root / 'private/tail'; private.mkdir(parents=True); os.chmod(private, 0o700)
         tool = private / 'recover-bootstrap-tail.py'; tool.write_bytes((HERE / 'recover-bootstrap-tail.py').read_bytes()); os.chmod(tool, 0o600)
         args = types.SimpleNamespace(controller_sha256=p.digest(tool.read_bytes()), source_commit='b' * 40)
@@ -289,13 +290,13 @@ class ControllerAndNormalScope(unittest.TestCase):
             self.assertFalse(marker.exists())
 
     def test_helper_fd_bytes_execute_without_second_path_read(self):
-        root = HERE.resolve()
+        root = FROZEN_HELPERS
         with patch.object(t, 'HELPER_ROOT', root), patch.object(importlib.machinery.SourceFileLoader, 'exec_module', side_effect=AssertionError('must not reread')):
             module = t.load('verified_fd_provision', 'provision.py')
         self.assertEqual(module.NETWORK_OPTIONS, p.NETWORK_OPTIONS)
 
     def test_actual_reader_chain_reuses_verified_provision_without_nested_loader_read(self):
-        with patch.object(t, 'HELPER_ROOT', HERE.resolve()), patch.object(importlib.machinery.SourceFileLoader, 'exec_module', side_effect=AssertionError('must not reread')), patch.object(importlib.machinery.SourceFileLoader, 'get_data', side_effect=AssertionError('must not read nested provision')):
+        with patch.object(t, 'HELPER_ROOT', FROZEN_HELPERS), patch.object(importlib.machinery.SourceFileLoader, 'exec_module', side_effect=AssertionError('must not reread')), patch.object(importlib.machinery.SourceFileLoader, 'get_data', side_effect=AssertionError('must not read nested provision')):
             module = t.load('verified_actual_private_reader', 'recover-created.py', provision_module=p)
         self.assertIs(module.p, p)
         self.assertTrue(issubclass(module.Recovery, p.Provisioner))
@@ -304,7 +305,7 @@ class ControllerAndNormalScope(unittest.TestCase):
 
     def test_actual_reader_requires_exact_already_loaded_provision_origin(self):
         for module in (None, types.SimpleNamespace(__file__='/untrusted/provision.py')):
-            with patch.object(t, 'HELPER_ROOT', HERE.resolve()), self.assertRaisesRegex(ValueError, 'READER_PROVISION_MODULE_INVALID'):
+            with patch.object(t, 'HELPER_ROOT', FROZEN_HELPERS), self.assertRaisesRegex(ValueError, 'READER_PROVISION_MODULE_INVALID'):
                 t.load('never_loaded_reader', 'recover-created.py', provision_module=module)
 
     def test_reader_ast_rejects_missing_modified_or_duplicated_known_loader(self):

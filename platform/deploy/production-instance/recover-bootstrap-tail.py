@@ -29,7 +29,7 @@ HELPERS = {'bootstrap.mjs': '754397b8b4604a66bbcaf5010e1a13ae21675dd024f00b72928
            'provision.py': '00203af2bf2c727fcbcee2b5288da91af584f5fb4dd252de56e18e7c3be1e5cd'}
 # Imported locally solely for fixture tests. A real check rejects this mode and
 # requires the root-private controller and every import at its exact 03 path.
-HELPER_ROOT = RELEASE / 'platform/deploy/production-instance' if Path(__file__).absolute() == TOOL else Path(__file__).resolve().parent
+HELPER_ROOT = RELEASE / 'platform/deploy/production-instance' if Path(__file__).absolute() == TOOL else Path(__file__).resolve().parent / 'fixtures/bootstrap-tail-20261010-03'
 
 
 def reader_ast(body, path):
