@@ -4,6 +4,7 @@ import {id,hash,seal,unseal,fail} from './security.mjs';
 import {appById,scope,audit,validate} from './platform.mjs';
 import {getProfile,playCycle} from './math/index.ts';
 import {walletRequest,validatedWalletBalance} from './wallet-binding.mjs';
+import {assertNewFinancialAdmission,FIRSTPARTY_FREE_PROFILE,publicAdmissionCapability} from './production-admission.mjs';
 export {walletRequest} from './wallet-binding.mjs';
 export const walletBalance=validatedWalletBalance;
 const recoveryBatchSize=20,recoveryLock='recovery:probability';
@@ -89,6 +90,9 @@ export const advanceCycle=cycleId=>locked('cycle:'+cycleId,()=>advanceUnlocked(c
 function balanceMinor(response){const b=response.balance||response;return b.available_minor??b.total_minor??b.balance_minor;}
 export async function publicSession(s){
   const app=await appById(s.app_id),b=await walletBalance(app,s.external_user_id),minor=balanceMinor(b);if(minor===undefined)fail(503,'WALLET_INVALID_BALANCE');
+  // Persisted session provenance describes this accepted session. New rooms
+  // independently recheck current App and admission policy in their transaction.
+  if(s.admission_profile===FIRSTPARTY_FREE_PROFILE)return{mode:'production',platformMode:'production',sessionId:s.id,epoch:0,stateVersion:s.state.version,balance:Number(minor)/10**app.currency_scale,betChoices:[],mathVersion:null,pendingRound:null,freeSpins:0,freeMultiplier:0,lockedBet:null,admission_profile:s.admission_profile,admission_revision:String(s.admission_revision),...publicAdmissionCapability({profile:s.admission_profile,game_ids:[]})};
   let pending=null,remaining=0,freeMultiplier=0,lockedBet=null,mathVersion=getProfile(s.game_id,app.math_profile).version;
   if(s.state.pendingPlay)pending=(await pool.query('SELECT payload FROM gp_plays WHERE id=$1',[s.state.pendingPlay])).rows[0]?.payload||null;
   if(s.state.cycleId){const cycle=(await pool.query('SELECT * FROM gp_cycles WHERE id=$1',[s.state.cycleId])).rows[0];if(cycle?.result){if(s.state.pendingPlay||s.state.nextIndex<cycle.result.rounds.length)mathVersion=cycle.math_version;remaining=cycle.result.rounds[Math.max(0,s.state.nextIndex-1)]?.freeSpinsAfter||0;freeMultiplier=cycle.result.rounds[Math.max(0,s.state.nextIndex-1)]?.nextFreeMultiplier||0;lockedBet=remaining?Number(cycle.stake_minor)/100:null;}}
@@ -108,6 +112,7 @@ export async function spin(session,body){
       cycle=(await pool.query('SELECT * FROM gp_cycles WHERE session_id=$1 AND request_id=$2',[s.id,body.requestId])).rows[0];
       if(cycle&&Number(cycle.stake_minor)!==body.bet*100)fail(409,'IDEMPOTENCY_CONFLICT');
       if(!cycle){
+        await assertNewFinancialAdmission(pool,app);
         if(app.status!=='active'||!app.game_ids.includes(s.game_id))fail(403,'GAME_DISABLED');
         const m=getProfile(s.game_id,app.math_profile),cid=id('cycle');
         // Exactly one unresolved cycle per session, even when a client changes request ID.

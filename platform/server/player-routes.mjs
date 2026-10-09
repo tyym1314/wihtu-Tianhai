@@ -1,8 +1,9 @@
 import {send,fail} from './security.mjs';
-import {pool} from './db.mjs';
+import {pool,tx} from './db.mjs';
 import {credentialRate,changePassword} from './credentials.mjs';
 import {appById,createSession,origin,scope} from './platform.mjs';
 import {runtime,assertProductionAppReady} from './runtime-mode.mjs';
+import {readProductionAdmission,publicAdmissionCapability} from './production-admission.mjs';
 import {RELEASED_IDS} from '../shared/games.mjs';
 import {validatedWalletBalance} from './wallet-binding.mjs';
 import {PLAYER_COOKIE,registerPlayer,loginPlayer,playerSession,csrfFor,requirePlayerCsrf,revokePlayerSession,appPlayerId} from './player-records.mjs';
@@ -24,20 +25,21 @@ export async function routePlayer(req,res,path,body,raw){
   if(req.method!=='GET')fail(405,'METHOD_NOT_ALLOWED');
   const appId=queryAppId(path);
   const app=await appById(appId);if(app.environment!=='production')fail(404,'NOT_FOUND');
-  let admissionOpen=app.status==='active'&&app.allowed_origins?.includes(origin);
-  if(admissionOpen)try{await assertProductionAppReady(pool,app);}catch(error){if(error.status!==409)throw error;admissionOpen=false;}
-  send(res,200,{name:app.name,game_ids:app.game_ids.filter(game=>RELEASED_IDS.includes(game)),admission_open:Boolean(admissionOpen)});return true;
+  let admission=null;
+  try{admission=await readProductionAdmission(pool,app,{intent:'metadata'});}catch(error){if(error.status!==409)throw error;}
+  const capability=publicAdmissionCapability(admission);
+  send(res,200,{name:app.name,...capability,game_ids:(admission?.game_ids||app.game_ids).filter(game=>RELEASED_IDS.includes(game))});return true;
  }
  if(path==='/api/player/register'){
   if(req.method!=='POST')fail(405,'METHOD_NOT_ALLOWED');exactOrigin(req);credentialRate(req,'player-register',6);exact(body,['app_id','username','password']);
   if(typeof body.app_id!=='string')fail(400,'INVALID_REQUEST');const app=await appById(body.app_id);
-  await assertProductionAppReady(pool,app);if(app.status!=='active')fail(409,'APP_PAUSED');
+  await assertProductionAppReady(pool,app,{intent:'register'});if(app.status!=='active')fail(409,'APP_PAUSED');
   send(res,201,{player:await registerPlayer(body.username,body.password,app.id)});return true;
  }
  if(path==='/api/player/login'){
   if(req.method!=='POST')fail(405,'METHOD_NOT_ALLOWED');exactOrigin(req);credentialRate(req,'player-login',8);exact(body,['username','password','app_id']);
   if(typeof body.app_id!=='string')fail(400,'INVALID_REQUEST');const app=await appById(body.app_id);
-  const {token,player}=await loginPlayer(body.username,body.password,app.id),externalUserId=await appPlayerId(pool,app.id,player.id);
+  const {token,player}=await loginPlayer(body.username,body.password,app.id),externalUserId=await tx(db=>appPlayerId(db,app.id,player.id));
   res.setHeader('set-cookie',cookie(token,28800));
   send(res,200,{player,app_id:app.id,external_user_id:externalUserId,csrf_token:csrfFor(token),expires_in:28800});return true;
  }

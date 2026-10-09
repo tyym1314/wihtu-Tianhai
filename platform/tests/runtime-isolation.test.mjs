@@ -223,35 +223,33 @@ test('production rejects even allowlisted loopback HTTP wallet without persistin
  assert.equal((await productionDb.query("SELECT count(*)::int n FROM gp_keys WHERE direction='platform-to-wallet'")).rows[0].n,0);assert.equal((await productionDb.query('SELECT wallet_url FROM gp_apps WHERE id=$1',[item.app.id])).rows[0].wallet_url,'');assert.equal(walletRequests,0);
 });
 
-test('paused App blocks new player binding and an unavailable external wallet blocks new launch without creating credits',async()=>{
+test('generic production env approval is rejected before boot and external Apps remain closed',async()=>{
  const newApp=(await request(production,'/api/partner/apps',{name:'Wallet preflight fixture',wallet_provider:'external'},partnerCookie)).body.app;
  await productionDb.query('UPDATE gp_apps SET allowed_origins=$2 WHERE id=$1',[newApp.id,JSON.stringify([publicOrigin])]);
+ const beforeApps=(await productionDb.query('SELECT * FROM gp_apps ORDER BY id')).rows,master=await readFile(join(production.folder,'master.key'));
+ const beforePlayers=await count(productionDb,'gp_players'),beforeSessions=await count(productionDb,'gp_sessions');
  await stop(production);
- production=await launch(names[0],'production',join(dir,'production'),{
-  OASIS_PRODUCTION_ADMISSION_ENABLED:'1',
-  OASIS_WALLET_ALLOWED_ORIGINS:'https://wallet.example.invalid'
- },false);assert.equal((await ready(production)).environment,'production');
- try{
-  const bound=await request(production,`/api/partner/apps/${newApp.id}/integration/wallet`,{
-   wallet_url:'https://wallet.example.invalid',wallet_key_id:'unreachable_wallet_key',wallet_secret_base64:randomBytes(32).toString('base64')
-  },partnerCookie);assert.equal(bound.status,200);
-  const password='Wallet-player-fixture-2026!';
-  const pausedRegister=await request(production,'/api/player/register',{app_id:newApp.id,username:'wallet_player',password});
-  assert.equal(pausedRegister.status,409);assert.equal(pausedRegister.body.error.code,'APP_PAUSED');
-  const pausedLogin=await request(production,'/api/player/login',{app_id:newApp.id,username:'player_alpha',password:'Player-fixture-only-2026!'});
-  assert.equal(pausedLogin.status,409);assert.equal(pausedLogin.body.error.code,'APP_PAUSED');
-  assert.equal((await productionDb.query('SELECT count(*)::int n FROM gp_player_app_ids WHERE app_id=$1',[newApp.id])).rows[0].n,0);
-  await productionDb.query("UPDATE gp_apps SET status='active' WHERE id=$1",[newApp.id]);
-  const registered=await request(production,'/api/player/register',{app_id:newApp.id,username:'wallet_player',password});assert.equal(registered.status,201);
-  const login=await request(production,'/api/player/login',{app_id:newApp.id,username:'wallet_player',password});assert.equal(login.status,200);
-  const newLaunch=await request(production,'/api/player/launch',{app_id:newApp.id,request_id:'wallet_unavailable_launch',game_id:'match',locale:'en',host_platform:'web'},login.cookie,'POST',{'x-oasis-csrf':login.body.csrf_token});
-  assert.equal(newLaunch.status,503);assert.equal(newLaunch.body.error.code,'WALLET_UNKNOWN');
-  assert.equal((await productionDb.query('SELECT count(*)::int n FROM gp_sessions WHERE app_id=$1',[newApp.id])).rows[0].n,0);
-  assert.equal((await productionDb.query('SELECT count(*)::int n FROM gp_launch_intents WHERE app_id=$1',[newApp.id])).rows[0].n,0);
-  assert.equal(await count(productionDb,'wallet_users'),0);assert.equal(await count(productionDb,'wallet_ledger'),0);assert.equal(walletRequests,0);
- }finally{
-  await stop(production);production=await launch(names[0],'production',join(dir,'production'),{},false);assert.equal((await ready(production)).environment,'production');
+ const invalid=await launch(names[0],'production',join(dir,'production'),{OASIS_PRODUCTION_ADMISSION_ENABLED:'1'},false);
+ await rejectBoot(invalid,/GENERIC_PRODUCTION_ADMISSION_FORBIDDEN/);
+ assert.deepEqual((await productionDb.query('SELECT * FROM gp_apps ORDER BY id')).rows,beforeApps);
+ assert.deepEqual(await readFile(join(production.folder,'master.key')),master);
+ assert.equal(await count(productionDb,'gp_players'),beforePlayers);assert.equal(await count(productionDb,'gp_sessions'),beforeSessions);
+ production=await launch(names[0],'production',join(dir,'production'),{OASIS_WALLET_ALLOWED_ORIGINS:'https://wallet.example.invalid'},false);assert.equal((await ready(production)).environment,'production');
+ const bound=await request(production,`/api/partner/apps/${newApp.id}/integration/wallet`,{
+  wallet_url:'https://wallet.example.invalid',wallet_key_id:'unreachable_wallet_key',wallet_secret_base64:randomBytes(32).toString('base64')
+ },partnerCookie);assert.equal(bound.status,200);
+ for(const status of ['paused','active']){
+  await productionDb.query('UPDATE gp_apps SET status=$2 WHERE id=$1',[newApp.id,status]);
+  const registration=await request(production,'/api/player/register',{app_id:newApp.id,username:'wallet_player',password:'Wallet-player-fixture-2026!'});
+  assert.equal(registration.status,409);assert.equal(registration.body.error.code,'PRODUCTION_ACCEPTANCE_REQUIRED');
+  const login=await request(production,'/api/player/login',{app_id:newApp.id,username:'player_alpha',password:'Player-fixture-only-2026!'});
+  assert.equal(login.status,409);assert.equal(login.body.error.code,'PRODUCTION_ACCEPTANCE_REQUIRED');
  }
+ assert.equal((await productionDb.query('SELECT count(*)::int n FROM gp_player_app_ids WHERE app_id=$1',[newApp.id])).rows[0].n,0);
+ assert.equal((await productionDb.query('SELECT count(*)::int n FROM gp_sessions WHERE app_id=$1',[newApp.id])).rows[0].n,0);
+ assert.equal((await productionDb.query('SELECT count(*)::int n FROM gp_launch_intents WHERE app_id=$1',[newApp.id])).rows[0].n,0);
+ assert.equal(await count(productionDb,'gp_players'),beforePlayers);assert.equal(await count(productionDb,'wallet_users'),0);assert.equal(await count(productionDb,'wallet_ledger'),0);assert.equal(walletRequests,0);
+ await stop(production);production=await launch(names[0],'production',join(dir,'production'),{},false);assert.equal((await ready(production)).environment,'production');
 });
 
 test('sandbox cannot reopen a production database or replace its identity, app, or master key',async()=>{

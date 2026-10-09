@@ -11,7 +11,6 @@ import {runtime,assertProductionAppReady} from './runtime-mode.mjs';
 import {resolveHostOrigin,assertExchangeOrigin} from './launch-policy.mjs';
 import {loginCredential} from './credentials.mjs';
 import {appPlayerId} from './player-records.mjs';
-import {validatedWalletBalance} from './wallet-binding.mjs';
 import {createPlatformWallet} from './platform-wallet.mjs';
 const spec=JSON.parse(readFileSync(new URL('../specs/openapi.json',import.meta.url),'utf8'));
 const catalog=JSON.parse(readFileSync(new URL('../specs/game-catalog.json',import.meta.url),'utf8')).games;
@@ -69,19 +68,6 @@ export async function createSession(app,b,raw,{playerId=null}={}){
   // Only the platform BFF can supply a player ID from its HttpOnly session.
   if(runtime.production&&!playerId)fail(403,'PLAYER_BFF_REQUIRED');
   if(!runtime.production){validate('CreateSessionRequest',b);for(const[k,v]of Object.entries(scope(app)))if(b[k]!==v)fail(403,'SCOPE_FORBIDDEN');}
-  if(runtime.production&&!b.resume_session_id){
-    // A replay returns the original intent, and an accepted-session resume
-    // remains available while the wallet or new-player admission is paused.
-    const prior=(await pool.query('SELECT 1 FROM gp_launch_intents WHERE app_id=$1 AND request_id=$2',[app.id,b.request_id])).rowCount;
-    if(!prior){
-      const current=await appById(app.id);
-      await assertProductionAppReady(pool,current);
-      if(current.status!=='active')fail(403,'APP_PAUSED');
-      const externalUserId=await appPlayerId(pool,current.id,playerId);
-      try{await validatedWalletBalance(current,externalUserId);}
-      catch(error){if(error.status===404)fail(409,'PLAYER_WALLET_NOT_READY','The configured wallet has no readable player balance');throw error;}
-    }
-  }
   return tx(async c=>{
     // Login takes the player row before the App row. Keep the same order here:
     // taking App FOR UPDATE first would deadlock with a concurrent login that
@@ -114,7 +100,16 @@ export async function createSession(app,b,raw,{playerId=null}={}){
     const game=request.game_id||'lobby';let sid=request.resume_session_id;
     if(game==='lobby')fail(409,'GAME_NOT_RELEASED','大厅尚未开放，请指定已开放的 game_id');
     if(sid){const old=(await c.query('SELECT * FROM gp_sessions WHERE id=$1 FOR UPDATE',[sid])).rows[0];if(!old||old.app_id!==app.id||old.external_user_id!==externalUserId||old.game_id!==game||(runtime.production&&old.player_id!==playerId))fail(403,'SCOPE_FORBIDDEN');}
-    else {await assertProductionAppReady(c,app);if(app.status!=='active')fail(403,'APP_PAUSED');if(game!=='lobby'&&!app.game_ids.includes(game))fail(403,'GAME_DISABLED');if(!RELEASED_IDS.includes(game))fail(409,'GAME_NOT_RELEASED','此竞技游戏尚未发布');sid=id('ses');await c.query('INSERT INTO gp_sessions(id,app_id,external_user_id,game_id,host_origin,player_id) VALUES($1,$2,$3,$4,$5,$6)',[sid,app.id,externalUserId,game,hostOrigin,playerId]);}
+    else {
+      const admission=await assertProductionAppReady(c,app,{intent:'session',gameId:game});
+      if(app.status!=='active')fail(403,'APP_PAUSED');if(game!=='lobby'&&!app.game_ids.includes(game))fail(403,'GAME_DISABLED');if(!RELEASED_IDS.includes(game))fail(409,'GAME_NOT_RELEASED','此竞技游戏尚未发布');
+      if(runtime.production){
+        const account=(await c.query('SELECT available,reserved,credit_pending FROM wallet_users WHERE scope_id=$1 AND external_user_id=$2',[Object.values(scope(app)).join(':'),externalUserId])).rows[0];
+        if(!account)fail(409,'PLAYER_WALLET_NOT_READY');
+        if(['available','reserved','credit_pending'].some(key=>account[key]!=='0'))fail(409,'FIRSTPARTY_FINANCIAL_STATE_NOT_EMPTY');
+      }
+      sid=id('ses');await c.query('INSERT INTO gp_sessions(id,app_id,external_user_id,game_id,host_origin,player_id,admission_profile,admission_revision) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',[sid,app.id,externalUserId,game,hostOrigin,playerId,admission?.profile||null,admission?.revision||null]);
+    }
     const code=randomBytes(32).toString('base64url'),expires=new Date(Date.now()+60000).toISOString();const response={session_id:sid,launch_code:code,expires_in:60,expires_at:expires,entry_url:origin+'/play/'+game};
     await c.query('INSERT INTO gp_launch_codes(code_hash,session_id,expires_at,consumed_at,host_origin) VALUES($1,$2,$3,NULL,$4)',[hash(code),sid,expires,hostOrigin]);await c.query('INSERT INTO gp_launch_intents VALUES($1,$2,$3,$4)',[app.id,request.request_id,hash(raw),seal(response)]);await audit(playerId?'player':'partner','session.created',app.id,{session_id:sid,game_id:game,host_origin:hostOrigin},c);return response;
   });

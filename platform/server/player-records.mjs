@@ -23,7 +23,7 @@ export async function registerPlayer(username,password,appId){
   // create an account after the App has stopped accepting new players.
   const app=(await db.query('SELECT * FROM gp_apps WHERE id=$1 FOR SHARE',[appId])).rows[0];
   if(!app)fail(404,'NOT_FOUND');
-  await assertProductionAppReady(db,app);
+  await assertProductionAppReady(db,app,{intent:'register'});
   if(app.status!=='active')fail(409,'APP_PAUSED');
   const playerId=id('player');
   try{await db.query('INSERT INTO gp_players(id,username,salt,password_hash) VALUES($1,$2,$3,$4)',[playerId,normalized,material.salt,material.password_hash]);}
@@ -41,7 +41,7 @@ export async function loginPlayer(username,password,appId){
   // A paused App may reauthenticate an already accepted player to finish an
   // obligation. It must not bind new players while production is closed.
   const accepted=(await db.query('SELECT 1 FROM gp_sessions WHERE app_id=$1 AND player_id=$2 LIMIT 1',[appId,player.id])).rowCount;
-  if(!accepted){await assertProductionAppReady(db,app);if(app.status!=='active')fail(409,'APP_PAUSED');}
+  if(!accepted){await assertProductionAppReady(db,app,{intent:'register'});if(app.status!=='active')fail(409,'APP_PAUSED');}
  });
  return{token,player:{id:account.id,username:account.username}};
 }
@@ -72,7 +72,7 @@ export async function appPlayerId(db,appId,playerId){
  if(!accepted.length){
   const app=(await db.query('SELECT * FROM gp_apps WHERE id=$1 FOR SHARE',[appId])).rows[0];
   if(!app)fail(404,'NOT_FOUND');
-  await assertProductionAppReady(db,app);
+  await assertProductionAppReady(db,app,{intent:'register'});
   if(app.status!=='active')fail(409,'APP_PAUSED');
  }
  await db.query('INSERT INTO gp_player_app_ids(app_id,player_id,external_user_id) VALUES($1,$2,$3) ON CONFLICT(app_id,player_id) DO NOTHING',[appId,playerId,accepted[0]?.external_user_id||id('player')]);

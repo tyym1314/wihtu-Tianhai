@@ -9,6 +9,7 @@ import {supportsRules} from './rule-support.mjs';
 import {runEngineTask} from './engine-pool.mjs';
 import {bowlingPreparations} from './bowling-preparation.mjs';
 import {assertProductionAppReady} from '../runtime-mode.mjs';
+import {FIRSTPARTY_FREE_PROFILE,productionAdmissionSnapshot} from '../production-admission.mjs';
 import {ARENA_GAMES,allowedCapacity,teamSizeFor} from '../../shared/games.mjs';
 import {getTrainingLesson} from '../../arena/towerlink/training.mjs';
 import {PRACTICE_RULE_VERSION as RUN_PRACTICE_RULE_VERSION,PRACTICE_INPUT_RULE_VERSION as RUN_INPUT_RULE_VERSION,RUN_SCENE_READY_POLICY} from '../../arena/run/engine.mjs';
@@ -232,7 +233,7 @@ async function replay(c,s,body,digest){const old=(await c.query('SELECT * FROM p
 async function remember(c,s,body,digest,r,response){await c.query('INSERT INTO pvp_requests(app_id,external_user_id,request_id,digest,room_id,response,response_status) VALUES($1,$2,$3,$4,$5,$6,$7)',[s.app_id,s.external_user_id,body.request_id,digest,r.id,response.body,response.status]);return response;}
 function player(s,index,now,bot=false){return{external_user_id:s.external_user_id,name:bot?`BOT ${index}`:s.external_user_id,seat_index:index,ready:bot,bot,last_seq:0,last_seen_at:now,forfeited:false};}
 export async function routePvp(session,method,path,body={},options={}){
- if(!path.startsWith('/api/pvp/rooms'))return null;checkSession(session);const s=session,app=method==='POST'?await appById(s.app_id):undefined;
+ if(!path.startsWith('/api/pvp/rooms'))return null;checkSession(session);const s=session;let app=method==='POST'?await appById(s.app_id):undefined;
  if(method==='POST'&&!/^[A-Za-z0-9_-]{8,128}$/.test(body.request_id||''))fail(400,'REQUEST_ID_REQUIRED');
  const digest=requestDigest(method,path,body);
  if(method==='POST'&&path==='/api/pvp/rooms'){
@@ -249,14 +250,16 @@ export async function routePvp(session,method,path,body={},options={}){
    gameOptions.training_lesson_id=lesson.id;
   }
   const roomId=body.room_id||id('pvp');if(!/^[A-Za-z0-9_-]{8,64}$/.test(roomId))fail(400,'INVALID_ROOM_ID');
-  return transaction(async c=>{await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`pvpcreate:${s.app_id}:${s.external_user_id}`]);await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`pvpreq:${s.app_id}:${s.external_user_id}:${body.request_id}`]);const repeated=await replay(c,s,body,digest);if(repeated)return repeated;checkNew(app,s.game_id);
-   await assertProductionAppReady(c,app);
+  return transaction(async c=>{await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`pvpcreate:${s.app_id}:${s.external_user_id}`]);await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`pvpreq:${s.app_id}:${s.external_user_id}:${body.request_id}`]);const repeated=await replay(c,s,body,digest);if(repeated)return repeated;
+   const admission=await assertProductionAppReady(c,app,{intent:'room',gameId:s.game_id,practice,entryMinor:body.entry_minor});
+   if(admission)app=admission.app;checkNew(app,s.game_id);
+   if(app.environment==='production'&&(s.admission_profile!==FIRSTPARTY_FREE_PROFILE||!s.player_id))fail(403,'FIRSTPARTY_PLAYER_SESSION_REQUIRED');
    if((await c.query('SELECT 1 FROM pvp_active_users WHERE app_id=$1 AND external_user_id=$2',[s.app_id,s.external_user_id])).rowCount)fail(409,'ALREADY_IN_ROOM');
    const now=roomNow(null,options.now),fee=practice||social?0:Number(app.competitive_fee_bps??500);if(!practice&&!social&&![300,500,800,1000].includes(fee))fail(409,'INVALID_APP_FEE');
    const players=[player(s,0,now)];if(practice)for(let i=1;i<body.capacity;i++)players.push(player({external_user_id:`bot_${i}_${randomBytes(12).toString('hex')}`},i,now,true));
    const teamSize=teamSizeFor(s.game_id,body.capacity);if(teamSize===2)players.forEach((p,i)=>p.team_id=i%2?'team_b':'team_a');
    const ruleVersion=s.game_id==='run'&&practice?(inputProfile?inputProfile.ruleVersion:RUN_PRACTICE_RULE_VERSION):engines[s.game_id].RULE_VERSION;
-   const terms={game_id:s.game_id,rule_version:ruleVersion,payout_template_version:teamSize===2?'team-share-v1':'winner-all-v1',fee_bps:fee,entry_minor:entry,player_count:body.capacity,team_size:teamSize,...(inputProfile?.profileId?{run_input_protocol:inputProfile.protocol,run_input_profile:inputProfile.profileId}:{} )};
+   const terms={game_id:s.game_id,rule_version:ruleVersion,payout_template_version:teamSize===2?'team-share-v1':'winner-all-v1',fee_bps:fee,entry_minor:entry,player_count:body.capacity,team_size:teamSize,...productionAdmissionSnapshot(admission),...(inputProfile?.profileId?{run_input_protocol:inputProfile.protocol,run_input_profile:inputProfile.profileId}:{} )};
    // Freeze a server-owned policy only on new eligible BOT-practice rooms.
    // Existing waiting/funding rooms retain their stored options and default 3s.
    Object.assign(gameOptions,newTowerPracticeStartOptions({game_id:s.game_id,practice,entry_minor:entry,fee_bps:fee,capacity:body.capacity,players,terms,rule_version:ruleVersion}));
@@ -310,6 +313,7 @@ export async function routePvp(session,method,path,body={},options={}){
   return transaction(async c=>{await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`pvpreq:${s.app_id}:${s.external_user_id}:${body.request_id}`]);const repeated=await replay(c,s,body,digest);if(repeated)return repeated;
    let actionReceipt;
    if(verb==='join'){
+    if(app.environment==='production')fail(403,'FIRSTPARTY_FREE_PRACTICE_ONLY');
     checkNew(app,s.game_id);await assertProductionAppReady(c,app);if(r.status!=='waiting')fail(409,'ROOM_NOT_JOINABLE');if(now>=r.expires_at||r.ready_deadline_at&&now>=r.ready_deadline_at)fail(409,'READY_TIMEOUT');
     if(!member){if(r.players.length>=r.capacity)fail(409,'ROOM_FULL');if((await c.query('SELECT 1 FROM pvp_active_users WHERE app_id=$1 AND external_user_id=$2',[s.app_id,s.external_user_id])).rowCount)fail(409,'ALREADY_IN_ROOM');
      try{await c.query('INSERT INTO pvp_active_users(app_id,external_user_id,room_id) VALUES($1,$2,$3)',[s.app_id,s.external_user_id,r.id]);}catch(e){if(e.code==='23505')fail(409,'ALREADY_IN_ROOM');throw e;}
@@ -330,7 +334,9 @@ export async function routePvp(session,method,path,body={},options={}){
      // A repeated acknowledgement after countdown/start is a no-op. It can
      // never move the shared start instant or extend a paid room's deadline.
     }else if(verb==='ready'){
-     checkNew(app,s.game_id);await assertProductionAppReady(c,app);if(r.status!=='waiting')fail(409,'NOT_WAITING');if(now>=r.expires_at||r.ready_deadline_at&&now>=r.ready_deadline_at)fail(409,'READY_TIMEOUT');member.ready=true;
+     const admission=await assertProductionAppReady(c,app,{intent:'existing-ready',room:r});
+     if(admission)app=admission.app;else checkNew(app,s.game_id);
+     if(r.status!=='waiting')fail(409,'NOT_WAITING');if(now>=r.expires_at||r.ready_deadline_at&&now>=r.ready_deadline_at)fail(409,'READY_TIMEOUT');member.ready=true;
      if(r.players.length===r.capacity&&r.players.every(p=>p.ready)){const seats=Array.from({length:r.capacity},(_,i)=>i);for(let i=seats.length-1;i>0;i--){const j=randomInt(i+1);[seats[i],seats[j]]=[seats[j],seats[i]];}if(r.terms.team_size===2){const offset=randomInt(2);for(const [i,team]of ['team_a','team_b'].entries()){const positions=[(i+offset)%2,(i+offset)%2+2];if(randomInt(2))positions.reverse();const members=r.players.filter(p=>p.team_id===team);if(members.length!==2)fail(409,'INVALID_TEAM');members.forEach((p,j)=>p.seat_index=positions[j]);}}else if(r.game_id==='towerlink'&&r.game_options?.training_lesson_id)r.players.forEach((p,i)=>p.seat_index=i);else r.players.forEach((p,i)=>p.seat_index=seats[i]);r.status='funding';
       // A Run BOT practice room has no wallet work or other human to wait for.
       // Arm it in this ready transaction so the client can prepare its scene

@@ -5,7 +5,7 @@ test('production requires explicit HTTPS, database, private directory and disabl
  assert.equal(runtimeConfiguration({}).environment,'sandbox');
  const env={OASIS_ENVIRONMENT:'production',OASIS_PUBLIC_ORIGIN:'https://games.example.com',OASIS_DATABASE_URL:'postgres://localhost/isolated',OASIS_LOCAL_DIR:'/private/production',OASIS_START_WALLET:'0'};
  assert.equal(runtimeConfiguration(env).admissionEnabled,false);
- assert.equal(runtimeConfiguration({...env,OASIS_PRODUCTION_ADMISSION_ENABLED:'1'}).admissionEnabled,true);
+ assert.throws(()=>runtimeConfiguration({...env,OASIS_PRODUCTION_ADMISSION_ENABLED:'1'}),/GENERIC_PRODUCTION_ADMISSION_FORBIDDEN/);
  for(const key of ['OASIS_DATABASE_URL','OASIS_LOCAL_DIR','OASIS_START_WALLET','OASIS_PUBLIC_ORIGIN']){const invalid={...env};delete invalid[key];assert.throws(()=>runtimeConfiguration(invalid));}
  assert.throws(()=>runtimeConfiguration({...env,OASIS_PUBLIC_ORIGIN:'http://localhost:9999'}));
  assert.throws(()=>runtimeConfiguration({OASIS_ENVIRONMENT:'prod'}));

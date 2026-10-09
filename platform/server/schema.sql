@@ -37,6 +37,22 @@ CREATE TABLE IF NOT EXISTS gp_player_app_ids (
  PRIMARY KEY(app_id,player_id),UNIQUE(app_id,external_user_id)
 );
 ALTER TABLE gp_sessions ADD COLUMN IF NOT EXISTS player_id text REFERENCES gp_players(id);
+ALTER TABLE gp_sessions ADD COLUMN IF NOT EXISTS admission_profile text;
+ALTER TABLE gp_sessions ADD COLUMN IF NOT EXISTS admission_revision bigint CHECK(admission_revision IS NULL OR admission_revision>0);
+
+-- An environment flag is not approval. This table starts empty; only the
+-- independently reviewed production operation records the exact source/scope.
+CREATE TABLE IF NOT EXISTS gp_production_admission (
+ app_id text PRIMARY KEY REFERENCES gp_apps(id),
+ profile text NOT NULL CHECK(profile='firstparty-free-v1'),
+ state text NOT NULL DEFAULT 'closed' CHECK(state IN ('closed','open')),
+ revision bigint NOT NULL CHECK(revision>0),scope jsonb NOT NULL,
+ currency_scale int NOT NULL CHECK(currency_scale BETWEEN 0 AND 6),
+ allowed_origins jsonb NOT NULL,game_ids jsonb NOT NULL,
+ release text NOT NULL,manifest_sha256 text NOT NULL,proof_sha256 text NOT NULL,
+ approved_by text NOT NULL,approved_at timestamptz NOT NULL,
+ updated_at timestamptz NOT NULL DEFAULT now()
+);
 
 -- Additive environment support. A runtime identity still forbids mixed-environment databases.
 ALTER TABLE gp_apps DROP CONSTRAINT IF EXISTS gp_apps_environment_check;
