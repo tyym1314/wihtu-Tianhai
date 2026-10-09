@@ -1,6 +1,10 @@
 import test,{before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {createPlayerFixture} from './player-hosted-fixture.mjs';
+import {spawnSync} from 'node:child_process';
+import {mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 
 // Real isolated PG + loopback HTTP test; never run against a deployed database.
 const password='Player-password-fixture-2026!',nextPassword='New-player-password-fixture-2026!';
@@ -55,6 +59,13 @@ test('one global player change revokes logins across Apps but preserves other pl
  const owner=await account(),other=await account(),platform=await import('../server/platform.mjs');
  const secondApp=(await platform.createApp('Password second tenant',{partnerId:uid('other_partner')})).app;
  await fixture.pool.query("UPDATE gp_apps SET status='active',allowed_origins=$2,game_ids='[\"match\"]' WHERE id=$1",[secondApp.id,JSON.stringify([fixture.origin])]);
+ const unacceptedLogin=await request('/api/player/login',{body:{app_id:secondApp.id,username:owner.username,password}});assert.equal(unacceptedLogin.status,409);assert.equal(unacceptedLogin.body.error.code,'FIRSTPARTY_APP_REQUIRED');
+ assert.equal((await fixture.pool.query('SELECT 1 FROM gp_player_app_ids WHERE app_id=$1',[secondApp.id])).rowCount,0);
+ // Explicit synthetic historical obligation in this unique loopback DB only.
+ // It tests global login revocation, never first-time foreign-App admission.
+ const oldExternal=uid('historically_accepted_player');
+ await fixture.pool.query('INSERT INTO gp_player_app_ids(app_id,player_id,external_user_id) VALUES($1,$2,$3)',[secondApp.id,owner.player.id,oldExternal]);
+ await fixture.pool.query('INSERT INTO gp_sessions(id,app_id,player_id,external_user_id,game_id,host_origin) VALUES($1,$2,$3,$4,$5,$6)',[uid('historically_accepted_session'),secondApp.id,owner.player.id,oldExternal,'match',fixture.origin]);
  const secondLogin=await request('/api/player/login',{body:{app_id:secondApp.id,username:owner.username,password}});assert.equal(secondLogin.status,200);
  const launch=await request('/api/player/launch',{body:{app_id:fixture.app.id,game_id:'match',request_id:uid('accepted'),host_origin:fixture.origin},cookie:owner.login.cookie,headers:headers(owner.login)});assert.equal(launch.status,201);
  const snapshot=async()=>({mappings:(await fixture.pool.query('SELECT * FROM gp_player_app_ids ORDER BY app_id,player_id')).rows,wallets:(await fixture.pool.query('SELECT * FROM wallet_users ORDER BY scope_id,external_user_id')).rows,games:(await fixture.pool.query('SELECT * FROM gp_sessions ORDER BY id')).rows,ledger:(await fixture.pool.query('SELECT * FROM wallet_ledger ORDER BY id')).rows});
@@ -69,13 +80,22 @@ test('one global player change revokes logins across Apps but preserves other pl
  for(const secret of [password,nextPassword,owner.login.cookie.split('=')[1]])assert(!JSON.stringify(audits).includes(secret));
 });
 
-test('password change remains available to authenticated players during admission pause but not in sandbox',async()=>{
- const owner=await account();fixture.runtime.admissionEnabled=false;
- await fixture.pool.query("UPDATE gp_apps SET status='paused' WHERE id=$1",[fixture.app.id]);
+test('password change remains available to authenticated players during actual admission pause',async()=>{
+ const owner=await account();await fixture.setAdmission('closed');
  try{
-  fixture.runtime.production=false;assert.equal((await change(owner.login)).body.error.code,'NOT_FOUND');fixture.runtime.production=true;
+  assert.equal(Object.isFrozen(fixture.runtime),true);assert.equal(fixture.runtime.admissionEnabled,false);
+  assert.throws(()=>{fixture.runtime.production=false;},TypeError);
   assert.equal((await change(owner.login)).status,200);
- }finally{fixture.runtime.production=true;fixture.runtime.admissionEnabled=true;await fixture.pool.query("UPDATE gp_apps SET status='active' WHERE id=$1",[fixture.app.id]);}
+ }finally{await fixture.setAdmission('open');}
+});
+
+test('an actual separate sandbox runtime rejects the player password route before any database access',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'oasis-password-sandbox-')),env={...process.env,OASIS_ENVIRONMENT:'sandbox',OASIS_LOCAL_DIR:dir};
+ for(const key of ['OASIS_ADMISSION_PROFILE','OASIS_FIRSTPARTY_APP_ID','OASIS_ADMISSION_RELEASE','OASIS_ADMISSION_MANIFEST_SHA256'])delete env[key];
+ try{
+  const child=spawnSync(process.execPath,['--import','tsx','--input-type=module','-e',`import assert from 'node:assert/strict';import{routePlayer}from'./server/player-routes.mjs';import{runtime}from'./server/runtime-mode.mjs';import{pool,closePools}from'./server/db.mjs';assert.equal(runtime.production,false);await assert.rejects(routePlayer({}, {}, '/api/player/password', {}, ''),{code:'NOT_FOUND'});assert.equal(pool.totalCount,0);await closePools();console.log('SANDBOX_PLAYER_ROUTE_REFUSED_WITHOUT_DATABASE_ACCESS');`],{cwd:new URL('../',import.meta.url),env,encoding:'utf8',timeout:10000});
+  assert.equal(child.error,undefined);assert.equal(child.status,0,child.stderr);assert.equal(child.stdout.trim(),'SANDBOX_PLAYER_ROUTE_REFUSED_WITHOUT_DATABASE_ACCESS');
+ }finally{await rm(dir,{recursive:true,force:true});}
 });
 
 test('password attempts are rate limited without mutating credentials or deleting the current session',async()=>{

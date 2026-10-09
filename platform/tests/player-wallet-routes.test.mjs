@@ -37,9 +37,9 @@ test('wallet identity is derived from cookie and existing App mapping; forged us
 });
 
 test('closed production admission retains a read-only own-wallet view for previously mapped players',async()=>{
- fixture.runtime.admissionEnabled=false;await fixture.pool.query("UPDATE gp_apps SET status='paused' WHERE id=$1",[fixture.app.id]);
+ await fixture.setAdmission('closed');
  try{const result=await request(path(),{cookie:owner.login.cookie});assert.equal(result.status,200);assert.equal(result.body.balance.available_minor,'0');}
- finally{fixture.runtime.admissionEnabled=true;await fixture.pool.query("UPDATE gp_apps SET status='active' WHERE id=$1",[fixture.app.id]);}
+ finally{await fixture.setAdmission('open');}
 });
 
 test('real wallet response preserves minor strings and scale six without rounding to zero',async()=>{
@@ -48,12 +48,17 @@ test('real wallet response preserves minor strings and scale six without roundin
  await db.query('UPDATE gp_apps SET currency_scale=6 WHERE id=$1',[fixture.app.id]);
  await db.query('UPDATE wallet_scopes SET currency_scale=6 WHERE app_id=$1',[fixture.app.id]);
  await db.query('UPDATE wallet_users SET available=1,reserved=2 WHERE external_user_id=$1',[user]);
- try{const result=await request(path(),{cookie:owner.login.cookie});assert.equal(result.status,200);assert.equal(result.body.balance.available_minor,'1');assert.equal(result.body.balance.reserved_minor,'2');assert.equal(result.body.balance.currency_scale,6);}
+ try{
+  const result=await request(path(),{cookie:owner.login.cookie});assert.equal(result.status,200);assert.equal(result.body.balance.available_minor,'1');assert.equal(result.body.balance.reserved_minor,'2');assert.equal(result.body.balance.currency_scale,6);
+  const newLaunch=await request('/api/player/launch',{body:{app_id:fixture.app.id,game_id:'match',request_id:'scale_six_new_launch',host_origin:fixture.origin},cookie:owner.login.cookie,headers:{'x-oasis-csrf':owner.login.body.csrf_token}});
+  assert.equal(newLaunch.status,409);assert.equal(newLaunch.body.error.code,'FIRSTPARTY_SCOPE_CHANGED');assert.equal((await db.query('SELECT 1 FROM gp_sessions')).rowCount,0);
+ }
  finally{
   await db.query('UPDATE wallet_users SET available=0,reserved=0 WHERE external_user_id=$1',[user]);
   await db.query('UPDATE wallet_scopes SET currency_scale=2 WHERE app_id=$1',[fixture.app.id]);
   await db.query('UPDATE gp_apps SET currency_scale=2 WHERE id=$1',[fixture.app.id]);
  }
+ const restored=await request('/api/player/launch',{body:{app_id:fixture.app.id,game_id:'match',request_id:'scope_restored_new_launch',host_origin:fixture.origin},cookie:owner.login.cookie,headers:{'x-oasis-csrf':owner.login.body.csrf_token}});assert.equal(restored.status,201);assert.equal((await db.query('SELECT 1 FROM gp_sessions')).rowCount,1);
 });
 
 test('missing account and broken wallet binding fail explicitly and never fabricate a balance',async()=>{

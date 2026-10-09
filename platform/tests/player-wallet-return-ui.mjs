@@ -1,13 +1,16 @@
 import assert from 'node:assert/strict';
-import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {mkdir,mkdtemp,readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
+import {pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
 import {chromium,webkit} from 'playwright';
 import {createPlayerWalletHttpsFixture} from './player-wallet-https-fixture.mjs';
+import {ARENA_IDS} from '../shared/games.mjs';
 
 // Engineering validation only: real isolated production PG/BFF/wallet/room,
 // synthetic iframe presentation. Never contacts a public deployment or device.
-const fixture=await createPlayerWalletHttpsFixture(),out=new URL('../review/player-wallet-return-tls-20261010/',import.meta.url);
+await mkdir(new URL('../review/',import.meta.url),{recursive:true});
+const fixture=await createPlayerWalletHttpsFixture(),out=pathToFileURL(await mkdtemp(new URL('../review/player-wallet-return-policy-',import.meta.url).pathname)+'/');
 const paths=['server/player-routes.mjs','src/pages/PlayerClient.mjs','src/pages/Player.jsx'];
 const sourceSha256=Object.fromEntries(await Promise.all(paths.map(async path=>[path,createHash('sha256').update(await readFile(new URL('../'+path,import.meta.url))).digest('hex')])));
 const bundle=await build({stdin:{contents:"import React from 'react';import{createRoot}from'react-dom/client';import Player from './src/pages/Player.jsx';import{OasisHost}from'./public/sdk/oasis-h5.mjs';const send=OasisHost.prototype.sendLaunch;OasisHost.prototype.sendLaunch=function(){if(window.__qaThrowLaunch&&this.sessionId)throw Error('QA send after accepted session');return send.call(this);};createRoot(document.getElementById('root')).render(<React.StrictMode><Player/></React.StrictMode>);",resolveDir:new URL('../',import.meta.url).pathname,loader:'jsx'},bundle:true,write:false,format:'esm',platform:'browser',outdir:'fixture'});
@@ -61,28 +64,40 @@ try{
   const balance=page.getByRole('region',{name:'账户余额'});
   await page.goto(entry);await page.getByRole('button',{name:'没有账号，创建账号'}).click();await page.getByLabel('账号',{exact:true}).fill(username);await page.getByLabel('密码',{exact:true}).fill(password);await page.getByRole('button',{name:'注册账号',exact:true}).click();await page.getByRole('status').filter({hasText:'账号已注册'}).waitFor();await login();
   await balance.getByText('0.00 COIN',{exact:true}).waitFor();assert.equal(await page.evaluate(()=>window.OasisPlayerHost.requestBack()),false);
+  assert.equal(await page.locator('.player-game-card').count(),ARENA_IDS.length);await page.getByRole('status').filter({hasText:'免费练习 · 对手为 BOT · 不扣金币'}).waitFor();
   assert.equal((await fixture.pool.query("SELECT count(*)::int count FROM wallet_ledger")).rows[0].count,0);checks.push('real register/login opens zero platform wallet, displays 0.00 and lobby returns synchronous false');
   for(const width of [360,390,430]){
    await page.setViewportSize({width,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
    assert((await page.locator('button').evaluateAll(elements=>elements.filter(e=>e.getClientRects().length).map(e=>e.getBoundingClientRect().height))).every(height=>height>=44));
   }
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:new URL('wallet-zero.png',dir).pathname});checks.push('360/390/430 mobile layouts have no horizontal overflow and touch targets >=44px');
-  const user=(await fixture.pool.query('SELECT map.external_user_id FROM gp_player_app_ids map JOIN gp_players p ON p.id=map.player_id WHERE map.app_id=$1 AND p.username=$2',[fixture.app.id,username])).rows[0].external_user_id;
+  const identity=(await fixture.pool.query('SELECT map.external_user_id,p.id AS player_id FROM gp_player_app_ids map JOIN gp_players p ON p.id=map.player_id WHERE map.app_id=$1 AND p.username=$2',[fixture.app.id,username])).rows[0],user=identity.external_user_id;
+  // Officially accept and exchange an idle session while the fixture's exact
+  // policy is open. Later scope-precision experiments can reauthenticate this
+  // already accepted player; they must not authorize a new inconsistent scope.
+  const platform=await import('../server/platform.mjs'),acceptedApp=await platform.appById(fixture.app.id);
+  const idleBody={...platform.scope(acceptedApp),request_id:'wallet_preaccepted_'+name,game_id:'match',host_origin:fixture.origin,locale:'en',host_platform:'web'};
+  const idle=await platform.createSession(acceptedApp,idleBody,JSON.stringify(idleBody),{playerId:identity.player_id});
+  await platform.exchange({launch_code:idle.launch_code,game_id:'match',host_origin:fixture.origin,client_instance_id:'wallet_preaccepted_client_'+name});
+  const baselineSessions=(await fixture.pool.query('SELECT count(*)::int count FROM gp_sessions WHERE external_user_id=$1',[user])).rows[0].count;assert.equal(baselineSessions,1);
   await fixture.pool.query('UPDATE gp_apps SET currency_scale=6 WHERE id=$1',[fixture.app.id]);await fixture.pool.query('UPDATE wallet_scopes SET currency_scale=6 WHERE app_id=$1',[fixture.app.id]);
-  await fixture.pool.query('UPDATE wallet_users SET available=1,reserved=2 WHERE external_user_id=$1',[user]);await page.reload();await balance.getByText('0.000001 COIN',{exact:true}).waitFor();assert.match(await balance.innerText(),/冻结 0\.000002 COIN/);await page.screenshot({path:new URL('wallet-scale-six.png',dir).pathname});checks.push('real wallet 1/2 minor at scale6 is displayed exactly without floats');
+  await fixture.pool.query('UPDATE wallet_users SET available=1,reserved=2 WHERE external_user_id=$1',[user]);await page.reload();await balance.getByText('0.000001 COIN',{exact:true}).waitFor();assert.match(await balance.innerText(),/冻结 0\.000002 COIN/);assert.equal(await page.locator('.player-game-card:disabled').count(),ARENA_IDS.length);
+  const denied=await platform.createSession(await platform.appById(fixture.app.id),{...idleBody,request_id:'wallet_scope_mismatch_'+name},'scope-mismatch',{playerId:identity.player_id}).then(()=>null,error=>error);assert.equal(denied?.code,'FIRSTPARTY_SCOPE_CHANGED');assert.equal((await fixture.pool.query('SELECT count(*)::int count FROM gp_sessions WHERE external_user_id=$1',[user])).rows[0].count,baselineSessions);
+  await page.screenshot({path:new URL('wallet-scale-six.png',dir).pathname});checks.push('real wallet 1/2 minor at scale6 is displayed exactly without floats; inconsistent approval disables all 11 new entries and official launch refuses it');
   holdWallet=true;await page.reload();await waitHeld(()=>heldWallet.length>0);await page.waitForFunction(()=>document.querySelector('[aria-label="账户余额"]')?.textContent.includes('正在读取余额'));
   await page.getByRole('button',{name:'退出登录',exact:true}).click();await page.getByRole('button',{name:'登录',exact:true}).waitFor();
   holdWallet=false;await fixture.pool.query('UPDATE wallet_users SET available=3,reserved=0 WHERE external_user_id=$1',[user]);await login();await balance.getByText('0.000003 COIN',{exact:true}).waitFor();await Promise.all(heldWallet.splice(0).map(fulfill=>fulfill()));await page.waitForTimeout(100);assert.match(await balance.innerText(),/可用 0\.000003 COIN/);assert.doesNotMatch(await balance.innerText(),/0\.000001/);checks.push('late aborted wallet responses from previous login cannot overwrite new-session balance');
   walletFails=true;await page.reload();await balance.getByRole('alert').waitFor();assert.equal(await balance.locator('strong').count(),0);assert.equal(await page.locator('.player-games').count(),1);
   walletFails=false;await balance.getByRole('button',{name:'重新读取余额'}).click();await balance.getByText('0.000003 COIN',{exact:true}).waitFor();checks.push('failed refresh shows unavailable without stale/fabricated zero and retries actual wallet');
   await fixture.pool.query('UPDATE wallet_users SET available=0,reserved=0 WHERE external_user_id=$1',[user]);await fixture.pool.query('UPDATE wallet_scopes SET currency_scale=2 WHERE app_id=$1',[fixture.app.id]);await fixture.pool.query('UPDATE gp_apps SET currency_scale=2 WHERE id=$1',[fixture.app.id]);
+  await page.reload();await balance.getByText('0.00 COIN',{exact:true}).waitFor();assert.equal(await page.locator('.player-game-card:disabled').count(),0);assert.equal(await page.locator('.player-game-card').count(),ARENA_IDS.length);
   await page.evaluate(()=>{window.__qaThrowLaunch=true;});holdLaunch=true;await page.getByRole('button',{name:'三消对战 进入游戏'}).click();await waitHeld(()=>heldLaunch.length>0);
   assert.equal(await page.evaluate(()=>window.OasisPlayerHost.requestBack()),true);assert.equal(await page.locator('.player-game[data-state=loading]').count(),1);assert.equal(await page.locator('iframe').count(),1);checks.push('native Back consumes pending launch without discarding possibly accepted intent');
   holdLaunch=false;await Promise.all(heldLaunch.splice(0).map(fulfill=>fulfill()));await page.locator('.player-game[data-state=error]').waitFor();
-  const acceptedSession=(await fixture.pool.query('SELECT id FROM gp_sessions WHERE external_user_id=$1',[user])).rows[0].id;
+  const acceptedSession=(await fixture.pool.query('SELECT id FROM gp_sessions WHERE external_user_id=$1 AND id<>$2',[user,idle.session_id])).rows[0].id;
   assert.equal(await page.evaluate(()=>window.OasisPlayerHost.requestBack()),true);await page.getByRole('status').filter({hasText:'原游戏尚未确认返回'}).waitFor();assert.equal(await page.locator('.player-game').count(),1);checks.push('actual SDK mount rejects after receiving real BFF session; Back retains accepted session rather than leaving lobby');
   await page.evaluate(()=>{window.__qaThrowLaunch=false;});await page.getByRole('button',{name:'重试连接',exact:true}).click();await page.locator('.player-game[data-state=error]').waitFor();let frame=page.frames().find(frame=>frame.url()===fixture.origin+'/play/match');assert(frame);
-  assert.equal((await fixture.pool.query('SELECT count(*)::int count FROM gp_sessions WHERE external_user_id=$1',[user])).rows[0].count,1);assert(fixture.launches.some(value=>value.resume_session_id===acceptedSession));
+  assert.equal((await fixture.pool.query('SELECT count(*)::int count FROM gp_sessions WHERE external_user_id=$1',[user])).rows[0].count,baselineSessions+1);assert(fixture.launches.some(value=>value.resume_session_id===acceptedSession));
   await frame.waitForFunction(()=>Boolean(window.fixture?.roomId));await page.locator('.player-game[data-state=error]').waitFor();
   const roomId=await frame.evaluate(()=>window.fixture.roomId);assert(roomId);assert.equal((await fixture.pool.query('SELECT status FROM pvp_rooms WHERE id=$1',[roomId])).rows[0].status,'active');
   assert.equal(await page.evaluate(()=>window.OasisPlayerHost.requestBack()),true);await page.getByRole('status').filter({hasText:'原游戏尚未确认返回'}).waitFor();assert.equal(await page.locator('iframe').count(),1);assert.equal(await frame.evaluate(()=>window.fixture.backRequests),0);checks.push('accepted session before loaded cannot return on error; original room remains recoverable');
@@ -96,7 +111,7 @@ try{
   await frame.evaluate(()=>window.fixture.finishReturn());await page.locator('.player-games').waitFor();await balance.getByText('0.00 COIN',{exact:true}).waitFor();
   assert.equal(page.url(),entry);assert.equal(await page.locator('iframe').count(),0);assert.equal(await page.evaluate(()=>window.OasisPlayerHost.requestBack()),false);assert.equal((await fixture.pool.query('SELECT 1 FROM pvp_active_users WHERE room_id=$1',[roomId])).rowCount,0);
   assert.equal((await fixture.pool.query('SELECT count(*)::int count FROM wallet_ledger')).rows[0].count,0);assert(!requests.some(path=>path.startsWith('/api/demo/')||path.startsWith('/api/admin/')));assert.deepEqual(errors,[]);checks.push('only authoritative leave then return_requested releases game; owned lobby reloads real zero wallet, no credits or browser authority');
-  const report={passed:true,browser:name,scope:'Real local HTTPS with owned temporary self-signed certificate (local fixture ignoreHTTPSErrors only), desktop browser mobile viewport, isolated production PostgreSQL+BFF+wallet+practice room; synthetic presentation, not public TLS/Android/iPhone/full-game acceptance',checks,errors,sourceSha256,requestTrace};
+  const report={passed:true,browser:name,evidence_directory:dir.pathname,admission_fixture:fixture.admissionDeclaration,scope:'Real local HTTPS with owned temporary self-signed certificate (local fixture ignoreHTTPSErrors only), desktop browser mobile viewport, isolated production-shaped PostgreSQL+BFF+wallet+practice room with explicit synthetic approval and prior accepted idle session; synthetic presentation, not production approval/public TLS/Android/iPhone/full-game acceptance',checks,errors,sourceSha256,requestTrace};
   await writeFile(new URL('report.json',dir),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await context.close();await browser.close();browser=null;
  }
 }finally{await browser?.close();await fixture.close();}

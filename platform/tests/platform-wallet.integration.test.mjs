@@ -6,18 +6,21 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import pg from 'pg';
 import {dropOwnedTestDatabase} from './database-cleanup.mjs';
+import {firstpartyPlayerFixtureDeclaration,installFirstpartyPlayerFixture} from './firstparty-player-fixture-policy.mjs';
 
 const name=`oasis_release_test_${process.pid}_${randomBytes(6).toString('hex')}`;
 const adminUrl=new URL(process.env.OASIS_TEST_ADMIN_DATABASE_URL||'postgres://oasis_local@127.0.0.1:5487/postgres');
 const databaseUrl=new URL(adminUrl);databaseUrl.pathname='/'+name;
 const publicOrigin='https://platform-wallet.example.invalid',password='Isolated-player-fixture-2026!';
+const declaration=firstpartyPlayerFixtureDeclaration({databaseName:name,origin:publicOrigin});
 const priorEnv={...process.env};
 const uid=prefix=>prefix+'_'+randomBytes(8).toString('hex');
-let admin,pool,closePools,dir,created=false,platform,binding,players,wallet,pvp,runtime,app,registered,mapped;
+let admin,pool,closePools,closeEnginePool,dir,created=false,platform,binding,players,wallet,pvp,runtime,app,registered,mapped,setAdmission;
 const scopeOf=value=>Object.fromEntries(['partner_id','environment','wallet_scope_id','currency_id'].map(key=>[key,value[key]]).concat([['app_id',value.id]]));
 const scopeId=value=>[value.partner_id,value.id,value.environment,value.wallet_scope_id,value.currency_id].join(':');
 const command=(value,path,body)=>binding.walletRequest(value,'POST',path,JSON.stringify({...scopeOf(value),...body}),body.request_id);
-async function activeApp(options={}){
+// Isolated trusted-wallet arithmetic precondition, never new production admission.
+async function historicalApp(options={}){
  const created=await platform.createApp('Platform wallet fixture',{partnerId:uid('partner'),...options});
  await pool.query("UPDATE gp_apps SET allowed_origins=$2,status='active' WHERE id=$1",[created.app.id,JSON.stringify([publicOrigin])]);
  return platform.appById(created.app.id);
@@ -27,35 +30,53 @@ async function player(value){
  const externalUserId=await players.appPlayerId(pool,value.id,account.id);
  return{...account,externalUserId};
 }
+async function acceptedHistoricalMapping(value,account){
+ // Only this uniquely created loopback fixture DB may seed a previously accepted
+ // cross-App session. No public register/launch authority or financial approval
+ // is inferred from these historical records.
+ assert.equal((await pool.query('SELECT current_database() name')).rows[0].name,name);
+ const externalUserId=uid('history_player'),db=await pool.connect();
+ try{
+  await db.query('BEGIN');
+  await db.query('INSERT INTO gp_player_app_ids(app_id,player_id,external_user_id) VALUES($1,$2,$3)',[value.id,account.id,externalUserId]);
+  await db.query('INSERT INTO gp_sessions(id,app_id,external_user_id,game_id,host_origin,player_id) VALUES($1,$2,$3,$4,$5,$6)',[uid('history_session'),value.id,externalUserId,'match',publicOrigin,account.id]);
+  assert.equal(await players.appPlayerId(db,value.id,account.id),externalUserId);
+  await db.query('COMMIT');return{...account,externalUserId};
+ }catch(error){await db.query('ROLLBACK');throw error;}finally{db.release();}
+}
 before(async()=>{
  assert.ok(['localhost','127.0.0.1','[::1]'].includes(adminUrl.hostname));
+ assert.equal(adminUrl.pathname,'/postgres','INDEPENDENT_ADMIN_DATABASE_REQUIRED');
  admin=new pg.Pool({connectionString:adminUrl.href,max:1});await admin.query(`CREATE DATABASE "${name}"`);created=true;
  dir=await mkdtemp(join(tmpdir(),'oasis-platform-wallet-'));await writeFile(join(dir,'master.key'),randomBytes(32),{mode:0o600});
- Object.assign(process.env,{OASIS_DATABASE_URL:databaseUrl.href,OASIS_ENVIRONMENT:'production',OASIS_LOCAL_DIR:dir,OASIS_START_WALLET:'0',OASIS_PUBLIC_ORIGIN:publicOrigin,OASIS_PRODUCTION_ADMISSION_ENABLED:'1',OASIS_WALLET_ALLOWED_ORIGINS:'https://external-wallet.example.invalid'});
+ Object.assign(process.env,{OASIS_DATABASE_URL:databaseUrl.href,OASIS_ENVIRONMENT:'production',OASIS_LOCAL_DIR:dir,OASIS_START_WALLET:'0',OASIS_PUBLIC_ORIGIN:publicOrigin,...declaration.runtimeEnv,OASIS_WALLET_ALLOWED_ORIGINS:'https://external-wallet.example.invalid'});
  ({pool,closePools}=await import('../server/db.mjs'));platform=await import('../server/platform.mjs');binding=await import('../server/wallet-binding.mjs');players=await import('../server/player-records.mjs');wallet=await import('../server/wallet/index.mjs');pvp=await import('../server/pvp/index.mjs');({runtime}=await import('../server/runtime-mode.mjs'));
  assert.equal((await pool.query('SELECT current_database() AS name')).rows[0].name,name);
  await wallet.migrateWallet(pool);await platform.migratePlatform();await pvp.migratePvp(pool);await binding.migrateWalletBindings(pool);
  await(await import('../server/runtime-mode.mjs')).migrateRuntime(pool);
+ ({closeEnginePool}=await import('../server/pvp/engine-pool.mjs'));
+ ({app,setAdmission}=await installFirstpartyPlayerFixture(pool,declaration,{name:'Firstparty zero-account fixture'}));
 });
 after(async()=>{
- await closePools?.();if(created)await dropOwnedTestDatabase(admin,name,{created});await admin?.end();if(dir)await rm(dir,{recursive:true,force:true});
+ await closeEnginePool?.();await closePools?.();if(created)await dropOwnedTestDatabase(admin,name,{created});await admin?.end();if(dir)await rm(dir,{recursive:true,force:true});
  for(const key of Object.keys(process.env))if(!(key in priorEnv))delete process.env[key];Object.assign(process.env,priorEnv);
 });
 
 test('production App defaults to a persisted zero-money platform provider and keeps admission closed',async()=>{
- const item=await platform.createApp('Production owned wallet',{partnerId:uid('partner')});app=item.app;
- assert.equal(app.status,'paused');assert.equal(app.wallet_url,'');
- assert.equal((await binding.getWalletStatus(app.id)).mode,'platform');
- assert.equal((await binding.getWalletStatus(app.id)).can_configure,false);
- const snapshot=await wallet.readWalletSnapshot(pool,{scope:scopeOf(app)});
+ const item=await platform.createApp('Production owned wallet',{partnerId:uid('partner')}),unadmitted=item.app;
+ assert.equal(unadmitted.status,'paused');assert.equal(unadmitted.wallet_url,'');
+ assert.equal((await binding.getWalletStatus(unadmitted.id)).mode,'platform');
+ assert.equal((await binding.getWalletStatus(unadmitted.id)).can_configure,false);
+ const snapshot=await wallet.readWalletSnapshot(pool,{scope:scopeOf(unadmitted)});
  assert.deepEqual(snapshot.treasury,{available_minor:'0',reserved_minor:'0',inbound_capacity_minor:'0'});assert.deepEqual(snapshot.users,[]);assert.deepEqual(snapshot.ledger,[]);
  assert.equal((await pool.query('SELECT count(*)::int count FROM wallet_keys')).rows[0].count,0);
  assert.equal((await pool.query("SELECT count(*)::int count FROM gp_keys WHERE direction='platform-to-wallet'")).rows[0].count,0);
- await binding.migrateWalletBindings(pool);assert.equal((await binding.getWalletStatus(app.id)).mode,'platform');
- runtime.admissionEnabled=false;
- try{await assert.rejects(players.registerPlayer(uid('closed'),password,app.id),{code:'PRODUCTION_ACCEPTANCE_REQUIRED'});}finally{runtime.admissionEnabled=true;}
- await assert.rejects(players.registerPlayer(uid('paused'),password,app.id),{code:'PRODUCTION_HOST_REQUIRED'});
- await pool.query("UPDATE gp_apps SET allowed_origins=$2,status='active' WHERE id=$1",[app.id,JSON.stringify([publicOrigin])]);app=await platform.appById(app.id);
+ await binding.migrateWalletBindings(pool);assert.equal((await binding.getWalletStatus(unadmitted.id)).mode,'platform');
+ assert.equal(Object.isFrozen(runtime),true);assert.equal(runtime.admissionEnabled,false);
+ await assert.rejects(players.registerPlayer(uid('foreign'),password,unadmitted.id),{code:'FIRSTPARTY_APP_REQUIRED'});
+ await setAdmission('closed');
+ try{await assert.rejects(players.registerPlayer(uid('closed'),password,app.id),{code:'PRODUCTION_ACCEPTANCE_REQUIRED'});}
+ finally{app=await setAdmission('open');}
 });
 
 test('registered player and per-App identity atomically open one zero-balance account without reference credits',async()=>{
@@ -98,7 +119,11 @@ test('real player login launches, exchanges and enters free practice at zero bal
 });
 
 test('App isolation, scope pinning and insufficient funds fail without automatic funding',async()=>{
- const other=await activeApp(),otherId=await players.appPlayerId(pool,other.id,registered.id);assert.notEqual(otherId,mapped);
+ const other=await historicalApp();
+ await assert.rejects(players.loginPlayer(registered.username,password,other.id),{code:'FIRSTPARTY_APP_REQUIRED'});
+ await assert.rejects(players.appPlayerId(pool,other.id,registered.id),{code:'FIRSTPARTY_APP_REQUIRED'});
+ const historical=await acceptedHistoricalMapping(other,registered),otherId=historical.externalUserId;assert.notEqual(otherId,mapped);
+ assert.equal((await players.loginPlayer(registered.username,password,other.id)).player.id,registered.id);
  await assert.rejects(binding.validatedWalletBalance(other,mapped),{status:404});
  await assert.rejects(binding.validatedWalletBalance({...app,currency_id:'OTHER'},mapped),{code:'WALLET_BINDING_CHANGED'});
  const terms={game_id:'match',rule_version:'pvp-match-v1.0.0',payout_template_version:'winner-all-v1',fee_bps:500,entry_minor:'1000',player_count:2,team_size:1};
@@ -108,7 +133,9 @@ test('App isolation, scope pinning and insufficient funds fail without automatic
  const stolen={...scopeOf(other),...reserve,request_id:uid('scope_spoof')};
  await assert.rejects(binding.walletRequest(app,'POST','/wallet/v1/reservations',JSON.stringify(stolen),stolen.request_id),{code:'SCOPE_FORBIDDEN'});
  const snapshot=await wallet.readWalletSnapshot(pool,{scope:scopeOf(app)});assert.deepEqual(snapshot.ledger,[]);assert.equal(snapshot.users[0].available,'0');assert.equal(snapshot.users[0].reserved,'0');
- const {assertProductionAppReady}=await import('../server/runtime-mode.mjs');await assert.rejects(assertProductionAppReady(pool,{...app,game_ids:['tiger']}),{code:'PRODUCTION_MATH_NOT_APPROVED'});
+ const {assertProductionAppReady}=await import('../server/runtime-mode.mjs');await assert.rejects(assertProductionAppReady(pool,{...app,game_ids:['tiger']}),{code:'FIRSTPARTY_APP_CONFIG_CHANGED'});
+ const probability={...scopeOf(app),request_id:uid('blocked_probability'),game_id:'tiger',locale:'en',host_platform:'web',host_origin:publicOrigin};
+ await assert.rejects(platform.createSession(app,probability,JSON.stringify(probability),{playerId:registered.id}),{code:'GAME_DISABLED'});
 });
 
 test('external provider remains an explicit option; pristine unconfigured production App can bind platform once',async()=>{
@@ -139,7 +166,10 @@ test('legacy binding schema migrates existing external URL, key and scope withou
 });
 
 async function creditedFixture(){
- const value=await activeApp(),accounts=[await player(value),await player(value)],identifier=scopeId(value);
+ // Fresh identities are genuinely registered only on the reviewed firstparty
+ // zero-money scope. Other-App financial history is seeded explicitly below;
+ // direct internal ledger commands here test arithmetic, not API admission.
+ const value=await historicalApp(),accounts=[await acceptedHistoricalMapping(value,await player(app)),await acceptedHistoricalMapping(value,await player(app))],identifier=scopeId(value);
  const db=await pool.connect();try{
   await db.query('BEGIN');await db.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[identifier]);
   for(const account of accounts){

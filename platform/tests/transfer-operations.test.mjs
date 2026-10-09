@@ -5,7 +5,7 @@ import {randomBytes,scryptSync} from 'node:crypto';
 import {createPlayerFixture} from './player-hosted-fixture.mjs';
 
 const uid=p=>p+'_'+randomBytes(8).toString('hex'),password='Synthetic-financial-console-2026!';
-let f,pool,portal,security,platform,operations,service,server,base,adminCookie,a,b,secondApp,otherEnvironment,orders={},calls=0,dbName;
+let f,pool,portal,security,platform,operations,service,server,base,adminCookie,a,b,secondApp,otherEnvironment,historyPlayer,orders={},calls=0,dbName;
 const adapters={};
 const request=async(path,{cookie=adminCookie,method='GET'}={})=>{const r=await fetch(base+path,{method,headers:{cookie:cookie||'',origin:f.origin}});return{status:r.status,body:await r.json(),headers:r.headers};};
 async function partner(name){
@@ -17,8 +17,22 @@ async function partner(name){
 async function app(owner){
  const created=await platform.createApp('Synthetic operations app',{partnerId:owner.user.partner_id});
  await pool.query("UPDATE gp_apps SET allowed_origins=$2,status='active' WHERE id=$1",[created.app.id,JSON.stringify([f.origin])]);
- const current=await platform.appById(created.app.id),player=await(await import('../server/player-records.mjs')).registerPlayer(uid('user'),password,current.id);
- const user=(await pool.query('SELECT external_user_id FROM gp_player_app_ids WHERE app_id=$1 AND player_id=$2',[current.id,player.id])).rows[0].external_user_id;
+ const current=await platform.appById(created.app.id),players=await import('../server/player-records.mjs');
+ // New identities have only the real firstparty-free fixture declaration. An
+ // outside App cannot register or bind this player through public admission.
+ await assert.rejects(players.registerPlayer(uid('forbidden_user'),password,current.id),{code:'FIRSTPARTY_APP_REQUIRED'});
+ await assert.rejects(players.loginPlayer(historyPlayer.username,password,current.id),{code:'FIRSTPARTY_APP_REQUIRED'});
+ // Seed this unique test DB's already accepted historical App mapping/session
+ // for read-only console and trusted synthetic financial-adapter coverage.
+ // This is not a source, player or financial production approval.
+ assert.equal((await pool.query('SELECT current_database() name')).rows[0].name,dbName);
+ const player=historyPlayer,user=uid('historical_user'),db=await pool.connect();
+ try{
+  await db.query('BEGIN');
+  await db.query('INSERT INTO gp_player_app_ids(app_id,player_id,external_user_id) VALUES($1,$2,$3)',[current.id,player.id,user]);
+  await db.query('INSERT INTO gp_sessions(id,app_id,external_user_id,game_id,host_origin,player_id) VALUES($1,$2,$3,$4,$5,$6)',[uid('historical_session'),current.id,user,'match',f.origin,player.id]);
+  assert.equal(await players.appPlayerId(db,current.id,player.id),user);await db.query('COMMIT');
+ }catch(error){await db.query('ROLLBACK');throw error;}finally{db.release();}
  const key=uid('key'),binding=uid('binding'),account=uid('account'),scope=[current.partner_id,current.id,current.environment,current.wallet_scope_id,current.currency_id].join(':');
  await pool.query("INSERT INTO gp_keys(id,app_id,direction,secret_enc) VALUES($1,$2,'partner-to-platform',$3)",[key,current.id,security.seal('synthetic-secret-do-not-export')]);
  await pool.query("INSERT INTO gp_transfer_bindings(id,app_id,scope_id,issuer,merchant,adapter_id,config,capabilities,status,approved_by) VALUES($1,$2,$3,'fixture','merchant','synthetic',$4,$5,'active','fixture')",[binding,current.id,scope,{endpoint:'https://secret.invalid',credential_ref:'never-export'},{[key]:['IN','OUT','READ']}]);
@@ -37,10 +51,14 @@ before(async()=>{
  f=await createPlayerFixture();pool=f.pool;dbName=(await pool.query('SELECT current_database() AS name')).rows[0].name;
  security=await import('../server/security.mjs');platform=await import('../server/platform.mjs');portal=await import('../server/portal.mjs');operations=await import('../server/transfer-operations.mjs');await portal.migratePortal();
  const core=await import('../server/transfers/index.mjs');await core.migrateTransfers(pool);
+ assert.equal(Object.isFrozen(f.runtime),true);assert.equal(f.runtime.admissionEnabled,false);assert.equal(f.admissionDeclaration.production_approval,false);
+ const registered=await f.request('/api/player/register',{body:{app_id:f.app.id,username:uid('real_fixture_user'),password}});assert.equal(registered.status,201);historyPlayer=registered.body.player;
  const salt=uid('salt');await pool.query('INSERT INTO gp_admins(id,username,salt,password_hash) VALUES($1,$1,$2,$3)',['ops_admin',salt,scryptSync(password,salt,64).toString('hex')]);
  adminCookie='oasis_admin='+(await platform.login('ops_admin',password)).token;
  a=await partner('Alpha');b=await partner('Beta');a.item=await app(a);b.item=await app(b);secondApp=await app(a);otherEnvironment=await app(a);
- service=core.createTransferService({pool,environment:'production',adapters:{synthetic:{idempotentReplay:true,authoritativeQuery:true,validateBinding:()=>true,
+ // The explicit test-only dependency is retained: this synthetic ledger fixture
+ // is independent of the shipped service's default closed financial admission.
+ service=core.createTransferService({pool,environment:'production',admitNew:async()=>{},adapters:{synthetic:{idempotentReplay:true,authoritativeQuery:true,validateBinding:()=>true,
   submit:async h=>{calls++;const state=adapters[h.operation.operation_id]||'SUCCEEDED';if(state==='UNKNOWN')throw Error('secret-provider-error');return{...h.operation,body_sha256:h.body_sha256,state,transaction_id:'ext_'+h.operation.operation_id,final:state==='REJECTED',rejection_code:'DECLINED',provider_raw:{secret:'never-export'}};},query:async()=>{calls++;throw Error('No console query may call adapter');}}}});
  orders.pending=await create(a.item,'request_pending');orders.success=await create(a.item,'request_success');await service.advance(orders.success.transfer_id);
  orders.rejected=await create(a.item,'request_rejected');adapters[orders.rejected.transfer_id]='REJECTED';await service.advance(orders.rejected.transfer_id);
