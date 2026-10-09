@@ -331,7 +331,7 @@ export async function playOneArenaAction(frame, game, readRoom, {touch=false,tim
     await plan.run();
     lastReason = 'waiting for accepted UI action response';
     const captured = await bounded(()=>responsePromise);
-    if (captured.timeout) throw new Error(`${game}: no action response before deadline`);
+    if (captured.timeout) throw Object.assign(new Error(`${game}: no action response before deadline`),{code:'ACTION_DEADLINE'});
     const response = captured.response, requestBody = response.request().postDataJSON();
     if (!inputBaseline&&(requestBody?.seq !== seq + 1 || requestBody?.action?.type !== plan.type)) {
       throw new Error(`${game}: UI submitted an unexpected action or sequence`);

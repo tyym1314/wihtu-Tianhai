@@ -4,6 +4,7 @@ import {credentialRate,changePassword} from './credentials.mjs';
 import {appById,createSession,origin,scope} from './platform.mjs';
 import {runtime,assertProductionAppReady} from './runtime-mode.mjs';
 import {RELEASED_IDS} from '../shared/games.mjs';
+import {validatedWalletBalance} from './wallet-binding.mjs';
 import {PLAYER_COOKIE,registerPlayer,loginPlayer,playerSession,csrfFor,requirePlayerCsrf,revokePlayerSession,appPlayerId} from './player-records.mjs';
 
 const exact=(body,keys)=>{if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(key=>!keys.includes(key)))fail(400,'INVALID_REQUEST');};
@@ -41,6 +42,15 @@ export async function routePlayer(req,res,path,body,raw){
   send(res,200,{player,app_id:app.id,external_user_id:externalUserId,csrf_token:csrfFor(token),expires_in:28800});return true;
  }
  const session=await playerSession(req);if(!session)fail(401,'LOGIN_REQUIRED');
+ if(path==='/api/player/wallet'||path.startsWith('/api/player/wallet?')){
+  if(req.method!=='GET')fail(405,'METHOD_NOT_ALLOWED');
+  const app=await appById(queryAppId(path));if(app.environment!=='production')fail(404,'NOT_FOUND');
+  // A balance read may finish an accepted obligation while admission is closed.
+  // It never binds a new App, opens an account, or accepts a client-supplied user.
+  const mapped=(await pool.query('SELECT external_user_id FROM gp_player_app_ids WHERE app_id=$1 AND player_id=$2',[app.id,session.id])).rows[0];
+  if(!mapped)fail(403,'SCOPE_FORBIDDEN');
+  send(res,200,await validatedWalletBalance(app,mapped.external_user_id));return true;
+ }
  if(path==='/api/player/recovery'||path.startsWith('/api/player/recovery?')){
   if(req.method!=='GET')fail(405,'METHOD_NOT_ALLOWED');
   const app=await appById(queryAppId(path));if(app.environment!=='production')fail(404,'NOT_FOUND');

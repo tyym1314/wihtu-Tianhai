@@ -18,6 +18,37 @@ export const playerMessage=error=>({
  GAME_NOT_RELEASED:'这个游戏暂未开放。'
 }[error?.code]||(error?.status===429?'操作太频繁，请稍后再试。':'连接暂时未完成，请检查网络后重试。'));
 
+const identifier=value=>typeof value==='string'&&/^[-A-Za-z0-9_]{1,128}$/.test(value);
+const minor=value=>typeof value==='string'&&/^(0|[1-9][0-9]{0,18})$/.test(value)&&BigInt(value)<=9223372036854775807n;
+export function formatPlayerMinor(value,scale){
+ if(!minor(value)||!Number.isInteger(scale)||scale<0||scale>6)return '—';
+ const digits=value.padStart(scale+1,'0'),whole=(scale?digits.slice(0,-scale):digits).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+ return whole+(scale?'.'+digits.slice(-scale):'');
+}
+function validatePlayerWallet(value,appId){
+ const balance=value?.balance;
+ if(value?.app_id!==appId||value?.environment!=='production'||!identifier(value.currency_id)||!identifier(value.partner_id)||!identifier(value.wallet_scope_id)||
+  !identifier(balance?.external_user_id)||!minor(balance.available_minor)||!minor(balance.reserved_minor)||!minor(balance.ledger_version)||
+  !Number.isInteger(balance.currency_scale)||balance.currency_scale<0||balance.currency_scale>6||typeof value.as_of!=='string'||!Number.isFinite(Date.parse(value.as_of)))
+  throw Object.assign(new Error('INVALID_WALLET_BALANCE'),{code:'WALLET_INVALID_BALANCE'});
+ return value;
+}
+
+/** Native presentation bridge; the existing game host keeps return authority. */
+export function createPlayerBackBridge({appId,origin,window:hostWindow,requestBack}){
+ return Object.freeze({requestBack(){
+  const location=hostWindow.location;
+  if(hostWindow!==hostWindow.top||!identifier(appId)||!origin.startsWith('https://')||location.origin!==origin||location.pathname!=='/player'||location.hash||location.search!=='?app_id='+appId)return false;
+  return requestBack()===true;
+ }});
+}
+
+export function requestPlayerGameBack({host,pending,accepted,onReturn,onBlocked}){
+ if(host?.loaded&&!host.closed){host.requestBack();return;}
+ if(pending||accepted){onBlocked();return;}
+ onReturn();
+}
+
 export function createPlayerClient({appId,origin,fetch=globalThis.fetch.bind(globalThis),requestId=()=>crypto.randomUUID().replaceAll('-',''),timeoutMs=8000,onExpired=()=>{}}){
  let csrf='';
  async function api(path,{body,signal}={}){
@@ -29,7 +60,7 @@ export function createPlayerClient({appId,origin,fetch=globalThis.fetch.bind(glo
     headers:body===undefined?{}:{'content-type':'application/json',...(csrf?{'x-oasis-csrf':csrf}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
    let value;try{value=await response.json();}catch{throw Object.assign(new Error('INVALID_RESPONSE'),{status:response.status});}
    if(!response.ok){const error=Object.assign(new Error('PLAYER_REQUEST_FAILED'),{status:response.status,code:value?.error?.code});if((error.status===401&&path==='launch')||error.code==='CSRF_FORBIDDEN')onExpired();throw error;}
-   if(value.csrf_token)csrf=value.csrf_token;
+   if(value?.csrf_token)csrf=value.csrf_token;
    return value;
   }finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);}
  }
@@ -37,6 +68,7 @@ export function createPlayerClient({appId,origin,fetch=globalThis.fetch.bind(glo
   metadata:()=>api('app?app_id='+encodeURIComponent(appId)),
   session:()=>api('session'),
   recovery:()=>api('recovery?app_id='+encodeURIComponent(appId)),
+  wallet:async({signal}={})=>validatePlayerWallet(await api('wallet?app_id='+encodeURIComponent(appId),{signal}),appId),
   login:(username,password)=>api('login',{body:{app_id:appId,username,password}}),
   register:(username,password)=>api('register',{body:{app_id:appId,username,password}}),
   async logout(){await api('logout',{body:{}});csrf='';},

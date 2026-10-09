@@ -44,10 +44,11 @@ function inputFixture(){
 }
 function inputUI({mutate=()=>{},method='POST',status=200,getFirst=false}={}){
  const f=inputFixture(),listeners=new Map();mutate(f);let taps=0;
+ const response=verb=>({url:()=> 'https://fixture.invalid/api/pvp/rooms/room-a/inputs',request:()=>({method:()=>verb,frame:()=>frame,postDataJSON:()=>f.request}),status:()=>status,json:async()=>f.after});
  const page={on:(n,fn)=>listeners.set(n,fn),off:n=>listeners.delete(n)},frame={page:()=>page,locator:()=>({isVisible:async()=>true,isEnabled:async()=>true,tap:async()=>{
-  taps++;const response=verb=>({url:()=> 'https://fixture.invalid/api/pvp/rooms/room-a/inputs',request:()=>({method:()=>verb,frame:()=>frame,postDataJSON:()=>f.request}),status:()=>status,json:async()=>f.after});
+  taps++;
   if(getFirst)listeners.get('response')?.(response('GET'));listeners.get('response')?.(response(method));
- }})};return {...f,frame,listeners,taps:()=>taps};
+ }})};return {...f,frame,listeners,taps:()=>taps,emitResponse:verb=>listeners.get('response')?.(response(verb))};
 }
 
 test('V2.3 one UI gesture requires its exact POST decision and independent accepted counter',async()=>{
@@ -70,7 +71,25 @@ for(const [label,mutate]of [
  assert.ok(h.taps()<=1);assert.equal(h.listeners.size,0);
 });
 test('V2.3 GET cannot impersonate a POST ACK or cause another gesture',async()=>{
- const h=inputUI({method:'GET'});await assert.rejects(()=>playOneArenaAction(h.frame,'run',()=>h.current,{touch:true,timeoutMs:20}),/deadline/);
+ const h=inputUI({method:'GET'});await assert.rejects(()=>playOneArenaAction(h.frame,'run',()=>h.current,{touch:true,timeoutMs:20}),{code:'ACTION_DEADLINE'});
+ assert.equal(h.taps(),1);assert.equal(h.listeners.size,0);
+ h.emitResponse('POST');await new Promise(resolve=>setTimeout(resolve,30));assert.equal(h.taps(),1);assert.equal(h.listeners.size,0);
+});
+for(const branch of ['response','bounded'])test('V2.3 GET deadline keeps its code and drains after '+branch+' timer wins',async t=>{
+ const timers=new Map();let now=0;
+ t.mock.method(Date,'now',()=>now);
+ t.mock.method(globalThis,'setTimeout',(callback,ms)=>{const handle=Symbol('deadline');timers.set(handle,{callback,at:now+ms});return handle;});
+ t.mock.method(globalThis,'clearTimeout',handle=>timers.delete(handle));
+ const h=inputUI({method:'GET'}),pending=playOneArenaAction(h.frame,'run',()=>h.current,{touch:true,timeoutMs:20});
+ // Readiness timers settle and clear. The response and bounded wait timers
+ // share the same real deadline; exercise both legal callback orderings.
+ for(let i=0;i<100&&(h.taps()!==1||timers.size!==2);i++)await Promise.resolve();
+ assert.equal(h.taps(),1);assert.equal(timers.size,2);
+ const waiting=[...timers.values()];assert(waiting.every(timer=>timer.at===20));now=20;
+ waiting[branch==='response'?0:1].callback();
+ await assert.rejects(pending,error=>error.code==='ACTION_DEADLINE'&&(branch==='response'?error.message.includes('no action response before deadline'):error.message==='run: ACTION_DEADLINE'));
+ assert.equal(h.taps(),1);assert.equal(h.listeners.size,0);assert.equal(timers.size,0);
+ h.emitResponse('GET');h.emitResponse('POST');await Promise.resolve();await Promise.resolve();
  assert.equal(h.taps(),1);assert.equal(h.listeners.size,0);
 });
 test('V2.3 HTTP and business rejections preserve the first body without a retry',async()=>{
