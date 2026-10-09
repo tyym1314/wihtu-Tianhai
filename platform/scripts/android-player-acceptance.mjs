@@ -22,6 +22,18 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const until=async(predicate,label,timeout=45000)=>{const end=Date.now()+timeout;while(Date.now()<end){if(await predicate())return;await sleep(100);}throw Error(label+'_TIMEOUT');};
 export const playerAdbArgs=(options,args,{device=true}={})=>['-H','127.0.0.1','-P',String(options.adbPort),...(device?['-s',options.serial]:[]),...args];
 
+/** The build stamp uses repository keys; this collector's ROOT is platform/. */
+export async function verifyPlayerAcceptanceRuntime(root,inputs){
+ const pins={};
+ for(const name of ['arena/main.jsx','arena/run/practice-controller.mjs','arena/run/engine.mjs','shared/run-practice-profiles.mjs','server/player-routes.mjs','src/pages/Player.jsx','src/pages/PlayerClient.mjs','server/pvp/index.mjs','server/pvp/run-practice-inputs.mjs','server/pvp/run-practice-protocol.mjs','server/pvp/engine-worker.mjs']){
+  const expected=inputs?.['platform/'+name];
+  assert.match(expected??'',/^[a-f0-9]{64}$/,'RELEASE_RUNTIME_SOURCE_PIN_MISSING: '+name);
+  assert.equal(playerEvidenceHash(await readFile(join(root,name))),expected,'RELEASE_RUNTIME_SOURCE_CHANGED: '+name);
+  pins[name]=expected;
+ }
+ return pins;
+}
+
 /** Trusted native taps and CDP touch drags, retaining the exact underlying frame
  * identity expected by the existing one-action response verifier. No JS events.
  */
@@ -92,9 +104,7 @@ export async function runPlayerAcceptance(options){
  const redactor=createPlayerEvidenceRedactor(),artifact=await readPlayerArtifact(options.metadata,{shellRoot:join(ROOT,'android-player'),execute,apksigner:options.apksigner});
  const manifestPath=resolve(options.platformManifest),manifestInfo=await lstat(manifestPath);assert.ok(manifestInfo.isFile()&&!manifestInfo.isSymbolicLink(),'RELEASE_MANIFEST_FILE_REQUIRED');
  const manifestBytes=await readFile(manifestPath),manifest=playerResourceManifest(JSON.parse(manifestBytes)),manifestSha=playerEvidenceHash(manifestBytes);
- const runtimePins={};for(const name of ['arena/main.jsx','arena/run/practice-controller.mjs','arena/run/engine.mjs','shared/run-practice-profiles.mjs','server/player-routes.mjs','src/pages/Player.jsx','src/pages/PlayerClient.mjs','server/pvp/index.mjs','server/pvp/run-practice-inputs.mjs','server/pvp/run-practice-protocol.mjs','server/pvp/engine-worker.mjs']){
-  assert.equal(playerEvidenceHash(await readFile(join(ROOT,name))),manifest.inputs[name],'RELEASE_RUNTIME_SOURCE_CHANGED: '+name);runtimePins[name]=manifest.inputs[name];
- }
+ const runtimePins=await verifyPlayerAcceptanceRuntime(ROOT,manifest.inputs);
  const out=resolve(options.output);await mkdir(out,{mode:0o700});await mkdir(join(out,'bodies'),{mode:0o700});
  const report={schema:'android-real-player-acceptance-v1',mode:options.mode,started_at:new Date().toISOString(),passed:false,executed:false,physical_device:false,
   scope:'Signed real Player QA shell; production cookie identity and zero wallet; one trusted Android/UI action per admitted arena and original-session return/cleanup. Not complete game, frame-rate, iPhone or third-party transfer acceptance.',
