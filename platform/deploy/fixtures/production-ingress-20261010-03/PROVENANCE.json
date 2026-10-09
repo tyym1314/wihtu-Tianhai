@@ -1,0 +1,19 @@
+{
+  "archive": {
+    "bytes": 195407390,
+    "name": "release-20261010-03.tar.gz",
+    "sha256": "f6e8ce86f17f41a3f94090feefe088baff076085e3ee0a6905e3d76cd3b1a8ae"
+  },
+  "extraction": "Exactly one regular tar member; embedded RELEASE-MANIFEST.json bytes equal SHA-bound sidecar; whole archive SHA read before extraction and identity unchanged afterward.",
+  "git_commit": null,
+  "kind": "immutable-production03-public-source-fixture",
+  "member": {
+    "bytes": 20407,
+    "path": "platform/deploy/production-ingress.py",
+    "sha256": "b61ea746225b30e25fdb590e0f358c9ad3f47f25e92057bb75cfc880e179f5f5"
+  },
+  "release": "20261010-03",
+  "release_manifest_sha256": "901d4285c22db46c11f50b6015e7f233ae65f8c17d951e5e0cf58438d4ad2a0d",
+  "schema": 1,
+  "scope": "Historical local loader/rollback test fixture only; does not approve production deployment or change the immutable server03 source."
+}

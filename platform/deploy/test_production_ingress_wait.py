@@ -17,10 +17,12 @@ import tempfile
 import time
 import unittest
 import urllib.error
+import urllib.request
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 HERE = Path(__file__).parent
+ORIGINAL_INGRESS = HERE / 'fixtures/production-ingress-20261010-03/production-ingress.py'
 spec = importlib.util.spec_from_file_location('production_ingress_wait', HERE / 'production-ingress-wait.py')
 w = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(w)
@@ -262,9 +264,28 @@ class ProductionIngressWaitTests(unittest.TestCase):
              patch.object(importlib.machinery.SourceFileLoader, 'exec_module', side_effect=AssertionError('pyc read')):
             for name, (member, digest) in w.MEMBERS.items():
                 path = (HERE / 'production-instance/fixtures/bootstrap-tail-20261010-03/provision.py'
-                        if name == 'runtime' else HERE.parent.parent / member)
+                        if name == 'runtime' else ORIGINAL_INGRESS
+                        if name == 'ingress' else HERE.parent.parent / member)
                 module, _ = w.load_verified(path, digest, 'actual_03_' + name)
                 self.assertEqual(Path(module.__file__), path)
+
+    def test_fixture_metadata_cannot_authorize_a_changed_historical_ingress_body(self):
+        _, expected = w.MEMBERS['ingress']
+        self.assertEqual(w.sha(ORIGINAL_INGRESS.read_bytes()), expected)
+        provenance = json.loads(ORIGINAL_INGRESS.with_name('PROVENANCE.json').read_text())
+        self.assertEqual(provenance['member']['sha256'], expected)
+        self.assertEqual(provenance['release_manifest_sha256'], w.MANIFEST)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'production-ingress.py'
+            changed = ORIGINAL_INGRESS.read_bytes() + b'\n# unapproved historical source\n'
+            path.write_bytes(changed)
+            # Even a rewritten provenance document cannot replace the fixed
+            # original-member digest supplied by the actual wait controller.
+            provenance['member']['sha256'] = w.sha(changed)
+            path.with_name('PROVENANCE.json').write_text(json.dumps(provenance))
+            with patch('builtins.compile', side_effect=AssertionError('unapproved source compiled')), \
+                 self.assertRaisesRegex(w.Refusal, 'WAIT_INPUT_SHA_CHANGED'):
+                w.load_verified(path, expected, 'changed_historical_ingress')
 
     def test_private_parent_identity_survives_own_evidence_appends_but_not_replacement(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -369,8 +390,8 @@ class ProductionIngressWaitTests(unittest.TestCase):
                 w.validate_capsule(bad, controller, binding, 1001)
 
     def actual_ingress(self):
-        name, digest = w.MEMBERS['ingress']
-        return w.load_verified(HERE.parent.parent / name, digest, 'actual_original_ingress')[0]
+        _, digest = w.MEMBERS['ingress']
+        return w.load_verified(ORIGINAL_INGRESS, digest, 'actual_original_ingress')[0]
 
     def test_actual_original_start_rollback_still_removes_only_authored_tls(self):
         ingress = self.actual_ingress()

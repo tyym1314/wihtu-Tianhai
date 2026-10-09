@@ -193,6 +193,20 @@ server {{
  location ~* \\.(pem|key|env|sql)$ {{ deny all; }}
  location = /health {{ proxy_pass http://127.0.0.1:18891; }}
  location = /health/ready {{ proxy_pass http://127.0.0.1:18891; }}
+ location ~ ^/(arena/assets|legacy/assets|legacy/bundles)/ {{
+  root /opt/oasis/static-assets;
+  types {{
+   application/javascript js mjs; text/css css;
+   image/png png; image/webp webp; image/jpeg jpg jpeg; image/svg+xml svg;
+   model/gltf-binary glb; model/gltf+json gltf; application/wasm wasm;
+   application/octet-stream bin; font/woff woff; font/woff2 woff2;
+   audio/mpeg mp3; audio/ogg ogg; video/webm webm;
+  }}
+  try_files $uri @oasis_production_api_static;
+  add_header Cache-Control $oasis_production_static_cache_control;
+  add_header X-Content-Type-Options nosniff always;
+  add_header Referrer-Policy no-referrer always;
+ }}
  location ~ ^/(api|v1|play|arena|legacy)/ {{ proxy_pass http://127.0.0.1:18891; }}
  location = /index.html {{
   add_header Cache-Control no-store always;
@@ -200,9 +214,33 @@ server {{
   try_files $uri =404;
  }}
  location ~ ^/(assets|previews)/ {{
+  root /opt/oasis/static-assets;
+  types {{
+   application/javascript js mjs; text/css css;
+   image/png png; image/webp webp; image/jpeg jpg jpeg; image/svg+xml svg;
+   model/gltf-binary glb; model/gltf+json gltf; application/wasm wasm;
+   application/octet-stream bin; font/woff woff; font/woff2 woff2;
+   audio/mpeg mp3; audio/ogg ogg; video/webm webm;
+  }}
+  try_files $uri @oasis_production_player_static;
+  add_header Cache-Control $oasis_production_static_cache_control;
+  add_header X-Content-Type-Options nosniff always;
+  add_header Referrer-Policy no-referrer always;
+ }}
+ location @oasis_production_api_static {{ proxy_pass http://127.0.0.1:18891; }}
+ location @oasis_production_player_static {{
+  root /opt/oasis/production-current/platform/dist;
+  types {{
+   application/javascript js mjs; text/css css;
+   image/png png; image/webp webp; image/jpeg jpg jpeg; image/svg+xml svg;
+   model/gltf-binary glb; model/gltf+json gltf; application/wasm wasm;
+   application/octet-stream bin; font/woff woff; font/woff2 woff2;
+   audio/mpeg mp3; audio/ogg ogg; video/webm webm;
+  }}
   try_files $uri =404;
   add_header Cache-Control $oasis_production_static_cache_control;
   add_header X-Content-Type-Options nosniff always;
+  add_header Referrer-Policy no-referrer always;
  }}
  location / {{
   add_header Cache-Control no-store always;

@@ -2,10 +2,12 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import posixpath
 import re
 import tempfile
 import unittest
 from unittest.mock import patch
+from urllib.parse import unquote
 
 MODULE = Path(__file__).with_name('production-ingress.py')
 spec = importlib.util.spec_from_file_location('production_ingress', MODULE)
@@ -13,6 +15,39 @@ ingress = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ingress)
 BINDING = {'release': '/opt/oasis/releases/20261010-01', 'manifest_sha256': 'a' * 64,
            'tool_sha256': 'b' * 64}
+
+
+def location_blocks(config):
+    """Read generated locations including nested MIME tables for route contracts."""
+    result = []
+    for match in re.finditer(r'\blocation\s+(?:(=|\^~|~\*?)\s+)?([^\s{]+)\s*\{', config):
+        depth, end = 1, match.end()
+        while depth and end < len(config):
+            depth += (config[end] == '{') - (config[end] == '}')
+            end += 1
+        if depth:
+            raise AssertionError('Unclosed generated location')
+        result.append((match.group(1) or '', match.group(2), config[match.end():end - 1]))
+    return result
+
+
+def selected_location(locations, request_path):
+    """Model Nginx URI normalization and exact/prefix/first-regex precedence only."""
+    path = posixpath.normpath(unquote(request_path))
+    if request_path.endswith('/') and not path.endswith('/'):
+        path += '/'
+    for kind, pattern, body in locations:
+        if kind == '=' and path == pattern:
+            return pattern, body
+    prefixes = [(kind, pattern, body) for kind, pattern, body in locations
+                if kind in ('', '^~') and not pattern.startswith('@') and path.startswith(pattern)]
+    prefix = max(prefixes, key=lambda item: len(item[1])) if prefixes else None
+    if prefix and prefix[0] == '^~':
+        return prefix[1], prefix[2]
+    for kind, pattern, body in locations:
+        if kind in ('~', '~*') and re.search(pattern, path, re.I if kind == '~*' else 0):
+            return pattern, body
+    return (prefix[1], prefix[2]) if prefix else (None, '')
 
 
 class ProductionIngressTests(unittest.TestCase):
@@ -126,6 +161,92 @@ class ProductionIngressTests(unittest.TestCase):
         pattern = r'-[A-Za-z0-9_-]{8}\.(js|mjs|css|png|webp|jpe?g|svg|glb|gltf|bin|woff2?|mp3|ogg|wasm)$'
         self.assertIsNone(re.search(pattern, '/previews/golf.webp'))
         self.assertIsNotNone(re.search(pattern, '/assets/Player-AbCd1234.js'))
+
+    def test_old_game_and_player_chunks_use_stable_store_before_current_fallback(self):
+        tls = ingress.configurations(BINDING)[str(ingress.TLS)].decode()
+        locations = location_blocks(tls)
+        game_pattern = '^/(arena/assets|legacy/assets|legacy/bundles)/'
+        player_pattern = '^/(assets|previews)/'
+        for path, pattern, fallback in [
+            ('/arena/assets/RunGame-QJIPAPjX.js', game_pattern, '@oasis_production_api_static'),
+            ('/legacy/assets/OldGame-AbCd1234.js', game_pattern, '@oasis_production_api_static'),
+            ('/legacy/bundles/OldGame-AbCd1234.js', game_pattern, '@oasis_production_api_static'),
+            ('/assets/index-CtYnvOXL.js', player_pattern, '@oasis_production_player_static'),
+            ('/previews/golf.webp', player_pattern, '@oasis_production_player_static'),
+        ]:
+            with self.subTest(path=path):
+                selected, body = selected_location(locations, path)
+                self.assertEqual(selected, pattern)
+                self.assertIn('root /opt/oasis/static-assets;', body)
+                self.assertIn('try_files $uri ' + fallback + ';', body)
+                self.assertNotIn('/opt/oasis/current', body)
+                self.assertNotIn('proxy_pass ', body)
+        named = {pattern: body for kind, pattern, body in locations if pattern.startswith('@')}
+        self.assertEqual(set(named), {'@oasis_production_api_static', '@oasis_production_player_static'})
+        self.assertIn('proxy_pass http://127.0.0.1:18891;', named['@oasis_production_api_static'])
+        self.assertNotIn('18881', named['@oasis_production_api_static'])
+        self.assertIn('root /opt/oasis/production-current/platform/dist;', named['@oasis_production_player_static'])
+        self.assertIn('try_files $uri =404;', named['@oasis_production_player_static'])
+        self.assertNotIn('/index.html', named['@oasis_production_player_static'])
+
+    def test_static_routes_do_not_bypass_sensitive_paths_or_capture_live_api(self):
+        tls = ingress.configurations(BINDING)[str(ingress.TLS)].decode()
+        locations = location_blocks(tls)
+        for path in ['/arena/assets/.env', '/legacy/assets/secret.pem', '/legacy/bundles/secret.key',
+                     '/assets/secret.env', '/previews/secret.sql', '/arena/assets/%2eenv',
+                     '/assets/secret%2esql', '/assets/%2e%2e/.env']:
+            with self.subTest(path=path):
+                _, body = selected_location(locations, path)
+                self.assertIn('deny all;', body)
+                self.assertNotIn('try_files ', body)
+                self.assertNotIn('proxy_pass ', body)
+        for path in ['/api/player/app', '/v1/sessions', '/play/golf', '/arena/index.html',
+                     '/legacy/index.html', '/arena/assets/%2e%2e/%2e%2e/api/player/app']:
+            with self.subTest(path=path):
+                pattern, body = selected_location(locations, path)
+                self.assertEqual(pattern, '^/(api|v1|play|arena|legacy)/')
+                self.assertIn('proxy_pass http://127.0.0.1:18891;', body)
+                self.assertNotIn('static-assets', body)
+        for path, status in [('/demo', '410'), ('/demo/index.html', '410'),
+                             ('/api/demo/.env', '410'), ('/downloads/.env', '404')]:
+            with self.subTest(path=path):
+                _, body = selected_location(locations, path)
+                self.assertIn('return ' + status + ';', body)
+        regexes = [pattern for kind, pattern, _ in locations if kind in ('~', '~*')]
+        self.assertLess(regexes.index(r'/\.'), regexes.index('^/(arena/assets|legacy/assets|legacy/bundles)/'))
+        self.assertLess(regexes.index(r'\.(pem|key|env|sql)$'), regexes.index('^/(assets|previews)/'))
+        self.assertLess(regexes.index('^/(arena/assets|legacy/assets|legacy/bundles)/'),
+                        regexes.index('^/(api|v1|play|arena|legacy)/'))
+        self.assertFalse(any(kind == '^~' and pattern.startswith(('/assets', '/arena', '/legacy', '/previews'))
+                             for kind, pattern, _ in locations))
+
+    def test_stable_and_current_static_files_keep_mime_cache_and_security_headers(self):
+        tls = ingress.configurations(BINDING)[str(ingress.TLS)].decode()
+        locations = location_blocks(tls)
+        paths = ['^/(arena/assets|legacy/assets|legacy/bundles)/', '^/(assets|previews)/',
+                 '@oasis_production_player_static']
+        for pattern in paths:
+            body = next(body for _, actual, body in locations if actual == pattern)
+            with self.subTest(location=pattern):
+                for mime, extensions in [('application/javascript', 'js mjs'), ('text/css', 'css'),
+                                         ('model/gltf-binary', 'glb'), ('application/wasm', 'wasm'),
+                                         ('font/woff2', 'woff2'), ('image/webp', 'webp')]:
+                    self.assertIn(mime + ' ' + extensions + ';', body)
+                self.assertIn('add_header Cache-Control $oasis_production_static_cache_control;', body)
+                self.assertIn('add_header X-Content-Type-Options nosniff always;', body)
+                self.assertIn('add_header Referrer-Policy no-referrer always;', body)
+        cache_rules = re.findall(r'"~([^\"]+)"\s+"([^\"]+)";', tls)
+        def cache(path):
+            return next((value for pattern, value in cache_rules if re.search(pattern, path)),
+                        'public, max-age=0, must-revalidate')
+        for path in ['/arena/assets/RunGame-QJIPAPjX.js', '/assets/index-CtYnvOXL.js',
+                     '/arena/assets/pin-AbCd1234.glb', '/arena/assets/img-mobile-0123456789.webp']:
+            self.assertEqual(cache(path), 'public, max-age=31536000, immutable')
+        for path in ['/previews/golf.webp', '/assets/config.json', '/assets/index.html']:
+            self.assertEqual(cache(path), 'public, max-age=0, must-revalidate')
+        for path in ['/index.html', '/player']:
+            _, body = selected_location(locations, path)
+            self.assertIn('add_header Cache-Control no-store always;', body)
 
     def test_acme_server_does_not_publish_player_or_business_routes(self):
         configs = ingress.configurations(BINDING)
