@@ -38,7 +38,8 @@ def operations_lock():
         yield
     finally:os.close(fd)
 
-def owned_resources(marker,runtime):
+def owned_resources(marker,runtime,*,created_prestart=False):
+    p.require(type(created_prestart) is bool,'PRODUCTION_PRESTART_FLAG_INVALID')
     p.account_guard(marker)
     cid=marker['container_id'];owner=marker['owner']
     c=runtime.inspect('container',cid);v=runtime.inspect('volume',p.VOLUME);n=runtime.inspect('network',p.NETWORK)
@@ -49,7 +50,30 @@ def owned_resources(marker,runtime):
     mounts=c['Mounts'];networks=c['NetworkSettings']['Networks']
     p.require(len(mounts)==1 and mounts[0].get('Type')=='volume' and mounts[0].get('Name')==p.VOLUME
               and mounts[0].get('Destination')=='/var/lib/postgresql/data' and mounts[0].get('RW') is True
-              and set(networks)=={p.NETWORK} and networks[p.NETWORK]['NetworkID']==n['Id'],'PRODUCTION_RESOURCE_SCOPE_CHANGED')
+              and set(networks)=={p.NETWORK},'PRODUCTION_RESOURCE_SCOPE_CHANGED')
+    attachment=networks[p.NETWORK]
+    if created_prestart:
+        # Docker has no assigned endpoint until the exact created container starts.
+        # This is permitted only by the explicit first pre-start checkpoint caller.
+        state=c.get('State',{})
+        p.require(state.get('Status')=='created'
+                  and all(state.get(key) is False for key in ('Running','Paused','Restarting','Dead','OOMKilled'))
+                  and type(state.get('Pid')) is int and state['Pid']==0
+                  and type(state.get('ExitCode')) is int and state['ExitCode']==0 and state.get('Error')==''
+                  and state.get('StartedAt')==state.get('FinishedAt')=='0001-01-01T00:00:00Z'
+                  and type(c.get('RestartCount')) is int and c['RestartCount']==0
+                  and c['HostConfig'].get('NetworkMode')==p.NETWORK
+                  and all(attachment.get(key)=='' for key in ('NetworkID','EndpointID','IPAddress'))
+                  and all(key not in attachment or attachment[key]==''
+                          for key in ('Gateway','GlobalIPv6Address','IPv6Gateway','MacAddress'))
+                  and all(key not in attachment or type(attachment[key]) is int and attachment[key]==0
+                          for key in ('IPPrefixLen','GlobalIPv6PrefixLen','GwPriority'))
+                  and all(key not in attachment or attachment[key] is None
+                          for key in ('IPAMConfig','Links','DriverOpts','Aliases','DNSNames'))
+                  and n.get('Containers',{})=={},'PRODUCTION_CREATED_PRESTART_STATE_CHANGED')
+    else:
+        p.require(c.get('State',{}).get('Status')!='created'
+                  and attachment.get('NetworkID')==n['Id'],'PRODUCTION_RESOURCE_SCOPE_CHANGED')
     p.require(set(n.get('Containers',{}))<= {cid},'PRODUCTION_NETWORK_FOREIGN_CONSUMER')
     p.require(marker.get('network_id')==n['Id'] and marker.get('volume_identity')=={key:v.get(key) for key in ('Name','CreatedAt','Driver','Options','Mountpoint')},'PRODUCTION_VOLUME_OR_NETWORK_REPLACED')
     ids=runtime.command(['docker','container','ls','-aq']).splitlines()
@@ -77,7 +101,8 @@ def owned_resources(marker,runtime):
               and unquote(url.username or '')==p.DB_APP and url.password and not url.query and not url.fragment,
               'PRODUCTION_RUNTIME_CONFIG_CHANGED')
     return {'container_id':cid,'volume':{'name':v['Name'],'created_at':v['CreatedAt'],'driver':v['Driver'],'options':v.get('Options')},
-            'network_id':n['Id'],'image':c['Image'],'running':c['State']['Running']}
+            'network_id':n['Id'],'image':c['Image'],'running':c['State']['Running'],
+            'created_prestart':created_prestart}
 
 def sql(runtime,marker,database,body):
     p.require(database==p.DATABASE or re.fullmatch(r'oasis_prod_restore_\d{8}_[a-f0-9]{16}',database),'PRODUCTION_DATABASE_NAME_INVALID')

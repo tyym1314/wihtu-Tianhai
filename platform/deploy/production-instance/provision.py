@@ -445,7 +445,12 @@ class Provisioner:
         os.replace(tmp, p)
         self.receipt_pin = fingerprint(p)
 
-    def fresh(self):
+    def fresh(self, *, created_prestart=False):
+        if created_prestart:
+            require(self.receipt.get('phase')=='database_resources_created'
+                    and not self.receipt.get('bootstrap') and not self.receipt.get('units_installed')
+                    and not os.path.lexists(PIN) and not os.path.lexists(PRIVATE/'bootstrap.json'),
+                    'PRODUCTION_PRESTART_PHASE_CHANGED')
         self.guard(self.capsule['protected'])
         verify_release(self.release, self.args.manifest_sha256)
         marker = json.loads((PRIVATE / 'installation.json').read_text())
@@ -459,13 +464,40 @@ class Provisioner:
         no_mount(PRIVATE); no_mount(BACKUPS)
         if self.receipt.get('container_id'):
             from_operations = self.load_operations()
-            from_operations.owned_resources(self.marker, self.runtime)
+            from_operations.owned_resources(self.marker, self.runtime,created_prestart=created_prestart)
 
     def load_operations(self):
         import importlib.util
         spec = importlib.util.spec_from_file_location('oasis_production_operations', Path(__file__).with_name('operations.py'))
         module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        # Both helpers are release-bound; use the executing controller's exact
+        # exception class rather than masking a second import's typed refusal.
+        module.p.Refusal = Refusal
         return module
+
+    def fail_closed(self,error):
+        failed_at=self.receipt.get('phase')
+        self.receipt['error_code']=str(error) if isinstance(error,Refusal) else 'PROVISION_FAILED'
+        self.receipt['failed_at_phase']=failed_at
+        self.event('failed_closed')
+        try:
+            # Scope-limited stop only. Never delete data or suppress the primary
+            # failure when a second ownership/stop guard correctly refuses.
+            if self.receipt.get('units_installed'):
+                self.loaded_unit_guard()
+                self.runtime.command(['systemctl','stop','oasis-production-api.service','oasis-production-instance-monitor.timer','oasis-production-instance-backup.timer'])
+            if self.receipt.get('container_id'):
+                prestart=failed_at=='database_resources_created' and not self.receipt.get('bootstrap') and not self.receipt.get('units_installed')
+                # This phase also covers role/bootstrap failures after start;
+                # never apply the Created exception to a running database.
+                created=prestart and self.runtime.inspect('container',self.marker['container_id']).get('State',{}).get('Status')=='created'
+                resources=self.load_operations().owned_resources(self.marker,self.runtime,
+                    created_prestart=created)
+                if resources['running']:
+                    self.runtime.command(['docker','stop','--time','30',self.marker['container_id']])
+        except Exception as cleanup_error:
+            self.receipt['cleanup_error_code']=str(cleanup_error) if isinstance(cleanup_error,Refusal) else 'PROVISION_FAILURE_STOP_FAILED'
+            self.event('failed_closed',stop_refused=True,cleanup_error_code=self.receipt['cleanup_error_code'])
 
     def apply(self):
         raw = Path(self.args.check).read_bytes()
@@ -523,15 +555,7 @@ class Provisioner:
                 self.event('complete_closed')
                 return self.receipt
             except Exception as error:
-                # Scope-limited stop only. Never delete a DB to conceal a provisioning failure.
-                self.receipt['error_code'] = str(error) if isinstance(error, Refusal) else 'PROVISION_FAILED'
-                self.event('failed_closed')
-                if self.receipt.get('units_installed'):
-                    self.loaded_unit_guard()
-                    self.runtime.command(['systemctl','stop','oasis-production-api.service','oasis-production-instance-monitor.timer','oasis-production-instance-backup.timer'])
-                if self.receipt.get('container_id'):
-                    self.load_operations().owned_resources(self.marker, self.runtime)
-                    self.runtime.command(['docker','stop','--time','30',self.marker['container_id']])
+                self.fail_closed(error)
                 raise
         finally:
             os.close(lock)
@@ -544,6 +568,7 @@ class Provisioner:
         os.chown(PRIVATE,0,group.gr_gid);os.chmod(PRIVATE,0o750)
         state = PRIVATE / 'state';state.mkdir(mode=0o700);os.chown(state,user.pw_uid,group.gr_gid)
         (PRIVATE / 'monitor').mkdir(mode=0o750);os.chown(PRIVATE / 'monitor',0,group.gr_gid)
+        os.chmod(PRIVATE / 'monitor',0o750)
         exclusive(state / 'master.key',secrets.token_bytes(32),uid=user.pw_uid,gid=group.gr_gid)
         require(fingerprint(state/'master.key')['sha256']!=fingerprint(BASE/'private/state/master.key')['sha256'],'PRODUCTION_MASTER_KEY_NOT_INDEPENDENT')
         passwords = {'owner':secrets.token_urlsafe(48),'app':secrets.token_urlsafe(48)}
@@ -577,7 +602,7 @@ class Provisioner:
         old = PRIVATE / 'installation.json';pin=fingerprint(old)
         tmp=PRIVATE / 'installation-final.json';exclusive(tmp,canonical(self.marker));require(fingerprint(old)==pin,'OWNERSHIP_MARKER_CHANGED');os.replace(tmp,old)
         self.receipt['container_id']=cid; self.event('database_resources_created')
-        self.fresh(); self.runtime.command(['docker','start',cid])
+        self.fresh(created_prestart=True); self.runtime.command(['docker','start',cid])
         for _ in range(30):
             try:
                 self.runtime.command(['docker','exec',cid,'pg_isready','-U',DB_OWNER,'-d',DATABASE]);break
@@ -585,6 +610,9 @@ class Provisioner:
                 time.sleep(1)
         else:
             raise Refusal('PRODUCTION_DATABASE_NOT_READY')
+        # The empty endpoint exception ends at start. Verify assigned networking
+        # and all protected identities again before any role/seed mutation.
+        self.fresh()
         # Password travels only through private stdin, never argv/report/stdout.
         sql=f"CREATE ROLE {DB_APP} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 96 PASSWORD '{passwords['app']}';\nREVOKE CONNECT ON DATABASE postgres,template0,template1 FROM PUBLIC;\nREVOKE ALL ON DATABASE {DATABASE} FROM PUBLIC;\nGRANT CONNECT,TEMPORARY ON DATABASE {DATABASE} TO {DB_APP};\nALTER SCHEMA public OWNER TO {DB_APP};\nREVOKE ALL ON SCHEMA public FROM PUBLIC;\n"
         self.runtime.command(['docker','exec','-i',cid,'psql','-X','-v','ON_ERROR_STOP=1','-U',DB_OWNER,'-d',DATABASE],input=sql)

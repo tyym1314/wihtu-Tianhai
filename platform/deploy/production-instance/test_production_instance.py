@@ -10,6 +10,7 @@ import tempfile
 import unittest
 import sys
 import types
+import copy
 from unittest.mock import patch
 
 HERE=Path(__file__).parent
@@ -171,7 +172,7 @@ class Resources(unittest.TestCase):
             'volume_identity':{'Name':p.VOLUME,'CreatedAt':'2026-10-10T00:00:00Z','Driver':'local','Options':None,'Mountpoint':'/docker/own'}}
         self.c={'Id':self.cid,'Name':'/'+p.CONTAINER,'Image':self.marker['pg_image'],'Config':{'Labels':{p.LABEL:self.marker['owner']}},
             'Mounts':[{'Name':p.VOLUME,'Type':'volume','Destination':'/var/lib/postgresql/data','RW':True}],
-            'NetworkSettings':{'Networks':{p.NETWORK:{'NetworkID':self.marker['network_id']}}},'HostConfig':{'PortBindings':{'5432/tcp':[{'HostIp':'127.0.0.1','HostPort':'18893'}]}},'State':{'Running':True}}
+            'NetworkSettings':{'Networks':{p.NETWORK:{'NetworkID':self.marker['network_id']}}},'HostConfig':{'NetworkMode':p.NETWORK,'PortBindings':{'5432/tcp':[{'HostIp':'127.0.0.1','HostPort':'18893'}]}},'State':{'Running':True,'Status':'running'}}
         self.v={**self.marker['volume_identity'],'Labels':{p.LABEL:self.marker['owner']}}
         self.n={'Id':self.marker['network_id'],'Internal':True,'Labels':{p.LABEL:self.marker['owner']},'Containers':{self.cid:{}}}
         self.other={'Id':'d'*64,'Mounts':[],'NetworkSettings':{'Networks':{}}}
@@ -216,6 +217,231 @@ class Resources(unittest.TestCase):
     def test_runtime_other_database_refused(self):
         self.env['OASIS_DATABASE_URL']='postgres://oasis_prod_app:random@127.0.0.1:18883/oasis_platform'
         with self.assertRaisesRegex(o.p.Refusal,'RUNTIME_CONFIG'):o.owned_resources(self.marker,self.r)
+
+    def created(self):
+        # Exact metadata-only Docker Created shape observed before its first start.
+        self.c['RestartCount']=0
+        self.c['State']={'Status':'created','Running':False,'Paused':False,'Restarting':False,
+            'OOMKilled':False,'Dead':False,'Pid':0,'ExitCode':0,'Error':'',
+            'StartedAt':'0001-01-01T00:00:00Z','FinishedAt':'0001-01-01T00:00:00Z'}
+        self.c['NetworkSettings']['Networks'][p.NETWORK]={
+            'Aliases':None,'DNSNames':None,'DriverOpts':None,'EndpointID':'','Gateway':'',
+            'GlobalIPv6Address':'','GlobalIPv6PrefixLen':0,'GwPriority':0,'IPAMConfig':None,
+            'IPAddress':'','IPPrefixLen':0,'IPv6Gateway':'','Links':None,'MacAddress':'','NetworkID':''}
+        self.n['Containers']={}
+
+    def test_actual_docker_created_shape_allowed_only_at_explicit_prestart(self):
+        self.created()
+        result=o.owned_resources(self.marker,self.r,created_prestart=True)
+        self.assertFalse(result['running']);self.assertTrue(result['created_prestart'])
+        with self.assertRaisesRegex(o.p.Refusal,'RESOURCE_SCOPE'):
+            o.owned_resources(self.marker,self.r)
+
+    def test_created_boolean_parameter_cannot_be_ambiguous(self):
+        self.created()
+        for value in ('true',1,None):
+            with self.subTest(value=value),self.assertRaisesRegex(o.p.Refusal,'FLAG_INVALID'):
+                o.owned_resources(self.marker,self.r,created_prestart=value)
+
+    def test_every_created_state_drift_is_refused(self):
+        self.created();original=copy.deepcopy(self.c['State'])
+        values={'Status':'exited','Running':True,'Paused':True,'Restarting':True,'Dead':True,
+                'OOMKilled':True,'Pid':1,'ExitCode':1,'Error':'unhandled',
+                'StartedAt':'2026-10-10T00:00:00Z','FinishedAt':'2026-10-10T00:00:00Z'}
+        for key,value in values.items():
+            with self.subTest(key=key):
+                self.c['State']={**original,key:value}
+                with self.assertRaisesRegex(o.p.Refusal,'PRESTART_STATE'):
+                    o.owned_resources(self.marker,self.r,created_prestart=True)
+        self.c['State']={**original,'Pid':False}
+        with self.assertRaisesRegex(o.p.Refusal,'PRESTART_STATE'):
+            o.owned_resources(self.marker,self.r,created_prestart=True)
+
+    def test_created_missing_principal_field_does_not_mean_empty(self):
+        self.created()
+        attachment=self.c['NetworkSettings']['Networks'][p.NETWORK]
+        for key in ('NetworkID','EndpointID','IPAddress'):
+            with self.subTest(key=key):
+                value=attachment.pop(key)
+                with self.assertRaisesRegex(o.p.Refusal,'PRESTART_STATE'):
+                    o.owned_resources(self.marker,self.r,created_prestart=True)
+                attachment[key]=value
+
+    def test_created_restart_count_must_prove_never_started(self):
+        self.created()
+        for value in (1,False,None):
+            self.c['RestartCount']=value
+            with self.subTest(value=value),self.assertRaisesRegex(o.p.Refusal,'PRESTART_STATE'):
+                o.owned_resources(self.marker,self.r,created_prestart=True)
+
+    def test_created_assigned_or_custom_network_field_refused(self):
+        self.created();original=copy.deepcopy(self.c['NetworkSettings']['Networks'][p.NETWORK])
+        for key in original:
+            with self.subTest(key=key):
+                value={'foreign':'data'} if original[key] is None else 1 if type(original[key]) is int else 'assigned'
+                self.c['NetworkSettings']['Networks'][p.NETWORK]={**original,key:value}
+                with self.assertRaisesRegex(o.p.Refusal,'PRESTART_STATE'):
+                    o.owned_resources(self.marker,self.r,created_prestart=True)
+
+    def test_created_unknown_host_network_mode_or_attached_consumer_refused(self):
+        self.created();self.c['HostConfig']['NetworkMode']='foreign'
+        with self.assertRaisesRegex(o.p.Refusal,'PRESTART_STATE'):
+            o.owned_resources(self.marker,self.r,created_prestart=True)
+        self.c['HostConfig']['NetworkMode']=p.NETWORK;self.n['Containers']={self.cid:{}}
+        with self.assertRaisesRegex(o.p.Refusal,'PRESTART_STATE'):
+            o.owned_resources(self.marker,self.r,created_prestart=True)
+
+    def test_created_ownership_pins_ports_mounts_and_consumers_still_strict(self):
+        self.created()
+        mutators=(lambda:self.v['Labels'].update({p.LABEL:'foreign'}),
+                  lambda:self.n.update(Id='changed-network'),
+                  lambda:self.v.update(CreatedAt='recreated'),
+                  lambda:self.c['HostConfig']['PortBindings']['5432/tcp'][0].update(HostIp='0.0.0.0'),
+                  lambda:self.c['Mounts'].append({'Type':'bind','Source':'/opt/oasis/private'}),
+                  lambda:self.other['Mounts'].append({'Name':p.VOLUME}),
+                  lambda:self.marker['private_pins']['state/master.key'].update(sha256='changed'))
+        original=(copy.deepcopy(self.c),copy.deepcopy(self.v),copy.deepcopy(self.n),copy.deepcopy(self.other),copy.deepcopy(self.marker))
+        for mutate in mutators:
+            self.c,self.v,self.n,self.other,self.marker=copy.deepcopy(original)
+            mutate()
+            with self.assertRaises(o.p.Refusal):
+                o.owned_resources(self.marker,self.r,created_prestart=True)
+
+    def test_noncreated_does_not_get_the_empty_network_exception(self):
+        self.created()
+        for status in ('running','exited','restarting','dead','unknown'):
+            with self.subTest(status=status):
+                self.c['State']['Status']=status
+                with self.assertRaisesRegex(o.p.Refusal,'RESOURCE_SCOPE'):
+                    o.owned_resources(self.marker,self.r)
+
+
+class ProvisionFailure(unittest.TestCase):
+    def test_initial_prestart_exception_ends_before_role_and_bootstrap_mutations(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);private=root/'production-instance-private';private.mkdir()
+            public=root/'private/state';public.mkdir(parents=True);(public/'master.key').write_bytes(b'p'*32)
+            tool=object.__new__(p.Provisioner);tool.release=root/'release'
+            tool.args=types.SimpleNamespace(origin='https://stage.example.com',pg_image='sha256:'+'b'*64)
+            tool.marker={'owner':'a'*32,'origins':['https://stage.example.com','https://game.tianyahuyu.com']}
+            (private/'installation.json').write_bytes(p.canonical(tool.marker))
+            tool.receipt={'phase':'namespace_created','history':[],'passed':False}
+            cid='c'*64;calls=[]
+            user=types.SimpleNamespace(pw_uid=os.getuid(),pw_gid=os.getgid())
+            group=types.SimpleNamespace(gr_gid=os.getgid())
+            class Runtime:
+                def command(self,args,**kwargs):
+                    calls.append(tuple(args))
+                    if args[:2]==['docker','create']:return cid
+                    if args[0]=='/usr/bin/node':
+                        (private/'bootstrap.json').write_text(json.dumps({'passed':True,
+                            'admission_enabled':False,'players_created':0,'coins_funded':'0'}))
+                    return ''
+                def inspect(self,kind,name):
+                    return {'Id':'d'*64} if kind=='network' else {'Name':p.VOLUME,'CreatedAt':'initial',
+                        'Driver':'local','Options':None,'Mountpoint':str(root/'volume')}
+            tool.runtime=Runtime()
+            def fresh(*,created_prestart=False):calls.append(('fresh',created_prestart))
+            with patch.object(p,'BASE',root),patch.object(p,'PRIVATE',private),patch.object(p,'PIN',root/'production-current'),\
+                 patch.object(p.pwd,'getpwnam',return_value=user),patch.object(p.pwd,'getpwall',return_value=[user]),\
+                 patch.object(p.grp,'getgrnam',return_value=group),patch.object(p.os,'chown'),patch.object(p.os,'fchown'),\
+                 patch.object(tool,'fresh',side_effect=fresh):
+                previous=os.umask(0o077)
+                try:
+                    tool.provision_resources()
+                finally:
+                    os.umask(previous)
+            self.assertEqual(stat.S_IMODE((private/'monitor').stat().st_mode),0o750)
+            start=next(i for i,v in enumerate(calls) if v==('docker','start',cid))
+            sql=next(i for i,v in enumerate(calls) if 'psql' in v)
+            bootstrap=next(i for i,v in enumerate(calls) if v[0]=='/usr/bin/node')
+            pre=calls.index(('fresh',True));post=calls.index(('fresh',False))
+            self.assertLess(pre,start);self.assertLess(start,post);self.assertLess(post,sql);self.assertLess(sql,bootstrap)
+            self.assertEqual([v for v in calls if v[0]=='fresh'],[('fresh',True),('fresh',False)])
+
+    def test_real_dynamic_import_refusal_is_same_controller_class(self):
+        tool=object.__new__(p.Provisioner)
+        loaded=tool.load_operations()
+        self.assertIs(loaded.p.Refusal,p.Refusal)
+        with self.assertRaisesRegex(p.Refusal,'ACTUAL_IMPORTED_GUARD'):
+            loaded.p.require(False,'ACTUAL_IMPORTED_GUARD')
+
+    def test_prestart_fresh_cannot_be_called_at_other_phase_or_existing_pin(self):
+        tool=object.__new__(p.Provisioner);tool.receipt={'phase':'namespace_created'}
+        with self.assertRaisesRegex(p.Refusal,'PRESTART_PHASE'):
+            tool.fresh(created_prestart=True)
+        tool.receipt={'phase':'database_resources_created','bootstrap':{'passed':True}}
+        with self.assertRaisesRegex(p.Refusal,'PRESTART_PHASE'):
+            tool.fresh(created_prestart=True)
+        tool.receipt={'phase':'database_resources_created'}
+        with patch.object(p.os.path,'lexists',return_value=True),self.assertRaisesRegex(p.Refusal,'PRESTART_PHASE'):
+            tool.fresh(created_prestart=True)
+
+    def failure(self,*,guard_error=None,stop_error=None,created=False,units=False,prebootstrap_started=False):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);tool=object.__new__(p.Provisioner)
+            tool.marker={'container_id':'c'*64}
+            tool.receipt={'schema':1,'passed':False,'history':[],
+                'phase':'database_resources_created' if created or prebootstrap_started else 'production_bootstrap_proved',
+                'container_id':'c'*64,'units_installed':units}
+            calls=[]
+            class Runtime:
+                def inspect(self,kind,cid):
+                    assert kind=='container' and cid=='c'*64
+                    return {'State':{'Status':'created' if created else 'running'}}
+                def command(self,args):
+                    calls.append(args)
+                    if stop_error:raise stop_error
+            tool.runtime=Runtime()
+            imported=tool.load_operations()
+            def guard(marker,runtime,**kwargs):
+                if guard_error:raise guard_error
+                return {'running':not created,'created_prestart':created}
+            with patch.object(imported,'owned_resources',side_effect=guard) as resource_guard,\
+                 patch.object(tool,'load_operations',return_value=imported),\
+                 patch.object(tool,'loaded_unit_guard',side_effect=guard_error),\
+                 patch.object(p,'PRIVATE',root),patch.object(p.os,'fchown'):
+                tool.fail_closed(p.Refusal('PRIMARY_SOURCE_FAILURE'))
+                saved=json.loads((root/'receipt.json').read_text())
+            return saved,calls,resource_guard.call_args
+
+    def test_primary_refusal_survives_secondary_ownership_refusal_no_stop(self):
+        receipt,calls,_=self.failure(guard_error=p.Refusal('SECONDARY_OWNERSHIP_CHANGED'))
+        self.assertEqual(receipt['error_code'],'PRIMARY_SOURCE_FAILURE')
+        self.assertEqual(receipt['cleanup_error_code'],'SECONDARY_OWNERSHIP_CHANGED')
+        self.assertEqual(receipt['phase'],'failed_closed');self.assertEqual(calls,[])
+        self.assertTrue(receipt['history'][-1]['stop_refused'])
+
+    def test_primary_refusal_survives_secondary_command_failure(self):
+        receipt,calls,_=self.failure(stop_error=p.Refusal('COMMAND_FAILED_DOCKER'))
+        self.assertEqual(receipt['error_code'],'PRIMARY_SOURCE_FAILURE')
+        self.assertEqual(receipt['cleanup_error_code'],'COMMAND_FAILED_DOCKER')
+        self.assertEqual(calls,[['docker','stop','--time','30','c'*64]])
+
+    def test_unsafe_loaded_unit_cannot_stop_units_or_container(self):
+        receipt,calls,_=self.failure(guard_error=p.Refusal('UNKNOWN_LOADED_COMMAND'),units=True)
+        self.assertEqual(calls,[]);self.assertEqual(receipt['cleanup_error_code'],'UNKNOWN_LOADED_COMMAND')
+
+    def test_exact_created_container_has_nothing_to_stop(self):
+        receipt,calls,guard=self.failure(created=True)
+        self.assertEqual(calls,[]);self.assertTrue(guard.kwargs['created_prestart'])
+        self.assertNotIn('cleanup_error_code',receipt)
+
+    def test_same_prebootstrap_phase_after_start_stops_only_normally_verified_pg(self):
+        receipt,calls,guard=self.failure(prebootstrap_started=True)
+        self.assertFalse(guard.kwargs['created_prestart'])
+        self.assertEqual(calls,[['docker','stop','--time','30','c'*64]])
+        self.assertNotIn('cleanup_error_code',receipt)
+
+    def test_real_dynamic_guard_primary_code_is_preserved_in_receipt(self):
+        tool=object.__new__(p.Provisioner);loaded=tool.load_operations()
+        try:loaded.p.require(False,'REAL_IMPORTED_PRIMARY')
+        except p.Refusal as error:
+            with tempfile.TemporaryDirectory() as temp,patch.object(p,'PRIVATE',Path(temp)),patch.object(p.os,'fchown'):
+                tool.receipt={'phase':'namespace_created','history':[],'passed':False}
+                tool.fail_closed(error)
+                saved=json.loads((Path(temp)/'receipt.json').read_text())
+                self.assertEqual(saved['error_code'],'REAL_IMPORTED_PRIMARY')
 
 class Archives(unittest.TestCase):
     def archive(self,root,names):
