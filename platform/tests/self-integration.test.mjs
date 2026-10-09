@@ -13,11 +13,16 @@ import {RELEASED_IDS} from '../shared/games.mjs';
 
 const uid=p=>p+'_'+randomBytes(10).toString('hex'),base='http://127.0.0.1:19197',wallet='http://127.0.0.1:19198',proxyOrigin='http://127.0.0.1:19199';
 const dbname='oasis_self_test_'+process.pid+'_'+randomBytes(5).toString('hex'),root=resolve(import.meta.dirname,'..');
+const adminURL=new URL(process.env.OASIS_TEST_ADMIN_DATABASE_URL||'postgres://oasis_local@127.0.0.1:5487/postgres');
+assert.ok(['postgres:','postgresql:'].includes(adminURL.protocol),'LOCAL_POSTGRES_REQUIRED');
+assert.ok(['127.0.0.1','localhost','[::1]'].includes(adminURL.hostname),'LOCAL_POSTGRES_REQUIRED');
+assert.equal(adminURL.search,'','POSTGRES_URL_OVERRIDES_FORBIDDEN');assert.equal(adminURL.hash,'','POSTGRES_URL_OVERRIDES_FORBIDDEN');adminURL.pathname='/postgres';
+const databaseURL=new URL(adminURL);databaseURL.pathname='/'+dbname;
 let admin,db,dir,child,proxy,cookie,partnerA,partnerB,app,logs='',dropCapture=false,observedCapture=false,created=false;
 const evidence={checks:[]};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function wait(fn,label,ms=20000){for(const until=Date.now()+ms;Date.now()<until;){const v=await fn();if(v)return v;await sleep(80);}throw Error('Timed out: '+label);}
-async function start(){child=spawn(process.execPath,['--import','tsx','server/index.mjs'],{cwd:root,env:{...process.env,OASIS_DATABASE_URL:`postgres://oasis_local@127.0.0.1:5487/${dbname}`,OASIS_LOCAL_DIR:dir,OASIS_PUBLIC_ORIGIN:base,OASIS_API_PORT:'19197',OASIS_WALLET_PORT:'19198',OASIS_REFERENCE_WALLET_URL:wallet,OASIS_WALLET_ALLOWED_ORIGINS:proxyOrigin},stdio:['ignore','pipe','pipe']});child.stdout.on('data',b=>logs+=b);child.stderr.on('data',b=>logs+=b);await wait(async()=>{if(child.exitCode!==null)throw Error(logs);try{return(await fetch(base+'/health')).ok;}catch{return false;}},'API startup');}
+async function start(){child=spawn(process.execPath,['--import','tsx','server/index.mjs'],{cwd:root,env:{...process.env,OASIS_DATABASE_URL:databaseURL.href,OASIS_LOCAL_DIR:dir,OASIS_PUBLIC_ORIGIN:base,OASIS_API_PORT:'19197',OASIS_WALLET_PORT:'19198',OASIS_REFERENCE_WALLET_URL:wallet,OASIS_WALLET_ALLOWED_ORIGINS:proxyOrigin},stdio:['ignore','pipe','pipe']});child.stdout.on('data',b=>logs+=b);child.stderr.on('data',b=>logs+=b);await wait(async()=>{if(child.exitCode!==null)throw Error(logs);try{return(await fetch(base+'/health')).ok;}catch{return false;}},'API startup');}
 async function stop(){if(child&&child.exitCode===null){const end=new Promise(r=>child.once('exit',r));child.kill('SIGKILL');await end;}}
 async function request(path,body,auth=cookie,method=body===undefined?'GET':'POST'){
  const r=await fetch(base+path,{method,headers:{origin:base,'content-type':'application/json',...(auth?{cookie:auth}:{})},body:body===undefined?undefined:JSON.stringify(body)});
@@ -26,7 +31,7 @@ async function request(path,body,auth=cookie,method=body===undefined?'GET':'POST
 const scope=a=>({partner_id:a.partner_id,app_id:a.id,environment:a.environment,wallet_scope_id:a.wallet_scope_id,currency_id:a.currency_id});
 const client=item=>new OasisClient({baseUrl:base,keyId:item.credentials.key_id,secretBase64:item.credentials.secret_base64,scope:scope(item.app)});
 before(async()=>{
- admin=new pg.Pool({connectionString:'postgres://oasis_local@127.0.0.1:5487/postgres'});await admin.query(`CREATE DATABASE "${dbname}"`);created=true;db=new pg.Pool({connectionString:`postgres://oasis_local@127.0.0.1:5487/${dbname}`});dir=await mkdtemp(join(tmpdir(),'oasis-self-'));
+ admin=new pg.Pool({connectionString:adminURL.href});await admin.query(`CREATE DATABASE "${dbname}"`);created=true;db=new pg.Pool({connectionString:databaseURL.href});dir=await mkdtemp(join(tmpdir(),'oasis-self-'));
  proxy=createServer(async(req,res)=>{try{const chunks=[];for await(const c of req)chunks.push(c);if(dropCapture&&req.url.startsWith('/wallet/v1/operations/')){res.destroy();return;}
   const r=await fetch(wallet+req.url,{method:req.method,headers:req.headers,body:req.method==='GET'?undefined:Buffer.concat(chunks)}),raw=await r.text();
   if(dropCapture&&req.url==='/wallet/v1/matches/capture'){observedCapture=true;res.destroy();return;}res.writeHead(r.status,{'content-type':'application/json'});res.end(raw);

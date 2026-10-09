@@ -1,0 +1,63 @@
+{
+  "blender": "4.5.14 LTS",
+  "scope": "Visual geometry only; exact source transforms/material slots and authoritative physics preserved",
+  "assets": [
+    {
+      "source": "neon-competition-pin.blend",
+      "source_sha256": "eb770e4eb8734409f5bab6eee74153b6246cc07999ce77dcbc5a10ef4f00cc5b",
+      "output": "neon-competition-pin-mobile-v1.glb",
+      "sha256": "7df9a1d3d9d9ed0c5d2905dcfb4e43c860b37654b147af6a3e02f0813a5708d6",
+      "bytes": 10520,
+      "source_triangles": 8960,
+      "triangles": 2692,
+      "material_triangles": {
+        "Pin polished porcelain": 2436,
+        "Competition red enamel": 256
+      },
+      "sampled_surface_distance_m": {
+        "PinBody": {
+          "samples": 5800,
+          "max_m": 0.00046274467604234815,
+          "p95_m": 0.0003082060138694942
+        }
+      },
+      "removed_unused_embedded_image": false
+    },
+    {
+      "source": "neon-pearl-ball.blend",
+      "source_sha256": "ad484934ae6059956d4ceccfce8511ad91824da74befca1cc374295df9d77bab",
+      "output": "neon-pearl-ball-runtime-v1.glb",
+      "sha256": "6a586f458e6ab296c635186eb386c33f9dac89787f55b7e021dad652e77c716a",
+      "bytes": 43512,
+      "source_triangles": 9626,
+      "triangles": 9626,
+      "material_triangles": {
+        "Violet pearl bowling resin": 8264,
+        "Recessed finger bore charcoal": 1362
+      },
+      "sampled_surface_distance_m": {},
+      "removed_unused_embedded_image": true
+    },
+    {
+      "source": "neon-pearl-ball.blend",
+      "source_sha256": "ad484934ae6059956d4ceccfce8511ad91824da74befca1cc374295df9d77bab",
+      "output": "neon-pearl-ball-mobile-v1.glb",
+      "sha256": "b2109e35bb2ada787c483a75cf60d527ff1f7554500b55750f20c75b4157f28c",
+      "bytes": 22196,
+      "source_triangles": 9626,
+      "triangles": 3656,
+      "material_triangles": {
+        "Violet pearl bowling resin": 3374,
+        "Recessed finger bore charcoal": 282
+      },
+      "sampled_surface_distance_m": {
+        "PearlBall": {
+          "samples": 6645,
+          "max_m": 0.00034513717400841415,
+          "p95_m": 0.00026168685872107744
+        }
+      },
+      "removed_unused_embedded_image": true
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import {createPresentationClock,syncGamePresentationClock,bindPresentationClock} from '../shared/presentation-clock.mjs';
+import {uiClockChanged} from '../shared/ui-clock.mjs';
 import {startVisibleInterval} from '../shared/visible-interval.mjs';
 import React,{useEffect,useRef,useState} from 'react';
 import {ArrowLeft,Volume2,VolumeX,Info,Target,Clock3,Trophy,X,ChevronUp} from 'lucide-react';
@@ -48,9 +49,11 @@ function City(){return <div className="da-palace-scene" aria-hidden="true"><i/><
 export default function DartsGame({room,me,onAction,audio,onExit,locale='zh'}){
  const game=room.game||{},players=game.players||[],mine=players.find(p=>p.key===me),turn=game.turnKey===me,zh=locale==='zh';const [now,setNow]=useState(room.server_now||Date.now()),[aim,setAim]=useState(null),[hit,setHit]=useState(null),[flying,setFlying]=useState(null),[pending,setPending]=useState(false),[message,setMessage]=useState(''),[help,setHelp]=useState(false),[sound,setSound]=useState(audio?.enabled!==false);
  const visualClock=useRef(null);if(!visualClock.current)visualClock.current=createPresentationClock();syncGamePresentationClock(visualClock.current,game,room.server_now,room.id);useEffect(()=>bindPresentationClock(visualClock.current),[]);
- const clock=useRef({server:room.server_now||Date.now(),local:performance.now()}),drag=useRef(null),input=useRef(null),sending=useRef(false),seen=useRef(null),timeouts=useRef(new Set()),mounted=useRef(true);
- useEffect(()=>{clock.current={server:room.server_now||Date.now(),local:performance.now()};setNow(clock.current.server);},[room.server_now]);
- useEffect(()=>{mounted.current=true;const stopClock=startVisibleInterval(()=>setNow(clock.current.server+performance.now()-clock.current.local),50);return()=>{mounted.current=false;stopClock();timeouts.current.forEach(clearTimeout);};},[]);
+ const clock=useRef({server:room.server_now||Date.now(),local:performance.now()}),drag=useRef(null),input=useRef(null),sending=useRef(false),seen=useRef(null),timeouts=useRef(new Set()),mounted=useRef(true),clockUi=useRef(null),aimFrame=useRef(0),latestAim=useRef(null);
+ clockUi.current={deadlines:[game.turnDeadlineAt],boundaries:[game.busyUntil,game.turnDeadlineAt,game.deadlineAt,hit?hit.at+2200:undefined]};
+ const presentTime=value=>setNow(previous=>uiClockChanged(previous,value,clockUi.current)?value:previous);
+ useEffect(()=>{clock.current={server:room.server_now||Date.now(),local:performance.now()};presentTime(clock.current.server);},[room.server_now]);
+ useEffect(()=>{mounted.current=true;const stopClock=startVisibleInterval(()=>presentTime(clock.current.server+performance.now()-clock.current.local),50);return()=>{mounted.current=false;stopClock();timeouts.current.forEach(clearTimeout);};},[]);
  function later(fn,ms){const t=setTimeout(()=>{timeouts.current.delete(t);if(mounted.current)fn();},ms);timeouts.current.add(t);}
  function reactTo(event){if(!event||seen.current===event.id)return;seen.current=event.id;if(event.type==='throw'){
   const serverTime=clock.current.server+performance.now()-clock.current.local,remaining=Math.max(0,event.busyUntil-serverTime);
@@ -60,19 +63,20 @@ export default function DartsGame({room,me,onAction,audio,onExit,locale='zh'}){
 
  useEffect(()=>{reactTo(game.lastEvent);},[game.lastEvent?.id]);
  const seconds=Math.min(20,Math.max(0,Math.ceil(((game.turnDeadlineAt||now)-now)/1000))),locked=room.status!=='active'||!turn||game.status!=='active'||mine?.forfeited||pending||help||now<(game.busyUntil||0)||now>=game.turnDeadlineAt||now>=game.deadlineAt,darts=turn?game.currentDarts?.length||0:0;
- function point(e,node){const r=node.getBoundingClientRect();return{x:Math.max(-1.5,Math.min(1.5,(e.clientX-r.left-r.width/2)/(r.width/2.5))),y:Math.max(-1.5,Math.min(1.5,(e.clientY-r.top-r.height/2)/(r.height/2.5))) };}
+ function point(e,node,rect){const r=rect||node.getBoundingClientRect();return{x:Math.max(-1.5,Math.min(1.5,(e.clientX-r.left-r.width/2)/(r.width/2.5))),y:Math.max(-1.5,Math.min(1.5,(e.clientY-r.top-r.height/2)/(r.height/2.5))) };}
  // Bind a drag to one pointer and one server turn. A later snapshot cannot
  // turn an old, interrupted gesture into a throw in the next turn.
  const turnToken=JSON.stringify([game.gameId,game.turnKey,game.turnStartedAt,game.currentDarts?.length]);
  input.current={locked,game,turnToken};
  function allowed(d){const current=input.current,t=clock.current.server+performance.now()-clock.current.local;return !sending.current&&!document.hidden&&!current.locked&&t>=(current.game.busyUntil||0)&&t<current.game.turnDeadlineAt&&t<current.game.deadlineAt&&(!d||d.turnToken===current.turnToken&&d.node.hasPointerCapture(d.id));}
- function cancel(e){if(!e||drag.current?.id===e.pointerId){drag.current=null;setAim(null);}}
+ function cancel(e){if(!e||drag.current?.id===e.pointerId){drag.current=null;cancelAnimationFrame(aimFrame.current);aimFrame.current=0;latestAim.current=null;setAim(null);}}
+ function presentAim(value){latestAim.current=value;if(!aimFrame.current)aimFrame.current=requestAnimationFrame(()=>{aimFrame.current=0;if(mounted.current&&drag.current)setAim(latestAim.current);});}
  useEffect(()=>{if(locked)cancel();else if(drag.current?.turnToken!==turnToken)cancel();},[locked,turnToken]);
- useEffect(()=>{const blur=()=>cancel(),visibility=()=>{if(document.hidden)cancel();},secondary=e=>{if(e.pointerType==='touch'&&e.isPrimary===false)cancel();};document.addEventListener('pointerdown',secondary,true);window.addEventListener('blur',blur);document.addEventListener('visibilitychange',visibility);return()=>{drag.current=null;window.removeEventListener('blur',blur);document.removeEventListener('visibilitychange',visibility);document.removeEventListener('pointerdown',secondary,true);};},[]);
- function down(e){if(e.button!==0||e.isPrimary===false||drag.current){cancel();return;}if(!allowed())return;e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);drag.current={id:e.pointerId,turnToken,start:performance.now(),node:e.currentTarget,points:[{...point(e,e.currentTarget),t:0}]};setAim(point(e,e.currentTarget));setMessage('');audio?.unlock?.();}
- function sample(e){const d=drag.current;if(!d||d.id!==e.pointerId)return;if(!allowed(d)){cancel();return;}const p={...point(e,d.node),t:Math.max(d.points.at(-1).t+1,Math.round(performance.now()-d.start))};if(d.points.length>=128)d.points.splice(1,1);d.points.push(p);try{setAim(mapGesture(d.points));}catch{setAim(p);}return d;}
+ useEffect(()=>{const blur=()=>cancel(),visibility=()=>{if(document.hidden)cancel();},secondary=e=>{if(e.pointerType==='touch'&&e.isPrimary===false)cancel();};document.addEventListener('pointerdown',secondary,true);window.addEventListener('blur',blur);window.addEventListener('resize',blur);window.addEventListener('scroll',blur,true);document.addEventListener('visibilitychange',visibility);return()=>{drag.current=null;cancelAnimationFrame(aimFrame.current);window.removeEventListener('resize',blur);window.removeEventListener('scroll',blur,true);window.removeEventListener('blur',blur);document.removeEventListener('visibilitychange',visibility);document.removeEventListener('pointerdown',secondary,true);};},[]);
+ function down(e){if(e.button!==0||e.isPrimary===false||drag.current){cancel();return;}if(!allowed())return;e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);const rect=e.currentTarget.getBoundingClientRect(),start=point(e,e.currentTarget,rect);drag.current={id:e.pointerId,turnToken,start:performance.now(),node:e.currentTarget,rect,points:[{...start,t:0}]};setAim(start);setMessage('');audio?.unlock?.();}
+ function sample(e){const d=drag.current;if(!d||d.id!==e.pointerId)return;if(!allowed(d)){cancel();return;}const p={...point(e,d.node,d.rect),t:Math.max(d.points.at(-1).t+1,Math.round(performance.now()-d.start))};if(d.points.length>=128)d.points.splice(1,1);d.points.push(p);try{presentAim(mapGesture(d.points));}catch{presentAim(p);}return d;}
  function move(e){if(drag.current?.id===e.pointerId){e.preventDefault();sample(e);}}
- async function up(e){const d=sample(e);if(!d)return;drag.current=null;setAim(null);try{mapGesture(d.points);}catch{setMessage(zh?'请按住并拖动准星，再松手投镖':'HOLD, DRAG & RELEASE TO THROW');return;}sending.current=true;setPending(true);try{const response=await onAction({type:'throw',gesture:d.points});reactTo(response?.event);}catch(error){if(mounted.current)setMessage(error.message||'暂时无法投掷');}finally{sending.current=false;if(mounted.current)setPending(false);}}
+ async function up(e){const d=sample(e);if(!d)return;cancel();try{mapGesture(d.points);}catch{setMessage(zh?'请按住并拖动准星，再松手投镖':'HOLD, DRAG & RELEASE TO THROW');return;}sending.current=true;setPending(true);try{const response=await onAction({type:'throw',gesture:d.points});reactTo(response?.event);}catch(error){if(mounted.current)setMessage(error.message||'暂时无法投掷');}finally{sending.current=false;if(mounted.current)setPending(false);}}
  const target=players.find(p=>p.key===game.turnKey);
  return <section className={`da-scene ${turn?'da-your-turn':''}`} aria-label="飞镖301竞技场" dir={locale==='ar'?'rtl':'ltr'}><City/><div className="da-vignette"/>
  <header className="da-header"><button onClick={onExit} aria-label="离开游戏"><ArrowLeft size={19}/></button><h1>✦ DARTS <span>301 ARENA</span></h1><button aria-label={sound?'关闭声音':'开启声音'} onClick={()=>{setSound(!sound);audio?.setEnabled?.(!sound);}}>{sound?<Volume2 size={19}/>:<VolumeX size={19}/>}</button></header>

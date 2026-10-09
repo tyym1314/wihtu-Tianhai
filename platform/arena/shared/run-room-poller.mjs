@@ -42,10 +42,11 @@ export async function readRunRoomOnce({read,rateScope,signal,isCurrent=()=>true,
  }finally{signal?.removeEventListener('abort',abort);visibilityTarget?.removeEventListener('visibilitychange',visibility);}
 }
 
-export function startRunRoomPolling({read,onRoom,onError,roomId,playerKey,readVersion=()=>-1,readRoom=()=>null,
+export function startRunRoomPolling({read,onRoom,onError,roomId,playerKey,gameId='run',readVersion=()=>-1,readRoom=()=>null,
  rateScope=JSON.stringify([roomId,playerKey]),interval=()=>150,initialDelay=250,hedgeAfterMs=350,timeoutMs=8000,now=defaultNow,
  setTimer=setTimeout,clearTimer=clearTimeout,visibilityTarget=globalThis.document}){
  if(typeof read!=='function'||typeof onRoom!=='function'||typeof onError!=='function'||typeof roomId!=='string'||!roomId||typeof playerKey!=='string'||!playerKey)throw new TypeError('Invalid Run polling scope');
+ if(!['run','towerlink'].includes(gameId))throw new TypeError('Invalid motion polling game');
  if(!Number.isFinite(initialDelay)||initialDelay<0||!Number.isFinite(hedgeAfterMs)||hedgeAfterMs<150||!Number.isFinite(timeoutMs)||timeoutMs<=hedgeAfterMs)throw new TypeError('Invalid Run polling timing');
  // Never evict an unexpired quota for identity churn: retain at most 128 scopes
  // plus one conservative overflow deadline, scoped to this monotonic clock.
@@ -80,7 +81,7 @@ export function startRunRoomPolling({read,onRoom,onError,roomId,playerKey,readVe
    if(!current(request))return;
    request.controller.signal.throwIfAborted();
    const room=raw?.room??raw;
-   if(room?.id!==roomId||room.me!==playerKey||room.game_id!=='run'||!validVersion(room.version))throw Object.assign(new Error('Run polling response scope is invalid'),{code:'RUN_POLL_SCOPE_MISMATCH'});
+   if(room?.id!==roomId||room.me!==playerKey||room.game_id!==gameId||!validVersion(room.version))throw Object.assign(new Error('Motion polling response scope is invalid'),{code:gameId==='run'?'RUN_POLL_SCOPE_MISMATCH':'TOWER_POLL_SCOPE_MISMATCH'});
    lastSuccess=Math.max(lastSuccess,request.sequence);
    const live=readRoom(),liveVersion=readVersion(),watermark=Math.max(deliveredVersion,validVersion(liveVersion)?liveVersion:-1,live?.id===roomId&&live.me===playerKey&&validVersion(live.version)?live.version:-1);
    if(room.version<watermark)return;

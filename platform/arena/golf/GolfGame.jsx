@@ -25,8 +25,19 @@ export default function GolfGame({room,me,onAction,audio,onExit,locale='en'}){
  const serverNow=now-serverClock.current.local+serverClock.current.server;
  useEffect(()=>startVisibleInterval(()=>setNow(Date.now()),80),[]);
  const latest=useRef(null);latest.current={game,me,angle,power,serverNow:room?.server_now??game?.serverNow};
- useEffect(()=>{let cancelled=false,ownedArt=null;const controller=new AbortController();setSceneReady(false);loadOasisArt({signal:controller.signal}).then(art=>{if(cancelled){art.dispose();return;}ownedArt=art;try{scene.current=createGolfScene(canvas.current,{art,initialGame:latest.current.game,onAim:setAngle,onPower:setPower,onEvent:kind=>audioRef.current?.play?.(kind==='hole'?'win':kind==='water'?'water':'bounce'),onReady:()=>{if(!cancelled)setSceneReady(true);},onError:()=>{if(!cancelled){setSceneReady(false);setError(t.unavailable);}}});const latestState=latest.current;if(latestState.game)scene.current.update(latestState.game,latestState.me,latestState.angle,latestState.power,latestState.serverNow);}catch{if(!cancelled)setError(t.unavailable);}}).catch(()=>{if(!cancelled)setError(t.unavailable);});return()=>{cancelled=true;controller.abort();scene.current?.dispose();scene.current=null;ownedArt?.dispose();};},[]);
- useEffect(()=>{if(game)scene.current?.update(game,me,angle,power,room?.server_now??game.serverNow);},[game,me,angle,power,room?.server_now]);
+ // Only the pinned current course blocks first play. Remaining authored courses
+ // are warmed after the first render; a later hole still waits for complete art.
+ useEffect(()=>{let cancelled=false,ownedArt=null,prefetchTimer=0;const controller=new AbortController();setSceneReady(false);
+  const nextCourse=()=>{clearTimeout(prefetchTimer);prefetchTimer=setTimeout(()=>{if(cancelled||!ownedArt)return;const current=latest.current.game,index=current?.holeIndex??0;if(index<2){try{const next=roundGolfHole(current,index+1);ownedArt.ensureCourse(next.artIndex??index+1).catch(()=>{});}catch{}}},300);};
+  loadOasisArt({signal:controller.signal,artIndex:level.artIndex??game?.holeIndex??0}).then(async art=>{
+   ownedArt=art;while(!cancelled){const current=latest.current.game,index=current?.holeIndex??0,next=roundGolfHole(current),artIndex=next.artIndex??index;if(art.courses[artIndex])break;await art.ensureCourse(artIndex);}
+   if(cancelled){art.dispose();return;}
+   scene.current=createGolfScene(canvas.current,{art,initialGame:latest.current.game,onAim:setAngle,onPower:setPower,onEvent:kind=>audioRef.current?.play?.(kind==='hole'?'win':kind==='water'?'water':'bounce'),onReady:()=>{if(!cancelled){setSceneReady(true);nextCourse();}},onError:()=>{if(!cancelled){setSceneReady(false);setError(t.unavailable);}}});
+   const latestState=latest.current;if(latestState.game)scene.current.update(latestState.game,latestState.me,latestState.angle,latestState.power,latestState.serverNow);
+  }).catch(()=>{if(!cancelled)setError(t.unavailable);});
+  return()=>{cancelled=true;clearTimeout(prefetchTimer);controller.abort();scene.current?.dispose();scene.current=null;ownedArt?.dispose();};
+ },[]);
+ useEffect(()=>{let cancelled=false;const current=scene.current;if(!game||!current)return;const target=roundGolfHole(game),index=target.artIndex??game.holeIndex;current.prepareCourse(index).then(()=>{if(!cancelled&&scene.current===current){const value=latest.current;current.update(value.game,value.me,value.angle,value.power,value.serverNow);}}).catch(()=>{if(!cancelled){setSceneReady(false);setError(t.unavailable);}});return()=>{cancelled=true;};},[game,me,angle,power,room?.server_now]);
  useEffect(()=>{setSceneReady(false);setAngle(Math.atan2(level.cup.x-level.tee.x,level.tee.z-level.cup.z));setPower(.58);setError('');},[game?.holeIndex,level.id]);
  const busy=!!player&&(player.busyUntil>serverNow||sending),canShoot=sceneReady&&game?.phase==='playing'&&room?.status==='active'&&!busy&&!player?.completed&&!player?.forfeited;
  const shotSeconds=Math.max(0,Math.ceil(((player?.shotDeadlineAt||0)-serverNow)/1000)),holeSeconds=Math.max(0,Math.ceil(((game?.holeDeadlineAt||0)-serverNow)/1000)),nextSeconds=Math.max(0,Math.ceil(((game?.nextHoleAt||0)-serverNow)/1000));

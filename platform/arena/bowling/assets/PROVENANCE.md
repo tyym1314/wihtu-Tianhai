@@ -22,3 +22,28 @@ Rebuild with Blender `--background --python platform/arena/bowling/assets/source
 The project Blender executable was run again on 2026-09-20 with `build_neon.py`; `build-venue-v3.log` records the native build and three GLB exports. The venue now has a 2.92 m wall section, a modeled roof slab, repeating cross beams, continuous double coves and an inset rear sign recess. Ball radius (.215) and pin profile are unchanged; no authority geometry or simulation was edited. Exporting all objects regenerated ball bytes, so only dimensions/modeling code—not binary identity—are claimed preserved.
 
 `scene.mjs` creates original GOOD PLAYERS / BRIGHTER TOMORROW small side-wall canvas signs; they are 3D-mounted local surfaces, not raster replacement rooms. It also creates narrow Gaussian alpha fixtures with instanced meshes. Final localized glow uses the existing bloom/output pipeline at strength .10, compared with rejected .30 over-blue trial. Native material tuning is applied in `art.mjs`. No new external artwork or image generation was used for this revision. `review/venue-v3` includes original before captures, final Metal screenshots/video, A/B/E inspection and genuine click-to-strike records.
+
+## Mobile runtime derivation — 2026-10-09
+
+`source/build-mobile-lod.py` was run with Blender 4.5.14 LTS from
+`/Users/tyym/Applications/Blender.app/Contents/MacOS/Blender`, using
+`--background --factory-startup --disable-autoexec`. It opens the original pin
+and ball `.blend` files without saving over them. The source and original GLB
+hashes remain unchanged. `mobile-lod-report.json` records the source/output
+hashes, material triangle counts and exporter version.
+
+The mobile pin has 2,692 triangles instead of 8,960; its two red neck bands retain
+all 256 original triangles. The mobile ball has 3,656 triangles instead of 9,626,
+with material boundaries preserving the charcoal recessed finger bores. Mobile
+models are separate `*-mobile-v1.glb` URLs. The desktop ball retains its full
+geometry in `neon-pearl-ball-runtime-v1.glb`. Both new ball variants omit the
+embedded original 161,036-byte PNG because `art.mjs` replaces that map with the
+unchanged pearl-resin WebP before presentation. Original models remain available
+for rollback and editable art work. These visual exports do not change Cannon
+colliders, scoring, trajectories, input limits or authoritative versions.
+
+Run the derivation script using the same Blender version to reproduce the LODs.
+The short A/B fixture is `qa/mobile-lod-review.mjs`; the full lifetime fixture is
+`qa/lifecycle.mjs`. Raw current screenshots and resource observations are saved
+under ignored `platform/review/bowling-mobile-20261009/` and are separate from
+physical-phone acceptance.

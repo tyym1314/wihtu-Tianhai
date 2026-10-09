@@ -1,0 +1,105 @@
+{
+  "version": "oasis-decorative-mobile-lod-v1",
+  "blender": "4.5.14 LTS",
+  "scope": "Renderer-only mobile LOD. Original desktop resources retained. All sampled errors are dense surface samples before Draco serialization, not a global Hausdorff bound.",
+  "courses": [
+    {
+      "course": 1,
+      "sourceBlendSHA256": "a012590232c52f2d9f12dee88839b0b3a300ab6ed57219e57a009c016fc9ab7c",
+      "sourceUnchanged": true,
+      "beforeTriangles": 97276,
+      "afterTriangles": 72814,
+      "exportedPrimitives": 9,
+      "sourceCriticalMeshCount": 341,
+      "sourceCriticalMeshDigestSHA256": "a241e1302663dd436ceef37c87d63c2651f79522dcd62635c59cc4971bc78382",
+      "sourceCriticalGeometryUnchanged": true,
+      "changedDecorativeMeshCount": 453,
+      "maximumSampledErrorUnits": 0.012610845267772675,
+      "surfaceSamples": 332049,
+      "GLBSHA256": "71a9d710b14935df6815d118353670c02720f2e4573429facb4b0bab05680f37",
+      "bytes": 491012
+    },
+    {
+      "course": 2,
+      "sourceBlendSHA256": "3682e03e7d7df53fc2ec914ce326872e5a86d7d3b5c87cdca3a13dcf4b623d0d",
+      "sourceUnchanged": true,
+      "beforeTriangles": 100624,
+      "afterTriangles": 76162,
+      "exportedPrimitives": 9,
+      "sourceCriticalMeshCount": 368,
+      "sourceCriticalMeshDigestSHA256": "0f3038828702114c89e600bdca94c46012390d7335d3f3666560999261438682",
+      "sourceCriticalGeometryUnchanged": true,
+      "changedDecorativeMeshCount": 453,
+      "maximumSampledErrorUnits": 0.012610845267772675,
+      "surfaceSamples": 332049,
+      "GLBSHA256": "70fe432002ee359081736ce40dd954b10edddcef6916bc578a17c3cc28088d7f",
+      "bytes": 517336
+    },
+    {
+      "course": 3,
+      "sourceBlendSHA256": "259c446908e01e6f7b535aeae313d3d4a815969adcfadf7cac27393ec709261d",
+      "sourceUnchanged": true,
+      "beforeTriangles": 96520,
+      "afterTriangles": 72058,
+      "exportedPrimitives": 9,
+      "sourceCriticalMeshCount": 334,
+      "sourceCriticalMeshDigestSHA256": "0479be30dd4948349af504c42721f45c3631b3b4e7f256e27f253192c9f83371",
+      "sourceCriticalGeometryUnchanged": true,
+      "changedDecorativeMeshCount": 453,
+      "maximumSampledErrorUnits": 0.012610845267772675,
+      "surfaceSamples": 332049,
+      "GLBSHA256": "d03b8e3b89a8cab0e1fd9d5384a5971c421d971dbc75575c10c4a52cd07124a9",
+      "bytes": 487088
+    }
+  ],
+  "botanicals": {
+    "sourceSHA256": "90feeeaa26aa5967704c0a9e36e8aa493919f7709584d9a1a84243eb068e5337",
+    "sourceUnchanged": true,
+    "beforeTrunkTriangles": 2664,
+    "afterTrunkTriangles": 1598,
+    "error": {
+      "samples": 19231,
+      "maxUnits": 0.004655118100345135,
+      "meanUnits": 0.0009641546307081959
+    },
+    "protectedSourceGeometryUnchanged": true,
+    "protected": {
+      "PalmCrown": "c4b838fd6d7488e682c462ccb27e1b85fd84f011a40a55e6b83ad028b5ab52f1",
+      "Flowers": "58aa8a91cca1b8d0dc44cd918a7ea3f6dc0f810af650a4e40107b1e087c244d1",
+      "Fern": "a00b0dd5f62926d8c8130ba0e51083184fc8cfda468a0e80bfeeb0d751771ec0"
+    },
+    "bytes": 76204
+  },
+  "visual": {
+    "scope": "Production Three scene, authored wide and cup closeup camera paths, fixed presentation/animation timestamps. 12 serial Chrome scenes. No performance or phone acceptance claim.",
+    "trianglesBeforeAfter": [
+      [
+        273432,
+        239376
+      ],
+      [
+        691524,
+        605346
+      ],
+      [
+        276436,
+        242380
+      ],
+      [
+        707098,
+        619854
+      ],
+      [
+        272100,
+        238044
+      ],
+      [
+        683842,
+        597664
+      ]
+    ],
+    "callsUnchanged": true,
+    "rootAndWorkerVisualReview": "Authored course outlines, cup/curb/bridge, plants and lighting remain present. Candidate accepted for mobile-only tier.",
+    "cameraMatrixObserver": "V2 did not capture matrices; all pairs use identical production camera/source/state/time. Followup QA observer fixed on Scene hook for future reproductions."
+  }
+}

@@ -285,6 +285,32 @@
       "bytes": 6570,
       "sha256": "570d3974a74954ba3d0fcdb7f26c585942593baf751267321b579d19604da19b",
       "role": "editable-source"
+    },
+    {
+      "path": "models/oasis-botanical-library-mobile-lod-v1-38844d1da9.glb",
+      "bytes": 76204,
+      "sha256": "38844d1da9f8bb95b227e66c6c65a72ca593f95fa450d8089fd4c2a5867d79b6",
+      "role": "runtime-mobile-lod-asset"
+    },
+    {
+      "path": "models/oasis-course-1-mobile-lod-v1-71a9d710b1.glb",
+      "bytes": 491012,
+      "sha256": "71a9d710b14935df6815d118353670c02720f2e4573429facb4b0bab05680f37",
+      "role": "runtime-mobile-lod-asset"
+    },
+    {
+      "path": "models/oasis-course-2-mobile-lod-v1-70fe432002.glb",
+      "bytes": 517336,
+      "sha256": "70fe432002ee359081736ce40dd954b10edddcef6916bc578a17c3cc28088d7f",
+      "role": "runtime-mobile-lod-asset"
+    },
+    {
+      "path": "models/oasis-course-3-mobile-lod-v1-d03b8e3b89.glb",
+      "bytes": 487088,
+      "sha256": "d03b8e3b89a8cab0e1fd9d5384a5971c421d971dbc75575c10c4a52cd07124a9",
+      "role": "runtime-mobile-lod-asset"
     }
-  ]
+  ],
+  "mobileLodVersion": "oasis-decorative-mobile-lod-v1",
+  "mobileLodScope": "Only decorative rounded garden/flower walls and palm trunk; playable coastline, legal curbs, bridge, crown, flowers and fern source geometry untouched. Desktop retains originals."
 }

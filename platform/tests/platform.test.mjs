@@ -11,10 +11,15 @@ import {sign,id,hash} from '../server/security.mjs';
 import {gzipSync} from 'node:zlib';
 const api='http://127.0.0.1:18997',wallet='http://127.0.0.1:18998',proxyURL='http://127.0.0.1:18999';
 const root=resolve(import.meta.dirname,'..'),dir=resolve(root,'.local/backend-test-'+Date.now());
-const dbname='oasis_test_'+process.pid+'_'+Date.now(),admin=new pg.Pool({connectionString:'postgres://oasis_local@127.0.0.1:5487/postgres'});
+const adminURL=new URL(process.env.OASIS_TEST_ADMIN_DATABASE_URL||'postgres://oasis_local@127.0.0.1:5487/postgres');
+assert.ok(['postgres:','postgresql:'].includes(adminURL.protocol),'LOCAL_POSTGRES_REQUIRED');
+assert.ok(['127.0.0.1','localhost','[::1]'].includes(adminURL.hostname),'LOCAL_POSTGRES_REQUIRED');
+assert.equal(adminURL.search,'','POSTGRES_URL_OVERRIDES_FORBIDDEN');assert.equal(adminURL.hash,'','POSTGRES_URL_OVERRIDES_FORBIDDEN');adminURL.pathname='/postgres';
+const dbname='oasis_test_'+process.pid+'_'+Date.now(),databaseURL=new URL(adminURL);databaseURL.pathname='/'+dbname;
+const admin=new pg.Pool({connectionString:adminURL.href});
 let db,child,apps,cookie,logs='',dropSettles=false,proxy,completed=[],created=false;
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
-async function start(){child=spawn(process.execPath,['--import','tsx','server/index.mjs'],{cwd:root,env:{...process.env,OASIS_DATABASE_URL:`postgres://oasis_local@127.0.0.1:5487/${dbname}`,OASIS_API_PORT:'18997',OASIS_WALLET_PORT:'18998',OASIS_REFERENCE_WALLET_URL:wallet,OASIS_WALLET_ALLOWED_ORIGINS:proxyURL,OASIS_LOCAL_DIR:dir,OASIS_PUBLIC_ORIGIN:api},stdio:['ignore','pipe','pipe']});child.stdout.on('data',b=>logs+=b);child.stderr.on('data',b=>logs+=b);for(let i=0;i<100;i++){try{const r=await fetch(api+'/health');if(r.ok)return;}catch{}if(child.exitCode!==null)throw Error(logs);await delay(100);}throw Error('Backend did not start: '+logs);}
+async function start(){child=spawn(process.execPath,['--import','tsx','server/index.mjs'],{cwd:root,env:{...process.env,OASIS_DATABASE_URL:databaseURL.href,OASIS_API_PORT:'18997',OASIS_WALLET_PORT:'18998',OASIS_REFERENCE_WALLET_URL:wallet,OASIS_WALLET_ALLOWED_ORIGINS:proxyURL,OASIS_LOCAL_DIR:dir,OASIS_PUBLIC_ORIGIN:api},stdio:['ignore','pipe','pipe']});child.stdout.on('data',b=>logs+=b);child.stderr.on('data',b=>logs+=b);for(let i=0;i<100;i++){try{const r=await fetch(api+'/health');if(r.ok)return;}catch{}if(child.exitCode!==null)throw Error(logs);await delay(100);}throw Error('Backend did not start: '+logs);}
 async function stop(){if(child&&child.exitCode===null){const ended=new Promise(r=>child.once('exit',r));child.kill('SIGKILL');await ended;}}
 async function request(path,body,headers={},method=body===undefined?'GET':'POST'){const r=await fetch(api+path,{method,headers:{...(body===undefined?{}:{'content-type':'application/json'}),origin:api,...headers},body:body===undefined?undefined:JSON.stringify(body)});const data=await r.json();return {status:r.status,data,headers:r.headers};}
 const s=a=>({partner_id:a.partner_id,app_id:a.id,environment:a.environment,wallet_scope_id:a.wallet_scope_id,currency_id:a.currency_id});
@@ -22,7 +27,7 @@ async function partner(item,path,body,overrides={}){const raw=body===undefined?'
 async function launch(item,game='tiger',extra={}){const body={...s(item.app),request_id:id('launch'),external_user_id:'demo_player',game_id:game,locale:'en',host_platform:'web',...extra};const r=await partner(item,'/v1/sessions',body);assert.equal(r.status,201,JSON.stringify(r.data));const x=await request('/v1/launch/exchange',{launch_code:r.data.launch_code,client_instance_id:id('client')});assert.equal(x.status,200,JSON.stringify(x.data));return {create:r.data,token:x.data.access_token,session_id:x.data.session_id,body};}
 const play=(l,game,path,body)=>request(`/api/play/${game}/${path}`,body,{authorization:'Bearer '+l.token});
 before(async()=>{
-  mkdirSync(dir,{recursive:true,mode:0o700});await admin.query(`CREATE DATABASE ${dbname}`);created=true;db=new pg.Pool({connectionString:`postgres://oasis_local@127.0.0.1:5487/${dbname}`});
+  mkdirSync(dir,{recursive:true,mode:0o700});await admin.query(`CREATE DATABASE ${dbname}`);created=true;db=new pg.Pool({connectionString:databaseURL.href});
   proxy=createServer(async(req,res)=>{try{const chunks=[];for await(const c of req)chunks.push(c);const raw=Buffer.concat(chunks);if(dropSettles&&req.method==='GET'&&req.url.startsWith('/wallet/v1/operations/')){res.destroy();return;}const r=await fetch(wallet+req.url,{method:req.method,headers:req.headers,body:req.method==='GET'?undefined:raw});const text=await r.text();if(dropSettles&&req.url.endsWith('/probability/settle')){res.destroy();return;}res.writeHead(r.status,{'content-type':'application/json'});res.end(text);}catch{res.destroy();}});await new Promise(r=>proxy.listen(18999,'127.0.0.1',r));
   await start();apps=JSON.parse(readFileSync(dir+'/sandbox-app-credentials.json'));const creds=JSON.parse(readFileSync(dir+'/development-credentials.json'));const r=await request('/api/admin/login',creds);assert.equal(r.status,200);cookie=r.headers.get('set-cookie').split(';')[0];
 });

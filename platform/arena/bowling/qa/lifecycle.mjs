@@ -3,7 +3,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createServer} from 'vite';
 import {webkit} from 'playwright';
-const out=resolve('review/deep-mobile-20260928/bowling-lifecycle');await mkdir(out,{recursive:true});
+const out=resolve(process.env.BOWLING_REVIEW_OUTPUT||'review/bowling-mobile-20261009/lifecycle');await mkdir(out,{recursive:true});
 const server=await createServer({configFile:resolve('arena/vite.config.mjs'),server:{host:'127.0.0.1',port:0}});await server.listen();const base=server.resolvedUrls.local[0],browser=await webkit.launch({headless:true}),report={scope:'Local desktop WebKit, actual Three.js resources. Resource counters are not a physical iPhone or heap measurement.',checks:[],samples:[],errors:[],failureSamples:[],hiddenSamples:[],deadlineInstrumentation:"Production loader uses 20000ms; fault cases instantiate an independent loader with a 600ms deadline"};
 try{
  const context=await browser.newContext({viewport:{width:393,height:852},hasTouch:true,isMobile:true}),page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));
@@ -20,7 +20,7 @@ try{
   window.__laneContextEvidence=()=>[...contexts].map(([gl,counts])=>({context_lost:gl.isContextLost(),unreleased_handles_at_context_loss:{...counts}}));
   for(const name of names){const create=proto['create'+name],remove=proto['delete'+name],live=new WeakSet();proto['create'+name]=function(...args){const item=create.apply(this,args);if(!contexts.has(this))contexts.set(this,Object.fromEntries(names.map(n=>[n,0])));if(item){live.add(item);contexts.get(this)[name]++;}return item;};proto['delete'+name]=function(item){if(item&&live.has(item)){live.delete(item);contexts.get(this)[name]--;}return remove.call(this,item);};}
  });
- let fail=true;await page.route('**/neon-pearl-ball.glb',route=>{if(fail){fail=false;return route.abort('failed');}return route.continue();});
+ let fail=true;await page.route('**/neon-pearl-ball-mobile-v1.glb',route=>{if(fail){fail=false;return route.abort('failed');}return route.continue();});
  await page.goto(base+'bowling/qa/lifecycle.html',{waitUntil:'domcontentloaded'});await page.locator('.nb-preparing').filter({hasText:'暂未加载'}).waitFor({timeout:45000});assert(await page.getByTestId('bowling-roll').isDisabled());assert.equal(await page.locator('canvas').count(),0);assert.equal(await page.evaluate(()=>window.__laneResources.workers),0);console.log('partial-load cleanup verified');report.checks.push('partial model failure disables input, leaves no scene and terminates decoders');
  await page.getByTestId('bowling-retry').click();await page.waitForFunction(()=>document.querySelector('[data-testid="bowling-roll"]')?.disabled===false,null,{timeout:45000});assert.equal(await page.locator('[data-scene-ready="true"][data-art-quality="blender"]').count(),1);report.checks.push('retry opens input only after the complete authored lane has rendered');
  await page.screenshot({path:resolve(out,'complete-lane.png')});

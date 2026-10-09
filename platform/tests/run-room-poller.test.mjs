@@ -38,6 +38,21 @@ test('one slow read gets one spare GET, whose success becomes the normal chain',
  await f.advance(50);f.requests[2].resolve(room(3));await flush();await f.advance(100);assert.equal(f.requests[3].at,650);
  f.requests[0].resolve(room(1));await flush();assert.deepEqual(f.rooms.map(r=>r.value.version),[2,3]);assert.equal(f.maxActive,2);
 });
+test('Tower Link reads at 250ms and a slow GET does not block the newer scoped snapshot',async t=>{
+ const tower=version=>({...room(version),game_id:'towerlink',server_now:version*250});
+ const f=fixture(t,{gameId:'towerlink',interval:()=>250});
+ await f.advance(350);assert.deepEqual(f.requests.map(r=>r.at),[0,350]);
+ f.requests[1].resolve(tower(2));await flush();await f.advance(250);
+ assert.equal(f.requests[2].at,600);f.requests[2].resolve(tower(3));await flush();
+ f.requests[0].resolve(tower(1));await flush();assert.deepEqual(f.rooms.map(r=>r.value.version),[2,3]);
+ assert.equal(f.maxActive,2);
+});
+test('Tower Link never accepts a Run response and still accepts its next Tower snapshot',async t=>{
+ const f=fixture(t,{gameId:'towerlink',interval:()=>250});await f.advance(0);
+ f.requests[0].resolve(room(999));await flush();assert.equal(f.rooms.length,0);
+ assert.equal(f.errors[0].value.code,'TOWER_POLL_SCOPE_MISMATCH');await f.advance(250);
+ f.requests[1].resolve({...room(2),game_id:'towerlink'});await flush();assert.equal(f.rooms[0].value.version,2);
+});
 test('two slow or abort-ignoring reads never accumulate more requests',async t=>{
  const f=fixture(t,{cooperate:false,timeoutMs:800});await f.advance(10000);
  assert.equal(f.requests.length,2);assert.equal(f.maxActive,2);assert.ok(f.requests.every(r=>r.signal.aborted));

@@ -1,7 +1,7 @@
 {
-  "date": "2026-09-20",
+  "date": "2026-10-09",
   "game": "bowling",
-  "revision": "venue-v3-localized-glow-E",
+  "revision": "venue-v3-mobile-runtime-v1",
   "blender": "4.5.14 LTS",
   "assets": [
     {
@@ -183,6 +183,36 @@
       "bytes": 3888,
       "sha256": "482a2609daf34056d575be60e04cbfcb724488dfd5b68b75c765f840cf07f667",
       "role": "editable-source"
+    },
+    {
+      "path": "models/neon-competition-pin-mobile-v1.glb",
+      "bytes": 10520,
+      "sha256": "7df9a1d3d9d9ed0c5d2905dcfb4e43c860b37654b147af6a3e02f0813a5708d6",
+      "role": "mobile-runtime"
+    },
+    {
+      "path": "models/neon-pearl-ball-mobile-v1.glb",
+      "bytes": 22196,
+      "sha256": "b2109e35bb2ada787c483a75cf60d527ff1f7554500b55750f20c75b4157f28c",
+      "role": "mobile-runtime"
+    },
+    {
+      "path": "models/neon-pearl-ball-runtime-v1.glb",
+      "bytes": 43512,
+      "sha256": "6a586f458e6ab296c635186eb386c33f9dac89787f55b7e021dad652e77c716a",
+      "role": "desktop-runtime"
+    },
+    {
+      "path": "source/build-mobile-lod.py",
+      "bytes": 4988,
+      "sha256": "a7c3084803ac4cd670e5ffd0e2f9f954daa75d0bc9b9ec4b8bcc2e87adb9e6ca",
+      "role": "editable-source"
+    },
+    {
+      "path": "mobile-lod-report.json",
+      "bytes": 2169,
+      "sha256": "d01e83f48e399c698194e39c204dd8445be9d6c9d82d2869915f07a1c983b2a1",
+      "role": "derived-asset-report"
     }
   ]
 }

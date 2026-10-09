@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-08T18:15:42.206Z",
+  "generatedAt": "2026-10-09T15:48:07.787Z",
   "status": "PLATFORM_PRESENTATION_BUILD",
   "sourceFilesVerifiedUnchanged": 24,
   "outputDirectory": "platform/legacy/dist",
@@ -56,7 +56,7 @@
     },
     {
       "path": "src/tiger/effects.ts",
-      "sha256": "7435c46dc2559891a470da58897e029bda44e3747f78fd78af05c085e14f45de"
+      "sha256": "0675f0f7bb583f9bd5e3441ef3b0ce4423359077361a951ea0c47ab4669454de"
     },
     {
       "path": "src/tiger/main.ts",

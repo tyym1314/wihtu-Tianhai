@@ -1,6 +1,6 @@
 # 13 款游戏引擎与移动性能审计
 
-审计日期：2026-10-09。源码基线：`master / e1f6ead1e8fe6301878b40909061daa14b877ec1`；应用源码对应已发布 `1a567d3`、Public `20261009-02`。本次检查当前代码、构建依赖、运行资源、Blender 源模型及隔离渲染；不把旧报告中的测试通过替代当前手机验收。本文供其他电脑上的同事接手。
+初始审计日期：2026-10-09。以下保留优化前的审计基线；后续已实施变更与验证以 [PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md) 和 [SYNC_DESIGN.md](SYNC_DESIGN.md) 为准。源码基线：`master / e1f6ead1e8fe6301878b40909061daa14b877ec1`；应用源码对应已发布 `1a567d3`、Public `20261009-02`。本次检查当前代码、构建依赖、运行资源、Blender 源模型及隔离渲染；不把旧报告中的测试通过替代当前手机验收。本文供其他电脑上的同事接手。
 
 ## 技术判断
 
@@ -112,4 +112,4 @@ Three r180的[Reflector](https://raw.githubusercontent.com/mrdoob/three.js/r180/
 
 ## 本机原始证据
 
-被忽略的 `platform/review/engine-audit-20261009/` 保存本轮Run原始帧/场景/资源采样、首次probe失败、适配后的QA副本、Blender下载验证及7源文件求值结果；`two-scenes-2026-10-09T14-20-23.799Z/`保存Golf/Bowling源与资源哈希、完整帧序列、阶段、截图及独立Node请求。此目录不随Git上传；本文保留跨机器可用结论。既有公网/实体手机证据索引见根目录 `HANDOFF.md`。未修改或发布游戏运行代码。
+被忽略的 `platform/review/engine-audit-20261009/` 保存本轮Run原始帧/场景/资源采样、首次probe失败、适配后的QA副本、Blender下载验证及7源文件求值结果；`two-scenes-2026-10-09T14-20-23.799Z/`保存Golf/Bowling源与资源哈希、完整帧序列、阶段、截图及独立Node请求。此目录不随Git上传；本文保留跨机器可用结论。既有公网/实体手机证据索引见根目录 `HANDOFF.md`。初始审计阶段未修改或发布游戏运行代码；本日后续实现和部署另见上述优化报告。

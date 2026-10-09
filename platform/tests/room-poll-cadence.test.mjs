@@ -16,7 +16,7 @@ test('funding burst lasts only two seconds despite fresh snapshots',()=>{
 test('leaving funding immediately restores the normal cadence',()=>{
  for(const game of ['run','golf','towerlink']){
   const f=fixture(game);f.room({id:'one',status:'funding'});assert.equal(f.interval(),100);
-  f.time(200);f.room({id:'one',status:'active'});assert.equal(f.interval(),game==='run'?150:500);
+  f.time(200);f.room({id:'one',status:'active'});assert.equal(f.interval(),game==='run'?150:game==='towerlink'?250:500);
   f.room(null);assert.equal(f.interval(),500);
  }
 });

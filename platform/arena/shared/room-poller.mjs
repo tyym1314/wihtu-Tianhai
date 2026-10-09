@@ -39,6 +39,6 @@ export function createRoomPollCadence({game,readRoom,now=()=>performance.now()})
    previousRoom=id;previousStatus=status;
   }
   if(status==='funding'&&at<fundingUntil)return 100;
-  return game==='run'&&status==='active'?150:500;
+  return status==='active'?(game==='run'?150:game==='towerlink'?250:500):500;
  };
 }
