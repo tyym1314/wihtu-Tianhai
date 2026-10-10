@@ -36,6 +36,8 @@ const modules={
 };
 const bundle=await build({entryPoints:{arena:resolve(root,'arena/main.jsx'),component:'feedback-component'},bundle:true,write:false,outdir:'/virtual-run-feedback',format:'esm',jsx:'automatic',logLevel:'silent',loader:{'.webp':'dataurl','.svg':'dataurl'},plugins:[{name:'bounded-feedback-fixtures',setup(b){
  b.onResolve({filter:/^feedback-component$/},()=>({path:'feedback-component',namespace:'fixture'}));
+ // Graphics are intentionally stubbed in this lifecycle/input fixture.
+ b.onLoad({filter:/\/arena\/run\/asset-urls\.mjs$/},()=>({contents:'export const runAssetSourcePlan=()=>({images:[],models:[]});export const RUN_ATLAS_URLS={front:"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="};',loader:'js'}));
  b.onResolve({filter:/^\/arena\/assets\//},()=>({path:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',external:true}));
  b.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:component,loader:'jsx',resolveDir:root}));
  b.onLoad({filter:/\/arena\/run\/(scene\.mjs|atlas-characters\.mjs|environment\.mjs)$/},a=>({contents:modules[a.path.split('/').at(-1)],loader:'js'}));

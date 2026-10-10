@@ -29,6 +29,7 @@ import android.widget.TextView;
 /** A server-authenticated player shell, without client-side identity or wallet fixtures. */
 public final class MainActivity extends Activity {
     private static final int BG = Color.rgb(15, 22, 33);
+    private static final long LOAD_TIMEOUT_MS = 30000;
     private NavigationPolicy policy;
     private FrameLayout root;
     private WebView webView;
@@ -37,9 +38,12 @@ public final class MainActivity extends Activity {
     private ProgressBar progress;
     private Button retry;
     private boolean pageFailed;
+    private boolean pageLoading;
     private boolean paused;
     private boolean backPending;
     private int backGeneration;
+    private int loadGeneration;
+    private Runnable loadTimeout;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -136,10 +140,15 @@ public final class MainActivity extends Activity {
                 if (!policy.isPlayerPage(url)) {
                     current.stopLoading();
                     showFailure("已阻止非授权页面。请重新打开游戏大厅。");
+                } else {
+                    pageLoading = true;
+                    armLoadTimeout();
                 }
             }
             @Override public void onPageFinished(WebView current, String url) {
                 if (current != webView) return;
+                pageLoading = false;
+                cancelLoadTimeout();
                 CookieManager.getInstance().flush();
                 if (!pageFailed && policy.isPlayerPage(url)) status.setVisibility(View.GONE);
             }
@@ -166,8 +175,10 @@ public final class MainActivity extends Activity {
 
     private void loadPlayer() {
         if (isFinishing() || isDestroyed()) return;
-        clearBackRequest();
+        // A retry owns a fresh view so callbacks from the stopped load cannot hide its status.
+        destroyWebView(false);
         pageFailed = false;
+        pageLoading = true;
         message.setText(PlayerBuildConfig.CONTRACT_FIXTURE
                 ? "合约验证包：不连接真实游戏服务" : "正在连接游戏大厅…");
         progress.setVisibility(View.VISIBLE);
@@ -175,16 +186,39 @@ public final class MainActivity extends Activity {
         status.setVisibility(View.VISIBLE);
         if (webView == null) createWebView();
         webView.loadUrl(policy.entryUrl());
+        armLoadTimeout();
     }
 
     private void showFailure(String text) {
         if (isFinishing() || isDestroyed()) return;
         pageFailed = true;
+        pageLoading = false;
+        cancelLoadTimeout();
         clearBackRequest();
         message.setText(PlayerBuildConfig.CONTRACT_FIXTURE ? "合约验证包：无真实后端连接\n" + text : text);
         progress.setVisibility(View.GONE);
         retry.setVisibility(View.VISIBLE);
         status.setVisibility(View.VISIBLE);
+    }
+
+    private void cancelLoadTimeout() {
+        loadGeneration++;
+        if (loadTimeout != null && root != null) root.removeCallbacks(loadTimeout);
+        loadTimeout = null;
+    }
+
+    private void armLoadTimeout() {
+        cancelLoadTimeout();
+        if (!pageLoading || paused || webView == null || isFinishing() || isDestroyed()) return;
+        final WebView requested = webView;
+        final int generation = loadGeneration;
+        loadTimeout = () -> {
+            if (generation != loadGeneration || requested != webView || !pageLoading || paused
+                    || isFinishing() || isDestroyed()) return;
+            requested.stopLoading();
+            showFailure("连接等待时间过长。请检查网络后重试。");
+        };
+        root.postDelayed(loadTimeout, LOAD_TIMEOUT_MS);
     }
 
     @Override public void onBackPressed() {
@@ -193,8 +227,11 @@ public final class MainActivity extends Activity {
         final WebView requested = webView;
         backPending = true;
         final int generation = ++backGeneration;
-        // A stalled renderer must not permanently swallow all later Back presses.
-        root.postDelayed(() -> { if (generation == backGeneration) backPending = false; }, 2500);
+        // A stalled renderer must not trap the user. This only closes the local Activity.
+        root.postDelayed(() -> {
+            if (generation == backGeneration && backPending && requested == webView
+                    && !isFinishing() && !isDestroyed()) { clearBackRequest(); finish(); }
+        }, 2500);
         try {
             requested.evaluateJavascript(policy.backScript(), value -> {
                 if (isFinishing() || isDestroyed() || requested != webView || generation != backGeneration) return;
@@ -208,6 +245,8 @@ public final class MainActivity extends Activity {
 
     @Override protected void onPause() {
         paused = true;
+        cancelLoadTimeout();
+        clearBackRequest();
         if (webView != null) { CookieManager.getInstance().flush(); webView.onPause(); }
         super.onPause();
     }
@@ -215,6 +254,7 @@ public final class MainActivity extends Activity {
         super.onResume();
         paused = false;
         if (webView != null) webView.onResume();
+        if (pageLoading) armLoadTimeout();
         if (root != null) root.requestApplyInsets();
     }
     @Override public void onConfigurationChanged(Configuration configuration) {
@@ -222,6 +262,8 @@ public final class MainActivity extends Activity {
         if (root != null) root.requestApplyInsets();
     }
     private void destroyWebView(boolean rendererGone) {
+        pageLoading = false;
+        cancelLoadTimeout();
         clearBackRequest();
         WebView old = webView;
         webView = null;

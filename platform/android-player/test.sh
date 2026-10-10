@@ -11,3 +11,4 @@ node --test "$TASK_ROOT/test/build-config.test.mjs"
 "$TASK_JAVA/bin/java" -cp "$TASK_TEST/classes" NavigationPolicyContract
 "$TASK_JAVA/bin/java" -cp "$TASK_TEST/classes" NavigationPolicyContract --back-script > "$TASK_TEST/back-script.js"
 node "$TASK_ROOT/test/back-bridge-contract.mjs" "$TASK_TEST/back-script.js"
+node "$TASK_ROOT/test/activity-lifecycle-contract.mjs"

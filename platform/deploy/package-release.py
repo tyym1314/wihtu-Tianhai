@@ -52,6 +52,9 @@ def package(repo, out):
             entry = archive.gettarinfo(str(path), arcname=name)
             if not entry.isfile():
                 raise ValueError('UNSAFE_RELEASE_PATH: ' + name)
+            # Builds may run under umask 077. Runtime files contain no credentials
+            # and must remain readable by the dedicated API and Nginx users.
+            entry.mode = 0o755 if entry.mode & 0o111 else 0o644
             entry.size = len(content)
             archive.addfile(entry, io.BytesIO(content))
         # The manifest names business files only, avoiding a self-hash recursion.

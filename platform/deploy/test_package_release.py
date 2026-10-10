@@ -95,6 +95,38 @@ class PackageRetainedAssetTest(unittest.TestCase):
         self.assertEqual((previous / 'platform/dist/index.html').read_bytes(), b'fixture')
         verify_retained_assets(candidate)
 
+    def test_private_build_modes_are_readable_in_full_delta_and_inherited_stage(self):
+        arena = self.repo / 'platform/arena/dist/index.html'
+        arena.chmod(0o600)
+        full = self.base / 'private-build.tar.gz'
+        package_module.package(self.repo, full)
+        with tarfile.open(full, 'r:gz') as bundle:
+            self.assertEqual(bundle.getmember('platform/arena/dist/index.html').mode, 0o644)
+        old_manifest = json.loads(full.with_suffix('.gz.manifest.json').read_text())
+        previous = self.base / 'private-previous'
+        shutil.copytree(self.repo, previous)
+        (previous / 'RELEASE-MANIFEST.json').write_text(json.dumps(old_manifest))
+        (previous / 'platform/arena/dist').chmod(0o700)
+        self.write('platform/dist/index.html', b'new entry under private umask')
+        (self.repo / 'platform/dist/index.html').chmod(0o600)
+        record(self.repo)
+        updated = self.base / 'private-updated.tar.gz'
+        package_module.package(self.repo, updated)
+        delta = self.base / 'private-delta.tar.gz'
+        completed = subprocess.run([sys.executable, str(self.repo / 'platform/deploy/package-delta.py'),
+                                    str(full.with_suffix('.gz.manifest.json')),
+                                    str(updated.with_suffix('.gz.manifest.json')), str(delta)],
+                                   capture_output=True, text=True, check=True)
+        with tarfile.open(delta, 'r:gz') as bundle:
+            self.assertEqual(bundle.getmember('platform/dist/index.html').mode, 0o644)
+        candidate = self.base / 'private-candidate'
+        stage(previous, candidate, delta, json.loads(completed.stdout)['sha256'])
+        self.assertEqual((candidate / 'platform/arena/dist/index.html').stat().st_mode & 0o777, 0o644)
+        self.assertEqual((candidate / 'platform/arena/dist').stat().st_mode & 0o777, 0o755)
+        self.assertEqual((candidate / 'platform/dist/index.html').stat().st_mode & 0o777, 0o644)
+        self.assertEqual((previous / 'platform/arena/dist/index.html').stat().st_mode & 0o777, 0o600)
+        self.assertEqual((previous / 'platform/arena/dist').stat().st_mode & 0o777, 0o700)
+
     def test_package_refuses_missing_or_modified_retained_asset(self):
         self.write(self.historical['path'], b'different historical bytes')
         out = self.base / 'bad.tar.gz'

@@ -1,10 +1,9 @@
 import * as T from 'three';
 import {createRunSourceCache,loadRunTexture,prepareRunAssets} from './asset-loading.mjs';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
-import kitUrl from './assets/environment/oasis-kit-runtime-v1.glb?url';
-import stoneUrl from '../golf/assets/textures/aged-sandstone-imagegen-mobile-dcc28108d4.webp?url';
-import normalUrl from '../golf/assets/textures/sandstone-normal.webp?url';
-import backdropUrl from '../golf/assets/textures/oasis-distant-palace-mobile-e251f780d8.webp?url';
+import {RUN_ENVIRONMENT_URLS} from './asset-urls.mjs';
+import {acquireRunModelSource} from './asset-sources.mjs';
+const {kit:kitUrl,albedo:stoneUrl,normal:normalUrl,backdrop:backdropUrl}=RUN_ENVIRONMENT_URLS;
 const backdrop=createRunSourceCache(async options=>{const texture=await loadRunTexture(backdropUrl,options);texture.colorSpace=T.SRGBColorSpace;return texture;});
 const albedoMap=createRunSourceCache(async options=>{const texture=await loadRunTexture(stoneUrl,options);texture.colorSpace=T.SRGBColorSpace;texture.wrapS=texture.wrapT=T.RepeatWrapping;texture.anisotropy=4;return texture;});
 const normalMap=createRunSourceCache(async options=>{const texture=await loadRunTexture(normalUrl,options);texture.wrapS=texture.wrapT=T.RepeatWrapping;texture.anisotropy=4;return texture;});
@@ -16,7 +15,7 @@ function releaseModel(root){const geometries=new Set(),materials=new Set();root?
 const kit=createRunSourceCache(async({signal})=>{
  let source=null;const replacedGeometries=new Set(),mapsPending=loadStoneTextures({signal});mapsPending.catch(()=>{});
  try{
-  const response=await fetch(kitUrl,{signal});if(!response.ok)throw new Error('Run scenery download failed');const data=await response.arrayBuffer();if(signal.aborted)throw signal.reason;
+  const data=await acquireRunModelSource(kitUrl,{signal});if(signal.aborted)throw signal.reason;
   // This GLB embeds geometry only: no Draco, external buffers or image loaders.
   const gltf=await new GLTFLoader().parseAsync(data,new URL('.',new URL(kitUrl,import.meta.url)).href);source=gltf.scene;if(signal.aborted)throw signal.reason;
   const maps=await mapsPending;if(signal.aborted)throw signal.reason;

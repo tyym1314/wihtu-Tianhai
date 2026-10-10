@@ -52,7 +52,12 @@ test('Only the four used root trees remain, with every buffer byte, transform an
  for(const name of retained)assert.deepEqual(semantic(b,name),semantic(a,name),name);
  assert.equal(b.doc.nodes.some(n=>n.name.startsWith('Palace')),false);
  assert.equal(a.doc.buffers[0].byteLength-b.doc.buffers[0].byteLength,405768);
- const environment=readFileSync(new URL('../arena/run/environment.mjs',import.meta.url),'utf8');assert.match(environment,/import kitUrl from '\.\/assets\/environment\/oasis-kit-runtime-v1\.glb\?url'/);
+ const urls=readFileSync(new URL('../arena/run/asset-urls.mjs',import.meta.url),'utf8'),environment=readFileSync(new URL('../arena/run/environment.mjs',import.meta.url),'utf8');
+ assert.match(urls,/import kit from '\.\/assets\/environment\/oasis-kit-runtime-v1\.glb\?url'/);
+ assert.match(environment,/import \{RUN_ENVIRONMENT_URLS\} from '\.\/asset-urls\.mjs'/);
+ assert.match(environment,/const \{kit:kitUrl,/);
+ assert.match(environment,/import \{acquireRunModelSource\} from '\.\/asset-sources\.mjs'/);
+ assert.match(environment,/const data=await acquireRunModelSource\(kitUrl,\{signal\}\)/);
 });
 
 test('Actual GLTFLoader reconstructs identical retained prefab meshes and transforms',async()=>{

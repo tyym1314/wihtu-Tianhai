@@ -10,7 +10,7 @@ const configuration=JSON.parse(await readFile(path.join(build,'build-config.json
 const config=validateBuildConfiguration(configuration);
 assert.equal(config.flavor,flavor);
 assert.deepEqual(await sourceEvidence(),configuration.sourceEvidence,'Source changed during the build; rebuild before using this APK');
-const [manifest,resources,java,badging,signature,bytes,navigation,bridge,configurationChecks,apkManifest]=await Promise.all([
+const [manifest,resources,java,badging,signature,bytes,navigation,bridge,configurationChecks,apkManifest,activity]=await Promise.all([
  readFile(path.join(build,'generated','AndroidManifest.xml'),'utf8'),
  readFile(path.join(build,'generated','res','values','strings.xml'),'utf8'),
  readFile(path.join(build,'generated','PlayerBuildConfig.java'),'utf8'),
@@ -20,7 +20,8 @@ const [manifest,resources,java,badging,signature,bytes,navigation,bridge,configu
  readFile(path.join(build,'navigation-checks.json'),'utf8'),
  readFile(path.join(build,'back-checks.json'),'utf8'),
  readFile(path.join(build,'configuration-checks.tap'),'utf8'),
- readFile(path.join(build,'apk-manifest.txt'),'utf8')
+ readFile(path.join(build,'apk-manifest.txt'),'utf8'),
+ readFile(path.join(build,'activity-checks.json'),'utf8')
 ]);
 assert.deepEqual({manifest:sha256(manifest),resources:sha256(resources),configuration:sha256(java)},configuration.generatedSha256);
 assert.ok(badging.includes(`package: name='${config.packageName}' versionCode='1' versionName='${config.version}'`));
@@ -35,9 +36,11 @@ assert.match(certificateSha256||'',/^[0-9a-f]{64}$/);
 assert.match(configurationChecks,/# fail 0\b/);
 const configurationPasses=Number(configurationChecks.match(/# pass ([0-9]+)/)?.[1]);
 assert.ok(configurationPasses>0);
-const checks={configuration:{passed:true,groups:configurationPasses},navigation:JSON.parse(navigation),backBridge:JSON.parse(bridge)};
+const checks={configuration:{passed:true,groups:configurationPasses},navigation:JSON.parse(navigation),backBridge:JSON.parse(bridge),activityLifecycle:JSON.parse(activity)};
 assert.equal(checks.navigation.passed,true);
 assert.equal(checks.backBridge.passed,true);
+assert.equal(checks.activityLifecycle.passed,true);
+assert.ok(checks.activityLifecycle.scenarios>=14);
 const metadata={...config,apkSha256:sha256(bytes),certificateSha256,apkBytes:bytes.length,
  buildTools:'35.0.1',compileSdk:35,minSdk:26,targetSdk:35,builtAt:new Date().toISOString(),
  sourceEvidence:configuration.sourceEvidence,generatedSha256:configuration.generatedSha256,checks,

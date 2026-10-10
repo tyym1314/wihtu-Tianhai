@@ -1,67 +1,65 @@
 # 游戏平台交接 — 2026-10-10
 
-已有移动渲染、加载和占塔更新修复已合入master并公网部署。用户随后要求继续达到上线标准、使用真实后端与最简APK，并明确授权删除服务器Mock应用和测试数据。**当前公网仍是沙箱试玩，第三方商业上线验收未通过。** 历史失败不改判，独立Mock退役与真实生产环境建设分别验证。
+用户要求：界面和游戏流畅、达到上线标准；提供最简 APK；删除其他 Mock 应用及数据；使用真实数据和接口，已连接本机 Android 手机。工作仍在进行，尚未达到完整第三方接入上线标准。
 
-## 仓库与部署
+## 当前部署
 
-- GitLab：`https://gitlab.chatnaapp.com/similar/game/game-platform.git`，发布分支master；远端main已不存在。
-- 已发布应用源码：`a97071f52a438615be40862f3393e6a74e3ce6fd`。本次master新增的Player余额、返回桥和Android Player模块尚未切换公网；当前公网03仍对应此已发布源码。
-- 公网试玩：<https://game.tianyahuyu.com/demo/>；管理入口：<https://game.tianyahuyu.com/>。
-- 当前Public03 `20261009-03`，2026-10-09 15:51:37 UTC（北京时间23:51:37）启用；回滚 `20261009-02`。
-- 发布清单SHA-256 `1f95900328ab75a13054ade0d5f50d76b43e083c0bb8a70ac469153d34d14888`，校验1,137个文件。
-- 17:24:36 UTC独立读回确认当前/回滚版本、配置、进程、共享容器及静态资源head不变，公网健康和试玩入口200。专属Mock已完成退役；公网数据库和私有配置保留，切换前备份仍在。
+- 发布分支 master，本轮开始时 HEAD `13e91695aef6c5ddaee655e75a6102e4a0027b7f`。当前提交与未提交修改须重新读回 git。
+- 真实 Player：`https://oasis-player.43.98.202.236.sslip.io/player?app_id=app_e091fb5daf135660d39ce89fc23760ab`。
+- 独立生产实例：`/opt/oasis/production-current` 指向 `20261010-06`，API 18891、数据库 18893；真实注册账号、持久化会话、真实房间及生产账本，测试账号初始余额 0。
+- 已开放第一方免费练习的 11 款竞技游戏，概率游戏、资金转入转出、第三方资金接入仍未开放。免费练习通过不代表 13 款和资金上线通过。
+- release manifest SHA256 `1135152d247b7de6f8bdecac3ede9ac9fb4a1675936c9596dde6ddba2d353a25`；本地 build stamp SHA256 `aefc1f7b7ed3d75baac6ec092d1e31081617a03e0114fb26bd12423b1ffdc0a3`。
+- source06 发布时 HTML 权限 0600 导致游戏入口 404，已在锁内核对完整 manifest 后将公开运行文件权限规范化，字节/inode/mtime不变，11 个入口读回 200。打包和 delta staging 已修复此权限继承问题，24 项聚焦测试通过。
 
-## 性能修复与验证
+## 最简 APK 和设备
 
-实施和边界见 [PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md)、[ENGINE_AUDIT.md](ENGINE_AUDIT.md) 和 [SYNC_DESIGN.md](SYNC_DESIGN.md)。占塔活动读取250ms并限制最多2条物理GET；高尔夫分洞加载、装饰LOD及空闲反射/阴影节流；保龄球手机模型、缓存反射/Bloom；棋盘快照/UI稳定、等待绘制节流；Tiger空粒子停RAF；消消乐关键图与演出图片分级加载已发布。
+- `platform/android-player/` 为固定 HTTPS/AppID 的 WebView，包含返回桥、失败重试及生命周期处理。
+- 已加原生 2.5 秒返回 watchdog、前台 30 秒加载 watchdog；重试创建新 WebView，保留实际登录 Cookie，旧回调不影响新页面。
+- APK 配置 5 组、Java 导航 98 项、返回桥 12 项及真实 Activity 生命周期 14 场景/26 断言通过；QA/release v2/v3 签名验证通过。
+- QA APK 20,883 B，SHA256 `18575df7fda675f721850313df73ce405c3492e236bd2dd01cdcc4d755b99f01`，已安装，安装后 SHA 一致。
+- release APK 20,883 B，SHA256 `92f40b68ae6223e4fbdb0462a8dff32f5589fc33aa030fe68e27364abf92ac2e`，已完成 release 包真机原生启动/返回、真实登录零余额及重启 Cookie 保持；尚未完成完整游戏/性能验收和外部交付。
+- 实体手机 `46dcfd25`，Xiaomi `24053PY09C` / Android 16，USB ADB 5037。云机 `localhost:49342` 及其已有 forward 保留。旧文档的实体 ADB 5038 已过时。
+- 实际 HTTPS 主脚本 GET 阻塞后，原生超时和重试恢复同一账号、零余额及空 recovery；8 秒 JS 阻塞时原生返回约 2.64 秒关闭 Activity，重新打开读回真实身份。负向诊断与失败报告保留。
 
-完整后端回归 **2,584/2,584**，零失败/取消/跳过。原本机PostgreSQL两次文件open EINTR失败日志保留，新的独占临时cluster通过，测试数据库/自有cluster清理完成，原5487数据库未修改。构建输入/输出独立校验通过，公开历史APK 1.2.0 / versionCode 5保留并验证；这不是Mock APK 1.3.0的验收。
+## 真机验收进度
 
-发布后71次完整资源GET、67次条件GET通过，包括新旧资源、HTML入口及4个历史下载URL。实际公网Match、Golf、Bowling、Tower各一条可信触控操作被权威受理，序号均 `0→1`，真实模型匹配；四款UI停止、离房、终态、会话空房和页面/浏览器清理通过。先前工具退出失败的四间房亦已单独清理，无操作重发。
+- `current06-native-basic-a5`：消消乐真实操作/返回/零余额和空 recovery 通过；高尔夫击球真实 200、序号 0→1、返回和自有房间清理通过，但严格资源观察失败。
+- 高尔夫当前失败涉及 Draco worker 生成 Blob 的来源证据和退出时两张场景图片 `net::ERR_ABORTED`，正在修复证据分类与加载/退出衔接；不能忽略错误或把操作成功当整体通过。
+- `current06-native-run-perf-a1`：跑酷冷启动约 9.7 秒，超过 5 秒标准；8 次真实输入和运动画面已有证据，后续第 9 次输入前控件变 disabled 导致诊断退出，房间清理通过。报告仍失败。
+- `current06-native-run-perf-a2`：实际可玩 17,446ms；10 个权威受理输入，35,272.9ms 前台/活动运动、3,884 帧。后续可信 click 未产生下一次 inputs 请求，8 秒超时；真实房间 active→cancelled、active_room_id=null、清理通过。15 分钟、3 完整局及冷热各 5 次未完成，报告仍 fail。
+- 该轮 10 个 >50ms 帧间隔全部位于 5 组截图窗口内；原始最大 366.1ms 保留，不扣除重判。下一轮采集器将分离截图观测和不中断的连续采样，保留实际输入/运动/原始边界证明。
+- `current06-native-run-perf-a3`：分离截图后连续实际 45,555.1ms / 5,472 帧，p95/p99 8.4ms、最大 16.7ms、>50ms 为 0；前置截图的四个 282.7–316ms 停顿另行保留。冷启动实际可玩 10,296ms，16 次权威受理输入；最后一次可信 click 未产生第 17 个 POST，仍失败。失败现场为正常 provisional 落水恢复，但比点击晚约 7.4 秒，不能追认点击当时的拒绝分支。自有房间取消、账号无活动房间、forward/前台恢复均通过。
+- 已改输入前归属/状态核对，明确记录未发输入的自然状态变化；失败前也保留 probe。性能阈值没有降低。
+- 正在优化 Run 模块导入与真实资产下载的串行等待；候选 runtime 变化需要重新构建、发布并建立新证明。
+- source07 候选已完成真实素材并行下载/模块导入、默认大厅头像复用原始 atlas Blob、宿主确认返回时避免临时结果资源加载。21 文件冻结、168 单元测试及真实 DOM/素材检查通过；canonical build 已完成（1,761 输入 / 740 输出），尚未部署，真机性能仍需新证明。
+- source07 候选 build stamp SHA `3d5bd2cb91a9439ff0fd2314eb0560e04b70254c231f12879faad32562b65d10`，release manifest SHA `4e6ac604068a797110553b5784e3fd7468e5b9caf66ca17196381235e89bc9b5`（1,208 文件）；06→07 增量 552,455 B。实际 dist 的 Run WebGL/丢 ACK/授权恢复 3 检查及 onboarding 9 检查通过、源文件不变，均为独立本地 HTTP/PG 检查，不是手机或公开网络性能证明。
+- 标准见 `platform/specs/mobile-quality-v1.md/json`：完整冷热入口各 5 次、逐款至少 15 分钟/3 完整局/30 操作、帧间隔、延迟、生命周期、内容和服务端容量等。当前尚未完成这些门槛；Android RAF/桌面 CPU 节流不等于 GPU 显示帧率或 iPhone 验收。
 
-严格四款整体结果仍为 **Match通过，Golf/Bowling/Tower未通过**：每款一条房间GET `net::ERR_ABORTED`，分类 `UNKNOWN_COMPETING_NETWORK_REQUEST`；Golf另有两条导航/销毁后读响应body失败。取消与并发请求证据未完整保存，不能宣布正常取消或网络故障已确诊；后续应保存完整脱敏证据并离线重放、等待body观察完成再销毁页面，不能删除分类保护。串行桌面CPU节流渲染诊断的工作量明显降低，但没有手机GPU、显示合成或热稳定证据，`performancePass`仍为null。
+## Mock 清理
 
-## Mock退役与真实环境
+- 独立 Android Mock 服务、库、卷、网络及私有运行数据已退役，旧 Mock HTTPS 返回 410。
+- 手机 `com.tianyahuyu.oasis.mock` 和 `com.tianyahuyu.oasis.smoke` 已卸载，实际 package list 确认均不存在。
+- 旧公网 sandbox 已完成退役：固定 `oasis-postgres` / `oasis_platform` / `oasis-postgres-data` 与生产实例独立；先关闭旧公开路径和停止/disable 6 个测试 unit，再于 2026-10-10 10:47 UTC 删除其固定容器及专属卷。完成收据 SHA `ddb448e94c8e5bd18baf7db4ab3948ecd17fd206684f98e661730b5fddbb7b39`，五步历史保留，未伪造 ACK。历史恢复备份和源码未当作活动 Mock 库删除。
+- 只读审计确认所有财务未决计数为 0，另有 3 条已 SETTLED 的旧概率演出状态；用户已授权随旧测试库删除，不能通过伪造 ACK 或修改状态使其通过。
+- v6 两步后因 systemd Requires 顺序变化拒绝，原失败收据和只读诊断保持原字节。独立 v2 接续固定原始证据，仅接受 9 个生产/TLS 与 4 个已观测测试 service 的 Requires 成员相同排序变化，其余保护严格一致；fresh audit/check 后只执行剩余三步 Docker 操作。
+- 退役后旧 `/player` 跳转实际 Player，旧 demo/API/download 410，共享不可变资源、TLS、其他业务和生产实例需独立读回保持正常。
+- 独立最终读回 SHA `dabc588a288ecd74179143af72f7c410100fb5c65b45e61c46b7430794d1a5e8`：旧容器/卷/端口不存在、retained 保护 stable diff 为空、旧入口 410、实际 Player/生产 health 200，生产指针仍为 source06。服务器 `/opt/oasis` 可用约 9.34GB（十进制）。
 
-**专属Mock退役已完成**：2026-10-09 17:23:56 UTC（北京时间10日01:23:56），v7实际执行返回`complete / passed=true`，17:24:36 UTC独立检查通过。专属容器、数据库卷及物理数据目录、network、8个unit及drop-in、UID/GID、4个监听端口、专属nft表、运行密钥、完整私有树（含旧测试数据库/配置备份）、ACME webroot、续签配置和release pin均已移除。删除前只读SQL确认3个sandbox应用、110个会话及所有未决业务计数为0；这些应用/会话随专属库删除。没有新保留完整Mock数据库备份。
+## 证据和接手
 
-v5的已停服务对象读取失败、v6的umask077权限失败均保留原始收据和历史；v7仅修复两份已验证410配置的权限，并在新鲜检查、独占锁和再次只读业务复核后进入删除流程。退役工具50/50本地及独立复跑通过，源码SHA-256 `fa9664fe4b081804e77fe92fecb21d008dce27ca49a6338a85a68de79ed3150c`；最终receipt SHA-256 `931dfadda3577244b434ee86c74f95cf3e66053362ff61ac10f207d69737c920`。旧失败错误字段保留为历史，最终结果以完成阶段及独立读回为准。
+原始私有证据在被忽略的 `platform/review/`，不得整包上传；签名材料、凭据、依赖和构建输出按 `.gitignore` 排除。
 
-旧Mock域名四条严格TLS路径及HTTP入口均返回无上游410。仅保留退役审计记录、非敏感配置备份和现有TLS叶证书/密钥用于410，续签已禁用；共享素材、历史公开下载、不可变Mock23/24快照、公网数据库及回滚版本保留。当前公网试玩仍使用sandbox数据库，不能将本次专属Mock清理描述为已完成生产环境迁移。
+- `android-player-20261010/root-native-recovery-build-20261010/`：QA/release 构建与签名读回。
+- `android-player-20261010/root-qa-recovery-install-zf0w21sb/`：QA 实际安装读回。
+- `android-player-20261010/current06-release-native-smoke-a2/`、`current06-release-auth-smoke-a1/`：正式 release 实际安装、非debug、原生返回、真实登录/零余额及重启 Cookie 保持。
+- `android-player-20261010/current06-native-recovery-a2/`、`current06-native-recovery-back-a1/`：加载超时恢复和返回 watchdog。a2 后续 Debugger.pause 诊断失败未改判。
+- `android-player-20261010/current06-native-basic-a5/`、`current06-native-run-perf-a1/`：最新真机操作和性能失败报告。
+- `firstparty-release-20261010/root-refresh06-actual-6lr4yana/`：source06 fresh audit/check/实际开放收据。
+- `firstparty-release-20261010/source06-runtime-permissions-kneakqie/`：入口权限修复、字节保护及读回。
+- `firstparty-release-20261010/root-public-retirement-a1/` 至 `root-public-retirement-a6/`：旧公网库审计、检查、原始拒绝与部分执行诊断。
+- `firstparty-release-20261010/root-source07-backend-tests.log`：首次完整 2,743 项，2,704 通过/39 失败（3 旧 build pin、1 迁移后的 URL import 断言、35 本地 PG 文件读取 Interrupted system call）；相关数据库文件独立串行重测 43 项全部通过、测试库已删除。新 build 后仍需完整回归通过。
+- `firstparty-release-20261010/root-source07-backend-tests-a2.log`：新 build 后完整 2,746 项，2,739 通过/7 失败（6 本地 PG Interrupted system call、1 Run 存储绑定缺少预期 rejection）；原始失败未改判。
+- `firstparty-release-20261010/root-source07-backend-tests-a3.log`：新 `/private/tmp` 独立 5488 集群完整 2,746/2,746 通过、0 skipped，测试数据库及本轮集群已停止删除，原 5487 未修改。原 a2 失败保留，具体旧集群 EINTR 原因尚未确认。发布 Python 聚焦检查 52/52 通过，fresh build verify 通过。
+- `firstparty-release-20261010/root-public-retirement-resume-a2/`：新鲜 v2 audit/check、实际完成收据及独立最终读回；未来 source07 控制器必须从完成退役的保护接续，不能调用仍检查旧测试库的历史构造器。
 
-17:26:07 UTC按原目录设备/inode、root归属及12个文件的既定SHA删除了本次专用上传临时目录，服务器仅保留退役审计记录；本地原始检查、两次失败和成功读回证据仍保留。
-
-平台已有持久化真实账号、Secure/HttpOnly会话、BFF一次性launch code和真实平台账本路径；当前线上运行环境仍sandbox。生产数据库环境绑定不能就地从sandbox改成production。真实生产实例、显式AppID和生产准入还未启用；正式账号初始余额应为0，不能通过Mock填充伪造余额。生产概率游戏数学准入保护仍存在。
-
-新的最简 `platform/android-player/` 模块已完成安全WebView、固定HTTPS/AppID、生命周期、加载重试与原生返回桥。Node 5组、Java 98项、返回桥12项及构建拒绝/锁7项通过；16,787B的独立QA合约包已签名并检查清单。它使用 `.invalid` 配置验证构建边界，**不属于可联网交付APK**；需真实生产origin/AppID后构建并安装实体手机验证。Mock手机应用尚未据此替换。
-
-提交前仅清理13个文件的EOF空行后，按同一QA配置重新构建并校验上述配置/Java/返回合约及v2/v3签名，旧包和原始源码证据保留。新QA APK SHA-256 `a3ac05e748b1e12fc0029d7d86d978c2d71f9de2af70cd6bbd156f50a270ac8c`，源码SHA-256 `dd72a31f93da17d8d37734fd42991ed35119df50c5f6a800a5ccfdabba7c139d`；APK、签名材料与构建输出按忽略规则不上传。
-
-真实Player新增Cookie身份绑定的余额读取及精确最小货币单位显示，失败/注销后清空旧余额。原生返回仍由既有游戏SDK确认，已受理会话在加载或失败时不能直接离开。15项客户端/返回测试、9项独立PostgreSQL路由测试通过；本地真实HTTPS下Chromium和WebKit各10项通过，实际登录Cookie发送至API，测试数据库、浏览器和临时证书已清理。这些是本地验证，不替代公网生产或实体手机验收。
-
-新代码完整后端回归 **2,600/2,600**，零失败/跳过，27.7秒。首次2,598项执行的四个失败记录保留：三个缺失被忽略的历史APK构建合约文件，一个超时错误文案大小写断言。按原来源校验补回合约文件，并给相同20ms超时添加稳定错误码；单次输入、监听器释放和迟到响应断言仍保留。复跑使用独占临时PostgreSQL，零业务连接、进程停止、集群删除和端口回收均通过；原5487数据库未修改。
-
-新代码本地发布构建及独立新鲜度校验通过：1,726项输入、738项输出，构建期间源码无变化；清单SHA-256 `78f8cfde6222d1c4ad6cb413ec0a71b63894bba8eca1e233f59f4b920feea5c4`。首次构建缺少被忽略的概念图，失败日志保留；补回的10张图与已跟踪公开素材逐一SHA一致，保留资源包也符合锁定SHA。此清单不等于当前公网Public03清单，历史APK/接入包未改字节。
-
-## 剩余上线障碍
-
-- Run已复现权威快照不推进时耗尽120tick/2秒预测窗口并停顿，桌面公网仍出现约2.75秒权威更新间隔。同步方案已成文，v2.3窗口/协议尚未修改。必须同时处理协议协商、服务端历史提交、客户端预算与兼容性，不能只抬常量或靠换引擎宣布解决。
-- 实体Android 16 / Xiaomi 24053PY09C连接独立ADB端口5038；默认5037为云机。Public02曾完成60.163秒同房观察及9条权威输入，但运动分析/退出整体未通过；不替代本次版本验收或iPhone Safari体感结论。
-- 全13款完整局、冷热入口各5次、移动手势、弱网/音效/温控、至少15分钟与3完整局、复杂中盘和关卡难度/可玩性尚未全部验收，遵循 `platform/specs/mobile-quality-v1.md`。高尔夫第二洞原始近景叶片遮挡洞口/庆祝仍需打磨。
-- COIN来自第三方应用划转、双方账本对账；资金核心默认关闭。真实合作方适配、归属证明、双方差异对账与资金联调尚未完成，不能直接打开资金开关。
-- 服务器17:24 UTC剩余7,848,300,544B / 41,882,943,488B（约7.85GB / 41.88GB）；这是退役后读回。未来发布继续重新计算15% / 3GiB门槛，长期容量与并发验证仍需完成。
-
-## 接手与证据
-
-从远端master拉取已发布代码。依赖、构建输出、本地数据库、证书、密码、私有配置按 `.gitignore` 排除，在新机器通过安全渠道配置；不能上传凭据或用空文件绕过保留资源校验。私有测试证据不得整包上传。
-
-执行机原始证据位于被忽略的 `platform/review/`：
-
-- `release/public-20261009-03-preparation/`：发布、静态回归及16:14:46读回。
-- `mobile-performance-20261009/backend-final-isolated-temp.log`：2,584项完整后端回归。
-- `mobile-performance-20261009/public03-runtime/runs/2026-10-09T16-11-01.554Z-8715d95f/report.json`：四款严格整体结果。
-- `engine-audit-20261009/two-scenes-2026-10-09T15-32-02.359Z/`：60秒串行桌面渲染诊断。
-- `mock-retirement-20261010/`：专属Mock只读库存与后续退役证据。
-- `player-wallet-final-backend-20261010-rerun-v2/`：新代码2,600项后端回归、输入归属与清理证据。
-- `player-wallet-return-tls-20261010/`：真实本地HTTPS的Chromium/WebKit余额与返回验证。
-- `player-wallet-build-20261010/attempt-v2/`：新代码发布构建、完整输入/输出SHA及新鲜度校验。
+后续操作前重新检查 git、部署指针、进程归属、空间及自有房间；保护历史 receipt/controller 外部 SHA，不得修改冻结历史文件来绕过状态变化。完成后提供实际可用交付物、最终提交/推送及 git status 读回。

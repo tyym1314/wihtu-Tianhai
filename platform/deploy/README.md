@@ -144,3 +144,17 @@ journalctl -u oasis-backup.service -n 30 --no-pager
 浏览器验证采用桌面 Chrome 的移动视口；两访客对局使用 HTTP 客户端。这些结果不代替 Android／iPhone 原生 WebView、多人真机、并发容量、容灾恢复或真实合作方钱包验收。
 
 同日切换至 `game.tianyahuyu.com` 后，重新通过 12 款启动／试玩／返回、管理员登录、测试币双人结算与重试隔离、接入包下载和新证书续期演练。证据为本机 `platform/review/deployment/custom-domain-acceptance.json`，服务器副本为 `/opt/oasis/acceptance/custom-domain-acceptance.json`。首轮浏览器检查为绕过本机此前缓存的 NXDOMAIN，显式指定了目标 IP，始终开启 TLS 证书验证；DNS 缓存刷新后，另用未指定 IP 的浏览器确认域名解析、12 款大厅和游戏启动／返回正常。旧 HTTPS 链接保留路径及查询参数，301 跳转到新域名。
+
+## 公共沙箱退役工具
+
+已结算演出例外固定为只读诊断观察到的 3 条 session/cycle/state/result 哈希、结算时间及 `pendingPlay` 类型（两条旧 JSON 字符串、一条 `null`）。这些字段的任何变化仍拒绝，不能扩展为任意已结算状态或执行确认操作。
+
+`check` 保留 expected/actual 原始快照及精确字段差异。仅 PostgreSQL 客户端及 4 组连接数组，在每次完整实时归属检查、两份 raw 再次 PG/socket join 核验通过且 API/proxy PID、目标 IP/namespace 范围完全相同时，允许连接池端口、inode、数量变化并记录 `allowed_observed_differences`；其他字段仍逐项精确比较，只忽略采集时间。停服务后仍必须没有任何外来数据库客户端。首次 apply 检查拒绝会在指定私有新路径写 `before_mutation_refused` 收据，`history=[]`、`no_business_mutation=true`，随后终止，不进入任何业务修改；不完整 audit 明确记录为未完成，不能把缺失证据当作相同状态。
+
+退役状态要求全部 6 个单元 inactive、MainPID/ControlPID 为零，API、试玩及两个 timer 必须 disabled。仅原 audit 已确认 `static` 的 backup/monitor service 保留该状态，同时对应 timer 必须 disabled/inactive，job 没有外部触发或依赖；其他单元或后来出现的 static 状态仍拒绝。
+
+仅已观测的 9 个生产/TLS 单元 `Requires` 字段按依赖成员集合比较，拒绝重复成员、非字符串、空字段及非单空格分隔；成员变化和其他全部保护字段仍精确拒绝。每次保护检查保留原始 expected/actual、raw 差异、允许的顺序差异及归一后的差异，最终收据保留实际读回的保护快照。部分退役不能重跑原 apply，须以全部冻结原始证据和新鲜现场核验准备独立续退役工具。
+
+`retire-public-sandbox.py` 的 `audit`（默认）与 `check` 只读取运行状态并输出私有证据；`apply` 必须另带 `--apply`。先准备 root 独占、权限 `0700` 的 `/opt/oasis/public-sandbox-retirement-20261010`，传入已核对 SHA256 的 source06 `complete_free_open` 生产收据，依次生成新鲜 inventory、外部核对其 SHA256、生成 check，再带 inventory/check 的外部 SHA256 执行 apply。证据最长有效 10 分钟。工具只停用公共 API、试玩宿主及其 backup/monitor 的 6 个单元，只删除固定 ID 的 `oasis-postgres` 容器和其唯一消费的 `oasis-postgres-data` 数据卷；所有财务及服务端未决业务必须为零。3 条已独立诊断的 `SETTLED` sandbox 演出残留仅在精确 session/App/game 范围及完整 session/cycle/state/result SHA256 证据覆盖时允许随专用卷丢弃，保留真实 `pending_presentations` 计数并明确未执行 ACK。数据库消费者同时核验 PostgreSQL 后端与各进程网络命名空间，包含共享 bridge 直连 `5432`；停 API 后必须没有外来客户端。外来进程/连接/依赖/数据卷消费者、加载后的未知命令或保护项变化均拒绝。局部检查可运行 `python3 platform/deploy/test_retire_public_sandbox.py`。
+
+路由只精确修改 `/etc/nginx/conf.d/oasis.conf`，修改前核对原字节 SHA256，并以 `*.started.json` 私有记录保留原配置字节，修改后通过 `nginx -t` 才重载：公共 sandbox 页面、API 和旧下载返回 `410`，`/player` 以 `302` 转到独立生产域名并保留 `app_id` 等查询参数。共享 bridge、其他容器和 `5433`/`8850–8859` 业务、主域 TLS/ACME 续期、静态资源 HEAD、release/operations 锁、全部生产数据及历史控制器证据保留；共享代理容器 `/etc/nginx` 全部普通文件哈希按原生产收据核对并逐次重读。成功收据另附 `protection_handoff`，记录原 public 进程/数据库/健康页/Nginx 保护项的明确撤销及新保留项；后续控制器必须核验该收据，不能改写旧保护快照。`partial_refusal` 只证明已记录阶段，必须先读回现场再处理，不能据此宣布退役或盲目重跑。工具通过局部测试不等于服务器已经退役。

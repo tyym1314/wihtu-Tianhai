@@ -26,6 +26,8 @@ const modules={
 };
 const bundle=await build({entryPoints:[resolve(root,'arena/main.jsx')],bundle:true,write:false,outdir:'/virtual-run-host-return',format:'esm',jsx:'automatic',logLevel:'silent',loader:{'.webp':'dataurl','.svg':'dataurl','.png':'dataurl'},plugins:[{name:'isolated-run-exit',setup(b){
  if(baseline)b.onLoad({filter:/\/arena\/main\.jsx$/},()=>({contents:oldMain,loader:'jsx',resolveDir:resolve(root,'arena')}));
+ // Graphics are intentionally stubbed in this lifecycle/input fixture.
+ b.onLoad({filter:/\/arena\/run\/asset-urls\.mjs$/},()=>({contents:'export const runAssetSourcePlan=()=>({images:[],models:[]});export const RUN_ATLAS_URLS={front:"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="};',loader:'js'}));
  b.onResolve({filter:/^\/arena\/assets\//},()=>({path:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',external:true}));
  b.onLoad({filter:/\/arena\/run\/(scene\.mjs|atlas-characters\.mjs|environment\.mjs)$/},a=>({contents:modules[a.path.split('/').at(-1)],loader:'js'}));
  b.onLoad({filter:/\/arena\/match\/assets\.mjs$/},()=>({contents:'export const preloadMatchAssets=async()=>{}',loader:'js'}));

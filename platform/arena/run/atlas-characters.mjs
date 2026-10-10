@@ -1,15 +1,10 @@
 import * as T from 'three';
-import foxRun from './assets/atlases/run-fox-v4-mobile-bd3571fd7e.webp?url';
-import catRun from './assets/atlases/run-cat-v4-mobile-e8ac410768.webp?url';
-import bearRun from './assets/atlases/run-bear-v4-mobile-9b7c40a00c.webp?url';
-import rabbitRun from './assets/atlases/run-rabbit-v4-mobile-415ab8b203.webp?url';
-import actionUrl from './assets/atlases/action-back-mobile-81e5c62e42.webp?url';
-import frontUrl from './assets/atlases/front-win-mobile-902055527a.webp?url';
+import {RUN_CYCLE_URLS,RUN_ATLAS_URLS} from './asset-urls.mjs';
+export {RUN_CYCLE_URLS,RUN_ATLAS_URLS} from './asset-urls.mjs';
 import {createRunSourceCache,loadRunTexture,prepareRunAssets} from './asset-loading.mjs';
 import {selectRunPreloadKinds} from './asset-selection.mjs';
 import {readRunVisualAction} from './input-presentation.mjs';
-export const RUN_CYCLE_URLS={fox:foxRun,cat:catRun,bear:bearRun,rabbit:rabbitRun};
-export const RUN_ATLAS_URLS={run:foxRun,action:actionUrl,front:frontUrl};
+const {action:actionUrl,front:frontUrl}=RUN_ATLAS_URLS;
 export const RUN_CYCLE_FRAMES=8;
 // A URL switch allows a same-device A/B: ?runAtlasBlend=0 restores the original
 // single-sample sprite shader if the extra atlas lookup costs too much on GPU.

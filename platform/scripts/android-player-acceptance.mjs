@@ -15,6 +15,7 @@ import {playOneArenaAction} from './android-game-actions.mjs';
 import {parseAndroidForwards,ownedAndroidForward,assertAndroidForwardsRestored,androidForeground,assertAndroidSessionBaseline,assertAndroidOneAction,cleanupOwnedAndroidSession} from './android-webview-checks.mjs';
 import {installNativeFetchProbe,observeNativeBrowser,runNativeActionOnce,nativeErrorsEmpty,createNativeCleanupApi} from '../deploy/native-browser-checks.mjs';
 import {formatPlayerMinor} from '../src/pages/PlayerClient.mjs';
+import {installOwnedPlayerResourceEvidence,validateConsumedImageEvidence,deliveryProofForRow,generatedScriptProofForResponse} from './android-player-resource-evidence.mjs';
 import {playerAcceptanceArguments,readPlayerArtifact,createPlayerEvidenceRedactor,readPlayerCredentials,assertPlayerLobbyBaseline,assertPlayerZeroWallet,assertOwnedPlayerArenaState,assertPlayerReturnReadback,playerResourceManifest,assertPlayerResourceBody,assertInstalledPlayerArtifact,playerEvidenceHash,playerShellSourcePins,playerRunResumeEvidence} from './android-player-acceptance-checks.mjs';
 
 const ROOT=fileURLToPath(new URL('../',import.meta.url)),execute=promisify(execFile);
@@ -54,34 +55,133 @@ export function playerTouchFrame(frame,{tap,touch}){
 /** Retains raw protocol and complete observed bodies, with original byte hashes
  * separate from redacted stored JSON. Never treats missing/failed bodies as pass.
  */
-export async function collectPlayerEvidence({context,page,origin,manifest,out,redactor,result}){
- const cdp=await context.newCDPSession(page),tasks=new Set(),raw=[],responses=[],errors=[],requests=[],requestRows=new WeakMap();let sequence=0,totalBytes=0,closed=false;
+export async function collectPlayerEvidence({context,page,origin,manifest,out,redactor,result,resourceDrainTimeoutMs=15000,resourceOutputRoot}){
+ assert.ok(Number.isSafeInteger(resourceDrainTimeoutMs)&&resourceDrainTimeoutMs>0&&resourceDrainTimeoutMs<=15000,'RESOURCE_DRAIN_BOUND');
+ const cdp=await context.newCDPSession(page),tasks=new Set(),raw=[],responses=[],errors=[],requests=[],requestRows=new WeakMap(),cdpRequests=new Map(),contexts=new Map(),resourceDocuments=new Map(),rawBodyDiagnostics=[],resourceSnapshots=[],handlers=[],initHandles=[];
+ const imagePath=path=>!/^\/(?:api|v1)(?:\/|$)/.test(path)&&/\.(?:webp|png|jpe?g|svg|avif|gif)$/.test(path),hasImages=[...manifest.expected.keys()].some(imagePath);
+ const entryUrl=hasImages?page.url():null,nonce=randomUUID();let sequence=0,totalBytes=0,closed=false;
  const rememberPost=value=>{if(value){try{redactor.remember(JSON.parse(value));}catch{redactor.add(value);}}};
- for(const event of ['Network.requestWillBeSent','Network.responseReceived','Network.loadingFinished','Network.loadingFailed','Page.frameNavigated','Runtime.exceptionThrown','Security.visibleSecurityStateChanged'])cdp.on(event,value=>{
+ const on=(event,fn)=>{cdp.on(event,fn);handlers.push({event,fn});},key=row=>row.frameId+':'+row.contextId;
+ for(const event of ['Network.requestWillBeSent','Network.responseReceived','Network.loadingFinished','Network.loadingFailed','Page.frameNavigated','Runtime.executionContextCreated','Runtime.executionContextDestroyed','Runtime.executionContextsCleared','Runtime.exceptionThrown','Security.visibleSecurityStateChanged'])on(event,value=>{
   redactor.remember(value);if(event==='Network.requestWillBeSent')rememberPost(value.request?.postData);raw.push({event,value});
  });
- await cdp.send('Network.enable');await cdp.send('Page.enable');await cdp.send('Runtime.enable');await cdp.send('Security.enable');await cdp.send('Network.setCacheDisabled',{cacheDisabled:true});
- const onRequest=request=>{try{const u=new URL(request.url());if(!['http:','https:'].includes(u.protocol))return;const row={id:++sequence,at:Date.now(),url:request.url(),method:request.method(),frame:request.frame()?.url(),headers:request.headers(),postData:request.postData(),resourceType:request.resourceType()};redactor.remember(row.headers);rememberPost(row.postData);requests.push(row);requestRows.set(request,row);if(u.origin!==origin&&!['https://fonts.googleapis.com','https://fonts.gstatic.com'].includes(u.origin))errors.push('UNEXPECTED_NETWORK_ORIGIN: '+u.origin);}catch(error){errors.push('REQUEST_OBSERVATION_FAILED: '+error.message);}};
+ on('Runtime.executionContextCreated',({context:realm})=>contexts.set(realm.id,realm));
+ on('Runtime.executionContextDestroyed',({executionContextId})=>contexts.delete(executionContextId));on('Runtime.executionContextsCleared',()=>contexts.clear());
+ on('Network.requestWillBeSent',event=>{
+  try{assert.ok(cdpRequests.size<50000,'RESOURCE_NETWORK_RECORD_BOUND');
+   const realms=[...contexts.values()].filter(realm=>realm.auxData?.isDefault&&realm.auxData.frameId===event.frameId);
+   cdpRequests.set(event.requestId,{id:event.requestId,url:event.request.url,frameId:event.frameId,contextId:realms.length===1?realms[0].id:null,method:event.request.method,type:event.type,redirected:!!event.redirectResponse||cdpRequests.has(event.requestId),transferFinished:false,response:null,failed:false});
+  }catch(error){errors.push(error.message);}
+ });
+ on('Network.responseReceived',({requestId,response})=>{const row=cdpRequests.get(requestId);if(row)row.response={status:response.status,fromServiceWorker:response.fromServiceWorker===true};});
+ on('Network.loadingFinished',({requestId})=>{const row=cdpRequests.get(requestId);if(row)row.transferFinished=true;});
+ on('Network.loadingFailed',({requestId,errorText})=>{const row=cdpRequests.get(requestId);if(row){row.failed=true;row.failure=errorText;}});
+ try{
+  if(hasImages){
+   assert.equal(new URL(entryUrl).origin,origin,'RESOURCE_PARENT_ORIGIN_REQUIRED');assert.equal(new URL(entryUrl).pathname,'/player','RESOURCE_PARENT_ENTRY_REQUIRED');
+   // Only an immutable document identity is installed here. There is no RAF,
+   // generated input, Response clone or replacement network response.
+   const identityHandle=await context.addInitScript(({origin,entryUrl,games,nonce})=>{
+    let game;try{const u=new URL(location.href);game=u.pathname.slice('/play/'.length);if(globalThis===parent||parent!==top||u.href!==origin+'/play/'+game||!games.includes(game)||parent.location.href!==entryUrl)return;}catch{return;}
+    if(Object.prototype.hasOwnProperty.call(globalThis,'__oasisPhysicalPerf'))throw Error('RESOURCE_DOCUMENT_IDENTITY_ALREADY_INSTALLED');
+    const id=new Uint8Array(16);crypto.getRandomValues(id);Object.defineProperty(globalThis,'__oasisPhysicalPerf',{value:Object.freeze({schema:'android-physical-performance-v1',nonce,documentId:Array.from(id,v=>v.toString(16).padStart(2,'0')).join(''),timeOrigin:performance.timeOrigin,url:location.href}),configurable:false,writable:false});
+   },{origin,entryUrl,games:ARENA_IDS,nonce});
+   assert.ok(identityHandle&&typeof identityHandle.dispose==='function','RESOURCE_IDENTITY_INIT_DISPOSABLE_REQUIRED');initHandles.push(identityHandle);
+   initHandles.push(await installOwnedPlayerResourceEvidence(context,{origin,entryUrl,games:ARENA_IDS,manifest,nonce,root:resourceOutputRoot}));
+  }
+  await cdp.send('Network.enable');await cdp.send('Page.enable');await cdp.send('Runtime.enable');await cdp.send('Security.enable');await cdp.send('Network.setCacheDisabled',{cacheDisabled:true});await mkdir(join(out,'bodies'),{recursive:true,mode:0o700});
+ }catch(error){for(const {event,fn}of handlers)cdp.off(event,fn);await Promise.allSettled(initHandles.map(handle=>handle.dispose()));await cdp.detach().catch(()=>{});throw error;}
+ const bounded=async(work,ms,label)=>{let timer;try{return await Promise.race([work,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(label)),ms);})]);}finally{clearTimeout(timer);}};
+ const validateDocument=document=>{
+  for(const receipt of document.snapshot.receipts)for(const source of cdpRequests.values())if(source.url===receipt.sourceUrl&&source.frameId===document.scope.frameId){assert.equal(source.contextId,document.scope.contextId,'RESOURCE_SOURCE_CONTEXT_CHANGED');assert.ok(!source.redirected,'RESOURCE_SOURCE_REDIRECT_REFUSED');}
+  return validateConsumedImageEvidence(document.snapshot,{origin,entryUrl,game:document.game,nonce,documentId:document.owner.documentId,timeOrigin:document.owner.timeOrigin,scope:document.scope,manifest,requests:[...cdpRequests.values()]});
+ };
+ const retainSnapshot=(row,document)=>{const value={responseId:row.id,scope:document.scope,owner:document.owner,snapshot:document.snapshot};if(row.resource_snapshot_index===undefined){row.resource_snapshot_index=resourceSnapshots.length;resourceSnapshots.push(value);}else resourceSnapshots[row.resource_snapshot_index]=value;};
+ async function delivery(row,{generatedScript=false}={}){
+  const matches=[...cdpRequests.values()].filter(get=>get.url===row.url&&get.method===row.method);
+  const cachedMatches=matches.filter(get=>resourceDocuments.get(key(get))?.owner.url===row.frame),liveRealms=[...contexts.values()].filter(realm=>realm.auxData?.isDefault);
+  let get,document;
+  if(cachedMatches.length===1&&!liveRealms.some(realm=>realm.id===cachedMatches[0].contextId)){get=cachedMatches[0];document=resourceDocuments.get(key(get));}
+  else{
+   const {frameTree}=await cdp.send('Page.getFrameTree');assert.equal(frameTree?.frame.url,entryUrl,'RESOURCE_PARENT_DOCUMENT_CHANGED');
+   const frames=(frameTree.childFrames||[]).filter(child=>child.frame.url===row.frame&&child.frame.parentId===frameTree.frame.id);
+   assert.equal(frames.length,1,'RESOURCE_OWN_GAME_FRAME_AMBIGUOUS');const frame=frames[0].frame,game=frame.url.slice((origin+'/play/').length);
+   assert.ok(frame.url===origin+'/play/'+game&&ARENA_IDS.includes(game),'RESOURCE_OWN_GAME_FRAME_REQUIRED');
+   const realms=liveRealms.filter(realm=>realm.auxData.frameId===frame.id&&realm.origin===origin);assert.equal(realms.length,1,'RESOURCE_CDP_CONTEXT_REQUIRED');
+   const owned=matches.filter(candidate=>candidate.frameId===frame.id&&candidate.contextId===realms[0].id);
+   if(generatedScript){assert.ok(owned.length>0&&owned.every(candidate=>candidate.type==='Script'&&!candidate.redirected&&!candidate.failed),'GENERATED_SCRIPT_CDP_SCOPE_UNPROVEN');row.cdp_request_ids=owned.map(candidate=>candidate.id);}
+   else assert.equal(owned.length,1,'RESOURCE_DELIVERY_REQUEST_AMBIGUOUS');get=owned[0];
+   const scope={frameId:frame.id,contextId:realms[0].id},end=Date.now()+resourceDrainTimeoutMs;
+   for(;;){
+    assert.ok(Date.now()<end,'RESOURCE_DELIVERY_DRAIN_TIMEOUT');assert.ok(contexts.has(scope.contextId),'RESOURCE_GAME_EXECUTION_CONTEXT_LOST');
+    const evaluated=await bounded(cdp.send('Runtime.evaluate',{expression:`(async()=>{const p=globalThis.__oasisPhysicalPerf,c=globalThis.__oasisConsumedImageEvidence;return {owner:p?{schema:p.schema,nonce:p.nonce,documentId:p.documentId,timeOrigin:p.timeOrigin,url:p.url}:null,snapshot:c?await c.drain(${resourceDrainTimeoutMs}):null};})()`,contextId:scope.contextId,returnByValue:true,awaitPromise:true}),end-Date.now(),'RESOURCE_DELIVERY_DRAIN_TIMEOUT');
+    assert.ok(!evaluated.exceptionDetails,'RESOURCE_DELIVERY_EVALUATION_FAILED');const value=evaluated.result?.value,owner=value?.owner;
+    document={game,scope,owner,snapshot:value?.snapshot};retainSnapshot(row,document);
+    assert.ok(owner?.schema==='android-physical-performance-v1'&&owner.nonce===nonce&&owner.url===frame.url&&/^[a-f0-9]{32}$/.test(owner.documentId)&&Number.isFinite(owner.timeOrigin),'RESOURCE_NATIVE_DOCUMENT_UNPROVEN');
+    const prior=resourceDocuments.get(key(get));if(prior)assert.deepEqual(owner,prior.owner,'RESOURCE_NATIVE_DOCUMENT_CHANGED');
+    assert.ok(document.snapshot,'RESOURCE_EVIDENCE_MISSING');assert.deepEqual(document.snapshot.errors,[],'RESOURCE_EVIDENCE_ERRORS');
+    assert.deepEqual(document.snapshot.identity,{nonce,documentId:owner.documentId,timeOrigin:owner.timeOrigin,url:frame.url,parentUrl:entryUrl},'RESOURCE_DOCUMENT_IDENTITY_CHANGED');
+    const allReceipts=[...document.snapshot.receipts,...(document.snapshot.generatedReceipts||[])],receipt=allReceipts.find(receipt=>row.url.startsWith('blob:')?receipt.blobUrls.some(blob=>blob.url===row.url):receipt.sourceUrl===row.url);
+    if((!receipt||!receipt.hashComplete||!receipt.blobUrls.length||!generatedScript&&!get.transferFinished)&&document.snapshot.phase==='loading'){
+     if(row.url.startsWith('blob:')&&allReceipts.some(receipt=>receipt.hashComplete)&&!receipt)throw Error('RESOURCE_ALTERNATIVE_DELIVERY_UNPROVEN');
+     if(get.failed||get.response?.fromServiceWorker)break;await sleep(Math.min(25,Math.max(1,end-Date.now())));continue;
+    }
+    try{validateDocument(document);}catch(error){
+     // A different image may have just resolved Response.blob while its native
+     // object URL or transfer is still finishing. Only incomplete work retries.
+     const incomplete=document.snapshot.receipts.some(receipt=>!receipt.hashComplete||!receipt.blobUrls.length||[...cdpRequests.values()].some(source=>source.url===receipt.sourceUrl&&source.frameId===scope.frameId&&!source.transferFinished&&!source.failed));
+     if(document.snapshot.phase==='loading'&&incomplete&&/RESOURCE_CONSUMED_BYTES_UNPROVEN|RESOURCE_OBJECT_URL_UNPROVEN|RESOURCE_SOURCE_GET_UNPROVEN|RESOURCE_HASH_TASKS_NOT_CLOSED/.test(error.message)){await sleep(Math.min(25,Math.max(1,end-Date.now())));continue;}throw error;
+    }
+    break;
+   }
+  }
+  assert.ok(!get.redirected,'RESOURCE_DELIVERY_REDIRECT_REFUSED');const evidence=validateDocument(document),proof=generatedScript?generatedScriptProofForResponse({...row,frameId:document.scope.frameId,contextId:document.scope.contextId,transferFinished:row.worker_response_finished===true},evidence,{origin,manifest,bodyPins:responses}):deliveryProofForRow(get,evidence,{origin,manifest});
+  if(row.original_bytes>0)assert.equal(row.original_sha256,proof.sha256,'RESOURCE_NONEMPTY_CDP_BODY_CONFLICT');
+  resourceDocuments.set(key(get),document);retainSnapshot(row,document);
+  row.cdp_request_id=get.id;row.deliveryProof=proof;row.rawBodyDiagnostic.requestId=get.id;row.rawBodyDiagnostic.frameId=get.frameId;row.rawBodyDiagnostic.contextId=get.contextId;row.rawBodyDiagnostic.resolvedByIndependentDelivery=true;
+  if(generatedScript){row.rawBodyDiagnostic.mainFrameCdpWorkerTransfers=(row.cdp_request_ids||[get.id]).map(id=>{const item=cdpRequests.get(id);return {requestId:id,transferFinished:item.transferFinished,response:item.response,failed:item.failed};});row.pin={path:row.url,sha256:proof.sha256,bytes:proof.bytes,source:'Exact original readable Worker response bound to the release-manifest decoder/module recipe and the actual native Blob',sourcePins:proof.sourcePins};}
+ }
+ const onRequest=request=>{try{const u=new URL(request.url());if(!['http:','https:','blob:'].includes(u.protocol))return;const row={id:++sequence,at:Date.now(),url:request.url(),method:request.method(),frame:request.frame()?.url(),headers:request.headers(),postData:request.postData(),resourceType:request.resourceType()};redactor.remember(row.headers);rememberPost(row.postData);requests.push(row);requestRows.set(request,row);if(u.origin!==origin&&!['https://fonts.googleapis.com','https://fonts.gstatic.com'].includes(u.origin))errors.push('UNEXPECTED_NETWORK_ORIGIN: '+u.origin);}catch(error){errors.push('REQUEST_OBSERVATION_FAILED: '+error.message);}};
  const onResponse=response=>{
   const work=(async()=>{
    const request=response.request(),u=new URL(response.url()),status=response.status(),headers=await response.allHeaders();redactor.remember(headers);
    const row={id:responses.length+1,at:Date.now(),request_at:requestRows.get(request)?.at??null,request_id:requestRows.get(request)?.id??null,request_headers:requestRows.get(request)?.headers??null,url:response.url(),path:u.pathname,method:request.method(),status,frame:request.frame()?.url(),resourceType:request.resourceType(),headers};responses.push(row);
-   if(!response.ok())row.body_error='NON_SUCCESS_STATUS';
-   const bytes=await response.body();row.original_sha256=playerEvidenceHash(bytes);row.original_bytes=bytes.length;totalBytes+=bytes.length;assert.ok(totalBytes<=256*1024*1024,'EVIDENCE_BODY_BOUND_EXCEEDED');
+   if(!response.ok())row.body_error='NON_SUCCESS_STATUS';let bytes,bodyError;
+   try{bytes=await response.body();row.original_sha256=playerEvidenceHash(bytes);row.original_bytes=bytes.length;totalBytes+=bytes.length;assert.ok(totalBytes<=256*1024*1024,'EVIDENCE_BODY_BOUND_EXCEEDED');}catch(error){bodyError=error;}
    const api=u.origin===origin&&(/^\/(api|v1)\//.test(u.pathname)||['/health','/health/ready'].includes(u.pathname));
+   const ownGame=ARENA_IDS.some(game=>row.frame===origin+'/play/'+game),image=row.resourceType==='image'||imagePath(u.pathname),ownImage=hasImages&&!api&&ownGame&&image&&u.origin===origin&&row.method==='GET'&&status===200;
+   const ownGeneratedScript=hasImages&&ownGame&&u.protocol==='blob:'&&u.origin===origin&&row.resourceType==='script'&&row.method==='GET'&&status===200&&bytes?.length>0&&!bodyError;
+   if(bodyError&&!ownImage)throw bodyError;if(bodyError?.message==='EVIDENCE_BODY_BOUND_EXCEEDED')throw bodyError;
    if(api){try{const value=JSON.parse(bytes);redactor.remember(value);row.body=value;row.body_format='redacted-json';}catch{row.body=bytes.toString('utf8');row.body_format='redacted-text';errors.push('API_RESPONSE_JSON_INVALID: '+u.pathname);}return;}
    if(!response.ok()){row.body=bytes.toString('utf8');row.body_format='redacted-text';return;}
    if(['document','script','stylesheet','image','font','media','fetch','xhr'].includes(request.resourceType())){
-    row.pin=u.origin===origin?assertPlayerResourceBody(response.url(),bytes,{origin,manifest}):{sha256:row.original_sha256,bytes:bytes.length,source:'Observed external HTTPS public asset; not a release output pin',origin:u.origin};const file='body-'+row.original_sha256;
-    await writeFile(join(out,'bodies',file),bytes,{mode:0o600,flag:'wx'}).catch(error=>{if(error.code!=='EEXIST')throw error;});row.stored_body='bodies/'+file;
+    try{if(bodyError)throw bodyError;if(u.protocol==='blob:')throw Error('UNPINNED_PLAYER_RESOURCE: '+u.pathname);row.pin=u.origin===origin?assertPlayerResourceBody(response.url(),bytes,{origin,manifest}):{sha256:row.original_sha256,bytes:bytes.length,source:'Observed external HTTPS public asset; not a release output pin',origin:u.origin};}
+    catch(error){
+     if(!ownImage&&!ownGeneratedScript)throw error;
+     const diagnostic={responseId:row.id,path:row.path,url:row.url,code:bytes===undefined?'CDP_RESPONSE_BODY_UNAVAILABLE':u.protocol==='blob:'?'UNPINNED_PLAYER_RESOURCE':'PLAYER_RESOURCE_BODY_SHA_MISMATCH',originalError:error.message,bodyBytes:row.original_bytes??null,bodySha256:row.original_sha256??null,nonemptyPublicBodyConflict:!!(bytes?.length&&u.protocol!=='blob:'),resolvedByIndependentDelivery:false};
+     rawBodyDiagnostics.push(diagnostic);row.rawBodyDiagnostic=diagnostic;if(diagnostic.nonemptyPublicBodyConflict)throw error;
+     try{if(ownGeneratedScript){assert.equal(typeof response.finished,'function','GENERATED_SCRIPT_RESPONSE_FINISH_REQUIRED');const failure=await bounded(response.finished(),resourceDrainTimeoutMs,'GENERATED_SCRIPT_RESPONSE_FINISH_TIMEOUT');assert.equal(failure,null,'GENERATED_SCRIPT_RESPONSE_FINISH_FAILED');row.worker_response_finished=true;await delivery(row,{generatedScript:true});}else await delivery(row);}catch(proofError){diagnostic.deliveryError=proofError.message;throw proofError;}
+    }
+    if(bytes!==undefined){const file='body-'+row.original_sha256;await writeFile(join(out,'bodies',file),bytes,{mode:0o600,flag:'wx'}).catch(error=>{if(error.code!=='EEXIST')throw error;});row.stored_body='bodies/'+file;}
    }
   })().catch(error=>errors.push(error.message));tasks.add(work);void work.finally(()=>tasks.delete(work));
  };
- page.on('request',onRequest);page.on('response',onResponse);await mkdir(join(out,'bodies'),{recursive:true,mode:0o700});
- return{cdp,raw,responses,requests,errors,
-  async drain(){const deadline=Date.now()+20000;while(tasks.size){assert.ok(Date.now()<deadline,'RAW_RESPONSE_DRAIN_TIMEOUT');await Promise.all([...tasks]);}result.raw_response_work_pending=tasks.size;},
-  async save(){await this.drain();await writeFile(join(out,'raw-cdp.json'),JSON.stringify(redactor.sanitize(raw),null,2),{mode:0o600});await writeFile(join(out,'network-bodies.json'),JSON.stringify(redactor.sanitize({requests,responses,errors,totalBytes}),null,2),{mode:0o600});},
-  async close({transportClosed=false}={}){if(!closed){closed=true;page.off('request',onRequest);page.off('response',onResponse);try{await cdp.detach();}catch(error){if(!transportClosed||!/Target.*closed|Session closed/i.test(error.message))throw error;}}},
+ page.on('request',onRequest);page.on('response',onResponse);
+ return{cdp,raw,responses,requests,errors,rawBodyDiagnostics,resourceSnapshots,
+  async drain(){const deadline=Date.now()+20000;try{while(tasks.size){assert.ok(Date.now()<deadline,'RAW_RESPONSE_DRAIN_TIMEOUT');await bounded(Promise.all([...tasks]),deadline-Date.now(),'RAW_RESPONSE_DRAIN_TIMEOUT');}
+   // Recheck retained exact-document proofs against all later observed GETs.
+   // A repeated URL or failed transfer cannot keep an earlier provisional pass.
+   for(const row of responses.filter(row=>row.rawBodyDiagnostic?.resolvedByIndependentDelivery)){try{const get=cdpRequests.get(row.cdp_request_id),document=resourceDocuments.get(key(get)),evidence=validateDocument(document),proof=row.worker_response_finished?generatedScriptProofForResponse({...row,frameId:document.scope.frameId,contextId:document.scope.contextId,transferFinished:true},evidence,{origin,manifest,bodyPins:responses}):deliveryProofForRow(get,evidence,{origin,manifest});assert.deepEqual(proof,row.deliveryProof,'RESOURCE_DELIVERY_PROOF_CHANGED');}catch(error){row.rawBodyDiagnostic.resolvedByIndependentDelivery=false;row.rawBodyDiagnostic.deliveryError=error.message;errors.push(error.message);}}
+  }finally{result.raw_response_work_pending=tasks.size;}},
+  async save(){await this.drain();await writeFile(join(out,'raw-cdp.json'),JSON.stringify(redactor.sanitize(raw),null,2),{mode:0o600});await writeFile(join(out,'network-bodies.json'),JSON.stringify(redactor.sanitize({requests,responses,errors,totalBytes,rawBodyDiagnostics,resourceSnapshots,cdpRequests:[...cdpRequests.values()],deliveryEvidenceSeparateFromCdpBody:true}),null,2),{mode:0o600});},
+  async close({transportClosed=false}={}){if(closed)return;closed=true;const failures=[];
+   try{await this.drain();}catch(error){failures.push(error);}
+   for(const document of resourceDocuments.values())if(contexts.has(document.scope.contextId))try{const stopped=await bounded(cdp.send('Runtime.evaluate',{expression:'globalThis.__oasisConsumedImageEvidence.stop()',contextId:document.scope.contextId,returnByValue:true,awaitPromise:true}),resourceDrainTimeoutMs,'RESOURCE_CLOSE_TIMEOUT');assert.ok(!stopped.exceptionDetails,'RESOURCE_CLOSE_EVALUATION_FAILED');if(stopped.result?.value)validateConsumedImageEvidence(stopped.result.value,{origin,entryUrl,game:document.game,nonce,documentId:document.owner.documentId,timeOrigin:document.owner.timeOrigin,scope:document.scope,manifest,requests:[...cdpRequests.values()]});}catch(error){if(!transportClosed||!/Target.*closed|Session closed|Connection closed|not connected/i.test(error.message))failures.push(error);}
+   page.off('request',onRequest);page.off('response',onResponse);for(const {event,fn}of handlers)cdp.off(event,fn);
+   for(const handle of initHandles)try{await handle.dispose();}catch(error){if(!transportClosed||!/Target.*closed|Session closed|Connection closed|not connected/i.test(error.message))failures.push(error);}
+   try{await cdp.detach();}catch(error){if(!transportClosed||!/Target.*closed|Session closed/i.test(error.message))failures.push(error);}
+   if(failures.length){errors.push(...failures.map(error=>error.message));throw new AggregateError(failures,failures.map(error=>error.message).join('; '));}
+  },
  };
 }
 
@@ -123,7 +223,7 @@ export async function runPlayerAcceptance(options){
   return assertInstalledPlayerArtifact({apkSha256,version:info.match(/\bversionName=([^\s]+)/)?.[1],versionCode:Number(info.match(/\bversionCode=(\d+)/)?.[1]),debuggable:/\bDEBUGGABLE\b/.test(info)},artifact);
  };
  const tap=async(locator,{position}={})=>{
-  await locator.scrollIntoViewIfNeeded();const b=await locator.boundingBox();assert.ok(b&&b.width>0&&b.height>0,'VISIBLE_NATIVE_TAP_BOUNDS_REQUIRED');
+  await locator.scrollIntoViewIfNeeded();await until(async()=>await locator.isEnabled()&&(await locator.getAttribute('aria-disabled'))!=='true','ENABLED_NATIVE_TAP');const b=await locator.boundingBox();assert.ok(b&&b.width>0&&b.height>0,'VISIBLE_NATIVE_TAP_BOUNDS_REQUIRED');
   const targets=await fetch('http://127.0.0.1:'+forward.port+'/json/list',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()),target=targets.find(t=>t.url===artifact.entryUrl);assert.ok(target,'EXACT_PLAYER_WEBVIEW_TARGET_REQUIRED');
   const box=JSON.parse(target.description),viewport=await page.evaluate(()=>({width:innerWidth,height:innerHeight,dpr:devicePixelRatio}));assert.ok(Math.abs(box.width/viewport.width-viewport.dpr)<.1,'PLAYER_WEBVIEW_SCALE_UNPROVEN');
   const x=Math.round(box.screenX+(b.x+(position?.x??b.width/2))*viewport.dpr),y=Math.round(box.screenY+(b.y+(position?.y??b.height/2))*viewport.dpr);
@@ -148,12 +248,14 @@ export async function runPlayerAcceptance(options){
   if(forward){assert.deepEqual((await forwards()).filter(r=>r.local===forward.local),[{serial:forward.serial,local:forward.local,remote:forward.remote}],'OWNED_FORWARD_REPLACED_NO_REMOVE');await adb('forward','--remove',forward.local);report.resources.events.push({event:'forward-removed',local:forward.local});forward=null;}
  };
  const connect=async()=>{
+  // Let the current activity persist its cookie jar before killing our process.
+  if(androidForeground(await adb('shell','dumpsys','activity','activities'))===component){await adb('shell','input','keyevent','3');await sleep(300);}
   await adb('shell','am','force-stop',pkg);await adb('shell','am','start','-n',component);
-  await until(async()=>/^\d+$/.test(await adb('shell','pidof',pkg)),'EXACT_PLAYER_PID');const pid=await adb('shell','pidof',pkg),remote='localabstract:webview_devtools_remote_'+pid;
+  await until(async()=>/^\d+$/.test(await adb('shell','pidof',pkg).catch(error=>{if(error.code===1)return '';throw error;})),'EXACT_PLAYER_PID');const pid=await adb('shell','pidof',pkg),remote='localabstract:webview_devtools_remote_'+pid;
   await until(async()=>(await adb('shell','cat','/proc/net/unix')).includes('@webview_devtools_remote_'+pid),'PLAYER_DEBUG_SOCKET');const localBefore=await forwards(),port=await adb('forward','tcp:0',remote);
   forward={serial:options.serial,local:'tcp:'+port,port,remote};ownedAndroidForward(localBefore,await forwards(),forward);report.resources.events.push({event:'forward-created',...forward});
   browser=await chromium.connectOverCDP('http://127.0.0.1:'+port,{isWebView:true,noDefaults:true,timeout:15000});assert.equal(browser.contexts().length,1,'EXACT_PLAYER_CONTEXT_REQUIRED');context=browser.contexts()[0];
-  await until(()=>context.pages().length===1,'EXACT_PLAYER_PAGE');page=context.pages()[0];await until(()=>page.url()===artifact.entryUrl,'EXACT_PLAYER_ENTRY');page.setDefaultTimeout(45000);
+  await until(()=>context.pages().length===1,'EXACT_PLAYER_PAGE');page=context.pages()[0];await until(()=>page.url()===artifact.entryUrl,'EXACT_PLAYER_ENTRY');page.setDefaultTimeout(45000);await page.waitForLoadState('networkidle',{timeout:30000});
   probe=await installNativeFetchProbe(context,{clean:redactor.clean});await probe.attach(page);const dir='connection-'+(++connection);await mkdir(join(out,dir),{mode:0o700});evidence=await collectPlayerEvidence({context,page,origin,manifest,out:join(out,dir),redactor,result:report});
   report.resources.events.push({event:'fresh-measured-webview',connection,evidence:dir,initial_unobserved_document_excluded:true});
   await page.reload({waitUntil:'domcontentloaded'});await page.locator('.player-lobby').waitFor();
@@ -174,6 +276,16 @@ export async function runPlayerAcceptance(options){
   }
   await page.locator('.player-games').waitFor();const session=await requiredRead('/api/player/session'),wallet=await requiredRead('/api/player/wallet?app_id='+artifact.appId),recovery=await requiredRead('/api/player/recovery?app_id='+artifact.appId);
   baseline=assertPlayerLobbyBaseline({metadata,session,wallet,recovery,appId:artifact.appId,username:credentials.username});redactor.add(baseline.playerId);redactor.add(baseline.externalUserId);report.baseline=baseline;report.catalog=metadata.game_ids;
+  if(initial.status===401){
+   // The signed-out lobby intentionally reads LOGIN_REQUIRED before login.
+   // Preserve that phase, then measure games in a new authenticated WebView.
+   await evidence.drain();report.login_phase_page_errors=probe.pageErrors(page);
+   const denied=evidence.responses.filter(row=>row.status===401);
+   assert.ok(denied.length>0&&denied.every(row=>row.path==='/api/player/session'&&row.body?.error?.code==='LOGIN_REQUIRED'),'UNEXPECTED_PRELOGIN_HTTP_FAILURE');
+   assert.ok(report.login_phase_page_errors.every(row=>row.kind==='console'&&row.page_url===artifact.entryUrl&&/^Failed to load resource: the server responded with a status of 401 \(\)$/.test(row.message)),'UNEXPECTED_PRELOGIN_PAGE_ERROR');
+   await closeConnection();await connect();assert.equal((await requiredRead('/api/player/session')).player?.id,baseline.playerId,'AUTHENTICATED_RECONNECT_IDENTITY_CHANGED');
+   assertPlayerZeroWallet(await requiredRead('/api/player/wallet?app_id='+artifact.appId),artifact.appId,baseline);assert.deepEqual((await requiredRead('/api/player/recovery?app_id='+artifact.appId)).sessions,[],'AUTHENTICATED_RECONNECT_OBLIGATION_CHANGED');
+  }
   await page.getByRole('region',{name:'账户余额'}).getByText('可用',{exact:false}).waitFor();assert.ok((await page.getByRole('region',{name:'账户余额'}).textContent()).includes(formatPlayerMinor('0',baseline.currencyScale)+' '+baseline.currencyId),'REAL_ZERO_BALANCE_UI_REQUIRED');await screenshot('player-lobby-zero-wallet');
   const games=options.games||ARENA_IDS;report.full_catalog=games.length===ARENA_IDS.length;
   if(options.mode==='lifecycle'){

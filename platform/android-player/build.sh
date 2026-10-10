@@ -48,6 +48,8 @@ find "$TASK_BUILD/classes" "$TASK_BUILD/test-classes" "$TASK_BUILD/dex" -type f 
   --back-script > "$TASK_BUILD/back-script.js"
 node "$TASK_ROOT/test/back-bridge-contract.mjs" "$TASK_BUILD/back-script.js" \
   | tee "$TASK_BUILD/back-checks.json"
+node "$TASK_ROOT/test/activity-lifecycle-contract.mjs" \
+  | tee "$TASK_BUILD/activity-checks.json"
 
 mkdir -p "$TASK_ROOT/.local/signing/$TASK_SIGNING_FLAVOR"
 TASK_KEY="$TASK_ROOT/.local/signing/$TASK_SIGNING_FLAVOR/key.jks"

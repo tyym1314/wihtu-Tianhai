@@ -160,6 +160,16 @@ def stage(base, candidate, archive, expected_sha256, static_base=None):
                 path.chmod(entry.mode & 0o777)
             (candidate / 'RELEASE-MANIFEST.json').write_text(json.dumps(new, indent=2) + '\n')
             verify_tree(candidate, new)
+            # Repair inherited private build modes as well as new delta members.
+            # Only verified manifest files and their ordinary runtime parents are
+            # touched; credentials and unlisted runtime state are left alone.
+            for name in [*new, 'RELEASE-MANIFEST.json']:
+                path = candidate / name
+                path.chmod(0o755 if path.stat().st_mode & 0o111 else 0o644)
+                parent = path.parent
+                while parent != candidate:
+                    parent.chmod(0o755)
+                    parent = parent.parent
             lock = verify_retained_assets(candidate)
             locked = {asset['path']: asset['sha256'] for asset in lock['assets']}
             if any(locked.get(name) != sha256 for name, sha256 in previous_locked.items()):
