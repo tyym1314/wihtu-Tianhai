@@ -22,9 +22,11 @@ const nonnegativeInteger=value=>Number.isSafeInteger(value)&&value>=0;
 // diagnostic state() copies history and is deliberately never a render input.
 export function resolveRunPracticeSceneContext(game,key,{roomId,practiceRoom,practiceController}={}){
  const a=practiceRoom?.run_inputs;
+ // Arming rooms can confirm their immutable profile before input authority
+ // exists. Keep the received pose static until that authority is supplied.
  if(!runInputRule(game?.ruleVersion)||typeof roomId!=='string'||!roomId||practiceRoom?.id!==roomId||practiceRoom.me!==key||practiceRoom.game!==game
   ||practiceRoom.game_id!=='run'||practiceRoom.practice!==true||String(practiceRoom.entry_minor)!=='0'||game.me!==key
-  ||!readRunPracticeRoomProfile(practiceRoom)||a.ruleVersion!==game.ruleVersion||a.roomId!==roomId||a.playerKey!==key
+  ||!readRunPracticeRoomProfile(practiceRoom)||!a||a.ruleVersion!==game.ruleVersion||a.roomId!==roomId||a.playerKey!==key
   ||!Number.isSafeInteger(a.clockEpoch)||a.clockEpoch<1||!nonnegativeInteger(a.revision)||!nonnegativeInteger(a.headTick)||a.headTick!==game.snapshotTick
   ||!nonnegativeInteger(a.serverTick)||a.serverTick<a.headTick||!nonnegativeInteger(a.committedThroughTick)||a.committedThroughTick>a.serverTick)return null;
  const scope=practiceController?.scope;

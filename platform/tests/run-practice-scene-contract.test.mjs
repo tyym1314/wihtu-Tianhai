@@ -1,14 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as engine from '../arena/run/engine.mjs';
+import {RUN_PRACTICE_PROFILES} from '../shared/run-practice-profiles.mjs';
 import {build} from 'esbuild';
 // Exercise the actual scene-owned pure selection helpers. Stub only asset URL
 // imports; this test neither constructs WebGL nor loads image/model bytes.
-const bundled=await build({stdin:{contents:`export {projectedPose,resolveRunPracticeSceneContext,sampleRunPracticeSceneFrame} from './arena/run/scene.mjs';`,resolveDir:new URL('../',import.meta.url).pathname},bundle:true,platform:'node',format:'esm',write:false,logLevel:'silent',plugins:[{name:'scene-contract-asset-urls',setup(b){
+const bundled=await build({stdin:{contents:`export {projectedPose,resolveRunPracticeSceneContext,sampleRunPracticeSceneFrame} from './arena/run/scene.mjs'; export {readRunPracticeRoomProfile} from './arena/run/practice-profile-contract.mjs';`,resolveDir:new URL('../',import.meta.url).pathname},bundle:true,platform:'node',format:'esm',write:false,logLevel:'silent',plugins:[{name:'scene-contract-asset-urls',setup(b){
  b.onResolve({filter:/\?url$/},a=>({path:a.path,namespace:'scene-url'}));
  b.onLoad({filter:/.*/,namespace:'scene-url'},a=>({contents:`export default ${JSON.stringify(a.path)}`,loader:'js'}));
 }}]});
-const {projectedPose,resolveRunPracticeSceneContext,sampleRunPracticeSceneFrame}=await import(`data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].contents).toString('base64')}`);
+const {projectedPose,resolveRunPracticeSceneContext,sampleRunPracticeSceneFrame,readRunPracticeRoomProfile}=await import(`data:text/javascript;base64,${Buffer.from(bundled.outputFiles[0].contents).toString('base64')}`);
 
 function fixture(){
  const state=engine.createState('12'.repeat(32),1000,{ruleVersion:engine.PRACTICE_INPUT_RULE_VERSION,startPolicy:engine.RUN_SCENE_READY_POLICY,players:[{key:'human',seatIndex:0,isBot:false},{key:'bot',seatIndex:1,isBot:true}]});
@@ -23,6 +24,51 @@ function fixture(){
  const options={roomId:'room',practiceRoom:room,practiceController:controller};
  return {game,room,a,mine,controller,snapshot,options,calls:()=>calls};
 }
+
+function armingV2Fixture(){
+ const profile=RUN_PRACTICE_PROFILES.v2;
+ const state=engine.createState('34'.repeat(32),1000,{ruleVersion:profile.ruleVersion,startPolicy:engine.RUN_SCENE_READY_POLICY,
+  players:[{key:'human',seatIndex:0,isBot:false},{key:'bot',seatIndex:1,isBot:true}]});
+ const game=engine.view(state,'human'),room={id:'room',me:'human',game_id:'run',practice:true,entry_minor:'0',fee_bps:0,capacity:2,game,
+  run_input_profile:{rule_version:profile.ruleVersion,protocol:profile.protocol,profile_id:profile.profileId}};
+ let calls=0,snapshot;
+ const controller={profile:readRunPracticeRoomProfile(room),scope:Object.freeze({roomId:'room',playerKey:'human',clockEpoch:1}),sample(){calls++;return snapshot;},
+  state(){assert.fail('arming must not read controller history');}};
+ return {state,game,room,controller,options:{roomId:'room',practiceRoom:room,practiceController:controller},calls:()=>calls,setSnapshot:value=>{snapshot=value;}};
+}
+
+test('V2.4 arming tuple without input authority holds the initial pose without throwing or prediction',()=>{
+ for(const missing of [undefined,null]){
+  const f=armingV2Fixture();
+  if(missing===null)f.room.run_inputs=null;
+  assert.equal(f.game.phase,'arming');assert.equal(f.game.snapshotTick,0);
+  assert.deepEqual(readRunPracticeRoomProfile(f.room),RUN_PRACTICE_PROFILES.v2,'the immutable profile can precede input authority');
+  const before=structuredClone(f.game),context=resolveRunPracticeSceneContext(f.game,'human',f.options);
+  assert.equal(context,null);
+  const early=sampleRunPracticeSceneFrame(f.game,'human',context,1000),late=sampleRunPracticeSceneFrame(f.game,'human',context,999999);
+  assert.equal(early.mode,'authority-static');assert.equal(early.authorityExpired,true);assert.equal(early.resultAuthorized,false);
+  assert.deepEqual(late.pose,early.pose);assert.equal(early.pose.distance,0);assert.equal(early.pose.visualSpeed,0);
+  assert.equal(f.calls(),0);assert.deepEqual(f.game,before);
+ }
+});
+
+test('V2.4 initial arming fallback can bind the later complete authority without changing its scope gates',()=>{
+ const f=armingV2Fixture();assert.equal(resolveRunPracticeSceneContext(f.game,'human',f.options),null);
+ engine.armStart(f.state,1000);engine.tick(f.state,1400);f.room.game=engine.view(f.state,'human');
+ const game=f.room.game,mine=game.players.find(p=>p.key==='human'),profile=RUN_PRACTICE_PROFILES.v2;
+ f.room.run_inputs={protocol:profile.protocol,profileId:profile.profileId,ruleVersion:game.ruleVersion,roomId:'room',playerKey:'human',clockEpoch:1,
+  revision:0,headTick:game.snapshotTick,serverTick:game.snapshotTick,committedThroughTick:0,resultAuthorization:null,
+  selfReplay:{schema:'run-practice-self-replay-v1',anchorTick:0,player:{key:'human'},acceptedCommands:[]}};
+ const snapshot={mode:'provisional',revision:0,headTick:game.snapshotTick,authorityExpired:false,resultAuthorization:null,
+  pose:{...projectedPose(mine,game,0),distance:mine.distance+.1,tick:game.snapshotTick+1,eventTick:game.snapshotTick,visualSpeed:8,visualPlayer:{...mine}}};
+ f.setSnapshot(snapshot);
+ const context=resolveRunPracticeSceneContext(game,'human',f.options);
+ assert.equal(context.controller,f.controller);assert.equal(context.authority,f.room.run_inputs);
+ assert.equal(sampleRunPracticeSceneFrame(game,'human',context,1500).pose.distance,snapshot.pose.distance);assert.equal(f.calls(),1);
+ f.room.entry_minor='1';assert.equal(resolveRunPracticeSceneContext(game,'human',f.options),null);
+ f.room.entry_minor='0';f.room.run_inputs.roomId='foreign';assert.equal(resolveRunPracticeSceneContext(game,'human',f.options),null);
+ assert.equal(f.calls(),1,'rejected room bindings do not sample the controller');
+});
 
 test('only explicit free V2.3 room and controller scopes can provide the own pose',()=>{
  const f=fixture(),context=resolveRunPracticeSceneContext(f.game,'human',f.options);
