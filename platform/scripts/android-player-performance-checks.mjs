@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {ARENA_IDS} from '../shared/games.mjs';
 import {statistics,percentile} from './mobile-quality-metrics.mjs';
 import {runPracticeInputBaseline,verifyRunPracticeInputAction} from './android-game-actions.mjs';
+import {VISIBLE_FEEDBACK_PROTOCOL_SHA256,assertVisibleFeedbackImplementation} from './android-player-visible-feedback.mjs';
 
 export const ANDROID_PERFORMANCE_SCHEMA='android-physical-performance-v1';
 export const PRIORITY_GAMES=Object.freeze(['run','towerlink','golf','bowling']);
@@ -39,7 +40,7 @@ export function finalizePerformanceStatus(report,{shortDiagnostic=false}={}){
 
 export function performanceArguments(argv,thresholds){
  const options={run:false,adbPort:5037,serial:'46dcfd25',games:[...ARENA_IDS],sampleMs:thresholds.minimum_active_sample_ms,repetitions:thresholds.entry_repetitions,roomMs:60000};
- const keys={'--metadata':'metadata','--platform-manifest':'platformManifest','--credentials-file':'credentialsFile','--apksigner':'apksigner','--output':'output','--adb-port':'adbPort','--serial':'serial','--games':'games','--sample-ms':'sampleMs','--room-ms':'roomMs','--repetitions':'repetitions'};
+ const keys={'--metadata':'metadata','--platform-manifest':'platformManifest','--credentials-file':'credentialsFile','--apksigner':'apksigner','--output':'output','--adb-port':'adbPort','--serial':'serial','--games':'games','--sample-ms':'sampleMs','--room-ms':'roomMs','--repetitions':'repetitions','--feedback-protocol':'feedbackProtocolFile','--feedback-source-dir':'feedbackSourceDir'};
  const seen=new Set();for(let i=0;i<argv.length;i++){const flag=argv[i];assert.ok(!seen.has(flag),'DUPLICATE_ARGUMENT');seen.add(flag);if(flag==='--run'){options.run=true;continue;}assert.ok(keys[flag],'UNKNOWN_ARGUMENT');const value=argv[++i];assert.ok(value&&!value.startsWith('--'),'ARGUMENT_VALUE_REQUIRED');options[keys[flag]]=value;}
  for(const key of ['metadata','platformManifest','apksigner','output'])assert.ok(options[key],key.toUpperCase()+'_REQUIRED');
  for(const key of ['adbPort','sampleMs','roomMs','repetitions']){options[key]=Number(options[key]);assert.ok(Number.isSafeInteger(options[key]),'INTEGER_ARGUMENT_REQUIRED');}
@@ -122,10 +123,21 @@ export function assertCachePosture(posture,{mode,sessionId}){
 }
 
 export function summarizeFrames(rounds){
- const sampled=round=>row=>(!finite(round.probe?.sampleStartAt)||row.at>round.probe.sampleStartAt)&&(!finite(round.probe?.sampleEndAt)||row.at<=round.probe.sampleEndAt);
+ const sampled=round=>row=>(!round.visibleFeedbackPhases?.length||finite(round.probe?.sampleStartAt))&&(!finite(round.probe?.sampleStartAt)||row.at>round.probe.sampleStartAt)&&(!finite(round.probe?.sampleEndAt)||row.at<=round.probe.sampleEndAt);
  const rows=rounds.flatMap(round=>(round.probe?.frames||[]).filter(sampled(round)).map(row=>{const start=Math.max(row.at-row.ms,round.probe?.sampleStartAt??-Infinity),end=Math.min(row.at,round.probe?.sampleEndAt??Infinity),eligibleEnd=Math.min(row.at-row.ms+(row.eligibleDurationMs??row.ms),end);return {...row,sampledDurationMs:Math.max(0,end-start),activeDurationMs:Math.max(0,eligibleEnd-start)};})).filter(row=>row.visible===true),active=rows.filter(row=>row.active===true),moving=active.filter(row=>row.moving===true);
  const duration=row=>row.activeDurationMs;
  return {foreground:statistics(rows.map(r=>r.ms)),active:statistics(active.map(r=>r.ms)),moving:statistics(moving.map(r=>r.ms)),foregroundMs:rows.reduce((s,r)=>s+r.sampledDurationMs,0),activeMs:active.reduce((s,r)=>s+duration(r),0),movingMs:moving.reduce((s,r)=>s+duration(r),0),idleMs:active.filter(r=>!r.moving).reduce((s,r)=>s+duration(r),0),dropped:rounds.reduce((s,r)=>s+(r.probe?.dropped||0),0),longTaskSupported:rounds.length>0&&rounds.every(r=>r.probe?.longTaskSupported===true),longTasks:statistics(rounds.flatMap(r=>(r.probe?.longTasks||[]).filter(sampled(r))).map(r=>r.ms))};
+}
+
+/** The independently analyzed captured-content bound is retained as a measurement;
+ * it does not silently accept missing physical display-present evidence. */
+export function summarizeVisibleFeedback(rounds,thresholdMs){
+ const phases=rounds.flatMap(r=>(r.visibleFeedbackPhases??[]).map(phase=>({round:r,phase})));if(!phases.length)return {status:'unmeasured',captureStatus:'unmeasured',swapStatus:'unmeasured',count:0,p95UpperBoundMs:null,physicalPanelPresent:false,reason:'No independent original-pixel feedback proof phase was observed'};
+ const verified=phases.filter(({round,phase:p})=>{
+  const a=p.analysis,s=p.capture?.scope,first=p.capture?.frames?.find(f=>f.index===a?.firstFeedbackFrame?.index);try{assertVisibleFeedbackImplementation(p.capture?.implementation,p.capture?.webviewVersion);}catch{return false;}return p.schema==='owned-performance-visible-feedback-phase-v1'&&p.phase==='feedbackProof'&&p.position==='beforeContinuous'&&p.finalized===true&&!p.errors?.length&&p.capture?.closed===true&&p.capture.dropped===0&&!p.capture.errors?.length&&s?.nonce&&s.documentId===round.documentId&&s.timeOrigin===round.documentTimeOrigin&&s.frameId===round.context?.frameId&&s.contextId===round.context?.contextId&&p.observation?.scope?.nonce===s.nonce&&p.observation.scope.documentId===s.documentId&&p.observation.scope.timeOrigin===s.timeOrigin&&p.observation.removed===true&&p.probe?.closed===true&&p.probe.dropped===0&&a?.schema==='owned-visible-run-feedback-v1'&&['pass','insufficient'].includes(a.captureStatus)&&a.swapStatus==='insufficient'&&a.capturedContentVerified===true&&a.timestampSemantics==='captured-video-frame-received-wall-time-v1'&&a.providerVersion===p.capture.webviewVersion&&finite(a.latencyMs)&&a.latencyMs===a.latencyIntervalMs?.upperInclusive&&a.latencyIntervalMs.lowerExclusive===0&&a.latencyMs>0&&a.commandBinding?.commandSeq>0&&p.acceptedActions?.length===1&&p.acceptedActions[0].proof?.commandSeq===a.commandBinding.commandSeq&&p.acceptedActions[0].requestSha256===a.commandBinding.requestSha256&&first?.pngSha256===a.firstFeedbackFrame.pngSha256&&p.capture.protocol?.sha256===VISIBLE_FEEDBACK_PROTOCOL_SHA256&&(!round.sampleBoundaries?.start||finite(p.capture.after?.at)&&s.timeOrigin+p.capture.after.at<=round.sampleBoundaries.start.epochMs);
+ });
+ const upper=percentile(verified.map(({phase:p})=>p.analysis.latencyMs),.95),complete=verified.length===phases.length&&rounds.every(r=>r.visibleFeedbackPhases?.length===1),captureStatus=complete&&verified.every(({phase:p})=>p.analysis.captureStatus==='pass')&&upper<=thresholdMs?'pass':'insufficient';
+ return {status:'insufficient',captureStatus,swapStatus:'insufficient',count:verified.length,observedPhases:phases.length,p95UpperBoundMs:finite(upper)?upper:null,threshold:thresholdMs,physicalPanelPresent:false,physicalPresentStatus:'insufficient',reason:'Original local control PNG + trusted gesture + unique accepted command with exact provider source receipts establish only captured-content observation upper bound; neither swap nor unique SurfaceFlinger display-frame presentation is proven, and delayed capture cannot establish a slow response'};
 }
 
 export function evaluateAndroidPerformance(game,rounds,thresholds,{sampleMs,networkCalibrated=false}={}){
@@ -138,7 +150,7 @@ export function evaluateAndroidPerformance(game,rounds,thresholds,{sampleMs,netw
  gate('VISIBLE-MOTION',rounds.length>0&&rounds.every(r=>r.motion?.pairs?.length>=2&&r.motion.pairs.filter(p=>p.moved).length>=2)?'pass':'insufficient',{pairs:rounds.map(r=>r.motion?.pairs?.length||0),method:'Decoded pixels of game render surface screenshots during authority-declared motion; not GPU/presented FPS'});
  limit('TRUSTED-INPUT-DISPATCH',percentile(actions.map(a=>a.dispatchMs),.95),thresholds.action_dispatch_p95_ms);
  gate('AUTHORITY-ACK',actions.length?(networkCalibrated?(percentile(actions.map(a=>a.confirmMs),.95)<=thresholds.wifi_action_confirm_p95_ms?'pass':'fail'):'insufficient'):'unmeasured',{p95Ms:percentile(actions.map(a=>a.confirmMs),.95),threshold:thresholds.wifi_action_confirm_p95_ms,networkCalibrated});
- gate('VISIBLE-LOCAL-FEEDBACK','unmeasured',{reason:'Gesture dispatch and authority ACK do not prove visible local response latency'});
+ const feedback=summarizeVisibleFeedback(rounds,thresholds.local_input_p95_ms);gate('VISIBLE-LOCAL-FEEDBACK',feedback.status,feedback);
  for(const mode of ['cold','warm']){const rows=rounds.filter(r=>r.cacheMode===mode&&r.cache?.passed===true&&r.entry?.ready===true);gate('LOAD-'+mode,rows.length>=thresholds.entry_repetitions?(percentile(rows.map(r=>r.entry.elapsedMs),.95)<=(mode==='cold'?thresholds.cold_entry_p95_ms:thresholds.warm_entry_p95_ms)?networkCalibrated?'pass':'insufficient':'fail'):'insufficient',{count:rows.length,p95Ms:percentile(rows.map(r=>r.entry.elapsedMs),.95),networkCalibrated});}
  for(const round of rounds){const n=round.network;gate('ROUND-INTEGRITY',round.cleanup?.passed===true&&round.returned===true&&!round.error&&!round.observerErrors?.length&&round.pendingWork===0?'pass':'fail',{round:round.id});limit('STATIC-BYTES',n?.staticEncodedBytes,thresholds.critical_static_encoded_bytes);limit('IMAGE-BYTES',n?.imageMaxEncodedBytes,thresholds.critical_image_encoded_bytes);limit('SNAPSHOT-BYTES',n?.snapshotMaxEncodedBytes,thresholds.snapshot_encoded_bytes);}
  gate('THREE-FRESH-ROOMS',new Set(rounds.map(r=>r.roomIdHash).filter(Boolean)).size>=3?'pass':'insufficient',{});
