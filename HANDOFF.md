@@ -4,12 +4,14 @@
 
 ## 当前部署
 
-- 发布分支 master，本轮开始时 HEAD `13e91695aef6c5ddaee655e75a6102e4a0027b7f`。当前提交与未提交修改须重新读回 git。
+- 发布分支 master；运行时候选提交 `24811c94ef26b67bd680d35dbcb192530e912911`，采集器提交 `1ceb2dfa23e2ccd3f74001c2491a020d0dbaf8b7` 已推送并独立核对远端。当前提交与未提交修改仍须重新读回 git。
 - 真实 Player：`https://oasis-player.43.98.202.236.sslip.io/player?app_id=app_e091fb5daf135660d39ce89fc23760ab`。
 - 独立生产实例：`/opt/oasis/production-current` 指向 `20261010-06`，API 18891、数据库 18893；真实注册账号、持久化会话、真实房间及生产账本，测试账号初始余额 0。
 - 已开放第一方免费练习的 11 款竞技游戏，概率游戏、资金转入转出、第三方资金接入仍未开放。免费练习通过不代表 13 款和资金上线通过。
-- release manifest SHA256 `1135152d247b7de6f8bdecac3ede9ac9fb4a1675936c9596dde6ddba2d353a25`；本地 build stamp SHA256 `aefc1f7b7ed3d75baac6ec092d1e31081617a03e0114fb26bd12423b1ffdc0a3`。
+- 当前生产 release manifest SHA256 `1135152d247b7de6f8bdecac3ede9ac9fb4a1675936c9596dde6ddba2d353a25`；本地 canonical build 已为下文 source07 候选。
 - source06 发布时 HTML 权限 0600 导致游戏入口 404，已在锁内核对完整 manifest 后将公开运行文件权限规范化，字节/inode/mtime不变，11 个入口读回 200。打包和 delta staging 已修复此权限继承问题，24 项聚焦测试通过。
+- source07 已实际 staging，尚未切换。v1 切换工具在业务修改前因共享对象比较误判拒绝；v2 新链在停止定时器前遇 `ADMISSION_ONESHOT_TRANSITION`，其失败处理停止了原 API 和三个定时器，未写策略或源码。原 partial SHA `ad23267dc5f2ecfa8a9dc527ebb237d6dbbe935c01ee9b6c1e9a5118a5c1141c` 保留，不重放。
+- 已仅恢复原 API 和三个定时器；2026-10-10 12:20 UTC 独立完整只读读回通过，SHA `6ebe18d675da5c342bc46ad61f34936e6f827f808dbe209ea6cbcb9c4704b225`。API 实际 PID 1005937、定时器 active/jobs idle、原配置及生产指针全 pin 不变、策略 revision8 open；47 表图完全一致、28 项完整性计数为零，HTTPS/静态资源/retired410及player302通过。候选切换工具正在修复有界任务等待及当前06资源检查误用候选成员的问题；恢复不能当作07发布完成。
 
 ## 最简 APK 和设备
 
@@ -33,6 +35,8 @@
 - 正在优化 Run 模块导入与真实资产下载的串行等待；候选 runtime 变化需要重新构建、发布并建立新证明。
 - source07 候选已完成真实素材并行下载/模块导入、默认大厅头像复用原始 atlas Blob、宿主确认返回时避免临时结果资源加载。21 文件冻结、168 单元测试及真实 DOM/素材检查通过；canonical build 已完成（1,761 输入 / 740 输出），尚未部署，真机性能仍需新证明。
 - source07 候选 build stamp SHA `3d5bd2cb91a9439ff0fd2314eb0560e04b70254c231f12879faad32562b65d10`，release manifest SHA `4e6ac604068a797110553b5784e3fd7468e5b9caf66ca17196381235e89bc9b5`（1,208 文件）；06→07 增量 552,455 B。实际 dist 的 Run WebGL/丢 ACK/授权恢复 3 检查及 onboarding 9 检查通过、源文件不变，均为独立本地 HTTP/PG 检查，不是手机或公开网络性能证明。
+- 新可见反馈采集器已推送，116 项验证通过：固定 WebView 150 原始 Chromium 源码与协议、保留原始 PNG/元数据和账号/iframe/页面身份、记录实际控件状态与原始权威请求，并将截图证明与连续性能采样分开。首次变化 PNG 时间仅是捕获内容的保守上界，不能代表屏幕呈现或物理输入延迟；真实07采样尚未执行。
+- 100 会话/900 秒的独立真实 HTTP/Postgres 容量工具 v2 已冻结，41 项验证通过，修复清理证据失败及进程组残留误判，绑定真实07开放收据。尚未执行负载；不得把工具准备或合成会话当作手机/真实资金验收。
 - 标准见 `platform/specs/mobile-quality-v1.md/json`：完整冷热入口各 5 次、逐款至少 15 分钟/3 完整局/30 操作、帧间隔、延迟、生命周期、内容和服务端容量等。当前尚未完成这些门槛；Android RAF/桌面 CPU 节流不等于 GPU 显示帧率或 iPhone 验收。
 
 ## Mock 清理
@@ -44,6 +48,8 @@
 - v6 两步后因 systemd Requires 顺序变化拒绝，原失败收据和只读诊断保持原字节。独立 v2 接续固定原始证据，仅接受 9 个生产/TLS 与 4 个已观测测试 service 的 Requires 成员相同排序变化，其余保护严格一致；fresh audit/check 后只执行剩余三步 Docker 操作。
 - 退役后旧 `/player` 跳转实际 Player，旧 demo/API/download 410，共享不可变资源、TLS、其他业务和生产实例需独立读回保持正常。
 - 独立最终读回 SHA `dabc588a288ecd74179143af72f7c410100fb5c65b45e61c46b7430794d1a5e8`：旧容器/卷/端口不存在、retained 保护 stable diff 为空、旧入口 410、实际 Player/生产 health 200，生产指针仍为 source06。服务器 `/opt/oasis` 可用约 9.34GB（十进制）。
+- 74 份历史 mock 备份已实际删除：370 文件、506,762,659 B 逻辑大小、507,858,944 B 分配大小。完成原始收据 SHA `7a7622d43942b300f22e4a31449a988df3bf83b1141670bed1e939c740cd673f`；独立读回 SHA `9866b6d89b21b00eb65f58dffd70ad833df612325d33defc79f95a987c1323e2`，74 路径全不存在、148 个原始 barrier 及完整保护通过。名义删除大小不等于磁盘净增加，保留证据也占空间。
+- 最后 `/opt/oasis/backups/20261009T155133Z` 的 5 文件共12,829,348 B仍保留，等待实际07真实备份/隔离恢复及开放收据通过后做精确删除；后续工具目前为未执行草稿。不要删除共享不可变资源、旧current03的TLS依赖或其他业务文件来凑空间。
 
 ## 证据和接手
 
@@ -61,5 +67,7 @@
 - `firstparty-release-20261010/root-source07-backend-tests-a2.log`：新 build 后完整 2,746 项，2,739 通过/7 失败（6 本地 PG Interrupted system call、1 Run 存储绑定缺少预期 rejection）；原始失败未改判。
 - `firstparty-release-20261010/root-source07-backend-tests-a3.log`：新 `/private/tmp` 独立 5488 集群完整 2,746/2,746 通过、0 skipped，测试数据库及本轮集群已停止删除，原 5487 未修改。原 a2 失败保留，具体旧集群 EINTR 原因尚未确认。发布 Python 聚焦检查 52/52 通过，fresh build verify 通过。
 - `firstparty-release-20261010/root-public-retirement-resume-a2/`：新鲜 v2 audit/check、实际完成收据及独立最终读回；未来 source07 控制器必须从完成退役的保护接续，不能调用仍检查旧测试库的历史构造器。
+- `firstparty-release-20261010/root-mock-backup-purge-v2-a1sx6k8i/`：74 份备份的实际删除、原始 barrier/journal及独立最终读回。
+- `firstparty-release-20261010/root-refresh07-v2-actual-3h40kmon/`：v2 原 audit/approval/check/partial、原 API 与定时器恢复、失败资源检查及独立完整恢复读回；全部历史原字节保留。
 
 后续操作前重新检查 git、部署指针、进程归属、空间及自有房间；保护历史 receipt/controller 外部 SHA，不得修改冻结历史文件来绕过状态变化。完成后提供实际可用交付物、最终提交/推送及 git status 读回。
