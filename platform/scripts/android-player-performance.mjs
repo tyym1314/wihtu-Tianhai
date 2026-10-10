@@ -14,6 +14,7 @@ import {parseAndroidForwards,ownedAndroidForward,assertAndroidForwardsRestored,a
 import {observeNativeBrowser,createNativeCleanupApi,nativeErrorsEmpty} from '../deploy/native-browser-checks.mjs';
 import {playerTouchFrame} from './android-player-acceptance.mjs';
 import {playOneArenaAction} from './android-game-actions.mjs';
+import {installOwnedPlayerResourceEvidence,validateConsumedImageEvidence,deliveryProofForRow} from './android-player-resource-evidence.mjs';
 import {canExercise,activityRoomState} from './mobile-continuous-driver.mjs';
 import {waitForPlayable} from './mobile-quality-metrics.mjs';
 import {ANDROID_PERFORMANCE_SCHEMA,performanceArguments,physicalAdbArgs,parseWebViewProvider,parseThermal,parseRefresh,assertGameContext,authorityCursor,assertPerformanceRoom,activeMotionState,acceptedPerformanceAction,installPhysicalProbe,verifyProbe,pixelDifference,cacheSchedule,assertCachePosture,evaluateAndroidPerformance,runtimeSourcePins,finalizePerformanceStatus,hash} from './android-player-performance-checks.mjs';
@@ -22,7 +23,7 @@ const ROOT=fileURLToPath(new URL('../',import.meta.url)),execute=promisify(execF
 const standards=JSON.parse(await readFile(join(ROOT,'specs/mobile-quality-v1.json'),'utf8'));
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const until=async(predicate,label,timeout=45000)=>{const end=Date.now()+timeout;while(Date.now()<end){if(await predicate())return;await sleep(100);}throw Error(label+'_TIMEOUT');};
-const sourceFiles=['scripts/android-player-performance.mjs','scripts/android-player-performance-checks.mjs','scripts/android-player-acceptance.mjs','scripts/android-player-acceptance-checks.mjs','scripts/android-webview-checks.mjs','scripts/android-game-actions.mjs','scripts/mobile-quality-metrics.mjs','scripts/mobile-continuous-driver.mjs','deploy/native-browser-checks.mjs','specs/mobile-quality-v1.json'];
+const sourceFiles=['scripts/android-player-performance.mjs','scripts/android-player-resource-evidence.mjs','scripts/android-player-performance-checks.mjs','scripts/android-player-acceptance.mjs','scripts/android-player-acceptance-checks.mjs','scripts/android-webview-checks.mjs','scripts/android-game-actions.mjs','scripts/mobile-quality-metrics.mjs','scripts/mobile-continuous-driver.mjs','deploy/native-browser-checks.mjs','specs/mobile-quality-v1.json'];
 const sceneSelectors={run:'.run-scene canvas',towerlink:'.towerlink-game canvas',golf:'.og-game canvas',bowling:'.bowling-game canvas',carrom:'.oc-game canvas',pool:'.op-game canvas',darts:'.da-board',match:'.match-cells',ludo:'.ludo-board',jackaroo:'.jack-board',domino:'.do-chain'};
 
 function ownedObserver(page,args){
@@ -60,16 +61,16 @@ export async function cleanupPerformanceRound({active,baseline,stopUI,api,until,
  try{await observer.drain({final:true});}catch(error){observationError('NATIVE_FINAL_DRAIN',error);}
  round.nativeObserverPassed=nativeErrorsEmpty(result)&&!round.observerErrors.some(error=>error.startsWith('NATIVE_'));round.nativeEvidence=result;
  try{await collector?.drain();}catch(error){observationError('CDP_DRAIN',error);}
- round.network=collector?.summary();round.actions=collector?.actions||[];round.observerErrors.push(...(collector?.errors||[]),...(result.observer_errors||[]).map(error=>error.message),...(!round.nativeObserverPassed?['NATIVE_FUNCTIONAL_OBSERVATIONS_FAILED']:[]));
- try{await collector?.close();}catch(error){observationError('CDP_CLOSE',error);}
+ round.actions=collector?.actions||[];round.observerErrors.push(...(result.observer_errors||[]).map(error=>error.message),...(!round.nativeObserverPassed?['NATIVE_FUNCTIONAL_OBSERVATIONS_FAILED']:[]));
+ try{await collector?.close();}catch(error){observationError('CDP_CLOSE',error);}round.network=collector?.summary();round.observerErrors.push(...(collector?.errors||[]));
  try{observer.detach();}catch(error){observationError('NATIVE_DETACH',error);}
  return round.cleanup;
 }
 
 /** No raw CDP headers, cookies, authorization, launch exchange or API bodies leave memory. */
-export async function createPhysicalNetworkCollector({context,page,origin,game,state,baseline,manifest,nonce,round,drainTimeoutMs=20000}){
+export async function createPhysicalNetworkCollector({context,page,origin,game,state,baseline,manifest,nonce,round,entryUrl,drainTimeoutMs=20000}){
  assert.ok(Number.isSafeInteger(drainTimeoutMs)&&drainTimeoutMs>0&&drainTimeoutMs<=20000,'BOUNDED_DRAIN_TIMEOUT_REQUIRED');
- const cdp=await context.newCDPSession(page),contexts=new Map(),requests=new Map(),tasks=new Set(),errors=[],records=[],actions=[];let candidateFrame=null,scope=null,bytes=0,closed=false;
+ const cdp=await context.newCDPSession(page),contexts=new Map(),requests=new Map(),tasks=new Set(),errors=[],records=[],actions=[],rawBodyDiagnostics=[];let candidateFrame=null,scope=null,bytes=0,closed=false,resourceSnapshot=null,resourceEvidence=null,resourceFrozen=false,resourceFinalized=false;
  const handlers=[],on=(event,fn)=>{cdp.on(event,fn);handlers.push({event,fn});};
  const tracked=fn=>{const task=Promise.resolve().then(fn).catch(error=>errors.push(error.message));tasks.add(task);void task.finally(()=>tasks.delete(task));};
  on('Runtime.executionContextCreated',({context:realm})=>contexts.set(realm.id,realm));on('Runtime.executionContextDestroyed',({executionContextId})=>contexts.delete(executionContextId));on('Runtime.executionContextsCleared',()=>contexts.clear());
@@ -90,30 +91,120 @@ export async function createPhysicalNetworkCollector({context,page,origin,game,s
  on('Network.responseReceived',({requestId,response})=>{const row=requests.get(requestId);if(row)row.response={status:response.status,protocol:response.protocol,mime:response.mimeType,fromDiskCache:response.fromDiskCache===true,fromServiceWorker:response.fromServiceWorker===true,timing:response.timing||null};});
  on('Network.loadingFailed',({requestId,errorText,canceled})=>{const row=requests.get(requestId);if(row){errors.push('GAME_NETWORK_FAILED: '+errorText);row.failed=true;row.canceled=!!canceled;}});
  on('Network.loadingFinished',event=>{
-  const row=requests.get(event.requestId);if(!row)return;tracked(async()=>{
+  const row=requests.get(event.requestId);if(!row)return;row.transferFinished=true;row.finished=true;tracked(async()=>{
    assert.equal(row.frameId,candidateFrame,'NETWORK_GAME_FRAME_CHANGED');assert.ok(row.response,'NETWORK_RESPONSE_MISSING');assert.ok(row.response.status>=200&&row.response.status<300||row.response.status===304,'GAME_HTTP_FAILURE');assert.ok(Number.isFinite(event.encodedDataLength)&&event.encodedDataLength>=0,'ENCODED_TRANSFER_UNAVAILABLE');
    const record={path:row.path.replace(/\/rooms\/[^/]+/,'/rooms/[owned]'),method:row.method,type:row.type,static:row.isStatic,status:row.response.status,encodedTransferBytes:event.encodedDataLength,durationMs:(event.timestamp-row.start)*1000,cache:{memory:row.cached,disk:row.response.fromDiskCache,serviceWorker:row.response.fromServiceWorker,revalidated:row.response.status===304},protocol:row.response.protocol,timing:row.response.timing,frameId:row.frameId};
-   assert.ok(!row.response.fromServiceWorker,'UNREVIEWED_SERVICE_WORKER_DELIVERY');
-   if(row.isStatic){const body=await cdp.send('Network.getResponseBody',{requestId:event.requestId}),data=Buffer.from(body.body,body.base64Encoded?'base64':'utf8');bytes+=data.length;assert.ok(bytes<=256*1024*1024,'RESOURCE_BODY_BOUND_EXCEEDED');record.resourcePin=assertPlayerResourceBody(row.url,data,{origin,manifest})||{sha256:hash(data),bytes:data.length,source:'Observed external HTTPS font asset; not a release output pin'};}
+   assert.ok(!row.response.fromServiceWorker,'UNREVIEWED_SERVICE_WORKER_DELIVERY');records.push(record);
+   if(row.isStatic){
+    let data;try{const body=await cdp.send('Network.getResponseBody',{requestId:event.requestId});data=Buffer.from(body.body,body.base64Encoded?'base64':'utf8');bytes+=data.length;assert.ok(bytes<=256*1024*1024,'RESOURCE_BODY_BOUND_EXCEEDED');
+     if(row.url.startsWith('blob:'))throw Error('UNPINNED_PLAYER_RESOURCE: '+row.path);
+     record.resourcePin=assertPlayerResourceBody(row.url,data,{origin,manifest})||{sha256:hash(data),bytes:data.length,source:'Observed external HTTPS font asset; not a release output pin'};
+    }catch(error){
+     const image=row.type==='Image'||/\.(?:webp|png|jpe?g|svg|avif|gif)$/.test(row.path),ownImage=image&&(row.url.startsWith('blob:'+origin+'/')||new URL(row.url).origin===origin);
+     if(!ownImage||error.message==='RESOURCE_BODY_BOUND_EXCEEDED')throw error;
+     const diagnostic={requestId:row.id,path:row.path,frameId:row.frameId,code:data===undefined?'CDP_RESPONSE_BODY_UNAVAILABLE':row.url.startsWith('blob:')?'UNPINNED_PLAYER_RESOURCE':'PLAYER_RESOURCE_BODY_SHA_MISMATCH',bodyBytes:data?.length??null,bodySha256:data?hash(data):null,nonemptyPublicBodyConflict:!!(data?.length&&!row.url.startsWith('blob:')),resolvedByIndependentDelivery:false};
+     rawBodyDiagnostics.push(diagnostic);record.rawBodyDiagnostic=diagnostic;record.observedBodySha256=data?hash(data):null;record.observedBodyBytes=data?.length??null;if(diagnostic.nonemptyPublicBodyConflict)throw error;
+    }
+   }
    if(row.isAction){assert.ok(scope,'ACTION_BEFORE_PROVEN_GAME_CONTEXT');const response=await cdp.send('Network.getResponseBody',{requestId:event.requestId}),data=Buffer.from(response.body,response.base64Encoded?'base64':'utf8');assert.ok(data.length<=2*1024*1024,'ACTION_BODY_BOUND_EXCEEDED');const body=JSON.parse(data),after=body.room||body;
     const probe=await evaluate('(()=>{const p=globalThis.__oasisPhysicalPerf;return {schema:p.schema,nonce:p.nonce,documentId:p.documentId,url:p.url,timeOrigin:p.timeOrigin,frames:[],longTasks:[],gestures:p.gestures.slice(-8)};})()');verifyProbe(probe,{origin,game,nonce,documentId:round.documentId});const gesture=[...probe.gestures].reverse().find(g=>g.completedEpochMs<=row.wall&&row.wall-g.completedEpochMs<1000);
     const proof=acceptedPerformanceAction({game,before:row.before,request:row.request,after,status:row.response.status,gesture,startedAt:row.wall,finishedAt:row.wall+(event.timestamp-row.start)*1000});
     actions.push({...proof,responseSha256:hash(data),requestSha256:hash(JSON.stringify(row.request)),roomIdHash:hash(after.id),source:'Exact game-frame CDP transfer plus trusted pointer completion and declared authority cursor',confirmationScope:'Complete network authority reply; excludes application JSON-read/visible-feedback time'});
    }
-   records.push(record);row.finished=true;
+   row.finished=true;
   });
  });
  await cdp.send('Page.enable');await cdp.send('Runtime.enable');await cdp.send('Network.enable');await cdp.send('Network.setCacheDisabled',{cacheDisabled:false});
  async function bind(){const{frameTree}=await cdp.send('Page.getFrameTree');scope=assertGameContext({tree:frameTree,contexts:[...contexts.values()],origin,game,topUrl:page.url()});assert.equal(scope.frameId,candidateFrame,'OBSERVED_FRAME_IDENTITY_MISMATCH');return scope;}
  async function evaluate(expression){assert.ok(scope&&contexts.has(scope.contextId),'GAME_EXECUTION_CONTEXT_LOST');const value=await cdp.send('Runtime.evaluate',{expression,contextId:scope.contextId,returnByValue:true,awaitPromise:true});assert.ok(!value.exceptionDetails,'GAME_PROBE_EVALUATION_FAILED');return value.result.value;}
- return {cdp,errors,records,actions,bind,evaluate,
+ async function verifyResourceEvidence({freeze=false,finish=false}={}){
+  assert.ok(entryUrl,'RESOURCE_PARENT_ENTRY_REQUIRED');const probe=await evaluate('(()=>{const p=globalThis.__oasisPhysicalPerf;return {schema:p.schema,nonce:p.nonce,documentId:p.documentId,url:p.url,timeOrigin:p.timeOrigin,frames:[],longTasks:[],gestures:[]};})()');verifyProbe(probe,{origin,game,nonce,documentId:round.documentId});
+  const began=Date.now();try{resourceSnapshot=await evaluate(finish?'globalThis.__oasisConsumedImageEvidence.stop()':'globalThis.__oasisConsumedImageEvidence.drain(15000)');}catch(error){try{resourceSnapshot=await evaluate('globalThis.__oasisConsumedImageEvidence.snapshot()');}catch{}if(resourceSnapshot)round.resourceEvidence={...resourceSnapshot,loadingDrainMs:Date.now()-began,verificationError:error.message,hashingPerturbsLoading:true,hashingDuringFrameSampling:resourceSnapshot.phase==='sampling'&&resourceSnapshot.pendingTasks>0};throw error;}
+  round.resourceEvidence={...resourceSnapshot,loadingDrainMs:Date.now()-began,hashingPerturbsLoading:true,hashingDuringFrameSampling:false,rawCdpBodyDiagnosticsRetained:true};
+  assert.ok(!rawBodyDiagnostics.some(d=>d.nonemptyPublicBodyConflict),'RESOURCE_NONEMPTY_CDP_BODY_CONFLICT');
+  resourceEvidence=validateConsumedImageEvidence(resourceSnapshot,{origin,entryUrl,game,nonce,documentId:round.documentId,timeOrigin:probe.timeOrigin,scope,manifest,requests:[...requests.values()]});
+  for(const record of records.filter(r=>r.rawBodyDiagnostic)){
+   const row=requests.get(record.rawBodyDiagnostic.requestId),proof=deliveryProofForRow(row,resourceEvidence,{origin,manifest});
+   if(record.observedBodyBytes>0)assert.equal(record.observedBodySha256,proof.sha256,'RESOURCE_NONEMPTY_CDP_BODY_CONFLICT');
+   record.deliveryProof=proof;record.rawBodyDiagnostic.resolvedByIndependentDelivery=true;
+  }
+  if(freeze){resourceSnapshot=await evaluate('globalThis.__oasisConsumedImageEvidence.freeze()');resourceFrozen=true;round.resourceHashLoadingDrainMs=Date.now()-began;round.resourceEvidenceReadyAt=new Date().toISOString();}
+  if(finish)resourceFinalized=true;
+  round.resourceEvidence={schema:resourceSnapshot.schema,identity:resourceSnapshot.identity,phase:resourceSnapshot.phase,pendingTasks:resourceSnapshot.pendingTasks,errors:resourceSnapshot.errors,receipts:resourceSnapshot.receipts,totalHashedBytes:resourceSnapshot.totalHashedBytes,verifiedReceipts:resourceEvidence.verifiedReceipts,loadingDrainMs:round.resourceHashLoadingDrainMs??null,finalVerificationMs:finish?Date.now()-began:null,hashingPerturbsLoading:true,hashingDuringFrameSampling:false,rawCdpBodyDiagnosticsRetained:true};return round.resourceEvidence;
+ }
+ return {cdp,errors,records,actions,bind,evaluate,verifyResourceEvidence,
   pendingStatic(){return [...requests.values()].filter(r=>r.isStatic&&!r.finished&&!r.failed).length;},
   async clearOwnHttpCache(){await cdp.send('Network.clearBrowserCache');},
   async drain(){const end=Date.now()+drainTimeoutMs;try{while(tasks.size){const remaining=end-Date.now();assert.ok(remaining>0,'PERFORMANCE_NETWORK_DRAIN_TIMEOUT');let timer;try{await Promise.race([Promise.all([...tasks]),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('PERFORMANCE_NETWORK_DRAIN_TIMEOUT')),remaining);})]);}finally{clearTimeout(timer);}}}finally{round.pendingWork=tasks.size;}},
-  summary(){const staticRows=records.filter(r=>r.static),images=staticRows.filter(r=>r.type==='Image'||/\.(?:png|webp|svg|jpg|jpeg)$/.test(r.path)),snapshots=records.filter(r=>r.method==='GET'&&/^\/api\/pvp\/rooms\//.test(r.path));return {staticEncodedBytes:staticRows.length?staticRows.reduce((s,r)=>s+r.encodedTransferBytes,0):null,imageMaxEncodedBytes:images.length?Math.max(...images.map(r=>r.encodedTransferBytes)):staticRows.length?0:null,snapshotMaxEncodedBytes:snapshots.length?Math.max(...snapshots.map(r=>r.encodedTransferBytes)):null,records,bodyPinsOnly:true,headersStored:false,apiBodiesStored:false,encodedScope:'Unmodified actual CDP encodedDataLength includes transport headers, including any 304 header transfer; cache delivery flags are separate'};},
+  summary(){const staticRows=records.filter(r=>r.static),images=staticRows.filter(r=>r.type==='Image'||/\.(?:png|webp|svg|jpg|jpeg)$/.test(r.path)),snapshots=records.filter(r=>r.method==='GET'&&/^\/api\/pvp\/rooms\//.test(r.path));return {staticEncodedBytes:staticRows.length?staticRows.reduce((s,r)=>s+r.encodedTransferBytes,0):null,imageMaxEncodedBytes:images.length?Math.max(...images.map(r=>r.encodedTransferBytes)):staticRows.length?0:null,snapshotMaxEncodedBytes:snapshots.length?Math.max(...snapshots.map(r=>r.encodedTransferBytes)):null,records,rawBodyDiagnostics,bodyPinsOnly:rawBodyDiagnostics.length===0,deliveryEvidenceSeparateFromCdpBody:true,transferCompletionSeparateFromBodyVerification:true,headersStored:false,apiBodiesStored:false,encodedScope:'Unmodified actual CDP encodedDataLength includes transport headers, including any 304 header transfer; cache delivery flags are separate'};},
   cacheFacts(){return {diskCacheSeen:records.some(r=>r.cache.disk),memoryCacheSeen:records.some(r=>r.cache.memory),reuseObserved:records.some(r=>r.cache.disk||r.cache.memory||r.status===304)};},
-  async close(){if(closed)return;closed=true;try{await this.drain();}finally{for(const {event,fn}of handlers)cdp.off(event,fn);await cdp.detach();}}
+  async close(){if(closed)return;closed=true;try{await this.drain();if(scope&&round.documentId&&!resourceFinalized)try{await verifyResourceEvidence({finish:true});}catch(error){errors.push('RESOURCE_FINAL_EVIDENCE: '+error.message);}for(const diagnostic of rawBodyDiagnostics)if(!diagnostic.resolvedByIndependentDelivery)errors.push('RESOURCE_ALTERNATIVE_DELIVERY_UNPROVEN: '+diagnostic.path);if(resourceFrozen&&!resourceFinalized)errors.push('RESOURCE_SAMPLING_EVIDENCE_NOT_FINALIZED');}finally{for(const {event,fn}of handlers)cdp.off(event,fn);await cdp.detach();}}
  };
+}
+
+/** One native input only: evidence installation observes real DOM events, never dispatches them. */
+export async function waitForSettledNativeTapFrame({twoRAF,wait=sleep,timeoutMs=1000}){
+ assert.ok(Number.isSafeInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=1000,'BOUNDED_NATIVE_TAP_SETTLE_REQUIRED');let timer;
+ try{await Promise.race([twoRAF(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('OWNED_NATIVE_TAP_RAF_SETTLE_TIMEOUT')),timeoutMs);})]);}finally{clearTimeout(timer);}await wait(300);
+}
+export function settledNativeTapGeometry({bounds,webview,viewport,position}){
+ const finite=(v,label)=>assert.ok(typeof v==='number'&&Number.isFinite(v),label);
+ for(const k of['x','y','width','height'])finite(bounds[k],'VISIBLE_NATIVE_TAP_BOUNDS_REQUIRED');
+ for(const k of['width','height','screenX','screenY'])finite(webview[k],'PLAYER_NATIVE_WEBVIEW_GEOMETRY_REQUIRED');
+ for(const k of['width','height','dpr'])finite(viewport[k],'PLAYER_NATIVE_VIEWPORT_REQUIRED');
+ assert.ok(bounds.width>0&&bounds.height>0&&viewport.width>0&&viewport.height>0&&viewport.dpr>0,'VISIBLE_NATIVE_TAP_BOUNDS_REQUIRED');
+ assert.equal(webview.visible,true,'PLAYER_NATIVE_WEBVIEW_NOT_VISIBLE');assert.equal(webview.attached,true,'PLAYER_NATIVE_WEBVIEW_NOT_ATTACHED');
+ assert.ok(Math.abs(webview.width/viewport.width-viewport.dpr)<.1&&Math.abs(webview.height/viewport.height-viewport.dpr)<.1,'PLAYER_WEBVIEW_SCALE_UNPROVEN');
+ const x=Math.round(webview.screenX+(bounds.x+(position?.x??bounds.width/2))*viewport.dpr),y=Math.round(webview.screenY+(bounds.y+(position?.y??bounds.height/2))*viewport.dpr);
+ assert.ok(x>=webview.screenX&&x<webview.screenX+webview.width&&y>=webview.screenY&&y<webview.screenY+webview.height,'PLAYER_NATIVE_TAP_OUTSIDE_WEBVIEW');return{x,y};
+}
+export function prepareOwnedNativeTapReceipt(element,{key,expectedUrl,position}){
+ const w=element.ownerDocument.defaultView,d=element.ownerDocument;
+ if(w.location.href!==expectedUrl||d.visibilityState!=='visible'||element.disabled||element.getAttribute('aria-disabled')==='true')throw Error('OWNED_NATIVE_TAP_DOCUMENT_OR_CONTROL_UNPROVEN');
+ if(Object.hasOwn(element,key))throw Error('OWNED_NATIVE_TAP_RECEIPT_ALREADY_PRESENT');
+ const r=element.getBoundingClientRect(),hit=d.elementFromPoint(r.x+(position?.x??r.width/2),r.y+(position?.y??r.height/2));
+ if(!hit||!(hit===element||element.contains(hit)))throw Error('OWNED_NATIVE_TAP_HIT_TARGET_UNPROVEN');
+ const slot={schema:'owned-native-tap-receipt-v1',key,url:expectedUrl,events:[],overflow:false,handlers:[],visibility:d.visibilityState,focusedBefore:d.hasFocus()};
+ Object.defineProperty(element,key,{value:slot,configurable:true});
+ for(const type of['pointerdown','pointerup','click']){const handler=event=>{if(!(event.target===element||element.contains(event.target)))return;if(slot.events.length>=8){slot.overflow=true;return;}slot.events.push({type,isTrusted:event.isTrusted===true,x:event.clientX,y:event.clientY,at:w.performance.now()});};d.addEventListener(type,handler,true);slot.handlers.push({type,handler});}
+ return{schema:slot.schema,key,url:slot.url,visibility:slot.visibility,focusedBefore:slot.focusedBefore,tag:element.tagName,hitTag:hit.tagName};
+}
+export function readOwnedNativeTapReceipt(element,{key,expectedUrl}){
+ const s=element[key],w=element.ownerDocument.defaultView;if(!s||s.key!==key||s.url!==expectedUrl||w.location.href!==expectedUrl)throw Error('OWNED_NATIVE_TAP_RECEIPT_IDENTITY_CHANGED');
+ return{schema:s.schema,key:s.key,url:s.url,events:s.events,overflow:s.overflow,focusedBefore:s.focusedBefore,focusedAfter:element.ownerDocument.hasFocus(),visibility:element.ownerDocument.visibilityState};
+}
+export function removeOwnedNativeTapReceipt(element,{key,expectedUrl}){
+ const s=element[key];if(!s)return{removed:false,missing:true};if(s.key!==key||s.url!==expectedUrl)throw Error('OWNED_NATIVE_TAP_RECEIPT_IDENTITY_CHANGED');
+ for(const{type,handler}of s.handlers)element.ownerDocument.removeEventListener(type,handler,true);delete element[key];return{removed:true,missing:false};
+}
+export function assertOwnedNativeTapReceipt(receipt,{key,expectedUrl}){
+ assert.equal(receipt?.schema,'owned-native-tap-receipt-v1','OWNED_NATIVE_TAP_RECEIPT_REQUIRED');assert.equal(receipt.key,key);assert.equal(receipt.url,expectedUrl);assert.equal(receipt.overflow,false,'OWNED_NATIVE_TAP_RECEIPT_BOUND');
+ assert.ok(Array.isArray(receipt.events)&&receipt.events.length<=8&&receipt.events.every(e=>['pointerdown','pointerup','click'].includes(e.type)&&e.isTrusted===true&&Number.isFinite(e.x)&&Number.isFinite(e.y)&&Number.isFinite(e.at)),'OWNED_NATIVE_TAP_UNTRUSTED_EVENT');
+ assert.equal(receipt.events.filter(e=>e.type==='click').length,1,'OWNED_NATIVE_TAP_EXACT_TRUSTED_CLICK_REQUIRED');return receipt;
+}
+export async function waitForOriginalAndroidForeground({read,expected,timeoutMs=10000,wait=sleep,now=Date.now,evidence}){
+ assert.ok(Number.isSafeInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=10000,'BOUNDED_FOREGROUND_RESTORE_REQUIRED');const end=now()+timeoutMs;let lastError=null;
+ evidence.observations??=[];evidence.observationsOmitted??=0;
+ while(now()<end){let current=null,readTimer;try{const raw=await Promise.race([read(),new Promise((_,reject)=>{readTimer=setTimeout(()=>reject(Error('ORIGINAL_ANDROID_FOREGROUND_RESTORE_TIMEOUT')),Math.max(1,end-now()));})]);current=androidForeground(raw);}catch(error){if(!error.message.startsWith('ANDROID_FOREGROUND_UNPROVEN'))throw error;lastError=error.message;}finally{clearTimeout(readTimer);}
+  const row={observedAt:new Date(now()).toISOString(),unique:current!==null,componentHash:current?hash(current):null,expected:current===expected};if(evidence.observations.length<20)evidence.observations.push(row);else evidence.observationsOmitted++;
+  if(current===expected){evidence.confirmed=true;return current;}await wait(100);
+ }
+ evidence.confirmed=false;evidence.lastParserError=lastError?'ANDROID_FOREGROUND_UNPROVEN':null;throw Error('ORIGINAL_ANDROID_FOREGROUND_RESTORE_TIMEOUT');
+}
+
+/** Read the original control until genuinely enabled; never mutate it or send input. */
+export async function waitForOwnedNativeTapEnabled({read,wait=sleep,now=Date.now,timeoutMs=45000,evidence}){
+ assert.ok(Number.isSafeInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=45000,'BOUNDED_NATIVE_TAP_ENABLE_WAIT_REQUIRED');const began=now(),end=began+timeoutMs;evidence.limitMs=timeoutMs;evidence.observedDisabled=false;evidence.observations=[];evidence.observationsOmitted=0;evidence.enabled=false;
+ try{while(now()<end){let timer;let value;try{value=await Promise.race([read(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('OWNED_NATIVE_TAP_CONTROL_ENABLE_TIMEOUT')),Math.max(1,end-now()));})]);}finally{clearTimeout(timer);}
+   assert.ok(value&&typeof value.visible==='boolean'&&typeof value.enabled==='boolean','OWNED_NATIVE_TAP_CONTROL_STATE_UNPROVEN');const row={elapsedMs:now()-began,visible:value.visible,enabled:value.enabled};if(evidence.observations.length<64)evidence.observations.push(row);else evidence.observationsOmitted++;if(!value.enabled)evidence.observedDisabled=true;
+   if(value.visible&&value.enabled){evidence.enabled=true;return;}await wait(Math.min(100,Math.max(1,end-now())));
+  }throw Error('OWNED_NATIVE_TAP_CONTROL_ENABLE_TIMEOUT');
+ }finally{evidence.waitMs=now()-began;}
+}
+export function ownedNativeTapWaitingDOM(element,{expectedUrl}){
+ const d=element.ownerDocument,w=d.defaultView;if(w.location.href!==expectedUrl)throw Error('OWNED_NATIVE_TAP_WAITING_DOCUMENT_CHANGED');
+ const text=e=>String(e?.textContent||'').replace(/\s+/g,' ').trim().slice(0,160);
+ return{url:w.location.href,visibility:d.visibilityState,focused:d.hasFocus(),viewport:{width:w.innerWidth,height:w.innerHeight,dpr:w.devicePixelRatio},control:{tag:element.tagName,disabled:element.disabled===true,ariaDisabled:element.getAttribute('aria-disabled'),className:String(element.className||'').slice(0,160),text:text(element)},loadingStatuses:[...d.querySelectorAll('.lobby-settings [role="status"],.waiting-room [role="status"],.arena-loading [role="status"]')].slice(0,4).map(e=>({className:String(e.className||'').slice(0,160),text:text(e)}))};
 }
 
 export async function runAndroidPerformance(options){
@@ -127,11 +218,25 @@ export async function runAndroidPerformance(options){
  if(!options.run){report.preflightPassed=true;report.scope='Local signed artifact/source preflight only. No ADB, network, phone or gameplay.';await save();return report;}
  const credentials=await readPlayerCredentials(options.credentialsFile,redactor),origin=artifact.origin,pkg=artifact.packageName,component=pkg+'/com.tianyahuyu.oasis.player.MainActivity';
  const adb=async(...args)=>(await execute('adb',physicalAdbArgs(options,args),{timeout:45000,maxBuffer:4*1024*1024})).stdout.trim(),forwards=async()=>parseAndroidForwards(await adb('forward','--list'));
- let beforeForwards,foreground,forward,browser,context,page,apiContext,baseline,ownedStarted=false,active=null;
+ let beforeForwards,foreground,forward,browser,context,page,apiContext,baseline,ownedStarted=false,active=null,resourceInstrumentation=null;
  const beforeState={};
  const topRead=async path=>{assert.ok(/^\/api\/player\/(app|session|wallet|recovery)(?:\?app_id=[A-Za-z0-9_-]+)?$/.test(path));const result=await page.evaluate(async path=>{const r=await fetch(path,{credentials:'same-origin',cache:'no-store'});return {status:r.status,body:await r.json()};},path);redactor.remember(result.body);return result;};
  const requiredRead=async path=>{const r=await topRead(path);assert.equal(r.status,200,'PLAYER_READ_FAILED');return r.body;};
- const tap=async(target,{position}={})=>{await target.scrollIntoViewIfNeeded();const b=await target.boundingBox();assert.ok(b&&b.width>0&&b.height>0);const targets=await fetch('http://127.0.0.1:'+forward.port+'/json/list',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()),match=targets.filter(t=>t.url===artifact.entryUrl);assert.equal(match.length,1);const box=JSON.parse(match[0].description),viewport=await page.evaluate(()=>({width:innerWidth,dpr:devicePixelRatio}));assert.ok(Math.abs(box.width/viewport.width-viewport.dpr)<.1);const x=Math.round(box.screenX+(b.x+(position?.x??b.width/2))*viewport.dpr),y=Math.round(box.screenY+(b.y+(position?.y??b.height/2))*viewport.dpr);assert.ok(x>=box.screenX&&x<box.screenX+box.width&&y>=box.screenY&&y<box.screenY+box.height);await adb('shell','input','tap',String(x),String(y));};
+ const tap=async(target,{position}={})=>{
+  report.resources.nativeTaps??=[];const receipt={sequence:(report.resources.nativeTapCount||0)+1,startedAt:new Date().toISOString(),settle:{rafCount:2,minimumWaitMs:300},nativeInput:null,trustedReceipt:null,errors:[]};report.resources.nativeTapCount=receipt.sequence;if(report.resources.nativeTaps.length<1000)report.resources.nativeTaps.push(receipt);else report.resources.nativeTapReceiptsOmitted=(report.resources.nativeTapReceiptsOmitted||0)+1;
+  let handle,key,expectedUrl;
+  const recordNative=async(value,exit)=>{const stdout=Buffer.from(value.stdout||''),stderr=Buffer.from(value.stderr||'');receipt.nativeInput={exit,stdoutBytes:stdout.length,stdoutSha256:hash(stdout),stderrBytes:stderr.length,stderrSha256:hash(stderr),stderrFile:null};if(stderr.length)try{const filename='native-tap-'+receipt.sequence+'-stderr.txt';await writeFile(join(out,filename),stderr,{mode:0o600,flag:'wx'});receipt.nativeInput.stderrFile=filename;}catch(error){receipt.stderrCaptureError=redactor.clean(error.message);report.resources.errors.push('OWNED_NATIVE_TAP_STDERR_CAPTURE: '+redactor.clean(error.message));}};
+  try{
+   await target.scrollIntoViewIfNeeded();receipt.enabledWait={};await waitForOwnedNativeTapEnabled({read:async()=>({visible:await target.isVisible(),enabled:await target.isEnabled()}),evidence:receipt.enabledWait});receipt.settle.startedAt=new Date().toISOString();await waitForSettledNativeTapFrame({twoRAF:()=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))});receipt.settle.finishedAt=new Date().toISOString();
+   assert.equal(await target.isEnabled(),true,'OWNED_NATIVE_TAP_CONTROL_DISABLED');handle=await target.elementHandle();assert.ok(handle,'OWNED_NATIVE_TAP_ELEMENT_REQUIRED');const b=await handle.boundingBox();assert.ok(b&&b.width>0&&b.height>0);const ownFrame=await handle.ownerFrame();assert.ok(ownFrame&&!ownFrame.isDetached(),'OWNED_NATIVE_TAP_FRAME_REQUIRED');expectedUrl=ownFrame.url();assert.ok(ownFrame===page.mainFrame()&&expectedUrl===artifact.entryUrl||active&&ownFrame.parentFrame()===page.mainFrame()&&expectedUrl===origin+'/play/'+active.round.game,'OWNED_NATIVE_TAP_FOREIGN_FRAME');
+   const targets=await fetch('http://127.0.0.1:'+forward.port+'/json/list',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()),match=targets.filter(t=>t.url===artifact.entryUrl);assert.equal(match.length,1);const box=JSON.parse(match[0].description),viewport=await page.evaluate(()=>({width:innerWidth,height:innerHeight,dpr:devicePixelRatio,scrollX,scrollY,visibility:document.visibilityState,focused:document.hasFocus(),visual:visualViewport?{width:visualViewport.width,height:visualViewport.height,offsetLeft:visualViewport.offsetLeft,offsetTop:visualViewport.offsetTop,scale:visualViewport.scale}:null}));const point=settledNativeTapGeometry({bounds:b,webview:box,viewport,position});receipt.geometry={bounds:b,webview:Object.fromEntries(['attached','visible','width','height','screenX','screenY'].map(k=>[k,box[k]])),viewport,point};
+   key='__oasisOwnNativeTap_'+randomUUID().replaceAll('-','');receipt.installation=await handle.evaluate(prepareOwnedNativeTapReceipt,{key,expectedUrl,position});
+   assert.equal(androidForeground(await adb('shell','dumpsys','activity','activities')),component,'OWNED_NATIVE_TAP_FOREGROUND_CHANGED');receipt.foregroundVerifiedAt=new Date().toISOString();
+   try{const native=await execute('adb',physicalAdbArgs(options,['shell','input','tap',String(point.x),String(point.y)]),{timeout:45000,maxBuffer:4*1024*1024});await recordNative(native,0);}catch(error){await recordNative(error,typeof error.code==='number'?error.code:null);throw error;}
+   const deadline=Date.now()+1000;let observed;do{observed=await handle.evaluate(readOwnedNativeTapReceipt,{key,expectedUrl});if(observed.events.some(e=>e.type==='click'))break;await sleep(25);}while(Date.now()<deadline);receipt.trustedReceipt=observed;assertOwnedNativeTapReceipt(observed,{key,expectedUrl});receipt.completed=true;
+  }catch(error){receipt.errors.push(redactor.clean(error.message));if(error.message==='OWNED_NATIVE_TAP_CONTROL_ENABLE_TIMEOUT'){let observationTimer;try{receipt.entryWaitObservation=await Promise.race([(async()=>{let observationHandle;try{observationHandle=await target.elementHandle({timeout:1000});assert.ok(observationHandle,'OWNED_NATIVE_TAP_ELEMENT_REQUIRED');const f=await observationHandle.ownerFrame();assert.ok(f&&!f.isDetached(),'OWNED_NATIVE_TAP_FRAME_REQUIRED');const u=f.url();assert.ok(f===page.mainFrame()&&u===artifact.entryUrl||active&&f.parentFrame()===page.mainFrame()&&u===origin+'/play/'+active.round.game,'OWNED_NATIVE_TAP_FOREIGN_FRAME');if(f!==page.mainFrame())assertOwnedPlayerArenaState(active.state,baseline);return await observationHandle.evaluate(ownedNativeTapWaitingDOM,{expectedUrl:u});}finally{try{await observationHandle?.dispose();}catch(observationError){receipt.entryWaitObservationCleanupError=redactor.clean(observationError.message);}}})(),new Promise((_,reject)=>{observationTimer=setTimeout(()=>reject(Error('OWNED_NATIVE_TAP_WAITING_DOM_TIMEOUT')),1500);})]);}catch(observationError){receipt.entryWaitObservationError=redactor.clean(observationError.message);}finally{clearTimeout(observationTimer);}}throw error;}
+  finally{if(handle&&key)try{receipt.receiptCleanup=await handle.evaluate(removeOwnedNativeTapReceipt,{key,expectedUrl});}catch(error){receipt.receiptCleanupError=redactor.clean(error.message);report.resources.errors.push('OWNED_NATIVE_TAP_RECEIPT_CLEANUP: '+redactor.clean(error.message));}try{await handle?.dispose();}catch(error){receipt.elementHandleDisposeError=redactor.clean(error.message);report.resources.errors.push('OWNED_NATIVE_TAP_HANDLE_DISPOSE: '+redactor.clean(error.message));}receipt.finishedAt=new Date().toISOString();}
+ };
  const stopUI=async round=>{if(page&&!page.isClosed()&&await page.locator('.player-lobby').isVisible()&&await page.locator('iframe').count()===0){round.uiStopped=true;return;}await adb('shell','am','force-stop',pkg);await until(async()=>!(await adb('shell','pidof',pkg).catch(e=>{if(e.code===1)return '';throw e;})),'OWN_QA_UI_STOP');round.uiStopped=true;};
  const cleanup=async()=>{
   if(!active)return;const current=active,{state,result,round}=current;
@@ -144,14 +249,14 @@ export async function runAndroidPerformance(options){
   const paths=(await adb('shell','pm','path',pkg)).split(/\r?\n/);assert.equal(paths.length,1);assert.match(paths[0],/^package:\/data\/app\/[A-Za-z0-9_./=+~-]+\/base\.apk$/);const packageInfo=await adb('shell','dumpsys','package',pkg);report.installed=assertInstalledPlayerArtifact({apkSha256:(await adb('shell','sha256sum',paths[0].slice(8))).split(/\s+/)[0],version:packageInfo.match(/\bversionName=([^\s]+)/)?.[1],versionCode:Number(packageInfo.match(/\bversionCode=(\d+)/)?.[1]),debuggable:/\bDEBUGGABLE\b/.test(packageInfo)},artifact);
   report.device={serial:options.serial,adbPort:options.adbPort,model:await adb('shell','getprop','ro.product.model'),os:await adb('shell','getprop','ro.build.version.release'),api:Number(await adb('shell','getprop','ro.build.version.sdk')),abi:await adb('shell','getprop','ro.product.cpu.abilist'),webview:parseWebViewProvider(await adb('shell','dumpsys','webviewupdate')),refresh:parseRefresh(await adb('shell','dumpsys','display')),thermalBefore:parseThermal(await adb('shell','dumpsys','thermalservice'))};
   beforeForwards=await forwards();foreground=androidForeground(await adb('shell','dumpsys','activity','activities'));report.resources.foregroundBeforeHash=hash(foreground);beforeState.webview=report.device.webview;ownedStarted=true;
-  await adb('shell','am','force-stop',pkg);await adb('shell','am','start','-n',component);await until(async()=>/^\d+$/.test(await adb('shell','pidof',pkg)),'OWN_QA_PID');const pid=await adb('shell','pidof',pkg),remote='localabstract:webview_devtools_remote_'+pid;
+  await adb('shell','am','force-stop',pkg);await adb('shell','am','start','-n',component);await until(async()=>/^\d+$/.test(await adb('shell','pidof',pkg).catch(e=>{if(e.code===1)return '';throw e;})),'OWN_QA_PID');const pid=await adb('shell','pidof',pkg),remote='localabstract:webview_devtools_remote_'+pid;
   await until(async()=>(await adb('shell','cat','/proc/net/unix')).includes('@webview_devtools_remote_'+pid),'OWN_QA_DEBUG_SOCKET');const existing=await forwards(),port=await adb('forward','tcp:0',remote);forward={serial:options.serial,port:Number(port),local:'tcp:'+port,remote};ownedAndroidForward(existing,await forwards(),forward);report.resources.events.push({event:'owned-forward-created',...forward});
   browser=await chromium.connectOverCDP('http://127.0.0.1:'+port,{isWebView:true,noDefaults:true,timeout:15000});assert.equal(browser.contexts().length,1);context=browser.contexts()[0];await until(()=>context.pages().length===1,'OWN_QA_SINGLE_PAGE');page=context.pages()[0];await until(()=>page.url()===artifact.entryUrl,'ACTUAL_PLAYER_ENTRY');page.setDefaultTimeout(45000);
   // Identity/authentication run before attaching any network body observer.
   await page.reload({waitUntil:'domcontentloaded'});await page.locator('.player-lobby').waitFor();const existingLogin=await topRead('/api/player/session');
   if(existingLogin.status===200)assert.equal(existingLogin.body.player?.username,credentials.username,'INHERITED_LOGIN_PRESERVED');else{assert.equal(existingLogin.status,401);assert.equal(existingLogin.body.error?.code,'LOGIN_REQUIRED');await page.locator('input[name="username"]').fill(credentials.username);await page.locator('input[name="password"]').fill(credentials.password);const login=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/player/login'&&r.request().method()==='POST');await tap(page.getByRole('button',{name:'登录',exact:true}));assert.equal((await login).status(),200);}
   await page.locator('.player-games').waitFor();baseline=assertPlayerLobbyBaseline({metadata:await requiredRead('/api/player/app?app_id='+artifact.appId),session:await requiredRead('/api/player/session'),wallet:await requiredRead('/api/player/wallet?app_id='+artifact.appId),recovery:await requiredRead('/api/player/recovery?app_id='+artifact.appId),appId:artifact.appId,username:credentials.username});redactor.add(baseline.playerId);redactor.add(baseline.externalUserId);
-  apiContext=await httpRequest.newContext({ignoreHTTPSErrors:false,timeout:12000});const nonce=randomUUID(),cacheSession=randomUUID();await context.addInitScript(installPhysicalProbe,{origin,nonce});report.executed=true;report.physicalDevice=true;report.webviewSessionId=cacheSession;report.inputScope='ADB native taps and CDP trusted touch drags; no JavaScript-dispatched input';
+  apiContext=await httpRequest.newContext({ignoreHTTPSErrors:false,timeout:12000});const nonce=randomUUID(),cacheSession=randomUUID();await context.addInitScript(installPhysicalProbe,{origin,nonce});resourceInstrumentation=await installOwnedPlayerResourceEvidence(context,{origin,entryUrl:artifact.entryUrl,games:options.games,manifest,nonce});report.resourceInstrumentation={schema:'owned-player-resource-evidence-v1',installedBeforeGamePreload:true,readsOnlyConsumedPublicImageBlob:true,refetches:false,responseCloneOrCancel:false,hashingPerturbsLoading:true,hashingAllowedDuringFrameSampling:false};report.executed=true;report.physicalDevice=true;report.webviewSessionId=cacheSession;report.inputScope='ADB native taps and CDP trusted touch drags; no JavaScript-dispatched input';
   // Use the PNG decoder already shipped by the pinned Playwright dependency.
   const decoderPath=join(dirname(require.resolve('playwright-core')),'lib/utilsBundle.js'),{PNG}=require(decoderPath);assert.ok(typeof PNG?.sync?.read==='function','PNG_DECODER_UNAVAILABLE');report.motionDecoder={source:'Installed Playwright bundled PNG decoder',sha256:hash(await readFile(decoderPath))};
   const primed=new Set();
@@ -162,17 +267,17 @@ export async function runAndroidPerformance(options){
    const observer=ownedObserver(page,{origin,state,result,clean:redactor.clean,remember:body=>{redactor.remember(body);if(body.access_token){assert.equal(body.scope?.app_id,baseline.appId);assert.equal(body.external_user_id,baseline.externalUserId);state.appId=body.scope.app_id;}}});
    let collector,touch,sampling=false,samplingPump,pumpError;active={state,result,observer,collector:null,round};
    try{
-    collector=await createPhysicalNetworkCollector({context,page,origin,game,state,baseline,manifest,nonce,round});active.collector=collector;
+    collector=await createPhysicalNetworkCollector({context,page,origin,game,state,baseline,manifest,nonce,round,entryUrl:artifact.entryUrl});active.collector=collector;
     round.cache={sessionId:cacheSession,cacheDisabled:false,routing:false,cookiesCleared:false,httpCacheCleared:cacheMode==='cold',mainDocumentReloaded:false,sameContext:true,primed:primed.has(game),passed:false};
     if(cacheMode==='cold'){await collector.clearOwnHttpCache();await page.reload({waitUntil:'domcontentloaded'});await page.locator('.player-games').waitFor();round.cache.mainDocumentReloaded=true;}
     assert.equal(page.url(),artifact.entryUrl,'PLAYER_DOCUMENT_CHANGED');if(cacheMode==='cold')await collector.clearOwnHttpCache();const start=Date.now();round.startedAt=new Date(start).toISOString();await tap(page.locator('.player-game-card').filter({has:page.getByText(ARENA_GAMES[game].name,{exact:true})}));
     await until(()=>Boolean(state.token&&state.sessionId),'ACTUAL_LAUNCH_EXCHANGE');await until(()=>page.frames().some(f=>f.url()===origin+'/play/'+game),'ACTUAL_GAME_IFRAME');const frame=page.frames().find(f=>f.url()===origin+'/play/'+game);assert.equal(await page.locator('iframe').count(),1);
-    await collector.bind();const probe=await collector.evaluate('(()=>globalThis.__oasisPhysicalPerf)()');verifyProbe(probe,{origin,game,nonce});round.documentId=probe.documentId;round.context=await collector.bind();
+    await collector.bind();const probe=await collector.evaluate('(()=>globalThis.__oasisPhysicalPerf)()');verifyProbe(probe,{origin,game,nonce});round.documentId=probe.documentId;round.context=await collector.bind();round.sessionIdHash=hash(state.sessionId);
     const read=createNativeCleanupApi({page:{request:apiContext},origin,state,result,clean:redactor.clean});assertAndroidSessionBaseline(state,await read('/api/arena/session'),ARENA_IDS);assertOwnedPlayerArenaState(state,baseline);
     state.phase='playing';state.practiceRequested=true;await tap(frame.getByRole('button',{name:'免费练习',exact:false}));await tap(frame.getByRole('button',{name:'确认规则 · 准备开局',exact:true}));await until(()=>state.room?.status==='active','OWN_FREE_BOT_ACTIVE');assertPerformanceRoom(state.room,{game,baseline,ownedRooms:state.ownedRooms});redactor.add(state.room.id);round.roomIdHash=hash(state.room.id);
-    const ready=await waitForPlayable(frame,game,{pendingStatic:()=>collector.pendingStatic(),readRoom:()=>state.room});round.entry={ready:ready.ready,elapsedMs:Date.now()-start-ready.turn_wait_ms-ready.other_player_ready_wait_ms,wallMs:Date.now()-start,excludedTurnWaitMs:ready.turn_wait_ms,excludedOtherReadyMs:ready.other_player_ready_wait_ms,scene:ready};
+    const ready=await waitForPlayable(frame,game,{pendingStatic:()=>collector.pendingStatic(),readRoom:()=>state.room});await collector.drain();await collector.verifyResourceEvidence({freeze:true});round.entry={ready:ready.ready,elapsedMs:Date.now()-start-ready.turn_wait_ms-ready.other_player_ready_wait_ms,wallMs:Date.now()-start,excludedTurnWaitMs:ready.turn_wait_ms,excludedOtherReadyMs:ready.other_player_ready_wait_ms,scene:ready};
     touch=playerTouchFrame(frame,{tap,touch:async(type,x,y)=>collector.cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x,y,id:1}],modifiers:0})});
-    await collector.evaluate('(()=>{globalThis.__oasisPhysicalPerf.sampleStartAt=performance.now();return true;})()');const began=Date.now(),windowMs=Math.max(options.roomMs,Math.ceil(options.sampleMs/(options.repetitions*2))),deadline=began+windowMs;let previousRoom=state.room,receipt=Date.now(),nextAction=0,nextMotion=0,lastCursor=authorityCursor(game,state.room);
+    await collector.evaluate('(()=>{globalThis.__oasisPhysicalPerf.sampleStartAt=performance.now();return true;})()');const began=Date.now();round.sampleStartedAt=new Date(began).toISOString();const windowMs=Math.max(options.roomMs,Math.ceil(options.sampleMs/(options.repetitions*2))),deadline=began+windowMs;let previousRoom=state.room,receipt=Date.now(),nextAction=0,nextMotion=0,lastCursor=authorityCursor(game,state.room);
     sampling=true;samplingPump=(async()=>{while(sampling){assertPerformanceRoom(state.room,{game,baseline,ownedRooms:state.ownedRooms});if(state.room!==previousRoom){previousRoom=state.room;receipt=Date.now();}const motion=activeMotionState(game,state.room,Date.now()-receipt);await collector.evaluate(`(()=>{const p=globalThis.__oasisPhysicalPerf;if(p.documentId!==${JSON.stringify(round.documentId)})throw Error('DOCUMENT_CHANGED');p.active=${motion.active};p.moving=${motion.moving};p.validUntil=performance.now()+500;return true;})()`);await sleep(100);}})().catch(error=>{pumpError=error;});
     while(Date.now()<deadline){
      if(pumpError)throw pumpError;
@@ -200,7 +305,7 @@ export async function runAndroidPerformance(options){
      }
      await sleep(100);
     }
-    sampling=false;await samplingPump;if(pumpError)throw pumpError;await touch.release();round.sampleWallMs=Date.now()-began;await collector.drain();await observer.drain({final:false});
+    sampling=false;await samplingPump;if(pumpError)throw pumpError;await touch.release();round.sampleWallMs=Date.now()-began;await collector.drain();await collector.verifyResourceEvidence({finish:true});await observer.drain({final:false});
     const snapshot=await collector.evaluate('(()=>{const p=globalThis.__oasisPhysicalPerf;p.sampleEndAt=performance.now();p.stop();return p;})()');verifyProbe(snapshot,{origin,game,nonce,documentId:round.documentId});round.probe=snapshot;
     round.renderers=await frame.evaluate(()=>[...document.querySelectorAll('[data-render-calls],[data-render-quality],[data-art-quality]')].map(e=>({tag:e.tagName,data:Object.fromEntries(Object.entries(e.dataset).filter(([key])=>/render|triangle|quality|capture|sceneReady/i.test(key)))})));
     state.returning=true;state.phase='returning';await adb('shell','input','keyevent','4');await sleep(200);const leave=frame.getByRole('button',{name:'确认离开',exact:true});if(!frame.isDetached()&&await leave.isVisible())await tap(leave);const confirm=frame.locator('[data-return="confirm"]');if(!frame.isDetached()&&await confirm.isVisible())await tap(confirm);await page.locator('.player-games').waitFor();assert.equal(await page.locator('iframe').count(),0);round.returned=true;round.uiStopped=true;
@@ -214,9 +319,10 @@ export async function runAndroidPerformance(options){
  finally{
   await cleanup();
   try{await apiContext?.dispose();}catch(error){report.resources.errors.push(redactor.clean(error.message));}
+  try{await resourceInstrumentation?.dispose();}catch(error){report.resources.errors.push('RESOURCE_INIT_DISPOSE: '+redactor.clean(error.message));}
   try{await browser?.close();}catch(error){report.resources.errors.push(redactor.clean(error.message));}
   if(forward)try{assert.deepEqual((await forwards()).filter(r=>r.local===forward.local),[{serial:forward.serial,local:forward.local,remote:forward.remote}]);await adb('forward','--remove',forward.local);report.resources.events.push({event:'owned-forward-removed',local:forward.local});}catch(error){report.resources.errors.push(redactor.clean(error.message));}
-  if(ownedStarted)try{await adb('shell','am','force-stop',pkg);if(foreground){await adb('shell','am','start','-n',foreground);const restored=androidForeground(await adb('shell','dumpsys','activity','activities'));assert.equal(restored,foreground);report.resources.foregroundRestoredHash=hash(restored);}}catch(error){report.resources.errors.push(redactor.clean(error.message));}
+  if(ownedStarted)try{await adb('shell','am','force-stop',pkg);if(foreground){await adb('shell','am','start','-n',foreground);report.resources.foregroundRestoreEvidence={};const restored=await waitForOriginalAndroidForeground({read:()=>adb('shell','dumpsys','activity','activities'),expected:foreground,evidence:report.resources.foregroundRestoreEvidence});report.resources.foregroundRestoredHash=hash(restored);}}catch(error){report.resources.errors.push(redactor.clean(error.message));}
   if(beforeForwards)try{assertAndroidForwardsRestored(beforeForwards,await forwards());report.resources.forwardsRestored=true;}catch(error){report.resources.errors.push(redactor.clean(error.message));}
   if(report.device)try{report.device.thermalAfter=parseThermal(await adb('shell','dumpsys','thermalservice'));assert.deepEqual(parseWebViewProvider(await adb('shell','dumpsys','webviewupdate')),beforeState.webview||report.device.webview);}catch(error){report.resources.errors.push(redactor.clean(error.message));}
   try{const finalSources=Object.fromEntries(await Promise.all(sourceFiles.map(async path=>[path,hash(await readFile(join(ROOT,path)))])));assert.deepEqual(finalSources,sources,'MEASUREMENT_SOURCE_CHANGED');report.runtimeSources.after=await assertRuntimeSources(ROOT,runtimePins);assert.equal(hash(await readFile(manifestPath)),report.releaseManifestSha256,'RELEASE_MANIFEST_CHANGED');}catch(error){report.resources.errors.push(redactor.clean(error.message));}
