@@ -141,7 +141,14 @@ def backup_source(marker,release,manifest,**selector):
     verification=p.verify_historical_release(Path(release),manifest,source['helpers'])
     p.require(verification['helpers']==source['helpers'] and verification.get('inspection_closure'),
               'PRODUCTION_BACKUP_HELPER_CLOSURE_CHANGED')
-    return {**source,'inspection_closure':verification['inspection_closure']}
+    historical=contract(a.historical_sources,marker,release,manifest)
+    for item in historical:
+        verified=p.verify_historical_release(Path(item['release']),item['manifest_sha256'],item['helpers'])
+        p.require(verified['helpers']==item['helpers'] and verified.get('inspection_closure'),
+                  'PRODUCTION_HISTORICAL_SNAPSHOT_HELPER_CLOSURE_CHANGED')
+        item['inspection_closure']=verified['inspection_closure']
+    return {**source,'inspection_closure':verification['inspection_closure'],
+            **({'historical_sources':historical} if historical else {})}
 
 def inspect_database(marker,runtime,database,source,master):
     helper=Path(source['release'])/'platform/deploy/production-instance/inspect-backup.mjs'
@@ -166,6 +173,10 @@ def inspect_database(marker,runtime,database,source,master):
                   'PRODUCTION_RESTORE_PROFILE_VERIFY_INVALID')
     again=p.verify_historical_release(Path(source['release']),source['manifest_sha256'],source['helpers'])
     p.require(again.get('inspection_closure')==source['inspection_closure'], 'PRODUCTION_INSPECTION_SOURCE_CHANGED')
+    for item in source.get('historical_sources',[]):
+        again=p.verify_historical_release(Path(item['release']),item['manifest_sha256'],item['helpers'])
+        p.require(again['helpers']==item['helpers'] and again.get('inspection_closure')==item['inspection_closure'],
+                  'PRODUCTION_HISTORICAL_INSPECTION_SOURCE_CHANGED')
     return verified
 
 def archive_identity(archive,source,current_env):

@@ -16,6 +16,7 @@ const id=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(value),sh
 const fail=code=>{throw Error(code);};
 const canonical=value=>JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))):item);
 const quote=value=>"'"+value.replaceAll("'","''")+"'";
+const terminalRoom=status=>['settled','cancelled','voided'].includes(status);
 function normalizedPolicy(value){
  if(!value||Object.keys(value).sort().join(',')!==[...policyFields].sort().join(','))fail('PRODUCTION_POLICY_SNAPSHOT_INVALID');
  const revision=String(value.revision),at=new Date(value.approved_at);
@@ -25,12 +26,14 @@ function normalizedPolicy(value){
 }
 export function validateExpectation(expected){
  if(!expected||expected.inspection_contract!=='production-free-v2'||!Array.isArray(expected.policy_approvals)||expected.policy_approvals.length>256)fail('PRODUCTION_INSPECTION_EXPECTATION_REQUIRED');
+ const rawHistory=Object.hasOwn(expected,'historical_policy_approvals')?expected.historical_policy_approvals:[];
+ if(!Array.isArray(rawHistory)||rawHistory.length>256)fail('PRODUCTION_POLICY_HISTORY_INVALID');
  const p=expected.runtime_profile;
  if(!p||Object.keys(p).sort().join(',')!=='app_id,manifest_sha256,profile,public_origin,release')fail('PRODUCTION_INSPECTION_PROFILE_INVALID');
  try{const url=new URL(p.public_origin);if(url.protocol!=='https:'||url.origin!==p.public_origin||url.username||url.password)fail('PRODUCTION_INSPECTION_PROFILE_INVALID');}catch{fail('PRODUCTION_INSPECTION_PROFILE_INVALID');}
  const approvals=expected.policy_approvals.map(normalizedPolicy);
  if(p.profile==='closed'){
-  if(p.app_id!==null||p.release!==null||p.manifest_sha256!==null||approvals.length)fail('PRODUCTION_INSPECTION_PROFILE_INVALID');
+  if(p.app_id!==null||p.release!==null||p.manifest_sha256!==null||approvals.length||rawHistory.length)fail('PRODUCTION_INSPECTION_PROFILE_INVALID');
  }else{
   if(p.profile!=='firstparty-free-v1'||!id(p.app_id)||!p.app_id.startsWith('app_')||!/^\/opt\/oasis\/releases\/\d{8}-\d{2}$/.test(p.release)||!sha(p.manifest_sha256)||!approvals.length)fail('PRODUCTION_INSPECTION_PROFILE_INVALID');
   for(const a of approvals){
@@ -39,13 +42,28 @@ export function validateExpectation(expected){
   }
   if(new Set(approvals.map(canonical)).size!==approvals.length)fail('PRODUCTION_POLICY_APPROVAL_HISTORY_AMBIGUOUS');
  }
- return {...expected,policy_approvals:approvals};
+ // Only an independently validated marker supplies this history. Never derive
+ // approvals from restored rows; current policy remains current-source-only.
+ const history=rawHistory.map(normalizedPolicy);
+ if(history.length){
+  const binding=a=>canonical({app_id:a.app_id,profile:a.profile,scope:a.scope,currency_scale:a.currency_scale,allowed_origins:a.allowed_origins,game_ids:a.game_ids});
+  const stable=binding(approvals[0]),firstRevision=approvals.reduce((min,a)=>BigInt(a.revision)<min?BigInt(a.revision):min,BigInt(approvals[0].revision));
+  if(approvals.some(a=>binding(a)!==stable)||new Set([...approvals,...history].map(a=>a.revision)).size!==approvals.length+history.length)fail('PRODUCTION_POLICY_APPROVAL_HISTORY_AMBIGUOUS');
+  for(const a of history){
+   if(a.release===p.release||BigInt(a.revision)>=firstRevision||binding(a)!==stable)fail('PRODUCTION_POLICY_HISTORY_BINDING_CHANGED');
+   // Reuse the strict policy/source-shape contract with this prior source, then
+   // bind its stable App identity and revision range to the current approvals.
+   validateExpectation({inspection_contract:expected.inspection_contract,runtime_profile:{...p,release:a.release,manifest_sha256:a.manifest_sha256},policy_approvals:[a]});
+  }
+ }
+ return {...expected,policy_approvals:approvals,historical_policy_approvals:history};
 }
 
 export const PRODUCTION_AUDIT_KEYS=['player_session_orphans','player_app_identity_errors','player_arena_identity_errors','wallet_player_identity_errors','launch_scope_errors','active_user_scope_errors','request_scope_errors','run_decision_errors','run_profile_errors','admission_snapshot_errors','nonzero_financial_state','financial_rows','financial_obligations'];
 const runProfiles=Object.values(RUN_PRACTICE_PROFILES).map(({ruleVersion,protocol,profileId})=>({ruleVersion,protocol,profileId}));
 function extraAuditSQL(expected){
- const approved=quote(JSON.stringify(expected.policy_approvals));
+ const approved=quote(JSON.stringify([...expected.policy_approvals,...expected.historical_policy_approvals]));
+ const currentRelease=expected.runtime_profile.release===null?'NULL':quote(expected.runtime_profile.release);
  return `WITH approved AS (SELECT value AS policy FROM jsonb_array_elements(${approved}::jsonb)), run_profiles AS (SELECT value AS profile FROM jsonb_array_elements(${quote(JSON.stringify(runProfiles))}::jsonb)),
  player_identity_errors AS (
  SELECT 1 FROM gp_player_app_ids m LEFT JOIN gp_players p ON p.id=m.player_id LEFT JOIN gp_apps a ON a.id=m.app_id WHERE p.id IS NULL OR a.id IS NULL
@@ -53,7 +71,7 @@ function extraAuditSQL(expected){
  UNION ALL SELECT 1 FROM pvp_rooms r CROSS JOIN LATERAL jsonb_array_elements(CASE WHEN jsonb_typeof(r.players)='array' THEN r.players ELSE '[]'::jsonb END) member LEFT JOIN gp_player_app_ids m ON m.app_id=r.app_id AND m.external_user_id=member->>'external_user_id' WHERE member->'bot'='false'::jsonb AND m.player_id IS NULL
  ), snapshot_errors AS (
  SELECT 1 FROM gp_sessions s WHERE NOT EXISTS(SELECT 1 FROM approved a WHERE a.policy->>'state'='open' AND a.policy->>'app_id'=s.app_id AND a.policy->>'profile'=s.admission_profile AND a.policy->>'revision'=s.admission_revision::text AND a.policy->'game_ids' ? s.game_id AND a.policy->'allowed_origins' ? s.host_origin)
- UNION ALL SELECT 1 FROM pvp_rooms r WHERE NOT EXISTS(SELECT 1 FROM approved a WHERE a.policy->>'state'='open' AND a.policy->>'app_id'=r.app_id AND a.policy->>'profile'=r.terms->>'admission_profile' AND a.policy->>'revision'=r.terms->>'admission_revision' AND a.policy->>'release'=r.terms->>'admission_release' AND a.policy->>'manifest_sha256'=r.terms->>'admission_manifest_sha256' AND a.policy->>'proof_sha256'=r.terms->>'admission_proof_sha256' AND a.policy->'scope'=r.scope AND a.policy->'game_ids' ? r.game_id)
+ UNION ALL SELECT 1 FROM pvp_rooms r WHERE NOT EXISTS(SELECT 1 FROM approved a WHERE a.policy->>'state'='open' AND a.policy->>'app_id'=r.app_id AND a.policy->>'profile'=r.terms->>'admission_profile' AND a.policy->>'revision'=r.terms->>'admission_revision' AND a.policy->>'release'=r.terms->>'admission_release' AND a.policy->>'manifest_sha256'=r.terms->>'admission_manifest_sha256' AND a.policy->>'proof_sha256'=r.terms->>'admission_proof_sha256' AND a.policy->'scope'=r.scope AND a.policy->'game_ids' ? r.game_id AND (a.policy->>'release'=${currentRelease} OR r.status IN ('settled','cancelled','voided')))
  ), run_errors AS (
  SELECT 1 FROM pvp_run_input_decisions d LEFT JOIN pvp_rooms r ON r.id=d.room_id WHERE r.id IS NULL OR r.game_id!='run' OR r.run_input_state IS NULL OR r.run_input_state->>'roomId' IS DISTINCT FROM r.id OR r.run_input_state->>'playerKey' IS DISTINCT FROM d.external_user_id OR d.decision->>'commandSeq' IS DISTINCT FROM d.command_seq::text OR d.decision->>'outcome' IS NULL OR d.decision->>'outcome' NOT IN ('accepted','rejected') OR jsonb_typeof(d.decision) IS DISTINCT FROM 'object' OR d.decision ? 'duplicate' OR NOT(d.decision ?& ARRAY['commandSeq','type','executeTick','clockEpoch','outcome','code','acceptedInputNo','decidedAtServerTick','revision']) OR (SELECT count(*) FROM jsonb_object_keys(CASE WHEN jsonb_typeof(d.decision)='object' THEN d.decision ELSE '{}'::jsonb END))!=9 OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(r.players)='array' THEN r.players ELSE '[]'::jsonb END) m WHERE m->>'external_user_id'=d.external_user_id AND m->'bot'='false'::jsonb)
  )
@@ -88,7 +106,7 @@ export function profileInspectSQL(expected){
  'policies',(SELECT COALESCE(json_agg(json_build_object(${policyFields.map(key=>`'${key}',${key==='revision'?'revision::text':key}`).join(',')})),'[]'::json) FROM gp_production_admission),
  'bindings',(SELECT COALESCE(json_agg(json_build_object('app_id',app_id,'provider',provider,'wallet_url',wallet_url,'wallet_key_id',wallet_key_id,'scope',scope)),'[]'::json) FROM gp_wallet_bindings),
  'wallet_scopes',(SELECT COALESCE(json_agg(json_build_object(${['scope_id',...scopes,'currency_scale','treasury_available','treasury_reserved','treasury_inbound','fee_available','fee_pending','ledger_version'].map(key=>`'${key}',${key.includes('available')||key.includes('reserved')||key.includes('inbound')||key.includes('pending')||key==='ledger_version'?key+'::text':key}`).join(',')})),'[]'::json) FROM wallet_scopes),
- 'rooms',(SELECT COALESCE(json_agg(json_build_object('game_id',game_id,'capacity',capacity,'practice',practice,'entry_minor',entry_minor::text,'fee_bps',fee_bps,'terms',terms,'scope',scope,'players',players)),'[]'::json) FROM pvp_rooms)));
+ 'rooms',(SELECT COALESCE(json_agg(json_build_object('game_id',game_id,'status',status,'capacity',capacity,'practice',practice,'entry_minor',entry_minor::text,'fee_bps',fee_bps,'terms',terms,'scope',scope,'players',players)),'[]'::json) FROM pvp_rooms)));
  SELECT json_build_object('environment',(SELECT environment FROM gp_runtime_identity WHERE singleton),'sandbox_apps',(SELECT count(*) FROM gp_apps WHERE environment!='production'),'reference_keys',(SELECT count(*) FROM gp_keys WHERE direction='platform-to-wallet'),'database',current_database()) AS identity;
  \\else
  DO $production_guard$ BEGIN RAISE EXCEPTION 'PRODUCTION_RESTORE_SCHEMA_INVALID'; END $production_guard$;
@@ -121,11 +139,16 @@ export function validateProfileInspection(value,identity,master,expected){
   if(policy.state==='closed'&&app.status!=='paused'||policy.state==='open'&&app.status!=='active')fail('PRODUCTION_RESTORE_APP_POLICY_STATE_CHANGED');
   for(const room of profiles.rooms){
    if(!ARENA_IDS.includes(room.game_id)||!allowedCapacity(room.game_id,room.capacity)||room.practice!==true||room.entry_minor!=='0'||room.fee_bps!==0||room.terms?.entry_minor!=='0'||room.terms?.fee_bps!==0||!Array.isArray(room.players)||room.players.length!==room.capacity||room.players.filter(player=>player.bot===false).length!==1||room.players.filter(player=>player.bot===true).length!==room.capacity-1||new Set(room.players.map(player=>player.external_user_id)).size!==room.capacity)fail('PRODUCTION_RESTORE_ROOM_PROFILE_INVALID');
-   if(!expected.policy_approvals.some(approved=>approved.state==='open'&&room.terms.admission_profile===approved.profile&&String(room.terms.admission_revision)===approved.revision&&room.terms.admission_release===approved.release&&room.terms.admission_manifest_sha256===approved.manifest_sha256&&room.terms.admission_proof_sha256===approved.proof_sha256&&approved.game_ids.includes(room.game_id)&&canonical(room.scope)===canonical(approved.scope)))fail('PRODUCTION_RESTORE_ROOM_SNAPSHOT_NOT_APPROVED');
+   const accepted=approved=>approved.state==='open'&&room.terms.admission_profile===approved.profile&&String(room.terms.admission_revision)===approved.revision&&room.terms.admission_release===approved.release&&room.terms.admission_manifest_sha256===approved.manifest_sha256&&room.terms.admission_proof_sha256===approved.proof_sha256&&approved.game_ids.includes(room.game_id)&&canonical(room.scope)===canonical(approved.scope);
+   if(!expected.policy_approvals.some(accepted)&&!(terminalRoom(room.status)&&expected.historical_policy_approvals.some(accepted)))fail('PRODUCTION_RESTORE_ROOM_SNAPSHOT_NOT_APPROVED');
   }
  }
  for(const key of value.keys)decryptCheck(master,key);
  const snapshot={runtime_profile:p,policy,run_profiles:runProfiles};
+ if(expected.historical_policy_approvals.length){
+  const ordered=[...expected.historical_policy_approvals].sort((a,b)=>BigInt(a.revision)<BigInt(b.revision)?-1:1);
+  snapshot.approved_history_sha256=createHash('sha256').update(canonical(ordered)).digest('hex');
+ }
  return {environment:'production',inspection_contract:expected.inspection_contract,master_key_sha256:createHash('sha256').update(master).digest('hex'),decrypted_keys:value.keys.length,row_counts:value.rows,audit:value.audit,profile_snapshot:snapshot,profile_snapshot_sha256:createHash('sha256').update(canonical(snapshot)).digest('hex')};
 }
 function legacyAudit(){return Object.fromEntries(['balance_mismatches','scope_mismatches','unbalanced_transactions','ledger_version_mismatches','orphan_records','invalid_constraints','pending_cycles','pending_probability_operations','pending_pvp_operations','active_rooms','pending_wallet_operations','clearing_mismatches','transfer_order_mismatches','wallet_hold_mismatches','pending_transfers'].map(key=>[key,0]));}

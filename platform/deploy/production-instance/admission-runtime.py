@@ -180,5 +180,49 @@ def approved_source(marker, release, manifest, *, runtime_env_sha=None, runtime_
         require(len(selected)==1,'PRODUCTION_BACKUP_CONFIGURATION_NOT_APPROVED');selected=selected[0]
     return {**entry,**selected}
 
+def historical_sources(marker, release, manifest):
+    """Prior marker-approved sources authorize old snapshots, never current admission."""
+    current = approved_source(marker, release, manifest)
+    history = marker['release_history']
+    position = next(index for index, entry in enumerate(history)
+                    if entry['release'] == release and entry['manifest_sha256'] == manifest)
+    if current['runtime_profile']['profile'] != FREE_PROFILE:
+        return []
+    current_policies = current['policy_approvals']
+    earliest = min(int(policy['revision']) for policy in current_policies)
+    stable = ('app_id', 'profile', 'scope', 'currency_scale', 'allowed_origins', 'game_ids')
+    reference = current_policies[0]
+    seen = {policy['revision'] for policy in current_policies}
+    require(len(seen) == len(current_policies), 'PRODUCTION_POLICY_REVISION_AMBIGUOUS')
+    result = []
+    for entry in history[:position]:
+        source = approved_source(marker, entry['release'], entry['manifest_sha256'])
+        configurations = [source, *entry.get('configuration_history', [])]
+        policies = []
+        unique = set()
+        for configuration in configurations:
+            # Re-select each approved archived configuration, including its pins.
+            selected = approved_source(marker, source['release'], source['manifest_sha256'],
+                runtime_env_sha=configuration['private_pins']['runtime.env']['sha256'],
+                runtime_profile_selector=configuration['runtime_profile'])
+            for policy in selected['policy_approvals']:
+                identity = json.dumps(policy, sort_keys=True)
+                if identity in unique:
+                    continue
+                unique.add(identity)
+                require(all(policy[field] == reference[field] for field in stable)
+                        and int(policy['revision']) < earliest and policy['revision'] not in seen,
+                        'PRODUCTION_HISTORICAL_POLICY_SCOPE_OR_REVISION_CHANGED')
+                seen.add(policy['revision']); policies.append(policy)
+        if policies:
+            result.append({name: source[name] for name in ('release', 'manifest_sha256', 'helpers')}
+                          | {'policy_approvals': policies})
+    return result
+
+
 def inspection_expectation(source):
-    return {name: source[name] for name in ('inspection_contract', 'runtime_profile', 'policy_approvals')}
+    result = {name: source[name] for name in ('inspection_contract', 'runtime_profile', 'policy_approvals')}
+    historical = source.get('historical_sources', [])
+    if historical:
+        result['historical_policy_approvals'] = [policy for item in historical for policy in item['policy_approvals']]
+    return result
