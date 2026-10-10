@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {activityRoomState,canExercise,runContinuousActions} from '../scripts/mobile-continuous-driver.mjs';
+import {activityRoomState,canExercise,canExerciseRunJump,runContinuousActions} from '../scripts/mobile-continuous-driver.mjs';
 import {playOneArenaAction} from '../scripts/android-game-actions.mjs';
+import * as runEngine from '../arena/run/engine.mjs';
+import {RUN_PRACTICE_PROFILES} from '../shared/run-practice-profiles.mjs';
 const room=(game='match')=>({id:'room-a',game_id:game,status:'active',me:'a',me_last_seq:0,server_now:100,game:{status:'active',turnKey:'a',busyUntil:0}});
 function driver(options={}){let time=0,current=room();const actions=[];return{actions,setRoom:r=>current=r,run:extra=>runContinuousActions({game:'match',roomId:'room-a',readRoom:()=>current,deadlineAt:6000,clock:()=>time,sleep:async ms=>time+=ms,minimumActionBudgetMs:1000,playAction:async controls=>{await controls.beforeAction();const before=current.me_last_seq;current.me_last_seq++;actions.push(time);return{roomId:current.id,sequenceBefore:before,sequenceAfter:current.me_last_seq};},...options,...extra})};}
 test('continuous driver performs serial authority-confirmed actions without changing room',async()=>{const h=driver();const r=await h.run();assert.equal(r.reason,'deadline');assert.deepEqual(h.actions,[0,1000,2000,3000,4000,5000]);assert.equal(r.room_count,1);assert.equal(r.overrun_ms,0);});
@@ -96,4 +98,28 @@ test('V2.3 HTTP and business rejections preserve the first body without a retry'
  for(const status of [409,200]){const h=inputUI({status,mutate:f=>Object.assign(f.after.run_inputs.decisions[0],{outcome:'rejected',code:'BUSY',acceptedInputNo:null})});
   await assert.rejects(()=>playOneArenaAction(h.frame,'run',()=>h.current,{touch:true}),e=>e.status===status&&e.responseBody.run_inputs.decisions[0].code==='BUSY');assert.equal(h.taps(),1);
  }
+});
+
+function jumpFixture(version){
+ const state=runEngine.createState('ab'.repeat(32),1000,{ruleVersion:version,startPolicy:runEngine.RUN_SCENE_READY_POLICY,players:[{key:'a',seatIndex:0,isBot:false},{key:'bot',seatIndex:1,isBot:true}]});
+ runEngine.armStart(state,1000);runEngine.tick(state,1500);
+ const current={...room('run'),server_now:1500,practice:true,entry_minor:'0',fee_bps:0,capacity:2,game:runEngine.view(state,'a')};
+ const profile=Object.values(RUN_PRACTICE_PROFILES).find(p=>p.ruleVersion===version);
+ if(profile){current.run_input_profile={rule_version:version,protocol:profile.protocol,profile_id:profile.profileId};current.run_inputs={ruleVersion:version,protocol:profile.protocol,...(profile.profileId?{profileId:profile.profileId}:{}),roomId:current.id,playerKey:current.me,clockEpoch:1,revision:1,headTick:current.game.snapshotTick,serverTick:current.game.snapshotTick,committedThroughTick:0,processedThroughCommandSeq:0,acceptedInputNo:0,decisions:[]};}
+ return{current,state};
+}
+for(const version of [runEngine.PRACTICE_RULE_VERSION,runEngine.PRACTICE_INPUT_RULE_VERSION,runEngine.PRACTICE_INPUT_V2_RULE_VERSION]){
+ test(version+' driver admits a canonical legal jump, not a version-only bypass',()=>{
+  const{current,state}=jumpFixture(version);assert.equal(canExercise('run',current),true);
+  runEngine.act(state,'a',{type:'jump',observed_tick:current.game.snapshotTick},current.server_now);
+  const queued={...current,game:runEngine.view(state,'a')};assert.equal(canExerciseRunJump(queued),false,'pending canonical input is blocked');
+  for(const [label,change]of [['slide',r=>r.game.players[0].slideUntilTick=r.game.snapshotTick+2],['stun',r=>r.game.players[0].stunUntilTick=r.game.snapshotTick+2],['jump',r=>r.game.players[0].jumpStartTick=r.game.snapshotTick-runEngine.RULES.jumpTicks+2],['rate',r=>r.game.players[0].lastEvent={inputNo:0,tick:r.game.snapshotTick}],['fall',r=>r.game.players[0].fallUntilTick=r.game.snapshotTick+1],['finished',r=>r.game.players[0].finishTick=r.game.snapshotTick],['countdown',r=>r.game.phase='countdown'],['deadline',r=>r.server_now=r.game.deadlineAt]]){const altered=structuredClone(current);change(altered);assert.equal(canExerciseRunJump(altered),false,label);}
+  const boundary=structuredClone(current);boundary.game.players[0].jumpStartTick=boundary.game.snapshotTick+1-runEngine.RULES.jumpTicks;boundary.game.players[0].lastEvent={inputNo:0,tick:boundary.game.snapshotTick+1-runEngine.RULES.inputRateTicks};assert.equal(canExerciseRunJump(boundary),true,'canonical next-tick recovery/rate boundary');
+ });
+}
+test('new Run driver refuses mixed profiles, foreign own cursor, paid/BOT ambiguity and unknown versions',()=>{
+ const{current}=jumpFixture(runEngine.PRACTICE_INPUT_V2_RULE_VERSION);
+ for(const [label,change]of [['unknown version',r=>r.game.ruleVersion='pvp-run-v2.5.0'],['foreign room',r=>r.run_inputs.roomId='other'],['foreign player',r=>r.run_inputs.playerKey='bot'],['foreign game owner',r=>r.game.me='bot'],['wrong protocol',r=>r.run_inputs.protocol=RUN_PRACTICE_PROFILES.v1.protocol],['wrong negotiated profile',r=>r.run_input_profile.profile_id='other'],['paid',r=>r.entry_minor='1'],['fee',r=>r.fee_bps=1],['second human',r=>r.game.players[1].isBot=false],['missing profile',r=>delete r.run_input_profile],['head mismatch',r=>r.run_inputs.headTick++],['accepted counter mismatch',r=>r.run_inputs.acceptedInputNo++],['duplicate own identity',r=>r.game.players.push({...r.game.players[0]})]]){const altered=structuredClone(current);change(altered);assert.equal(canExerciseRunJump(altered),false,label);}
+ const legacyPractice=jumpFixture(runEngine.PRACTICE_RULE_VERSION).current;legacyPractice.practice=false;assert.equal(canExerciseRunJump(legacyPractice),false);
+ const v1Profile=jumpFixture(runEngine.PRACTICE_INPUT_RULE_VERSION).current;v1Profile.run_input_profile.profile_id=RUN_PRACTICE_PROFILES.v2.profileId;assert.equal(canExerciseRunJump(v1Profile),false,'v1 must not inherit a foreign negotiated profile');
 });

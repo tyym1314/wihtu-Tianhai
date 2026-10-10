@@ -1,13 +1,22 @@
 /** Same-room UI exercise. It does not create rooms, submit API mutations or certify motion. */
 import {roomAllowsAction} from './mobile-quality-metrics.mjs';
-import {RULE_VERSION as RUN_VERSION,PREVIOUS_RULE_VERSION as PREVIOUS_RUN_VERSION,RULES as RUN_RULES} from '../arena/run/engine.mjs';
+import {RULE_VERSION as RUN_VERSION,PREVIOUS_RULE_VERSION as PREVIOUS_RUN_VERSION,PRACTICE_RULE_VERSION,PRACTICE_INPUT_RULE_VERSION,PRACTICE_INPUT_V2_RULE_VERSION,RULES as RUN_RULES} from '../arena/run/engine.mjs';
 import {RULE_VERSION as LEGACY_RUN_VERSION,RULES as LEGACY_RUN_RULES} from '../arena/run/engine-v1.mjs';
-const runRules=new Map([[RUN_VERSION,RUN_RULES],[PREVIOUS_RUN_VERSION,RUN_RULES],[LEGACY_RUN_VERSION,LEGACY_RUN_RULES]]);
+import {runPracticeInputBaseline} from './android-game-actions.mjs';
+import {readRunPracticeRoomProfile} from '../arena/run/practice-profile-contract.mjs';
+const runRules=new Map([[RUN_VERSION,RUN_RULES],[PREVIOUS_RUN_VERSION,RUN_RULES],[PRACTICE_RULE_VERSION,RUN_RULES],[PRACTICE_INPUT_RULE_VERSION,RUN_RULES],[PRACTICE_INPUT_V2_RULE_VERSION,RUN_RULES],[LEGACY_RUN_VERSION,LEGACY_RUN_RULES]]);
 
 /** Conservative public-snapshot admission for the helper's actual action: jump. */
 export function canExerciseRunJump(room){
  const g=room?.game,me=g?.players?.find?.(p=>p.key===room.me),rules=runRules.get(g?.ruleVersion),tick=g?.snapshotTick;
  if(!rules||!me||!roomAllowsAction('run',room)||!['racing','finish-window'].includes(g.phase)||!Number.isSafeInteger(tick)||tick<0)return false;
+ if(room.game_id!=='run'||g.gameId!=='run'||g.me!==room.me||g.players.filter(p=>p.key===room.me).length!==1)return false;
+ if(g.ruleVersion===PRACTICE_RULE_VERSION&&(room.practice!==true||room.entry_minor!=='0'||room.run_inputs||!g.players.every(p=>typeof p.isBot==='boolean')||g.players.filter(p=>!p.isBot).length!==1||me.isBot!==false))return false;
+ if(g.ruleVersion===PRACTICE_INPUT_RULE_VERSION||g.ruleVersion===PRACTICE_INPUT_V2_RULE_VERSION){
+  // Reuse the UI helper's canonical negotiated profile and exact own cursor.
+  // A matching version alone does not authorize a paid/mixed/foreign input.
+  try{if(!readRunPracticeRoomProfile(room)||!runPracticeInputBaseline(room))return false;}catch(error){if(error.code==='RUN_INPUT_PROOF_INVALID')return false;throw error;}
+ }
  if(!Number.isFinite(room.server_now)||!Number.isFinite(g.startedAt)||room.server_now<g.startedAt||!Number.isFinite(g.deadlineAt)||room.server_now>=g.deadlineAt)return false;
  if(me.finishTick!==null||me.forfeited||me.fallUntilTick!==null)return false;
  if(!Number.isSafeInteger(me.inputNo)||!Number.isSafeInteger(me.appliedInputNo)||me.inputNo!==me.appliedInputNo)return false;
