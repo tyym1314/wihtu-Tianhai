@@ -485,5 +485,53 @@
     "encoder_yuv_psnr_db": 42.17,
     "visible_alpha_weighted_rgb_psnr_db": 34.574505791395154,
     "codec": "WebP quality82, alpha100, ICC retained; same dimensions/grid; alpha byte-identical to original PNG"
+  },
+  {
+    "source": "platform/arena/public/assets/restoration/trophies-v2.png",
+    "target": "platform/arena/public/assets/restoration/trophies-v2-mobile-f513af1cd0.webp",
+    "source_sha256": "4e9b7a269fbb85907b990ee2c7ad577567eb7127ae2a60e7fcda126021474cd7",
+    "target_sha256": "f513af1cd00bd7261508d212dfc65c5a7c544aa3cf8617120d809abe0e68f144",
+    "source_bytes": 2279954,
+    "target_bytes": 500586,
+    "original_url": "/assets/restoration/trophies-v2.webp",
+    "optimized_url": "/assets/restoration/trophies-v2-mobile-f513af1cd0.webp",
+    "codec": "WebP quality82 m6 alpha100 from original PNG, original1983x793, ICC retained",
+    "dimensions": {
+      "width": 1983,
+      "height": 793
+    },
+    "atlas": {
+      "columns": 5,
+      "rows": 2,
+      "order": [
+        "carrom",
+        "match",
+        "golf",
+        "darts",
+        "ludo",
+        "pool",
+        "bowling",
+        "jackaroo",
+        "domino",
+        "run"
+      ]
+    },
+    "previous_runtime_target": "platform/arena/public/assets/restoration/trophies-v2.webp",
+    "previous_runtime_sha256": "669e9f59cb0916bf78820970e2a0e535e8a4b98e81552315c337cf57f1e18dda",
+    "previous_runtime_bytes": 641424,
+    "generator": "platform/scripts/generate-mobile-result-assets.mjs",
+    "encoder": "1.5.0",
+    "encoder_arguments": [
+      "-q",
+      "82",
+      "-m",
+      "6",
+      "-alpha_q",
+      "100",
+      "-metadata",
+      "icc"
+    ],
+    "encoder_yuv_psnr_db": 40.64,
+    "alpha_note": "Lossless original alpha; no resizing, cropping, compositing or cell reordering. Original PNG and desktop WebP retained."
   }
 ]

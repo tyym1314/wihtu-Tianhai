@@ -5,3 +5,5 @@
 @media(prefers-reduced-motion:reduce){.result-stage-ring,.result-theme-trophy,.result-fox-actor,.result-cinematic-rays,.result-confetti i,.result-finish-ranking>div{animation:none!important}.result-confetti{display:none}}
 .result-fox-actor{width:150px;height:300px;top:-42px}
 @media(max-width:374px){.result-fox-actor{width:130px;height:260px;top:-34px}}
+/* One original-resolution atlas keeps all ten themes and normalized cells. */
+@media(max-width:767px),(pointer:coarse){.result-theme-trophy{background-image:url('/arena/assets/restoration/trophies-v2-mobile-f513af1cd0.webp')}}
