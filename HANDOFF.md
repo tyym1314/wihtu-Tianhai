@@ -38,6 +38,8 @@
 
 ## 真机验收进度
 
+- Run native-tap采集器调用修复已完成：collector SHA `0ade3348cc506bb5ae3558fe264e8fdfd803401e80c7a1fdeb38151b67369d31`、新真实Chromium test `08346c18021028a65e7562f7643761c4bb2c55ffb37c00e14194ee92d7bf83a8`。实际两个callsite共用真正Function，发ADB前核验installation与原slot的身份/时钟/空events/无overflow及observer errors；原可信事件、exact-click、scope、cleanup条件和cache/start整行保持。Root完整读diff/test，72项相关regression及2语法检查通过，执行收据 SHA `7fc7939f7aada9c5bc1248ba94adf65d0bd760f33fc89b5732cabf8d9a9d67b9`，独立只读审查无阻塞缺陷。新增观测开销保留在原entry计时内。旧a1失败及wrapper原件不变；新a2须绑定此次source/test并确认前次结束清理后独立测量，当前无a2真机性能通过结论。
+- `current08-native-run-perf-a1` 已实际失败：9.834秒/exit1，report SHA `785d9fa2117307bbe960e9457dc1c682b699db1fc98d250ee31cb4e9c494ea27`、execution `54d66941531f882a2e6d6aba29ce1b82aa765206325398b21cd974e5c33a493f`，没有进入游戏帧率采样。冷重载前后大厅UI gate均通过，但入口tap的installation字段缺失、read报OWNED_NATIVE_TAP_RECEIPT_IDENTITY_CHANGED、cleanup slot missing；独立真实Chromium复现确认两个组合arrow STRING传入Playwright仅返回函数而未调用，installer和game pre-tap DOM read均须改真正Function并在输入前核验安装。原fail/无trusted click/空actions及CDP_CLOSE记录保留，不把ADB exit0当可信输入。Root完整FD原件审计 SHA `1b44a95794e3216bc3576459509decbc478fa9ea66c656ba7de8cfcc0dfc98df`；报告native observer pending0/无owned creations，未尝试房间取消，原forward及前台恢复。后续四项ADB只读完整回读确认USB在线、亮屏解锁、原QA前台、完整cloud-only forward，收据 SHA `ec94b116594d5e28cbc996153841a46c00782612b5d803b45419820d8f7bf074`。修复与新的a2测量尚未完成；性能标准和整体上线仍未通过。
 - `current06-native-basic-a5`：消消乐真实操作/返回/零余额和空 recovery 通过；高尔夫击球真实 200、序号 0→1、返回和自有房间清理通过，但严格资源观察失败。
 - 高尔夫当前失败涉及 Draco worker 生成 Blob 的来源证据和退出时两张场景图片 `net::ERR_ABORTED`，正在修复证据分类与加载/退出衔接；不能忽略错误或把操作成功当整体通过。
 - `current06-native-run-perf-a1`：跑酷冷启动约 9.7 秒，超过 5 秒标准；8 次真实输入和运动画面已有证据，后续第 9 次输入前控件变 disabled 导致诊断退出，房间清理通过。报告仍失败。
