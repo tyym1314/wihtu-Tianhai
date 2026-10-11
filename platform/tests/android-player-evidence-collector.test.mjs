@@ -39,11 +39,11 @@ async function fixture({body='empty',worker=false,snapshotChange=()=>{},rawChang
  cdp.emit('Page.frameNavigated',{frame:{id:frameId,parentId:'top',url:frameUrl}});
  cdp.emit('Runtime.executionContextCreated',{context:{id:contextId,origin,auxData:{isDefault:true,frameId}}});
  const transfer=(id,url,type='Fetch',{finished=true,responded=true,status=200,serviceWorker=false}={})=>{
-  const start={requestId:id,frameId,type,timestamp:1,wallTime:100,request:{url,method:'GET',headers:{}}};
+  const start={requestId:id,frameId,type,timestamp:1,wallTime:(timeOrigin+1)/1000,request:{url,method:'GET',headers:{}}};
   rawChange(start);
   cdp.emit('Network.requestWillBeSent',start);
   if(responded)cdp.emit('Network.responseReceived',{requestId:id,response:{status,protocol:'h2',mimeType:'image/webp',fromDiskCache:true,fromServiceWorker:serviceWorker}});
-  if(finished)cdp.emit('Network.loadingFinished',{requestId:id,timestamp:2,encodedDataLength:0});
+  if(finished)cdp.emit('Network.loadingFinished',{requestId:id,timestamp:1.003,encodedDataLength:0});
  };
  const response=(url,{resourceType='fetch',body:bodyOverride,ok=true}={})=>{
   const request={url:()=>url,method:()=> 'GET',frame:()=>child,headers:()=>({}),postData:()=>null,resourceType:()=>resourceType};
@@ -90,7 +90,7 @@ test('derived native worker accepts two readable exact Script deliveries without
   f.response(workerBlobUrl,{resourceType:'script',body:workerBytes});f.response(workerBlobUrl,{resourceType:'script',body:workerBytes});await f.evidence.drain();
   assert.deepEqual(f.evidence.errors,[]);const workers=f.evidence.responses.filter(row=>row.worker_response_finished);
   assert.equal(workers.length,2);assert.equal(workers.every(row=>row.pin.sha256===playerEvidenceHash(workerBytes)&&row.rawBodyDiagnostic.resolvedByIndependentDelivery),true);
-  assert.equal(workers.every(row=>row.rawBodyDiagnostic.mainFrameCdpWorkerTransfers.every(transfer=>!transfer.transferFinished&&transfer.response===null)),true);
+  assert.equal(workers.every(row=>row.rawBodyDiagnostic.mainFrameCdpWorkerCandidates.every(transfer=>!transfer.transferFinished&&transfer.response===null)),true);
   await f.evidence.save();assert.match(await readFile(join(f.out,'network-bodies.json'),'utf8'),/UNPINNED_PLAYER_RESOURCE/);
  }finally{await f.cleanup();}
 });

@@ -75,12 +75,14 @@ test('explicit producer consumer uses the original native arrayBuffer and retain
  const f=realmFixture(),result=await f.evaluate(nativeFetchChallengeConsumer,producer()),t=result.consumer_telemetry;
  assert.equal(result.status,200);assert.equal(result.bytes,42);assert.equal(result.failed,undefined);assert.equal(f.calls.fetch.length,1);assert.equal(f.calls.arrayBuffer,1);assert.equal(f.calls.reader,0);assert.equal(f.calls.cancel,0);
  assert.deepEqual(JSON.parse(JSON.stringify(t.events.map(e=>e.kind))),['fetch-start','fetch-fulfilled','native-body-start','native-body-complete','consumer-final']);
+ assert.equal(t.diagnostic_only,false);assert.equal(t.body_evidence_required,true);
  assert.equal(t.mode,'producer-bound-native-arraybuffer');assert.equal(t.runtime_byte_cap,false);assert.equal(t.producer_max_body_bytes,42);assert.equal(t.native_body_complete,true);assert.equal(t.eof,false);assert.equal(t.body_complete,true);assert.equal(t.signal_aborted,false);assert.equal(playerEvidenceHash(Buffer.from(t.body_base64,'base64')),version.bodySha256);
  assert.equal(f.timers[0].delay,5000);assert.equal(f.calls.cleared[0],f.timers[0]);const {signal,...options}=f.calls.fetch[0].options;assert.deepEqual(options,{method:'GET',credentials:'omit',cache:'no-store',redirect:'error'});assert.equal(signal.aborted,false);
 });
 
 test('unselected generic challenge still reads the bounded stream and cancels only beyond 16 KiB',async()=>{
  const good=realmFixture(),received=await good.evaluate(nativeFetchChallengeConsumer,url);assert.equal(received.bytes,42);assert.equal(good.calls.arrayBuffer,0);assert.equal(good.calls.reader,1);assert.equal(received.consumer_telemetry.mode,'bounded-stream');assert.equal(received.consumer_telemetry.eof,true);assert.equal(received.consumer_telemetry.runtime_byte_cap,true);
+ assert.equal(received.consumer_telemetry.diagnostic_only,true);assert.equal(received.consumer_telemetry.body_evidence_required,false);
  const over=realmFixture({content:'x'.repeat(16385)}),failed=await over.evaluate(nativeFetchChallengeConsumer,url);assert.equal(failed.failed,true);assert.equal(over.calls.arrayBuffer,0);assert.equal(over.calls.cancel,1);assert.equal(failed.consumer_telemetry.events.find(e=>e.kind==='consumer-rejected').error.message,'CHALLENGE_BODY_LIMIT');
  const wrong=producer();wrong.producerBound.bytes=16384;const f=realmFixture(),rejected=await f.evaluate(nativeFetchChallengeConsumer,wrong);assert.equal(rejected.failed,true);assert.equal(f.calls.fetch.length,0);assert.equal(f.calls.reader,0);assert.equal(f.calls.arrayBuffer,0);
 });

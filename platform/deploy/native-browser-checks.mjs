@@ -281,7 +281,7 @@ function nativeFetchProbe({bindingName,flushName,networkBindingName}){
  };
 }
 
-/** Serialized challenge consumer. Telemetry never changes its request or verdict. */
+/** Serialized challenge consumer. Selected producer body evidence is required by the host; generic telemetry is diagnostic. */
 export async function nativeFetchChallengeConsumer(input){
  const producer=input!==null&&typeof input==='object'?input.producerBound:null,challengeUrl=typeof input==='string'?input:input?.challengeUrl;
  const controller=new AbortController();let timer,result,bytes=0,eof=false,nativeBodyComplete=false,retainedBytes=0,dropped=0,recordErrors=0;
@@ -311,7 +311,7 @@ export async function nativeFetchChallengeConsumer(input){
  catch(error){record('consumer-rejected',{error:describe(error),signal_aborted:controller.signal.aborted});result={failed:true};}
  finally{clearTimeout(timer);record('consumer-final',{signal_aborted:controller.signal.aborted,reason:controller.signal.aborted?describe(controller.signal.reason):null,bytes,eof});controller.signal.removeEventListener('abort',aborted);}
  let bodyBase64=null;try{bodyBase64=btoa(String.fromCharCode(...retained.subarray(0,retainedBytes)));}catch{recordErrors++;}
- return {...result,consumer_telemetry:{schema:'native-fetch-challenge-consumer-telemetry-v1',diagnostic_only:true,mode:producer?'producer-bound-native-arraybuffer':'bounded-stream',runtime_byte_cap:!producer,producer_max_body_bytes:producer?42:null,native_body_complete:nativeBodyComplete,events,event_limit:256,dropped_events:dropped,record_errors:recordErrors,capture_complete:dropped===0&&recordErrors===0,signal_aborted:controller.signal.aborted,signal_reason:controller.signal.aborted?describe(controller.signal.reason):null,bytes,eof,body_retained_bytes:retainedBytes,body_complete:(eof||nativeBodyComplete)&&retainedBytes===bytes,body_base64:bodyBase64}};
+ return {...result,consumer_telemetry:{schema:'native-fetch-challenge-consumer-telemetry-v1',diagnostic_only:!producer,body_evidence_required:Boolean(producer),mode:producer?'producer-bound-native-arraybuffer':'bounded-stream',runtime_byte_cap:!producer,producer_max_body_bytes:producer?42:null,native_body_complete:nativeBodyComplete,events,event_limit:256,dropped_events:dropped,record_errors:recordErrors,capture_complete:dropped===0&&recordErrors===0,signal_aborted:controller.signal.aborted,signal_reason:controller.signal.aborted?describe(controller.signal.reason):null,bytes,eof,body_retained_bytes:retainedBytes,body_complete:(eof||nativeBodyComplete)&&retainedBytes===bytes,body_base64:bodyBase64}};
 }
 
 export async function installNativeFetchProbe(context,{clean=String,healthProducerContract=null}={}){

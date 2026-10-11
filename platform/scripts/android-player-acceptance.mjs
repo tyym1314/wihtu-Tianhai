@@ -16,11 +16,25 @@ import {parseAndroidForwards,ownedAndroidForward,assertAndroidForwardsRestored,a
 import {installNativeFetchProbe,observeNativeBrowser,runNativeActionOnce,nativeErrorsEmpty,createNativeCleanupApi} from '../deploy/native-browser-checks.mjs';
 import {formatPlayerMinor} from '../src/pages/PlayerClient.mjs';
 import {installOwnedPlayerResourceEvidence,validateConsumedImageEvidence,deliveryProofForRow,generatedScriptProofForResponse} from './android-player-resource-evidence.mjs';
+import {waitForNativeLobbyWallet} from './android-player-lobby-wallet-readiness.mjs';
 import {playerAcceptanceArguments,readPlayerArtifact,createPlayerEvidenceRedactor,readPlayerCredentials,readNativeHealthProducerContract,assertPlayerLobbyBaseline,assertPlayerZeroWallet,assertOwnedPlayerArenaState,assertPlayerReturnReadback,playerResourceManifest,assertPlayerResourceBody,assertInstalledPlayerArtifact,playerEvidenceHash,playerShellSourcePins,playerRunResumeEvidence} from './android-player-acceptance-checks.mjs';
 
 const ROOT=fileURLToPath(new URL('../',import.meta.url)),execute=promisify(execFile);
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const until=async(predicate,label,timeout=45000)=>{const end=Date.now()+timeout;while(Date.now()<end){if(await predicate())return;await sleep(100);}throw Error(label+'_TIMEOUT');};
+export async function waitForPlayerForegroundRestoration(readActivity,expected,{timeoutMs=10000,now=Date.now,wait=sleep}={}){
+ const end=now()+timeoutMs;
+ while(now()<end){
+  const raw=await readActivity();let foreground;
+  try{foreground=androidForeground(raw);}catch(error){
+   const message=error.message;
+   if(!(error instanceof assert.AssertionError&&error.code==='ERR_ASSERTION'&&error.actual===0&&error.expected===1&&(message==='ANDROID_FOREGROUND_UNPROVEN'||message==='ANDROID_FOREGROUND_UNPROVEN\n\n0 !== 1\n')))throw error;
+  }
+  if(foreground===expected&&now()<end)return foreground;
+  if(now()>=end)break;await wait(100);
+ }
+ throw Error('ORIGINAL_FOREGROUND_NOT_RESTORED_TIMEOUT');
+}
 export const playerAdbArgs=(options,args,{device=true}={})=>['-H','127.0.0.1','-P',String(options.adbPort),...(device?['-s',options.serial]:[]),...args];
 
 /** The build stamp uses repository keys; this collector's ROOT is platform/. */
@@ -178,6 +192,19 @@ export async function collectPlayerEvidence({context,page,origin,manifest,out,re
  };
  page.on('request',onRequest);page.on('response',onResponse);
  return{cdp,raw,responses,requests,errors,rawBodyDiagnostics,resourceSnapshots,
+  async readCompletePlayerWalletBody({requestId,url,frameId,timeoutMs}){
+   assert.ok(!closed&&Number.isSafeInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=45000,'LOBBY_WALLET_BODY_READ_BOUND');
+   const parsed=new URL(url),source=cdpRequests.get(requestId);
+   assert.ok(parsed.origin===origin&&parsed.pathname==='/api/player/wallet','LOBBY_WALLET_BODY_PATH_REQUIRED');
+   const valid=()=>source&&cdpRequests.get(requestId)===source&&source.url===url&&source.frameId===frameId&&source.method==='GET'&&source.type==='Fetch'&&source.transferFinished===true&&!source.failed&&!source.redirected&&source.response?.status===200&&source.response.fromServiceWorker===false&&Number.isSafeInteger(source.contextId)&&contexts.has(source.contextId)&&contexts.get(source.contextId).auxData?.isDefault===true&&contexts.get(source.contextId).auxData.frameId===frameId;
+   assert.ok(valid(),'LOBBY_WALLET_BODY_SOURCE_UNPROVEN');
+   const received=await bounded(cdp.send('Network.getResponseBody',{requestId}),timeoutMs,'LOBBY_WALLET_BODY_READ_TIMEOUT');
+   assert.ok(valid(),'LOBBY_WALLET_BODY_SOURCE_CHANGED');
+   assert.ok(typeof received?.body==='string'&&typeof received.base64Encoded==='boolean','LOBBY_WALLET_BODY_UNAVAILABLE');
+   const bytes=Buffer.from(received.body,received.base64Encoded?'base64':'utf8');
+   assert.ok(bytes.length>0&&bytes.length<=256*1024*1024,'LOBBY_WALLET_BODY_UNAVAILABLE');
+   return{requestId,url,frameId,bytes};
+  },
   async drain(){const deadline=Date.now()+20000;try{while(tasks.size){assert.ok(Date.now()<deadline,'RAW_RESPONSE_DRAIN_TIMEOUT');await bounded(Promise.all([...tasks]),deadline-Date.now(),'RAW_RESPONSE_DRAIN_TIMEOUT');}
    // Recheck the original Blob input IDs/facts and every later observed GET.
    // Later success cannot repair an earlier proof; failed transfers still revoke it.
@@ -327,6 +354,7 @@ export async function runPlayerAcceptance(options){
    try{
     // Each earlier UI/authority return completed before this new launch.
     assert.deepEqual((await requiredRead('/api/player/recovery?app_id='+artifact.appId)).sessions,[],'INHERITED_OBLIGATIONS_PRESERVED');
+    if(options.mode==='basic')await waitForNativeLobbyWallet({page,evidence,probe,artifact,baseline,diagnostic:result.lobby_wallet_readiness={}});
     await tap(page.locator('.player-game-card').filter({has:page.getByText(ARENA_GAMES[game].name,{exact:true})}));
     await until(()=>Boolean(state.token&&state.sessionId),'OBSERVED_PLAYER_LAUNCH_EXCHANGE');await until(()=>page.frames().some(f=>f.url()===origin+'/play/'+game),'EXACT_PLAYER_GAME_IFRAME');
     const frame=page.frames().find(f=>f.url()===origin+'/play/'+game);assert.equal(await page.locator('iframe').count(),1);result.probe_installation=await probe.requireInstalled(frame);
@@ -366,7 +394,7 @@ export async function runPlayerAcceptance(options){
   try{await closeConnection();}catch(error){report.resources.errors.push(redactor.clean(error.message));}
   try{await apiContext?.dispose();}catch(error){report.resources.errors.push(redactor.clean(error.message));}
   if(forward){try{assert.deepEqual((await forwards()).filter(r=>r.local===forward.local),[{serial:forward.serial,local:forward.local,remote:forward.remote}],'OWNED_FORWARD_REPLACED_NO_REMOVE');await adb('forward','--remove',forward.local);}catch(error){report.resources.errors.push(redactor.clean(error.message));}}
-  if(started){try{await adb('shell','am','force-stop',pkg);if(foreground){await adb('shell','am','start','-n',foreground);await until(async()=>{report.resources.restoredForeground=androidForeground(await adb('shell','dumpsys','activity','activities'));return report.resources.restoredForeground===foreground;},'ORIGINAL_FOREGROUND_NOT_RESTORED',10000);}else report.resources.restoredForeground=androidForeground(await adb('shell','dumpsys','activity','activities'));assert.equal(report.resources.restoredForeground,foreground,'ORIGINAL_FOREGROUND_NOT_RESTORED');}catch(error){report.resources.errors.push(redactor.clean(error.message));}}
+  if(started){try{await adb('shell','am','force-stop',pkg);if(foreground){await adb('shell','am','start','-n',foreground);report.resources.restoredForeground=await waitForPlayerForegroundRestoration(()=>adb('shell','dumpsys','activity','activities'),foreground);}else report.resources.restoredForeground=androidForeground(await adb('shell','dumpsys','activity','activities'));assert.equal(report.resources.restoredForeground,foreground,'ORIGINAL_FOREGROUND_NOT_RESTORED');}catch(error){report.resources.errors.push(redactor.clean(error.message));}}
   if(beforeForwards){try{report.resources.afterForwards=await forwards();assertAndroidForwardsRestored(beforeForwards,report.resources.afterForwards);}catch(error){report.resources.errors.push(redactor.clean(error.message));}}
   report.resources.passed=report.resources.errors.length===0;report.basic_passed=report.full_catalog&&report.games.length===ARENA_IDS.length&&report.games.every(g=>g.passed&&g.post_close_drained&&g.cleanup?.passed);report.passed=options.mode==='basic'&&report.basic_passed&&!report.failure&&report.resources.passed;report.finished_at=new Date().toISOString();await save();
  }
