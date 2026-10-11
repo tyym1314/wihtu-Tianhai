@@ -144,6 +144,34 @@ function failureAuthority(state,{game,baseline}){
  return {schema:'owned-performance-failure-authority-v1',source:'Latest retained original authorized room reply; no additional request or mutation',authoritySha256:hash(JSON.stringify(room)),roomIdHash:hash(room.id),playerKeyHash:hash(room.me),sessionIdHash:hash(state.sessionId),room:scalar(room,['status','version','server_now','me_last_seq','practice','entry_minor']),game:scalar(g,['status','phase','ruleVersion','snapshotTick','startedAt','serverNow','deadlineAt']),own:scalar(own,['inputNo','appliedInputNo','lastInputTick','jumpStartTick','slideUntilTick','stunUntilTick','fallStartTick','fallUntilTick','finishTick','forfeited','distanceU','distance','checkpointU','checkpoint']),runInputs:inputs?scalar(inputs,['protocol','profileId','ruleVersion','clockEpoch','revision','headTick','serverTick','committedThroughTick','processedThroughCommandSeq','acceptedInputNo']):null};
 }
 
+export const INITIAL_PROBE_FAILURE_LIMITS=Object.freeze({rawProbeBytes:256*1024,inspectedFrames:250000,invalidRows:16,adjacentRows:48,adjacentRowBytes:4096});
+
+/** Serialize the original CDP return, never a replacement realm read. JSON byte
+ * prefixes are explicitly incomplete; field types retain JSON-lossy values. */
+function initialProbeFailureEvidence(probe){
+ const limits=INITIAL_PROBE_FAILURE_LIMITS,type=value=>value===null?'null':Array.isArray(value)?'array':typeof value;
+ const raw=(value,limit)=>{const json=JSON.stringify(value);if(json===undefined)return {type:type(value),serialization:'undefined',complete:false,bytes:0,retainedBytes:0,omittedBytes:0};const bytes=Buffer.from(json),retained=bytes.subarray(0,limit);return {type:type(value),serialization:bytes.length<=limit?'complete-json':'json-byte-prefix-base64',complete:bytes.length<=limit,bytes:bytes.length,sha256:hash(bytes),retainedBytes:retained.length,omittedBytes:bytes.length-retained.length,...(bytes.length<=limit?{json}:{base64:retained.toString('base64')})};};
+ const frames=probe?.frames,inspected=Array.isArray(frames)?Math.min(frames.length,limits.inspectedFrames):0,invalidRows=[],adjacent=new Set();let invalidCount=0;
+ for(let index=0;index<inspected;index++){
+  const row=frames[index],fields={at:row?.at,ms:row?.ms,visible:row?.visible,active:row?.active,moving:row?.moving},invalidFields=[];
+  for(const key of ['at','ms'])if(typeof fields[key]!=='number'||!Number.isFinite(fields[key]))invalidFields.push(key+':not-finite-number');
+  if(typeof fields.ms==='number'&&Number.isFinite(fields.ms)){if(fields.ms<=0)invalidFields.push('ms:not-positive');if(fields.ms>900000)invalidFields.push('ms:above-900000');}
+  for(const key of ['visible','active','moving'])if(typeof fields[key]!=='boolean')invalidFields.push(key+':not-boolean');
+  if(!invalidFields.length)continue;invalidCount++;
+  if(invalidRows.length<limits.invalidRows){invalidRows.push({index,rowType:type(row),fieldTypes:Object.fromEntries(Object.entries(fields).map(([key,value])=>[key,type(value)])),nonfiniteNumbers:Object.fromEntries(Object.entries(fields).filter(([,value])=>typeof value==='number'&&!Number.isFinite(value)).map(([key,value])=>[key,String(value)])),invalidFields});for(let near=Math.max(0,index-1);near<=Math.min(frames.length-1,index+1);near++)adjacent.add(near);}
+ }
+ return {schema:'owned-initial-probe-failure-evidence-v1',source:'Same initial CDP Runtime.evaluate return rejected by unchanged verifyProbe; no additional read, filtering or correction',limits,rawProbe:raw(probe,limits.rawProbeBytes),framesType:type(frames),frameCount:Array.isArray(frames)?frames.length:null,inspectedFrames:inspected,uninspectedFrames:Array.isArray(frames)?frames.length-inspected:null,invalidRowsDetectedInInspectedFrames:invalidCount,invalidRowsOmitted:invalidCount-invalidRows.length,invalidRows,adjacentRows:[...adjacent].sort((a,b)=>a-b).map(index=>({index,raw:raw(frames[index],limits.adjacentRowBytes)}))};
+}
+
+/** A bound frame/default realm is evidence, but does not authorize an unverified
+ * probe document ID. The caller sets its original verified scope only on return. */
+export async function readInitialPerformanceProbe({collector,round,origin,game,nonce}){
+ const binding=await collector.bind(),observation=round.initialProbeValidation={schema:'owned-initial-probe-validation-v1',binding:{...binding},bindingSource:'Original first collector.bind result before probe validation; frame/default-realm identity only',probeIdentityVerified:false};
+ const probe=await collector.evaluate('(()=>globalThis.__oasisPhysicalPerf)()');
+ try{verifyProbe(probe,{origin,game,nonce});}catch(error){observation.validationError={message:String(error.message).slice(0,256),code:error.code??null};try{observation.failureEvidence=initialProbeFailureEvidence(probe);}catch(failure){observation.evidenceError=String(failure.message).slice(0,256);}throw error;}
+ observation.probeIdentityVerified=true;return probe;
+}
+
 /** Preserve the original failure before cleanup can destroy the observed realm.
  * Each exact-realm read is bounded; unavailable evidence stays explicit. */
 export async function capturePerformanceRoundFailure({round,error,collector,state,baseline,origin,game,nonce,nativeTaps=[],timeoutMs=1500,clean=String,now=Date.now}){
@@ -593,7 +621,7 @@ export async function runAndroidPerformance(options){
     round.lobbyReadiness={};await preparePerformanceLobbyForEntry({cacheMode,diagnostic:round.lobbyReadiness,waitLobby:(stage,diagnostic)=>waitForPerformanceLobbyWallet({page,cdp:collector.cdp,artifact,baseline,stage,diagnostic}),reloadCold:async()=>{await collector.clearOwnHttpCache();await page.reload({waitUntil:'domcontentloaded'});await page.locator('.player-games').waitFor();round.cache.mainDocumentReloaded=true;}});
     assert.equal(page.url(),artifact.entryUrl,'PLAYER_DOCUMENT_CHANGED');if(cacheMode==='cold')await collector.clearOwnHttpCache();const start=Date.now();round.startedAt=new Date(start).toISOString();round.loadTimeline=createPerformanceLoadTimeline({roundId:round.id,game,nonce,entryUrl:artifact.entryUrl,startEpochMs:start});await tap(page.locator('.player-game-card').filter({has:page.getByText(ARENA_GAMES[game].name,{exact:true})}));
     await until(()=>Boolean(state.token&&state.sessionId),'ACTUAL_LAUNCH_EXCHANGE');await until(()=>page.frames().some(f=>f.url()===origin+'/play/'+game),'ACTUAL_GAME_IFRAME');const frame=page.frames().find(f=>f.url()===origin+'/play/'+game);assert.equal(await page.locator('iframe').count(),1);
-    await collector.bind();const probe=await collector.evaluate('(()=>globalThis.__oasisPhysicalPerf)()');verifyProbe(probe,{origin,game,nonce});round.documentId=probe.documentId;round.documentTimeOrigin=probe.timeOrigin;round.context=await collector.bind();round.sessionIdHash=hash(state.sessionId);round.loadTimeline.gameDocument={nonce,documentId:round.documentId,timeOrigin:round.documentTimeOrigin,url:round.context.url,frameId:round.context.frameId,contextId:round.context.contextId};
+    const probe=await readInitialPerformanceProbe({collector,round,origin,game,nonce});round.documentId=probe.documentId;round.documentTimeOrigin=probe.timeOrigin;round.context=await collector.bind();round.sessionIdHash=hash(state.sessionId);round.loadTimeline.gameDocument={nonce,documentId:round.documentId,timeOrigin:round.documentTimeOrigin,url:round.context.url,frameId:round.context.frameId,contextId:round.context.contextId};
     const read=createNativeCleanupApi({page:{request:apiContext},origin,state,result,clean:redactor.clean});assertAndroidSessionBaseline(state,await read('/api/arena/session'),ARENA_IDS);assertOwnedPlayerArenaState(state,baseline);
     state.phase='playing';state.practiceRequested=true;await tap(frame.getByRole('button',{name:'免费练习',exact:false}));await tap(frame.getByRole('button',{name:'确认规则 · 准备开局',exact:true}));await until(()=>state.room?.status==='active','OWN_FREE_BOT_ACTIVE');assertPerformanceRoom(state.room,{game,baseline,ownedRooms:state.ownedRooms});redactor.add(state.room.id);round.roomIdHash=hash(state.room.id);
     await capturePerformanceEntryTiming({round,collector,frame,game,state});
