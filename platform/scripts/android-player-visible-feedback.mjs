@@ -40,8 +40,10 @@ export function visibleFeedbackProtocolReceipt(bytes){
  return {schema:'visible-feedback-official-protocol-v1',url:VISIBLE_FEEDBACK_PROTOCOL_URL,sha256:sha(bytes),bytes:bytes.length,version:raw.version,timestamp:'Protocol labels Unix epoch seconds as Frame swap timestamp; actual provider implementation receipt determines its meaning',ack:'Page.screencastFrameAck with the original event sessionId',limitations:['timestamp is optional; absence is insufficient','sessionId is an ACK identifier, not a unique compositor frame token','everyNthFrame=1 does not prove all compositor frames were delivered','Protocol field description alone does not prove swap or physical display present']};
 }
 
-function assertScope(scope){
- assert.ok(scope&&typeof scope.nonce==='string'&&scope.nonce.length>0&&/^[a-f0-9]{32}$/.test(scope.documentId)&&finite(scope.timeOrigin),'FEEDBACK_OWNER_REQUIRED');assert.ok(new URL(scope.url).protocol==='https:'&&new URL(scope.url).pathname==='/play/run','FEEDBACK_REAL_RUN_DOCUMENT_REQUIRED');
+function assertScope(scope,arenaPlan=null){
+ assert.ok(scope&&typeof scope.nonce==='string'&&scope.nonce.length>0&&/^[a-f0-9]{32}$/.test(scope.documentId)&&finite(scope.timeOrigin),'FEEDBACK_OWNER_REQUIRED');
+ if(arenaPlan)assert.ok(['golf','bowling','carrom','pool','darts','ludo','jackaroo','domino','match','towerlink'].includes(arenaPlan.game),'FEEDBACK_EXPLICIT_ARENA_PLAN_REQUIRED');
+ assert.ok(new URL(scope.url).protocol==='https:'&&new URL(scope.url).pathname==='/play/'+(arenaPlan?.game??'run'),'FEEDBACK_REAL_RUN_DOCUMENT_REQUIRED');
  for(const key of ['frameId','loaderId','topFrameId','topLoaderId','topUrl'])assert.ok(typeof scope[key]==='string'&&scope[key].length>0,'FEEDBACK_FRAME_BINDING_REQUIRED');assert.ok(Number.isSafeInteger(scope.contextId),'FEEDBACK_DEFAULT_REALM_REQUIRED');assert.equal(new URL(scope.topUrl).origin,new URL(scope.url).origin,'FEEDBACK_SAME_ORIGIN_PLAYER_REQUIRED');
 }
 const owner=scope=>({nonce:scope.nonce,documentId:scope.documentId,timeOrigin:scope.timeOrigin,url:scope.url});
@@ -88,8 +90,8 @@ export function readOwnedVisibleFeedbackObservation({scope,key,remove=false}){
 
 /** ACK is dispatched before hashing, disk I/O, decoding or further CDP reads.
  * Session IDs can repeat; our own receipt index is not a compositor frame ID. */
-export async function createVisibleFeedbackCollector({session,scope,phaseId,protocol,implementation=null,webviewVersion=null,readOwnedState,writeFrame,clock=()=>({epochMs:Date.now(),monotonicMs:performance.now()}),maxFrames=VISIBLE_FEEDBACK_LIMITS.maxFrames}){
- assertScope(scope);assert.equal(protocol?.schema,'visible-feedback-official-protocol-v1');assert.equal(protocol.sha256,VISIBLE_FEEDBACK_PROTOCOL_SHA256,'FEEDBACK_PROTOCOL_RECEIPT_REQUIRED');assert.ok(typeof readOwnedState==='function'&&typeof writeFrame==='function','FEEDBACK_ORIGINAL_FRAME_SINK_REQUIRED');assert.ok(Number.isSafeInteger(maxFrames)&&maxFrames>=2&&maxFrames<=VISIBLE_FEEDBACK_LIMITS.maxFrames,'FEEDBACK_FRAME_BOUND_INVALID');assert.ok(typeof phaseId==='string'&&phaseId.length>0,'FEEDBACK_PHASE_ID_REQUIRED');
+export async function createVisibleFeedbackCollector({session,scope,arenaPlan=null,phaseId,protocol,implementation=null,webviewVersion=null,readOwnedState,writeFrame,clock=()=>({epochMs:Date.now(),monotonicMs:performance.now()}),maxFrames=VISIBLE_FEEDBACK_LIMITS.maxFrames}){
+ assertScope(scope,arenaPlan);assert.equal(protocol?.schema,'visible-feedback-official-protocol-v1');assert.equal(protocol.sha256,VISIBLE_FEEDBACK_PROTOCOL_SHA256,'FEEDBACK_PROTOCOL_RECEIPT_REQUIRED');assert.ok(typeof readOwnedState==='function'&&typeof writeFrame==='function','FEEDBACK_ORIGINAL_FRAME_SINK_REQUIRED');assert.ok(Number.isSafeInteger(maxFrames)&&maxFrames>=2&&maxFrames<=VISIBLE_FEEDBACK_LIMITS.maxFrames,'FEEDBACK_FRAME_BOUND_INVALID');assert.ok(typeof phaseId==='string'&&phaseId.length>0,'FEEDBACK_PHASE_ID_REQUIRED');
  const capture={schema:'owned-visible-feedback-capture-v1',phase:'feedbackProof',phaseId,scope:clone(scope),protocol:clone(protocol),implementation:clone(implementation),webviewVersion,startParameters:{format:'png',everyNthFrame:1},frames:[],errors:[],dropped:0,rawBytes:0,started:false,closed:false,physicalPanelPresent:false},listeners=[],tasks=new Set();let nextIndex=0,closing;
  const fail=(stage,error)=>capture.errors.push({stage,message:error.message??String(error)}),on=(event,fn)=>{session.on(event,fn);listeners.push({event,fn});};
  const bounded=async operation=>{let timer;try{return await Promise.race([Promise.resolve().then(operation),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('FEEDBACK_OBSERVATION_TIMEOUT')),1500);})]);}finally{clearTimeout(timer);}};

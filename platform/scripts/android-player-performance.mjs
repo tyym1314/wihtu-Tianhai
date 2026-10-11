@@ -16,6 +16,8 @@ import {playerTouchFrame} from './android-player-acceptance.mjs';
 import {playOneArenaAction} from './android-game-actions.mjs';
 import {installOwnedPlayerResourceEvidence,validateConsumedImageEvidence,deliveryProofForRow} from './android-player-resource-evidence.mjs';
 import {visibleFeedbackProtocolReceipt,visibleFeedbackImplementationReceipt,VISIBLE_FEEDBACK_IMPLEMENTATION_SOURCES,readOwnedFeedbackProjection,installOwnedVisibleFeedbackObservation,readOwnedVisibleFeedbackObservation,createVisibleFeedbackCollector,analyzeVisibleRunFeedback} from './android-player-visible-feedback.mjs';
+import {ARENA_FEEDBACK_CONFIGS,arenaFeedbackPlan,readArenaFeedbackPresentation,installOwnedArenaFeedbackObservation,readOwnedArenaFeedbackObservation,renderArenaFeedbackGlyphTemplate,analyzeVisibleArenaFeedback} from './android-player-arena-feedback.mjs';
+import {legalMoves as matchLegalMoves} from '../arena/match/engine.mjs';
 import {canExercise,activityRoomState} from './mobile-continuous-driver.mjs';
 import {waitForPlayable,roomWaitReason} from './mobile-quality-metrics.mjs';
 import {ANDROID_PERFORMANCE_SCHEMA,performanceArguments,physicalAdbArgs,parseWebViewProvider,parseThermal,parseRefresh,assertGameContext,authorityCursor,assertPerformanceRoom,activeMotionState,acceptedPerformanceAction,installPhysicalProbe,verifyProbe,pixelDifference,cacheSchedule,assertCachePosture,evaluateAndroidPerformance,runtimeSourcePins,finalizePerformanceStatus,hash} from './android-player-performance-checks.mjs';
@@ -24,7 +26,7 @@ const ROOT=fileURLToPath(new URL('../',import.meta.url)),execute=promisify(execF
 const standards=JSON.parse(await readFile(join(ROOT,'specs/mobile-quality-v1.json'),'utf8'));
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const until=async(predicate,label,timeout=45000)=>{const end=Date.now()+timeout;while(Date.now()<end){if(await predicate())return;await sleep(100);}throw Error(label+'_TIMEOUT');};
-const sourceFiles=['scripts/android-player-performance.mjs','scripts/android-player-visible-feedback.mjs','scripts/android-player-resource-evidence.mjs','scripts/android-player-performance-checks.mjs','scripts/android-player-acceptance.mjs','scripts/android-player-acceptance-checks.mjs','scripts/android-webview-checks.mjs','scripts/android-game-actions.mjs','scripts/mobile-quality-metrics.mjs','scripts/mobile-continuous-driver.mjs','deploy/native-browser-checks.mjs','specs/mobile-quality-v1.json'];
+const sourceFiles=['scripts/android-player-performance.mjs','scripts/android-player-visible-feedback.mjs','scripts/android-player-arena-feedback.mjs','scripts/android-player-resource-evidence.mjs','scripts/android-player-performance-checks.mjs','scripts/android-player-acceptance.mjs','scripts/android-player-acceptance-checks.mjs','scripts/android-webview-checks.mjs','scripts/android-game-actions.mjs','scripts/mobile-quality-metrics.mjs','scripts/mobile-continuous-driver.mjs','deploy/native-browser-checks.mjs','specs/mobile-quality-v1.json'];
 const sceneSelectors={run:'.run-scene canvas',towerlink:'.towerlink-game canvas',golf:'.og-game canvas',bowling:'.bowling-game canvas',carrom:'.oc-game canvas',pool:'.op-game canvas',darts:'.da-board',match:'.match-cells',ludo:'.ludo-board',jackaroo:'.jack-board',domino:'.do-chain'};
 
 /** Collector observation times only. Never infer the first product-ready instant
@@ -217,17 +219,92 @@ export function partitionPerformanceRoundActions(round){
 }
 
 /** Exact original default-realm binding, never an iframe selected by title. */
-export function visibleFeedbackScopeForRound({tree,context,round,origin,nonce,topUrl}){
- assert.equal(round.game,'run','VISIBLE_FEEDBACK_RUN_ONLY');assert.ok(round.documentId&&Number.isFinite(round.documentTimeOrigin),'VISIBLE_FEEDBACK_ROUND_OWNER_REQUIRED');assert.ok(context&&context.frameId===round.context?.frameId&&context.contextId===round.context.contextId&&context.url===origin+'/play/run','VISIBLE_FEEDBACK_DEFAULT_REALM_CHANGED');
+export function visibleFeedbackScopeForRound({tree,context,round,origin,nonce,topUrl,arenaPlan=null}){
+ if(round.game==='run')assert.equal(arenaPlan,null,'VISIBLE_FEEDBACK_RUN_PLAN_CHANGED');else{assert.ok(ARENA_FEEDBACK_CONFIGS[round.game],'VISIBLE_FEEDBACK_GAME_UNSUPPORTED');assert.deepEqual(arenaPlan,arenaFeedbackPlan(arenaPlan),'VISIBLE_FEEDBACK_EXPLICIT_ARENA_PLAN_REQUIRED');assert.equal(arenaPlan.game,round.game,'VISIBLE_FEEDBACK_GAME_CHANGED');}
+ assert.ok(round.documentId&&Number.isFinite(round.documentTimeOrigin),'VISIBLE_FEEDBACK_ROUND_OWNER_REQUIRED');assert.ok(context&&context.frameId===round.context?.frameId&&context.contextId===round.context.contextId&&context.url===origin+'/play/'+round.game,'VISIBLE_FEEDBACK_DEFAULT_REALM_CHANGED');
  const rows=(tree.childFrames??[]).filter(row=>row.frame.url===context.url);assert.equal(rows.length,1,'VISIBLE_FEEDBACK_EXACT_GAME_FRAME_REQUIRED');const f=rows[0].frame;assert.equal(f.id,context.frameId);assert.equal(f.parentId,tree.frame.id);assert.equal(tree.frame.url,topUrl);assert.ok(f.loaderId&&tree.frame.loaderId,'VISIBLE_FEEDBACK_LOADER_REQUIRED');
  return {nonce,documentId:round.documentId,timeOrigin:round.documentTimeOrigin,url:context.url,frameId:f.id,loaderId:f.loaderId,contextId:context.contextId,topFrameId:tree.frame.id,topLoaderId:tree.frame.loaderId,topUrl};
+}
+
+/** Read the actual final UI target. These selectors identify submission only;
+ * the existing game driver remains responsible for legal cards/pawns/routes. */
+export function arenaFeedbackPlanForInput({game,kind,descriptor={},room,locale='zh'}){
+ assert.ok(ARENA_FEEDBACK_CONFIGS[game],'VISIBLE_FEEDBACK_GAME_UNSUPPORTED');
+ assert.ok(room?.game_id===game&&room.id&&room.status==='active'&&room.game&&typeof room.me==='string'&&Number.isSafeInteger(room.me_last_seq),'ARENA_FEEDBACK_OWN_ACTIVE_ROOM_REQUIRED');
+ let actionType,end,cell;const id=descriptor.testId,action=descriptor.action;
+ if(kind==='drag')actionType=game==='darts'?'throw':game==='towerlink'?'link':null;
+ else if(kind==='tap'){
+  if(id&&{golf:'golf-shoot',bowling:'bowling-roll',carrom:'carrom-shoot',pool:'pool-shoot'}[game]===id)actionType=game==='bowling'?'roll':'shot';
+  else if(game==='ludo'&&['ludo-roll','ludo-move'].includes(action))actionType=action==='ludo-roll'?'roll':'move';
+  else if(game==='jackaroo'&&action==='jack-confirm')actionType=room.game.phase==='exchange'?'pass':descriptor.effect==='discard'?'discard':'play';
+  else if(game==='domino'&&['domino-left','domino-right','domino-draw','domino-pass'].includes(id)){actionType=['domino-draw','domino-pass'].includes(id)?id.slice(7):'play';if(actionType==='play')end=id.slice(7);}
+  else if(game==='match'&&Number.isSafeInteger(descriptor.cell)&&Number.isSafeInteger(descriptor.selectedCell)&&matchLegalMoves(room.game.board??[]).some(a=>a.from===descriptor.selectedCell&&a.to===descriptor.cell)){actionType='swap';cell=descriptor.cell;}
+  else if(game==='towerlink'&&['tower-stop','tower-upgrade-confirm'].includes(action))actionType=action==='tower-stop'?'stop':'upgrade';
+ }
+ return actionType?arenaFeedbackPlan({game,actionType,locale,...(end?{end}:{}),...(cell===undefined?{}:{cell})}):null;
+}
+
+/** Wrap the original touch frame without changing input or response bytes.
+ * Card/tile/pawn preparation passes through. Capture is armed immediately before
+ * the actual submitting tap or drag's first down. The driver still checks ACK. */
+export function arenaFeedbackInputFrame({frame,game,readRoom,beforeSubmit,locale='zh'}){
+ const originalPage=frame.page(),handlers=new Map();let wrapped,submission=null;
+ const submit=async plan=>{if(!plan)return;if(submission)throw Error('ARENA_FEEDBACK_MULTIPLE_SUBMISSIONS');submission=plan;await beforeSubmit(plan);};
+ const response=r=>new Proxy(r,{get(target,key){if(key==='request')return()=>new Proxy(target.request(),{get(request,k){if(k==='frame')return()=>request.frame()===frame?wrapped:request.frame();const value=request[k];return typeof value==='function'?value.bind(request):value;}});const value=target[key];return typeof value==='function'?value.bind(target):value;}});
+ const mouse=new Proxy(originalPage.mouse,{get(target,key){if(key==='down')return async(...args)=>{await submit(arenaFeedbackPlanForInput({game,kind:'drag',room:readRoom(),locale}));return target.down(...args);};const value=target[key];return typeof value==='function'?value.bind(target):value;}});
+ const page=new Proxy(originalPage,{get(target,key){if(key==='mouse')return mouse;if(key==='on')return(event,handler)=>{const bound=event==='response'?r=>handler(response(r)):handler;handlers.set(handler,bound);target.on(event,bound);return page;};if(key==='off')return(event,handler)=>{target.off(event,handlers.get(handler)||handler);handlers.delete(handler);return page;};const value=target[key];return typeof value==='function'?value.bind(target):value;}});
+ const locator=target=>new Proxy(target,{get(value,key){if(key==='tap')return async(...args)=>{const descriptor=await value.evaluate(el=>{const selected=document.querySelector('.match-cells button[aria-pressed="true"]'),effect=document.querySelector('.jack-effects [data-effect].is-active'),integer=v=>v!==null&&/^\d+$/.test(v)?Number(v):null;return {testId:el.getAttribute('data-testid'),action:el.getAttribute('data-action'),cell:integer(el.getAttribute('data-cell')),selectedCell:integer(selected?.getAttribute('data-cell')??null),effect:effect?.getAttribute('data-effect')??null};});const plan=arenaFeedbackPlanForInput({game,kind:'tap',descriptor,room:readRoom(),locale});if(plan)await value.scrollIntoViewIfNeeded({timeout:1500});await submit(plan);return value.tap(...args);};const member=value[key];return typeof member==='function'?member.bind(value):member;}});
+ wrapped=new Proxy(frame,{get(target,key){if(key==='page')return()=>page;if(key==='locator')return(...args)=>locator(target.locator(...args));const value=target[key];return typeof value==='function'?value.bind(target):value;}});
+ return {frame:wrapped,get plan(){return submission;},assertClosed(){assert.equal(handlers.size,0,'ARENA_FEEDBACK_DRIVER_LISTENER_NOT_REMOVED');}};
+}
+
+async function captureArenaVisibleFeedbackPhase({round,collector,origin,nonce,topUrl,protocol,implementation,webviewVersion,readTop,runAction,arenaFrame,readRoom,locale='zh',drainOriginal,writeFrame,readAuthority,createCapture,wait,now}){
+ assert.ok(ARENA_FEEDBACK_CONFIGS[round.game],'VISIBLE_FEEDBACK_GAME_UNSUPPORTED');assert.ok(round.measurementPhase!=='continuous'&&!round.sampleBoundaries?.start,'VISIBLE_FEEDBACK_DURING_CONTINUOUS_REFUSED');
+ const phaseId=round.id+'-feedback-1',entry={schema:'owned-performance-visible-feedback-phase-v1',game:round.game,phase:'feedbackProof',phaseId,position:'beforeContinuous',startedAt:new Date(now()).toISOString(),errors:[],finalized:false};round.visibleFeedbackPhases??=[];round.visibleFeedbackPhases.push(entry);
+ if(!protocol?.available){entry.analysis=analyzeVisibleArenaFeedback({});entry.analysis.reasons=[protocol?.error??'Exact official screencast protocol bytes were not provided'];entry.finishedAt=new Date(now()).toISOString();return entry;}
+ const previousPhase=round.measurementPhase,key='__oasisFeedback_'+randomUUID().replaceAll('-',''),args={phase:'feedbackProof',expectedUrl:origin+'/play/'+round.game,nonce,documentId:round.documentId};let capture,installed=false,probeInstalled=false,actionError,input;
+ const evaluate=async expression=>{let timer;try{return await Promise.race([collector.evaluate(expression),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('VISIBLE_FEEDBACK_REALM_TIMEOUT')),1500);})]);}finally{clearTimeout(timer);}};
+ try{
+  input=arenaFeedbackInputFrame({frame:arenaFrame,game:round.game,readRoom,locale,beforeSubmit:async plan=>{
+   entry.plan=plan;round.measurementPhase='feedbackProof';entry.authorityBefore=readAuthority();const {frameTree}=await collector.cdp.send('Page.getFrameTree'),context=await collector.bind();entry.scope=visibleFeedbackScopeForRound({tree:frameTree,context,round,origin,nonce,topUrl,arenaPlan:plan});
+   await evaluate('('+beginOwnedMotionProof.toString()+')('+JSON.stringify(args)+','+ownedPerformanceFailureDOM.toString()+')');probeInstalled=true;
+   entry.installation=await evaluate('('+installOwnedArenaFeedbackObservation.toString()+')('+JSON.stringify({scope:entry.scope,key,phaseId,plan})+','+readArenaFeedbackPresentation.toString()+')');installed=true;
+   capture=await createCapture({session:collector.cdp,scope:entry.scope,arenaPlan:plan,phaseId,protocol:protocol.receipt,implementation:implementation?.receipt??null,webviewVersion,readOwnedState:()=>readTop(readOwnedFeedbackProjection,{scope:entry.scope}),writeFrame});
+   const baselineDeadline=now()+1500;while(capture.capture.frames.length<2&&now()<baselineDeadline)await wait(25);assert.ok(capture.capture.frames.length>=2,'VISIBLE_FEEDBACK_BASELINE_FRAMES_UNAVAILABLE');
+  }});
+  try{
+   // Pool may first require its real accepted cue placement or pocket call.
+   // Those remain preparation, never the shot's feedback or accepted sequence.
+   for(let attempt=0;attempt<3;attempt++){const action=await runAction(input.frame);if(input.plan){entry.uiAction=action;break;}entry.preparatoryUiActions??=[];entry.preparatoryUiActions.push(action);if(round.game!=='pool'||!['place','call'].includes(action.actionType))break;}
+   input.assertClosed();
+  }catch(error){if(error.capture)entry.capture=error.capture;entry.actionError={message:error.message,code:error.code??null,status:error.status??null,nativeInputSent:error.nativeInputSent??null};actionError=error;}
+  if(capture){await wait(200);await drainOriginal();}
+ }catch(error){if(error.capture)entry.capture=error.capture;entry.errors.push({stage:'OBSERVATION',message:error.message});}
+ finally{
+  if(input)try{input.assertClosed();}catch(error){entry.errors.push({stage:'OWN_DRIVER_LISTENERS',message:error.message});}
+  if(installed)try{entry.observation=await evaluate('('+readOwnedArenaFeedbackObservation.toString()+')('+JSON.stringify({scope:entry.scope,key,remove:true})+')');}catch(error){entry.errors.push({stage:'OWN_OBSERVER_CLEANUP',message:error.message});}
+  if(capture)try{entry.capture=await capture.close();}catch(error){entry.errors.push({stage:'OWN_SCREENCAST_CLEANUP',message:error.message});}
+  if(probeInstalled)try{entry.probe=await evaluate('globalThis.__oasisOwnedMotionProof.stop()');assert.equal(entry.probe.phase,'feedbackProof');assert.equal(entry.probe.closed,true);assert.equal(entry.probe.dropped,0);assert.deepEqual(entry.probe.owner,{nonce,documentId:round.documentId,timeOrigin:round.documentTimeOrigin,url:args.expectedUrl});}catch(error){entry.errors.push({stage:'OWN_PROBE_CLEANUP',message:error.message});}
+  // Original PNG capture has closed before offscreen comparison preparation.
+  if(entry.observation&&entry.capture)try{const first=entry.capture.frames[0],scale=first?.pngBase64?Buffer.from(first.pngBase64,'base64').readUInt32BE(16)/first.metadata.deviceWidth:NaN;for(let i=0;i<entry.observation.presentations.length;i++){const p=entry.observation.presentations[i];if(p.feedback.textRect)entry.observation.presentations[i]=await evaluate('('+renderArenaFeedbackGlyphTemplate.toString()+')('+JSON.stringify({scope:entry.scope,presentation:p,pixelScale:scale})+')');}}catch(error){entry.errors.push({stage:'RETAINED_GLYPH_COMPARISON',message:error.message});}
+  try{entry.authorityAfter=readAuthority();}catch(error){entry.errors.push({stage:'ORIGINAL_AUTHORITY',message:error.message});}round.measurementPhase=previousPhase;entry.finishedAt=new Date(now()).toISOString();
+ }
+ entry.originalRequests=collector.actionRequestDiagnostics?.().filter(r=>r.frameId===entry.scope?.frameId&&entry.capture?.before&&entry.capture?.after&&r.requestStartedEpochMs>=entry.scope.timeOrigin+entry.capture.before.at&&r.requestStartedEpochMs<=entry.scope.timeOrigin+entry.capture.after.at)??[];
+ entry.acceptedActions=collector.actions.filter(a=>entry.originalRequests.some(r=>r.requestSha256===a.requestSha256));
+ entry.analysis=analyzeVisibleArenaFeedback({plan:entry.plan,capture:entry.capture,observation:entry.observation,actions:entry.acceptedActions,requests:entry.originalRequests});
+ entry.finalized=entry.errors.length===0&&entry.capture?.closed===true&&entry.observation?.removed===true&&entry.probe?.closed===true;
+ if(!entry.finalized&&entry.analysis.captureStatus==='pass'){entry.analysis.status='insufficient';entry.analysis.captureStatus='insufficient';entry.analysis.passed=false;entry.analysis.reasons.push('Independent phase finalization evidence is incomplete');}
+ if(entry.capture)entry.capture={...entry.capture,frames:entry.capture.frames.map(({pngBase64,...row})=>row),rawPngStorage:'All original received PNG bytes saved by indexed sink; byte hashes validated before stripping duplicated inline base64'};
+ if(actionError&&!(actionError.code==='ACTION_STATE_CHANGED'&&actionError.nativeInputSent===false))throw actionError;
+ return entry;
 }
 
 /** Isolated proof: no continuous-clock edits and no authority/controller injection.
  * runAction must use the existing native UI + original accepted response path.
  * All received PNG files remain on disk; report indexes every frame without
  * duplicating their large base64 bodies after the original-byte analysis. */
-export async function capturePerformanceVisibleFeedbackPhase({round,collector,origin,nonce,topUrl,protocol,implementation=null,webviewVersion=null,readTop,waitEnabled,runAction,drainOriginal,writeFrame,readAuthority,createCapture=createVisibleFeedbackCollector,wait=sleep,now=Date.now}){
+export async function capturePerformanceVisibleFeedbackPhase({round,collector,origin,nonce,topUrl,protocol,implementation=null,webviewVersion=null,readTop,waitEnabled,runAction,arenaFrame,readRoom,locale='zh',drainOriginal,writeFrame,readAuthority,createCapture=createVisibleFeedbackCollector,wait=sleep,now=Date.now}){
+ if(round.game!=='run')return captureArenaVisibleFeedbackPhase({round,collector,origin,nonce,topUrl,protocol,implementation,webviewVersion,readTop,runAction,arenaFrame,readRoom,locale,drainOriginal,writeFrame,readAuthority,createCapture,wait,now});
  assert.equal(round.game,'run');assert.ok(round.measurementPhase!=='continuous'&&!round.sampleBoundaries?.start,'VISIBLE_FEEDBACK_DURING_CONTINUOUS_REFUSED');
  const phaseId=round.id+'-feedback-1',entry={schema:'owned-performance-visible-feedback-phase-v1',phase:'feedbackProof',phaseId,position:'beforeContinuous',startedAt:new Date(now()).toISOString(),errors:[],finalized:false};round.visibleFeedbackPhases??=[];round.visibleFeedbackPhases.push(entry);
  if(!protocol?.available){entry.analysis={schema:'owned-visible-run-feedback-v1',status:'insufficient',swapStatus:'insufficient',passed:false,physicalPanelPresent:false,reasons:[protocol?.error??'Exact official screencast protocol bytes were not provided']};entry.finishedAt=new Date(now()).toISOString();return entry;}
@@ -505,6 +582,8 @@ export async function runAndroidPerformance(options){
     round.measurementPhase='before';await captureMotion('before');
     if(game==='run'){
      const feedback=await capturePerformanceVisibleFeedbackPhase({round,collector,origin,nonce,topUrl:artifact.entryUrl,protocol:feedbackProtocol,implementation:feedbackImplementation,webviewVersion:report.device.webview.version,readTop:(fn,args)=>page.evaluate(fn,args),waitEnabled:()=>waitForOwnedNativeTapEnabled({read:async()=>({visible:await frame.getByTestId('run-jump').isVisible(),enabled:await frame.getByTestId('run-jump').isEnabled()}),evidence:{}}),runAction:()=>playOneArenaAction(touch.frame,'run',()=>state.room,{touch:true,timeoutMs:3000,deadlineAt:Date.now()+3000,beforeAction:()=>assertPerformanceRoom(state.room,{game,baseline,ownedRooms:state.ownedRooms})}),drainOriginal:async()=>{await collector.drain();await observer.drain({final:false});},readAuthority:()=>failureAuthority(state,{game,baseline}),writeFrame:async(index,bytes,pin)=>{const name=round.id+'-feedback-frame-'+String(index).padStart(4,'0')+'.png';await writeFile(join(out,name),bytes,{mode:0o600,flag:'wx'});return {path:name,sha256:hash(bytes),bytes:bytes.length};}});if(feedback.uiAction)lastCursor=feedback.uiAction.sequenceAfter;
+    }else{
+     const feedback=await capturePerformanceVisibleFeedbackPhase({round,collector,origin,nonce,topUrl:artifact.entryUrl,protocol:feedbackProtocol,implementation:feedbackImplementation,webviewVersion:report.device.webview.version,readTop:(fn,args)=>page.evaluate(fn,args),arenaFrame:touch.frame,readRoom:()=>state.room,locale:'zh',runAction:inputFrame=>playOneArenaAction(inputFrame,game,()=>state.room,{touch:true,timeoutMs:8000,deadlineAt:Date.now()+8000,beforeAction:()=>assertPerformanceRoom(state.room,{game,baseline,ownedRooms:state.ownedRooms})}),drainOriginal:async()=>{await collector.drain();await observer.drain({final:false});},readAuthority:()=>failureAuthority(state,{game,baseline}),writeFrame:async(index,bytes)=>{const name=round.id+'-feedback-frame-'+String(index).padStart(4,'0')+'.png';await writeFile(join(out,name),bytes,{mode:0o600,flag:'wx'});return {path:name,sha256:hash(bytes),bytes:bytes.length};}});const last=feedback.uiAction??feedback.preparatoryUiActions?.at(-1);if(last)lastCursor=last.sequenceAfter;
     }
     await continuousSampleBoundary({stage:'start',round,collector,state,baseline,origin,game,nonce,motion:readMotion()});const began=round.sampleBoundaries.start.epochMs,windowMs=Math.max(options.roomMs,Math.ceil(options.sampleMs/(options.repetitions*2))),deadline=began+windowMs;
     sampling=true;samplingPump=(async()=>{while(sampling){assertPerformanceRoom(state.room,{game,baseline,ownedRooms:state.ownedRooms});if(state.room!==previousRoom){previousRoom=state.room;receipt=Date.now();}const motion=activeMotionState(game,state.room,Date.now()-receipt);await collector.evaluate(`(()=>{const p=globalThis.__oasisPhysicalPerf;if(p.documentId!==${JSON.stringify(round.documentId)})throw Error('DOCUMENT_CHANGED');p.active=${motion.active};p.moving=${motion.moving};p.validUntil=performance.now()+500;return true;})()`);await sleep(100);}})().catch(error=>{pumpError=error;});

@@ -5,6 +5,7 @@ import {createHash} from 'node:crypto';
 import {createRequire} from 'node:module';
 import {dirname,join} from 'node:path';
 import vm from 'node:vm';
+import {arenaFeedbackPlan} from '../scripts/android-player-arena-feedback.mjs';
 import {VISIBLE_FEEDBACK_PROTOCOL_SHA256,VISIBLE_FEEDBACK_IMPLEMENTATION_VERSION,VISIBLE_FEEDBACK_IMPLEMENTATION_SOURCES,visibleFeedbackImplementationReceipt,assertVisibleFeedbackImplementation,VISIBLE_FEEDBACK_PROTOCOL_URL,visibleFeedbackProtocolReceipt,createVisibleFeedbackCollector,installOwnedVisibleFeedbackObservation,readOwnedVisibleFeedbackObservation,readOwnedFeedbackProjection,analyzeVisibleRunFeedback} from '../scripts/android-player-visible-feedback.mjs';
 
 const require=createRequire(import.meta.url),{PNG}=require(join(dirname(require.resolve('playwright-core')),'lib/utilsBundle.js'));
@@ -60,6 +61,20 @@ test('the exact nonce, realm, phase, native gesture and original byte sequence a
 });
 
 class Session extends EventEmitter{constructor(){super();this.calls=[];}async send(method,args){this.calls.push({method,args});return method==='Page.getFrameTree'?{frameTree:structuredClone(tree)}:{};}}
+test('original PNG stream requires an explicit matching arena plan; Run default and exact foreign frame guards remain',async()=>{
+ for(const [game,type]of [['golf','shot'],['bowling','roll'],['carrom','shot'],['pool','shot'],['darts','throw'],['ludo','roll'],['jackaroo','pass'],['domino','draw'],['match','swap'],['towerlink','link']]){
+  const arenaPlan=arenaFeedbackPlan({game,actionType:type,...(game==='match'?{cell:7}:{})}),s={...scope,url:'https://owned-player.example/play/'+game},t=structuredClone(tree);t.childFrames[0].frame.url=s.url;
+  const session=new Session();session.send=async(method,args)=>{session.calls.push({method,args});return method==='Page.getFrameTree'?{frameTree:t}:{};};
+  const args={session,scope:s,arenaPlan,phaseId:'original-'+game,protocol,readOwnedState:async()=>({...state(),owner:{...owner,url:s.url}}),writeFrame:async()=>assert.fail('Scope fixture sends no frames')};
+  const capture=await createVisibleFeedbackCollector(args);await capture.close();assert.equal(capture.capture.closed,true);assert.equal(capture.capture.scope.url,s.url);
+  await assert.rejects(()=>createVisibleFeedbackCollector({...args,arenaPlan:null}),/REAL_RUN_DOCUMENT_REQUIRED/);
+  await assert.rejects(()=>createVisibleFeedbackCollector({...args,arenaPlan:{...arenaPlan,game:'run'}}),/EXPLICIT_ARENA_PLAN_REQUIRED/);
+  await assert.rejects(()=>createVisibleFeedbackCollector({...args,scope:{...s,url:'https://owned-player.example/play/run'}}),/REAL_RUN_DOCUMENT_REQUIRED/);
+  await assert.rejects(()=>createVisibleFeedbackCollector({...args,scope:{...s,frameId:'foreign-frame'}}),/GAME_FRAME_CHANGED/);
+  await assert.rejects(()=>createVisibleFeedbackCollector({...args,scope:{...s,loaderId:'foreign-loader'}}),/GAME_DOCUMENT_CHANGED/);
+ }
+ await assert.rejects(()=>createVisibleFeedbackCollector({session:new Session(),scope:{...scope,url:'https://owned-player.example/play/slot'},arenaPlan:{game:'slot'},phaseId:'bad',protocol}),/EXPLICIT_ARENA_PLAN_REQUIRED/);
+});
 test('collector dispatches exact ACK before any read/write, saves original PNGs and only removes its own listeners',async()=>{
  const s=new Session(),foreign=()=>{};s.on('Page.screencastFrame',foreign);let at=0,monotonic=0,reads=0,writes=0;const c=await createVisibleFeedbackCollector({session:s,scope,phaseId:'proof-1',protocol,readOwnedState:async()=>{reads++;return state(at);},writeFrame:async(index,bytes,pin)=>{writes++;assert.ok(s.calls.some(r=>r.method==='Page.screencastFrameAck'));assert.equal(bytes.equals(fullBytes),true);return {path:'own-'+index+'.png',sha256:sha(bytes),bytes:bytes.length};},clock:()=>({epochMs:epoch+monotonic,monotonicMs:monotonic++})});
  assert.deepEqual(s.calls.find(r=>r.method==='Page.startScreencast').args,{format:'png',everyNthFrame:1});const readBefore=reads;at=10;s.emit('Page.screencastFrame',{sessionId:41,data:fullBytes.toString('base64'),metadata:frame(1,10).metadata});assert.equal(s.calls.at(-1).method,'Page.screencastFrameAck');assert.deepEqual(s.calls.at(-1).args,{sessionId:41});assert.equal(reads,readBefore);assert.equal(writes,0);await c.drain();at=100;const [saved,again]=await Promise.all([c.close(),c.close()]);assert.equal(saved,again);assert.equal(saved.closed,true);assert.equal(saved.errors.length,0);assert.equal(saved.frames[0].pngSha256,sha(fullBytes));assert.equal(saved.frames[0].pngBase64,fullBytes.toString('base64'));assert.deepEqual(s.listeners('Page.screencastFrame'),[foreign]);assert.equal(s.listenerCount('Page.frameNavigated'),0);assert.equal(s.calls.filter(r=>r.method==='Page.stopScreencast').length,1);assert.equal(await c.close(),saved);
