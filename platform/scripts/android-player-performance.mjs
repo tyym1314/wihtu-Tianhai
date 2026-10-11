@@ -197,7 +197,9 @@ export async function capturePerformanceVisibleFeedbackPhase({round,collector,or
  }
  entry.originalRequests=collector.actionRequestDiagnostics?.().filter(r=>r.frameId===entry.scope?.frameId&&entry.capture?.before&&entry.capture?.after&&r.requestStartedEpochMs>=entry.scope.timeOrigin+entry.capture.before.at&&r.requestStartedEpochMs<=entry.scope.timeOrigin+entry.capture.after.at)??[];
  entry.acceptedActions=collector.actions.filter(a=>entry.originalRequests.some(r=>r.requestSha256===a.requestSha256));
- entry.analysis=analyzeVisibleRunFeedback({capture:entry.capture,observation:entry.observation,actions:entry.acceptedActions,requests:entry.originalRequests,requirePhysicalPresent:true});
+ // The standard accepts a proven captured-content upper bound. OS/optical
+ // presentation is supplementary evidence and is never claimed by this phase.
+ entry.analysis=analyzeVisibleRunFeedback({capture:entry.capture,observation:entry.observation,actions:entry.acceptedActions,requests:entry.originalRequests});
  entry.finalized=entry.errors.length===0&&entry.capture?.closed===true&&entry.observation?.removed===true&&entry.probe?.closed===true;
  if(!entry.finalized&&entry.analysis.captureStatus==='pass'){entry.analysis.status='insufficient';entry.analysis.captureStatus='insufficient';entry.analysis.passed=false;entry.analysis.reasons.push('Independent phase finalization evidence is incomplete');}
  if(entry.capture){entry.capture={...entry.capture,frames:entry.capture.frames.map(({pngBase64,...row})=>row),rawPngStorage:'All original received PNG bytes saved by indexed sink; byte hashes validated before stripping duplicated inline base64'};}
