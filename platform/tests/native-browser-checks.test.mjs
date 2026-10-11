@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import vm from 'node:vm';
 import {webcrypto} from 'node:crypto';
-import {observeNativeBrowser,createNativeFetchEvidence,installNativeFetchProbe,cleanupNativeSession,createNativeCleanupApi,runNativeActionOnce,nativeErrorsEmpty,reserveNativeReportDirectory} from '../deploy/native-browser-checks.mjs';
+import {observeNativeBrowser,createNativeFetchEvidence,installNativeFetchProbe,nativeFetchChallengeConsumer,cleanupNativeSession,createNativeCleanupApi,runNativeActionOnce,nativeErrorsEmpty,reserveNativeReportDirectory} from '../deploy/native-browser-checks.mjs';
 import {replayNativeFetchReport} from './native-fetch-cancellation-replay.mjs';
 
 const origin='https://fixture.invalid';
@@ -1045,4 +1045,63 @@ for(const variant of ['valid','missing-start','missing-end','wrong-status','two-
  if(variant==='wrong-status')record.response_status=404;if(variant==='wrong-frame')record.frame='other';if(variant==='wrong-method')record.method='POST';
  probe.network.set('network',record);if(variant==='two-network-requests')probe.network.set('second',{...record,id:'second'});
  const summary=probe.inspectChallenge(frame,doc,url,2,5);assert.equal(summary.passed,variant==='valid');assert.equal(summary.network_statuses[0],record.response_status);
+});
+
+function challengeConsumerRealm({chunks=[Buffer.from('{"status":"ok","environment":"production"}')],readError=null,waitForAbort=false}={}){
+ const url=origin+'/health',calls={fetch:[],reads:0,cancels:0,cleared:[]},timers=[];let now=0,index=0;
+ const reader={read:async()=>{calls.reads++;if(index<chunks.length)return{done:false,value:chunks[index++]};if(readError)throw readError;return{done:true};},cancel:async()=>{calls.cancels++;}};
+ const realm=vm.createContext({AbortController,Uint8Array,btoa:value=>Buffer.from(value,'binary').toString('base64'),performance:{timeOrigin:1000,now:()=>++now},Date:{now:()=>1000+now},
+  setTimeout:(callback,delay)=>{const timer={callback,delay};timers.push(timer);return timer;},clearTimeout:timer=>calls.cleared.push(timer),
+  fetch:(href,options)=>{calls.fetch.push({href,options});if(waitForAbort)return new Promise((_resolve,reject)=>options.signal.addEventListener('abort',()=>reject(options.signal.reason),{once:true}));return Promise.resolve({status:200,url:href,redirected:false,body:{getReader:()=>reader}});}});
+ return{url,calls,timers,run:()=>vm.runInContext('('+nativeFetchChallengeConsumer.toString()+')('+JSON.stringify(url)+')',realm)};
+}
+
+test('challenge consumer telemetry records original 42 bytes and EOF without cancelling a gzip/no-length response',async()=>{
+ const f=challengeConsumerRealm(),raw=await f.run(),result=JSON.parse(JSON.stringify(raw)),t=result.consumer_telemetry;
+ assert.equal(result.status,200);assert.equal(result.bytes,42);assert.equal(result.failed,undefined);assert.equal(f.calls.fetch.length,1);
+ const {signal,...options}=f.calls.fetch[0].options;assert.deepEqual(options,{method:'GET',credentials:'omit',cache:'no-store',redirect:'error'});assert.equal(signal.aborted,false);
+ assert.equal(f.timers[0].delay,5000);assert.equal(f.calls.cleared[0],f.timers[0]);assert.equal(f.calls.reads,2);assert.equal(f.calls.cancels,0);
+ assert.deepEqual(t.events.map(e=>e.kind),['fetch-start','fetch-fulfilled','reader-read-start','reader-read-result','reader-read-start','reader-read-result','body-done','consumer-final']);
+ assert.deepEqual(t.events.filter(e=>e.kind==='reader-read-result').map(e=>[e.done,e.chunk_bytes,e.bytes]),[[false,42,0],[true,0,42]]);
+ assert.equal(Buffer.from(t.body_base64,'base64').toString(),'{"status":"ok","environment":"production"}');assert.equal(t.body_complete,true);assert.equal(t.signal_aborted,false);assert.equal(t.capture_complete,true);
+ assert.ok(t.events.every((e,i)=>e.sequence===i+1&&e.at_ms===1000+e.performance_now_ms&&e.wall_ms===e.at_ms&&(i===0||e.at_ms>t.events[i-1].at_ms)));
+});
+
+test('challenge consumer telemetry retains the sole 16 KiB reader cancel and its original rejection',async()=>{
+ const f=challengeConsumerRealm({chunks:[Buffer.alloc(16000,65),Buffer.alloc(385,66)]}),result=JSON.parse(JSON.stringify(await f.run())),t=result.consumer_telemetry;
+ assert.deepEqual(Object.keys(result).sort(),['consumer_telemetry','failed']);assert.equal(result.failed,true);assert.equal(f.calls.cancels,1);assert.equal(f.calls.fetch[0].options.signal.aborted,false);
+ assert.equal(t.bytes,16385);assert.equal(t.body_retained_bytes,16000);assert.equal(Buffer.from(t.body_base64,'base64').length,16000);assert.equal(t.eof,false);assert.equal(t.body_complete,false);
+ const cancel=t.events.findIndex(e=>e.kind==='reader-cancel-start'),rejected=t.events.findIndex(e=>e.kind==='consumer-rejected');assert.ok(cancel>=0&&cancel<rejected);
+ assert.equal(t.events[cancel].limit,16384);assert.equal(t.events[cancel+1].kind,'reader-cancel-done');assert.equal(t.events[rejected].error.message,'CHALLENGE_BODY_LIMIT');assert.equal(t.events.some(e=>e.kind==='timeout-fired'),false);
+});
+
+test('challenge consumer telemetry records the unchanged 5000 ms timeout callback before signal abort',async()=>{
+ const f=challengeConsumerRealm({waitForAbort:true}),pending=f.run();assert.equal(f.timers[0].delay,5000);f.timers[0].callback();const result=JSON.parse(JSON.stringify(await pending)),t=result.consumer_telemetry;
+ assert.equal(result.failed,true);assert.equal(f.calls.fetch.length,1);assert.equal(f.calls.reads,0);assert.equal(f.calls.cancels,0);assert.equal(f.calls.cleared[0],f.timers[0]);
+ const timeout=t.events.findIndex(e=>e.kind==='timeout-fired'),abort=t.events.findIndex(e=>e.kind==='signal-abort');assert.ok(timeout>=0&&abort===timeout+1);assert.equal(t.events[timeout].delay_ms,5000);
+ assert.equal(t.signal_aborted,true);assert.equal(t.signal_reason.name,'AbortError');assert.equal(t.body_complete,false);assert.equal(t.events.at(-1).kind,'consumer-final');assert.equal(t.capture_complete,true);
+});
+
+test('challenge consumer telemetry does not self-cancel after an external body read failure',async()=>{
+ const f=challengeConsumerRealm({readError:new TypeError('net::ERR_ABORTED')}),result=JSON.parse(JSON.stringify(await f.run())),t=result.consumer_telemetry;
+ assert.equal(result.failed,true);assert.equal(t.bytes,42);assert.equal(t.eof,false);assert.equal(t.body_complete,false);assert.equal(t.signal_aborted,false);assert.equal(f.calls.cancels,0);
+ assert.equal(t.events.find(e=>e.kind==='consumer-rejected').error.message,'net::ERR_ABORTED');assert.equal(t.events.some(e=>['timeout-fired','signal-abort','reader-cancel-start'].includes(e.kind)),false);
+});
+
+test('challenge consumer telemetry overflow is explicit and cannot stop the original EOF read',async()=>{
+ const f=challengeConsumerRealm({chunks:Array.from({length:140},()=>Buffer.from('x'))}),result=JSON.parse(JSON.stringify(await f.run())),t=result.consumer_telemetry;
+ assert.equal(result.status,200);assert.equal(result.bytes,140);assert.equal(f.calls.reads,141);assert.equal(f.calls.cancels,0);assert.equal(t.body_complete,true);assert.equal(Buffer.from(t.body_base64,'base64').toString(),'x'.repeat(140));
+ assert.equal(t.events.length,t.event_limit);assert.equal(t.event_limit,256);assert.ok(t.dropped_events>0);assert.equal(t.capture_complete,false);assert.equal(t.signal_aborted,false);
+});
+
+test('challenge consumer telemetry stays diagnostic when original CDP reports ERR_ABORTED after complete body',async()=>{
+ const consumer=JSON.parse(JSON.stringify(await challengeConsumerRealm().run()));
+ for(const aborted of [false,true]){
+  const {context}=attachmentFixture(),probe=await installNativeFetchProbe(context),url=origin+'/play/golf',doc='a'.repeat(32);let flushes=0;
+  const frame={url:()=>url,evaluate:async(fn)=>{if(fn===nativeFetchChallengeConsumer)return consumer;flushes++;const event={document_id:doc,kind:'checkpoint',event_seq:flushes===1?2:5,at_ms:flushes===1?105:125};probe.receive(frame,event);if(flushes===1){probe.receive(frame,{document_id:doc,kind:'start',event_seq:3,at_ms:110,attempt_id:1,url:origin+'/health',method:'GET',supported:true,body_present:false,frame_url:url});probe.receive(frame,{document_id:doc,kind:'fulfilled',event_seq:4,at_ms:120,attempt_id:1,signal_aborted:false,reason:null});}return{document_id:doc,frame_url:url,event_seq:event.event_seq,lost:false,fetch_wrapper_intact:true};}};
+  const document={document_id:doc,kind:'document',event_seq:1,at_ms:100,frame_url:url};probe.receive(frame,document);probe.receiveNetworkDocument('original-protocol-frame',document);
+  probe.network.set('original-request',{id:'original-request',frame:'original-protocol-frame',url:origin+'/health',method:'GET',type:'Fetch',started_at_ms:111,response_seen:true,response_status:200,redirected:false,...(aborted?{error:'net::ERR_ABORTED',cancelled:true}: {})});
+  if(aborted)await assert.rejects(probe.requireInstalled(frame),/FETCH_PROBE_CHALLENGE_FAILED/);else assert.equal((await probe.requireInstalled(frame)).verification,'same-document-fetch-challenge');
+  const observation=probe.installationObservations[0];assert.equal(observation.http.bytes,42);assert.equal(observation.http.failed,false);assert.deepEqual(observation.consumer_telemetry,consumer.consumer_telemetry);assert.equal(observation.passed,!aborted);assert.equal(observation.challenge.passed,!aborted);
+ }
 });

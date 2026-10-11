@@ -57,6 +57,7 @@
 - 2026-10-12 手机断连后重新连接，fresh 只读双世界诊断完成：stream 实际消费42B且 CDP loadingFinished；arrayBuffer 分支因真实 gzip 响应无 Content-Length 自行拒绝并 abort，不能当作安装检查或性能通过。原诊断报告 SHA `a6aeecf71921cd37177bc6bbece2027408387e8fa69520908194d06079fb971d`，本轮完整 forwards、自有连接关闭及原前台均恢复。
 - 随后原 native probe 未改，`current08-native-basic-a2` 完成 Match 的原生安装检查、真实 swap/ACK sequence1、返回及自有房间清理；第二款 Golf 的 health HTTP200/42B 仍观察到真实 CDP ERR_ABORTED，整轮 exit1/failed，报告 SHA `20b24685fa7fcab4f8e1feaf3f430a691b453247d82b74b299438bf8ca519150`。原前台是 MIUI DeveloperSettings 子 Activity，恢复实际成 MiuiSettings，原严格恢复检查也拒绝；不能声明整轮清理或上线通过。取消因果仍待查。
 - 十款非 Run 的反馈采集接入原 native UI driver，选牌/选棋和 Pool placement/call 仅作为准备，最终提交单独绑定可信事件、原始 PNG、请求及受理序号。Jackaroo 像素 ROI 避开原 Send 图标，仍需16/16匹配；原 Run 阶段正文保持，Root直接聚焦43项通过。当前 collector SHA `a7fa3607442a89f067edeca3ab1aa6b6dad779a797395b9ab29913089bc193cc`；尚无新逐款实际帧/延迟结果。
+- 健康挑战仅增加有界消费遥测，记录真实 read/EOF、最终 signal、唯一16KiB cancel及5秒 timeout；原GET参数、Promise.race及严格错误门槛不改，逆移除增量精确恢复原源码。源码 SHA `4723565b7ed0d54a3c23e65de07b5b7fef0bd91fbc811da51f337a0a4432c9c2`，作者20项及Root/独立各6项聚焦通过；尚未实际手机采集新遥测，不代表取消故障已解决。
 - 弱网执行器 v2 已完成关闭与原始记录保存异常修复，15项聚焦测试及独立复核通过；仅确认实际连接关闭后删除本轮 forward，保存失败保留首因。仍未实际变更网络，网络与玩法性能门禁保持未测。
 - 标准见 `platform/specs/mobile-quality-v1.md/json`：完整冷热入口各 5 次、逐款至少 15 分钟/3 完整局/30 操作、帧间隔、延迟、生命周期、内容和服务端容量等。当前尚未完成这些门槛；Android RAF/桌面 CPU 节流不等于 GPU 显示帧率或 iPhone 验收。
 

@@ -247,6 +247,24 @@ function nativeFetchProbe({bindingName,flushName,networkBindingName}){
  };
 }
 
+/** Serialized challenge consumer. Telemetry never changes its request or verdict. */
+export async function nativeFetchChallengeConsumer(challengeUrl){
+ const controller=new AbortController();let timer,result,bytes=0,eof=false,retainedBytes=0,dropped=0,recordErrors=0;
+ const events=[],retained=new Uint8Array(16384),describe=error=>({name:String(error?.name||'').slice(0,256),message:String(error?.message||'').slice(0,256)});
+ const record=(kind,more={})=>{try{if(events.length>=256){dropped++;return;}const now=performance.now();events.push({sequence:events.length+1,kind,at_ms:performance.timeOrigin+now,performance_now_ms:now,wall_ms:Date.now(),...more});}catch{recordErrors++;}};
+ const aborted=()=>record('signal-abort',{reason:describe(controller.signal.reason),signal_aborted:controller.signal.aborted});
+ controller.signal.addEventListener('abort',aborted);
+ record('fetch-start',{url:challengeUrl,signal_aborted:controller.signal.aborted});
+ try{result=await Promise.race([(async()=>{const response=await globalThis.fetch(challengeUrl,{method:'GET',credentials:'omit',cache:'no-store',redirect:'error',signal:controller.signal});
+  record('fetch-fulfilled',{status:response.status,url:response.url,redirected:response.redirected,signal_aborted:controller.signal.aborted});
+  const reader=response.body?.getReader();let reads=0;if(reader)for(;;){record('reader-read-start',{read:++reads,bytes});const chunk=await reader.read();record('reader-read-result',{read:reads,done:chunk.done,chunk_bytes:chunk.value?.byteLength??0,bytes});if(chunk.done){eof=true;break;}bytes+=chunk.value.byteLength;if(bytes>16384){record('reader-cancel-start',{bytes,limit:16384});await reader.cancel();record('reader-cancel-done',{bytes});throw Error('CHALLENGE_BODY_LIMIT');}retained.set(chunk.value,retainedBytes);retainedBytes+=chunk.value.byteLength;}
+  record('body-done',{bytes,eof});return{status:response.status,url:response.url,redirected:response.redirected,bytes};})(),new Promise((_resolve,reject)=>{timer=setTimeout(()=>{record('timeout-fired',{delay_ms:5000});controller.abort();reject(Error('CHALLENGE_TIMEOUT'));},5000);})]);}
+ catch(error){record('consumer-rejected',{error:describe(error),signal_aborted:controller.signal.aborted});result={failed:true};}
+ finally{clearTimeout(timer);record('consumer-final',{signal_aborted:controller.signal.aborted,reason:controller.signal.aborted?describe(controller.signal.reason):null,bytes,eof});controller.signal.removeEventListener('abort',aborted);}
+ let bodyBase64=null;try{bodyBase64=btoa(String.fromCharCode(...retained.subarray(0,retainedBytes)));}catch{recordErrors++;}
+ return {...result,consumer_telemetry:{schema:'native-fetch-challenge-consumer-telemetry-v1',diagnostic_only:true,events,event_limit:256,dropped_events:dropped,record_errors:recordErrors,capture_complete:dropped===0&&recordErrors===0,signal_aborted:controller.signal.aborted,signal_reason:controller.signal.aborted?describe(controller.signal.reason):null,bytes,eof,body_retained_bytes:retainedBytes,body_complete:eof&&retainedBytes===bytes,body_base64:bodyBase64}};
+}
+
 export async function installNativeFetchProbe(context,{clean=String}={}){
  const evidence=createNativeFetchEvidence({clean}),suffix=randomUUID().replaceAll('-',''),bindingName=`__oasisNativeFetch_${suffix}`,flushName=`__oasisNativeFlush_${suffix}`,networkBindingName=`__oasisNativeNetwork_${suffix}`;
  const attachedPages=new WeakSet(),pageErrors=new WeakMap(),errorSubscribers=new WeakMap(),networkFlushes=[];let sessionSequence=0;
@@ -297,15 +315,10 @@ export async function installNativeFetchProbe(context,{clean=String}={}){
    // No nonce/header is added. inspectChallenge requires one request across the
    // entire CDP collection, so any other same-URL candidate fails closed.
    const challenge=new URL('/health',url);
-   const received=await frame.evaluate(async challengeUrl=>{
-    const controller=new AbortController();let timer;
-    try{return await Promise.race([(async()=>{const response=await globalThis.fetch(challengeUrl,{method:'GET',credentials:'omit',cache:'no-store',redirect:'error',signal:controller.signal});
-     let bytes=0;const reader=response.body?.getReader();if(reader)for(;;){const chunk=await reader.read();if(chunk.done)break;bytes+=chunk.value.byteLength;if(bytes>16384){await reader.cancel();throw Error('CHALLENGE_BODY_LIMIT');}}
-     return{status:response.status,url:response.url,redirected:response.redirected,bytes};})(),new Promise((_resolve,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('CHALLENGE_TIMEOUT'));},5000);})]);}
-    catch{return{failed:true};}finally{clearTimeout(timer);}
-   },challenge.href);
+   const received=await frame.evaluate(nativeFetchChallengeConsumer,challenge.href);
    stillOpen();
    observation.http={status:received?.status??null,url_matches:received?.url===challenge.href,redirected:received?.redirected??null,bytes:received?.bytes??null,failed:received?.failed===true};
+   observation.consumer_telemetry=received?.consumer_telemetry??null;
    const after=await frame.evaluate(async name=>typeof globalThis[name]==='function'?await globalThis[name]():null,flushName);stillOpen();observation.after=shape(after);await evidence.networkFlush();stillOpen();
    observation.challenge=evidence.inspectChallenge(frame,before.document_id,challenge.href,before.event_seq,after?.event_seq);
    if(!valid(after)||after.document_id!==before.document_id||received?.status!==200||received.url!==challenge.href||received.redirected!==false||!observation.challenge.passed)throw Error('FETCH_PROBE_CHALLENGE_FAILED');
