@@ -79,3 +79,37 @@ test('actual collector uses shared Functions and both pre-input guards before AD
  assert.ok(installAt>=0&&assertAt>installAt&&readAt>assertAt&&slotAt>readAt&&inputAt>slotAt);assert.equal(source.includes('const tapDOMExpression='),false);
  const start=source.split('\n').find(line=>line.includes('const start=Date.now();round.startedAt='))+'\n';assert.equal(createHash('sha256').update(start).digest('hex'),'3765c4dd2baa96efc9321a4a92e35001df6d9feca335bc062e9e8a218bcaab2c');
 });
+
+test('browser evaluate preserves a bounded diagnostic for each original synchronous refusal without installing a receipt',async()=>{
+ await fixture(async({page,handle,evaluators})=>{
+  const cases=[
+   ['urlMatches',{urlMatches:false,visibility:'unread',disabled:'unread',ariaDisabled:'unread'}],
+   ['visibility',{urlMatches:true,visibility:'hidden',disabled:'unread',ariaDisabled:'unread'}],
+   ['disabled',{urlMatches:true,visibility:'visible',disabled:true,ariaDisabled:'unread'}],
+   ['ariaDisabled',{urlMatches:true,visibility:'visible',disabled:false,ariaDisabled:'true'}]
+  ];
+  for(const [failedPredicate,evaluatedPrefix] of cases){
+   const args=argumentsFor('rejected-'+failedPredicate);
+   if(failedPredicate==='urlMatches')args.expectedUrl=url+'?private-fixture-token';
+   await handle.evaluate((element,kind)=>{
+    if(kind==='visibility')Object.defineProperty(element.ownerDocument,'visibilityState',{value:'hidden',configurable:true});
+    if(kind==='disabled')element.disabled=true;
+    if(kind==='ariaDisabled')element.setAttribute('aria-disabled','true');
+   },failedPredicate);
+   try{
+    await assert.rejects(handle.evaluate(evaluators.install,args),error=>{
+     const marker=' | guard-diagnostic=',at=error.message.indexOf(marker);assert.ok(at>=0);
+     const raw=error.message.slice(at+marker.length).split('\n')[0];assert.ok(raw.length<=350);
+     assert.deepEqual(JSON.parse(raw),{schema:'owned-native-tap-guard-diagnostic-v1',failedPredicate,evaluatedPrefix});
+     assert.equal(raw.includes('private-fixture-token'),false);assert.equal(raw.includes('fixture.invalid'),false);return true;
+    });
+    assert.equal(await handle.evaluate((element,key)=>Object.hasOwn(element,key),args.key),false);
+   }finally{
+    await handle.evaluate(element=>{delete element.ownerDocument.visibilityState;element.disabled=false;element.removeAttribute('aria-disabled');});
+   }
+  }
+  const args=argumentsFor('success-after-refusals');await install(handle,evaluators,args);
+  assert.deepEqual(await handle.evaluate(removeOwnedNativeTapReceipt,args),{removed:true,missing:false});
+  assert.equal(await page.getByTestId('run-jump').count(),1);
+ });
+});

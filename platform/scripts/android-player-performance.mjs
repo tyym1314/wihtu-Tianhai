@@ -467,7 +467,12 @@ export function ownedNativeTapEventDOM(element,{performanceScope},readDOM){
 }
 export function prepareOwnedNativeTapReceipt(element,{key,expectedUrl,position,performanceScope=null,authorityAtInstallation=null},readDOM){
  const w=element.ownerDocument.defaultView,d=element.ownerDocument;
- if(w.location.href!==expectedUrl||d.visibilityState!=='visible'||element.disabled||element.getAttribute('aria-disabled')==='true')throw Error('OWNED_NATIVE_TAP_DOCUMENT_OR_CONTROL_UNPROVEN');
+ let failedPredicate,urlMatches,visibility,disabled,ariaDisabled;
+ if((failedPredicate='urlMatches',urlMatches=w.location.href===expectedUrl,!urlMatches)||(failedPredicate='visibility',visibility=d.visibilityState,visibility!=='visible')||(failedPredicate='disabled',disabled=!!element.disabled,disabled)||(failedPredicate='ariaDisabled',ariaDisabled=element.getAttribute('aria-disabled'),ariaDisabled==='true')){
+  const visibilityLabel=failedPredicate==='urlMatches'?'unread':visibility==='visible'?'visible':visibility==='hidden'?'hidden':visibility==='prerender'?'prerender':'other',disabledLabel=failedPredicate==='urlMatches'||failedPredicate==='visibility'?'"unread"':disabled?'true':'false',ariaDisabledLabel=failedPredicate!=='ariaDisabled'?'unread':ariaDisabled==='true'?'true':ariaDisabled==='false'?'false':ariaDisabled===null?'absent':'other';
+  const diagnostic='{"schema":"owned-native-tap-guard-diagnostic-v1","failedPredicate":"'+failedPredicate+'","evaluatedPrefix":{"urlMatches":'+(urlMatches?'true':'false')+',"visibility":"'+visibilityLabel+'","disabled":'+disabledLabel+',"ariaDisabled":"'+ariaDisabledLabel+'"}}';
+  throw Error('OWNED_NATIVE_TAP_DOCUMENT_OR_CONTROL_UNPROVEN | guard-diagnostic='+diagnostic);
+ }
  if(Object.hasOwn(element,key))throw Error('OWNED_NATIVE_TAP_RECEIPT_ALREADY_PRESENT');
  const r=element.getBoundingClientRect(),hit=d.elementFromPoint(r.x+(position?.x??r.width/2),r.y+(position?.y??r.height/2));
  if(!hit||!(hit===element||element.contains(hit)))throw Error('OWNED_NATIVE_TAP_HIT_TARGET_UNPROVEN');
