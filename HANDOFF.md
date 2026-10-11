@@ -1,4 +1,4 @@
-# 游戏平台交接 — 2026-10-10
+# 游戏平台交接 — 2026-10-11
 
 用户要求：界面和游戏流畅、达到上线标准；提供最简 APK；删除其他 Mock 应用及数据；使用真实数据和接口，已连接本机 Android 手机。工作仍在进行，尚未达到完整第三方接入上线标准。
 
@@ -7,11 +7,14 @@
 - 发布分支 master；运行时候选提交 `24811c94ef26b67bd680d35dbcb192530e912911`，采集器提交 `1ceb2dfa23e2ccd3f74001c2491a020d0dbaf8b7` 已推送并独立核对远端。当前提交与未提交修改仍须重新读回 git。
 - 真实 Player：`https://oasis-player.43.98.202.236.sslip.io/player?app_id=app_e091fb5daf135660d39ce89fc23760ab`。
 - 独立生产实例：`/opt/oasis/production-current` 指向 `20261010-06`，API 18891、数据库 18893；真实注册账号、持久化会话、真实房间及生产账本，测试账号初始余额 0。
-- 已开放第一方免费练习的 11 款竞技游戏，概率游戏、资金转入转出、第三方资金接入仍未开放。免费练习通过不代表 13 款和资金上线通过。
+- 原第一方免费练习范围为 11 款竞技游戏；本轮切换已将入场策略提交为 revision9 closed，当前账号 paused，尚未重新开放。概率游戏、资金转入转出、第三方资金接入均关闭。免费练习通过不代表 13 款和资金上线通过。
 - 当前生产 release manifest SHA256 `1135152d247b7de6f8bdecac3ede9ac9fb4a1675936c9596dde6ddba2d353a25`；本地 canonical build 已为下文 source07 候选。
 - source06 发布时 HTML 权限 0600 导致游戏入口 404，已在锁内核对完整 manifest 后将公开运行文件权限规范化，字节/inode/mtime不变，11 个入口读回 200。打包和 delta staging 已修复此权限继承问题，24 项聚焦测试通过。
 - source07 已实际 staging，尚未切换。v1 切换工具在业务修改前因共享对象比较误判拒绝；v2 新链在停止定时器前遇 `ADMISSION_ONESHOT_TRANSITION`，其失败处理停止了原 API 和三个定时器，未写策略或源码。原 partial SHA `ad23267dc5f2ecfa8a9dc527ebb237d6dbbe935c01ee9b6c1e9a5118a5c1141c` 保留，不重放。
 - 已仅恢复原 API 和三个定时器；2026-10-10 12:20 UTC 独立完整只读读回通过，SHA `6ebe18d675da5c342bc46ad61f34936e6f827f808dbe209ea6cbcb9c4704b225`。API 实际 PID 1005937、定时器 active/jobs idle、原配置及生产指针全 pin 不变、策略 revision8 open；47 表图完全一致、28 项完整性计数为零，HTTPS/静态资源/retired410及player302通过。候选切换工具正在修复有界任务等待及当前06资源检查误用候选成员的问题；恢复不能当作07发布完成。
+- v3 实际关闭阶段于 2026-10-10 提交 revision9 closed，随后在定时器恢复后的最终读回遇到 `ADMISSION_ONESHOT_TRANSITION`。失败处理再次停止 API 和三个定时器；当前指针仍为06，没有切源或追加静态资源。原 partial SHA `2d6743697a2028afb27cc4e9c1d05658acca72567295799e76f99aa753a6db56`、已提交策略及七步原历史保留，不能重放 close SQL 或把失败收据改成成功。
+- 2026-10-11 恢复前发现三组精确保护差异：主证书 renewal.conf 仅 ARI 下次重试时间改变；12 条原监听输出各增加4个尾部空格，端口/进程/正文不变；DB RequiredBy 两个原成员顺序互换。原配置通过完整历史 SHA 重建，明确不是原文件备份，当前文件改写时间与实际主证书任务成功日志同秒。新恢复证明只采纳这些已审差异，不增加通用忽略规则或改历史保护文件。
+- 2026-10-11 实际 API 恢复通过，原始收据 SHA `c824d610cd915725adf8a03963367630aebd218d5a6c945e6abd69fb1273ca3e`：仅执行一次 `systemctl start oasis-production-api.service`，API 实际 PID1545089；current06、revision9 closed、47表图及28项零计数保持一致，已提交 marker 的新 fullpin 绑定原 partial。三个定时器仍 inactive；尚未完成 close 验收接续、source07 切换、重新开放或新真机性能采样。
 
 ## 最简 APK 和设备
 
