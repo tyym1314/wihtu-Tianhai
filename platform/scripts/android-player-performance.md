@@ -93,6 +93,15 @@ ten games retain motion before feedback. The motion labels remain relative to
 continuous sampling. A hard feedback error propagates unchanged and leaves
 Run's deferred motion unexecuted; it does not become successful evidence.
 
+Run can explicitly select `--run-feedback-resolution css`; the default remains
+`device`. The CSS profile derives output pixel bounds from the original guarded
+viewport and checks every received PNG against those dimensions and scale 1.
+It preserves the original PNG bytes, hashes, ACKs and errors, including rejected
+frames. A correctly bound positive observation can prove a captured-content
+upper bound; resized pixels do not prove full-resolution equivalence, earlier
+absence or physical presentation. The 100 ms feedback threshold, classifier,
+three-second action deadline and other ten games' capture paths are unchanged.
+
 The standard limits remain in `specs/mobile-quality-v1.json`: active/moving
 sample at least 60 seconds, frame P95 20 ms, P99 34 ms, maximum 100 ms and frames
 over 50 ms no more than 0.5%; five cold/warm entries with P95 5/2.5 seconds;

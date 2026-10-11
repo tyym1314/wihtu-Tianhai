@@ -4,7 +4,9 @@
 
 ## 当前部署
 
-- Run 采集顺序已调整，当前 collector SHA `c46c32b55dfc7752412bb1ac0c09c0afae7eb8a1ddf2198f8f8ba6d34308fc38`：仅 Run 在完整反馈及清理后采集原 before-motion 两对图，再进入原 continuous；其他十款原顺序保持。Root 六项纯本地机制验证和四组 canonical 回归72/72通过，应用证明 SHA `556d6d23ce3acc6531f244bfa816a685f193cbc39c2fe530f97bf40ad1a228cd`。原3s/100ms/5000ms/50ms门槛、PNG、原生输入断言和清理保持；反馈硬失败时后置 motion 未执行，不能称其通过。A7失败原件保持，尚无本次真机通过结论；另行 CSS 尺寸采集方案仍仅设计。
+- Run 采集顺序已调整：完整反馈及清理后采集原 before-motion 两对图，再进入原 continuous；其他十款原顺序保持。原顺序变更应用证明 SHA `556d6d23ce3acc6531f244bfa816a685f193cbc39c2fe530f97bf40ad1a228cd` 保留。随后新增显式 `--run-feedback-resolution css`，默认仍 device；当前 collector SHA `5cd88f61533acadc6dbd27920c167a634363eab4eb24518653aa57633feb0482`。CSS 仅 Run 使用，逐帧绑定原 viewport/PNG尺寸/scale1，保留原 bytes/SHA/ACK/错误；仅证明捕获内容正向时间上界，非完整分辨率等价或物理呈现。Root 五组 canonical 回归及11个私有机制测试98/98通过，实际应用证明 SHA `0d1a8058f4782472e856b87d7440ecdf0df128383d06786b623669bf01eb6370`。原3s/100ms/5000ms/50ms门槛、分类器、原生输入和清理保持；A7失败原件保持，新CSS真机性能尚未执行。
+- 新CSS选项另有三项持久回归（CLI严格选择、原viewport/profile绑定、错误尺寸PNG原字节保存后拒绝）；五组及私有机制测试实际共101/101通过、stderr0，证明 SHA `b65ef8111cce0ac4db2c06dd4273fa387f822f2b8dd61002f07090645d7607e9`。仅新增测试后重跑；业务代码及原标准未改变。
+- Carrom/Pool 轴向排除候选已实际通过服务器 Node v20.20.2 原工作线程执行证明：两组完整结果与原同步计算字节一致，真正业务 worker thread2 的候选 simulateShot 各执行1次，原 cannon-es 解析及默认 pool 参数保持。原始服务器回执 SHA `1fd3318b86c3a1caae2bc005245e3484770b39684c24ff956af80aea0e804852`、Root34份原件独立复核 SHA `d89e7dde4334a6d7f876414ea5f5dbc11b2d66243f7484d8d3ef5dc80a961301`；发布源码、受保护状态及父目录身份前后一致，自有子进程与coverage/transient已清理，私有候选与证据保留。首次a2在Node启动前因timer无PID属性读取失败，原件完整存档后仅退休其17文件/10目录，新a3修正后通过。该证明不含性能收益或容量结论，候选未应用到业务源码或生产实例。
 - 发布分支 master；source08 运行时提交 `877ede391fab75dfd7293c9e3f6dc3e8aae9bdd8`，继承 source07 游戏优化与采集器提交 `1ceb2dfa23e2ccd3f74001c2491a020d0dbaf8b7`，已推送并核对远端。当前提交与未提交修改仍须重新读回 git。
 - 真实 Player：`https://oasis-player.43.98.202.236.sslip.io/player?app_id=app_e091fb5daf135660d39ce89fc23760ab`。
 - 独立生产实例：`/opt/oasis/production-current` 指向 `20261011-01`，API 18891、数据库 18893；2026-10-11 实际接续修复和重新开放通过，API PID1618408 保持 active，三个生产定时器 active，新证书及监控任务成功，最终已诊断失败任务为空。真实账号、持久化会话、房间及生产账本保留，测试账号初始余额 0；完整真机、容量和交付验收尚未完成。

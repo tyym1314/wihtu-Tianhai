@@ -6,7 +6,7 @@ import {createRequire} from 'node:module';
 import {dirname,join} from 'node:path';
 import vm from 'node:vm';
 import {arenaFeedbackPlan} from '../scripts/android-player-arena-feedback.mjs';
-import {VISIBLE_FEEDBACK_LIMITS,VISIBLE_FEEDBACK_PROTOCOL_SHA256,VISIBLE_FEEDBACK_IMPLEMENTATION_VERSION,VISIBLE_FEEDBACK_IMPLEMENTATION_SOURCES,visibleFeedbackImplementationReceipt,assertVisibleFeedbackImplementation,VISIBLE_FEEDBACK_PROTOCOL_URL,visibleFeedbackProtocolReceipt,createVisibleFeedbackCollector,installOwnedVisibleFeedbackObservation,readOwnedVisibleFeedbackObservation,readOwnedFeedbackProjection,analyzeVisibleRunFeedback} from '../scripts/android-player-visible-feedback.mjs';
+import {VISIBLE_FEEDBACK_LIMITS,VISIBLE_FEEDBACK_PROTOCOL_SHA256,VISIBLE_FEEDBACK_IMPLEMENTATION_VERSION,VISIBLE_FEEDBACK_IMPLEMENTATION_SOURCES,visibleFeedbackImplementationReceipt,assertVisibleFeedbackImplementation,VISIBLE_FEEDBACK_PROTOCOL_URL,visibleFeedbackProtocolReceipt,createVisibleFeedbackCollector,createRunFeedbackCSSResolutionProfile,assertVisibleFeedbackCaptureResolution,installOwnedVisibleFeedbackObservation,readOwnedVisibleFeedbackObservation,readOwnedFeedbackProjection,analyzeVisibleRunFeedback} from '../scripts/android-player-visible-feedback.mjs';
 
 const require=createRequire(import.meta.url),{PNG}=require(join(dirname(require.resolve('playwright-core')),'lib/utilsBundle.js'));
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex'),epoch=1791630000000;
@@ -61,6 +61,21 @@ test('the exact nonce, realm, phase, native gesture and original byte sequence a
 });
 
 class Session extends EventEmitter{constructor(){super();this.calls=[];}async send(method,args){this.calls.push({method,args});return method==='Page.getFrameTree'?{frameTree:structuredClone(tree)}:{};}}
+test('CSS profile binds original integer viewports and cannot relabel device evidence',()=>{
+ const before=state(),profile=createRunFeedbackCSSResolutionProfile({scope,before});
+ assert.deepEqual(profile.startParameters,{format:'png',everyNthFrame:1,maxWidth:192,maxHeight:320});assert.equal(profile.pixelScale,1);assert.equal(profile.fullResolutionEquivalent,false);assert.equal(profile.absenceProven,false);
+ const capture={scope,before,resolutionProfile:profile,startParameters:profile.startParameters};assert.deepEqual(assertVisibleFeedbackCaptureResolution(capture,'css'),profile);assert.throws(()=>assertVisibleFeedbackCaptureResolution(capture),/UNEXPECTED_RESOLUTION_PROFILE/);
+ for(const mutate of [v=>v.projection.topViewport.width=191.5,v=>v.projection.topViewport.height=0,v=>v.projection.gameViewport.width=191,v=>v.owner.documentId='b'.repeat(32)]){const invalid=structuredClone(before);mutate(invalid);assert.throws(()=>createRunFeedbackCSSResolutionProfile({scope,before:invalid}));}
+ assert.throws(()=>createRunFeedbackCSSResolutionProfile({scope:{...scope,url:'https://owned-player.example/play/pool'},before}),/REAL_RUN_DOCUMENT/);
+ const changed=structuredClone(capture);changed.startParameters.maxWidth=191;assert.throws(()=>assertVisibleFeedbackCaptureResolution(changed,'css'));
+});
+test('CSS stream saves original wrong-size PNG before rejecting its dimensions',async()=>{
+ const session=new Session(),saved=[];let at=0;
+ const collector=await createVisibleFeedbackCollector({session,scope,phaseId:'css-proof',protocol,implementation,webviewVersion:VISIBLE_FEEDBACK_IMPLEMENTATION_VERSION,resolution:'css',readOwnedState:async()=>state(at++),writeFrame:async(index,bytes)=>{saved.push(Buffer.from(bytes));return {path:'owned-'+index+'.png',sha256:sha(bytes),bytes:bytes.length};}});
+ assert.deepEqual(session.calls.find(c=>c.method==='Page.startScreencast').args,{format:'png',everyNthFrame:1,maxWidth:192,maxHeight:320});
+ session.emit('Page.screencastFrame',{sessionId:41,data:fullBytes.toString('base64'),metadata:frame(1,10).metadata});await collector.close();
+ assert.equal(saved.length,1);assert.deepEqual(saved[0],fullBytes);assert.equal(collector.capture.frames[0].pngSha256,sha(fullBytes));assert.equal(collector.capture.frames[0].sink.bytes,fullBytes.length);assert.match(collector.capture.frames[0].error,/CSS_PNG_DIMENSIONS_MISMATCH/);assert.equal(collector.capture.closed,true);assert.equal(session.listenerCount('Page.screencastFrame'),0);
+});
 test('original PNG stream requires an explicit matching arena plan; Run default and exact foreign frame guards remain',async()=>{
  for(const [game,type]of [['golf','shot'],['bowling','roll'],['carrom','shot'],['pool','shot'],['darts','throw'],['ludo','roll'],['jackaroo','pass'],['domino','draw'],['match','swap'],['towerlink','link']]){
   const arenaPlan=arenaFeedbackPlan({game,actionType:type,...(game==='match'?{cell:7}:{})}),s={...scope,url:'https://owned-player.example/play/'+game},t=structuredClone(tree);t.childFrames[0].frame.url=s.url;
