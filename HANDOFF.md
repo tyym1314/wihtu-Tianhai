@@ -4,6 +4,7 @@
 
 ## 当前部署
 
+- Run 采集顺序已调整，当前 collector SHA `c46c32b55dfc7752412bb1ac0c09c0afae7eb8a1ddf2198f8f8ba6d34308fc38`：仅 Run 在完整反馈及清理后采集原 before-motion 两对图，再进入原 continuous；其他十款原顺序保持。Root 六项纯本地机制验证和四组 canonical 回归72/72通过，应用证明 SHA `556d6d23ce3acc6531f244bfa816a685f193cbc39c2fe530f97bf40ad1a228cd`。原3s/100ms/5000ms/50ms门槛、PNG、原生输入断言和清理保持；反馈硬失败时后置 motion 未执行，不能称其通过。A7失败原件保持，尚无本次真机通过结论；另行 CSS 尺寸采集方案仍仅设计。
 - 发布分支 master；source08 运行时提交 `877ede391fab75dfd7293c9e3f6dc3e8aae9bdd8`，继承 source07 游戏优化与采集器提交 `1ceb2dfa23e2ccd3f74001c2491a020d0dbaf8b7`，已推送并核对远端。当前提交与未提交修改仍须重新读回 git。
 - 真实 Player：`https://oasis-player.43.98.202.236.sslip.io/player?app_id=app_e091fb5daf135660d39ce89fc23760ab`。
 - 独立生产实例：`/opt/oasis/production-current` 指向 `20261011-01`，API 18891、数据库 18893；2026-10-11 实际接续修复和重新开放通过，API PID1618408 保持 active，三个生产定时器 active，新证书及监控任务成功，最终已诊断失败任务为空。真实账号、持久化会话、房间及生产账本保留，测试账号初始余额 0；完整真机、容量和交付验收尚未完成。

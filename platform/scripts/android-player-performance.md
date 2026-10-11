@@ -87,6 +87,12 @@ Default one-minute sampling may therefore remain partial. A sustained run can
 request `--sample-ms 900000 --room-ms 900000`; legitimately finished rounds are
 observed until the original outcome, and authority duration is never extended.
 
+For Run, the complete feedback phase and its cleanup precede the two original
+before-motion pairs; continuous sampling starts after both phases. The other
+ten games retain motion before feedback. The motion labels remain relative to
+continuous sampling. A hard feedback error propagates unchanged and leaves
+Run's deferred motion unexecuted; it does not become successful evidence.
+
 The standard limits remain in `specs/mobile-quality-v1.json`: active/moving
 sample at least 60 seconds, frame P95 20 ms, P99 34 ms, maximum 100 ms and frames
 over 50 ms no more than 0.5%; five cold/warm entries with P95 5/2.5 seconds;
