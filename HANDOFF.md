@@ -4,11 +4,11 @@
 
 ## 当前部署
 
-- 发布分支 master；运行时候选提交 `24811c94ef26b67bd680d35dbcb192530e912911`，采集器提交 `1ceb2dfa23e2ccd3f74001c2491a020d0dbaf8b7` 已推送并独立核对远端。当前提交与未提交修改仍须重新读回 git。
+- 发布分支 master；source08 运行时提交 `877ede391fab75dfd7293c9e3f6dc3e8aae9bdd8`，继承 source07 游戏优化与采集器提交 `1ceb2dfa23e2ccd3f74001c2491a020d0dbaf8b7`，已推送并核对远端。当前提交与未提交修改仍须重新读回 git。
 - 真实 Player：`https://oasis-player.43.98.202.236.sslip.io/player?app_id=app_e091fb5daf135660d39ce89fc23760ab`。
-- 独立生产实例：`/opt/oasis/production-current` 指向 `20261010-06`，API 18891、数据库 18893；真实注册账号、持久化会话、真实房间及生产账本，测试账号初始余额 0。
-- 原第一方免费练习范围为 11 款竞技游戏；本轮切换已将入场策略提交为 revision9 closed，当前账号 paused，尚未重新开放。概率游戏、资金转入转出、第三方资金接入均关闭。免费练习通过不代表 13 款和资金上线通过。
-- 当前生产 release manifest SHA256 `1135152d247b7de6f8bdecac3ede9ac9fb4a1675936c9596dde6ddba2d353a25`；本地 canonical build 已为下文 source07 候选。
+- 独立生产实例：`/opt/oasis/production-current` 已指向 `20261011-01`，API 18891、数据库 18893；2026-10-11 12:18 UTC 失败后只读读回 API inactive、三个生产定时器 inactive、数据库 active，旧证书任务仍 failed。真实注册账号、持久化会话、真实房间及生产账本保留，测试账号初始余额 0；恢复工作尚未完成。
+- 原第一方免费练习范围为 11 款竞技游戏；source08 切换实际提交 revision10 closed，尚未重新开放。概率游戏、资金转入转出、第三方资金接入均关闭。免费练习通过不代表 13 款和资金上线通过。
+- 当前生产 release manifest SHA256 `960c380ac39a2083edbce269467ec497af70146e99f555a909a9a769e3b3f708`；游戏 build stamp `3d5bd2cb91a9439ff0fd2314eb0560e04b70254c231f12879faad32562b65d10`。以下06/07记录为保留的历史证据。
 - source06 发布时 HTML 权限 0600 导致游戏入口 404，已在锁内核对完整 manifest 后将公开运行文件权限规范化，字节/inode/mtime不变，11 个入口读回 200。打包和 delta staging 已修复此权限继承问题，24 项聚焦测试通过。
 - source07 已实际 staging，尚未切换。v1 切换工具在业务修改前因共享对象比较误判拒绝；v2 新链在停止定时器前遇 `ADMISSION_ONESHOT_TRANSITION`，其失败处理停止了原 API 和三个定时器，未写策略或源码。原 partial SHA `ad23267dc5f2ecfa8a9dc527ebb237d6dbbe935c01ee9b6c1e9a5118a5c1141c` 保留，不重放。
 - 已仅恢复原 API 和三个定时器；2026-10-10 12:20 UTC 独立完整只读读回通过，SHA `6ebe18d675da5c342bc46ad61f34936e6f827f808dbe209ea6cbcb9c4704b225`。API 实际 PID 1005937、定时器 active/jobs idle、原配置及生产指针全 pin 不变、策略 revision8 open；47 表图完全一致、28 项完整性计数为零，HTTPS/静态资源/retired410及player302通过。候选切换工具正在修复有界任务等待及当前06资源检查误用候选成员的问题；恢复不能当作07发布完成。
@@ -17,8 +17,11 @@
 - 2026-10-11 实际 API 恢复通过，原始收据 SHA `c824d610cd915725adf8a03963367630aebd218d5a6c945e6abd69fb1273ca3e`：仅执行一次 `systemctl start oasis-production-api.service`，API 实际 PID1545089；current06、revision9 closed、47表图及28项零计数保持一致，已提交 marker 的新 fullpin 绑定原 partial。当时三个定时器 inactive，后续状态如下。
 - v4 关闭验收接续的实际 fresh audit/check 通过，47 表及28项零计数一致；仅启动三个生产定时器，未重复 SQL、停止 API 或切源。随后 `SOURCE07_AUTHORED_STATIC_CHANGED` 拒绝，原始 partial SHA `e992d5e5920ec58fee46deb5969bfe201f1ecf83c098f1fa113d7257df5b5a6f`。2026-10-11 11:03 UTC 现场回读：API PID1545089 active、current06/revision9 closed、三个 timer active；证书 service 实际 FAILED/exit1，监控正确报告该故障。没有 source07 开放或新真机性能样本。
 - 原 BASIS 完整静态只读 snapshot SHA `dd8d8ad62b035d103febfa2516b1eb278cfac1ceae07dde74f1e7fd2ba6f9735`：1,002 静态文件、25 registry receipt、11目录、head、其他祖先全部一致，仅 `/opt/oasis` 的 ctime/mtime 改变。实际 job/journal 读回 SHA `d7844eeb7c0310ffa5bdbc5720c42c0766e2f087c252a96f2212d6bec437c861`：生产证书 renew 的旧 `https://game.tianyahuyu.com/health` 依赖收到合法退役的410，其 finally 删除 `.production-ingress-lock`，时间与祖先变化一致。不能只忽略时间戳或清除 failed 状态来声称通过。
-- 新 immutable source08 的入口修复已通过本地及独立复核，两轮各115项：续期前后检查真实公网 production ready，操作锁移至已有 root700 私有目录；首装仅在 TLS 尚不存在时使用明确标记的 loopback production ready，完成后仍验证 HTTPS。继承 source07 游戏优化，06/07 冻结文件保持原字节；新包、修复后实际续期、数据恢复演练和开放验收尚未完成。
+- 新 immutable source08 的入口修复已通过本地及独立复核，两轮各115项：续期前后检查真实公网 production ready，操作锁移至已有 root700 私有目录；首装仅在 TLS 尚不存在时使用明确标记的 loopback production ready，完成后仍验证 HTTPS。继承 source07 游戏优化，06/07 冻结文件保持原字节。source08 已实际切换源码并完成备份恢复演练，整体刷新验收失败；修复后的实际续期、监控、重新开放及新真机性能验收尚未完成。
+- source08 源提交 `877ede391fab75dfd7293c9e3f6dc3e8aae9bdd8`，服务器候选目录 `/opt/oasis/releases/20261011-01`，manifest SHA `960c380ac39a2083edbce269467ec497af70146e99f555a909a9a769e3b3f708`。06→08 为41项变更、22项删除；07→08 仅两个 ingress 文件变更，游戏 build stamp 仍 `3d5bd2cb91a9439ff0fd2314eb0560e04b70254c231f12879faad32562b65d10`。实际 stage a2 原始回执 SHA `d0519116c297590127b658a054518e481100b4e37f58c27f2559d64989010dff`，1208文件验证及可读性通过，独立复核通过；前后47表、28零计数、运行状态和静态资源一致，未写 current/SQL/服务/静态发布，`healthy=false`、`source_admission=false`。
 - 2026-10-11 11:17 UTC 完整只读前置诊断 SHA `1915db0d6f76624467704ea8e468d09b50d000dea5d2304c3f75462461688a64`：current06/revision9 closed/API1545089及47表/28零计数保持，静态精确匹配上述诊断，两次 raw runtime/protection 一致。明确 healthy close completion/source admission 均 false；这是观察基线，不能当作上线验收。
+- source08 控制器 `d988172d480f1687320b3be6160a0b85caa7953db25b784214b12b2d5a38e0bf` 经40项聚焦测试及两位独立复核后实际执行。原 audit/check 及独立现场审核通过；refresh 在 `target_units_loaded` 后被 `RETIRED_PUBLIC_UNIT_CHANGED` 中止，原始失败回执 SHA `d7a770605c41f484cdb183ac047f218b52a4739f8974939bd675a3e4193f7393`。回执保留真实备份及隔离恢复通过/临时库清理、47表和28零计数、22项静态追加（1002→1024）、原history保留、06→08指针切换、revision10 closed实际提交。原回执终身 failed，不能重放 SQL10、静态追加或伪造完成。
+- 失败后原只读单位读回 SHA `c72f8e02c14768d0981194fb922346d95bc4088f9fa8da9f96caab5056127206`：六个退役服务其余字段精确一致，仅 Requires 成员顺序；原比较器只允许四个服务的顺序变化，新出现 `/oasis-backup.timer/Requires` 的两个原成员互换，原比较器拒绝。此证据是失败后的现场观察，未保存失败瞬间的 actual，不能倒填历史。临时引用全部六单位所观察到的 RequiredBy/TriggeredBy 变化未采用。后续先核对完整 source08/策略10/数据及保护，再仅恢复 API；续期与监控验收须从实际已提交状态接续。
 
 ## 最简 APK 和设备
 
