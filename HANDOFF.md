@@ -6,7 +6,7 @@
 
 - 发布分支 master；source08 运行时提交 `877ede391fab75dfd7293c9e3f6dc3e8aae9bdd8`，继承 source07 游戏优化与采集器提交 `1ceb2dfa23e2ccd3f74001c2491a020d0dbaf8b7`，已推送并核对远端。当前提交与未提交修改仍须重新读回 git。
 - 真实 Player：`https://oasis-player.43.98.202.236.sslip.io/player?app_id=app_e091fb5daf135660d39ce89fc23760ab`。
-- 独立生产实例：`/opt/oasis/production-current` 已指向 `20261011-01`，API 18891、数据库 18893；2026-10-11 12:18 UTC 失败后只读读回 API inactive、三个生产定时器 inactive、数据库 active，旧证书任务仍 failed。真实注册账号、持久化会话、真实房间及生产账本保留，测试账号初始余额 0；恢复工作尚未完成。
+- 独立生产实例：`/opt/oasis/production-current` 已指向 `20261011-01`，API 18891、数据库 18893；2026-10-11 实际 API-only 恢复通过，API PID1618408 active、三个生产定时器 inactive、数据库 active，旧证书任务仍 failed。真实注册账号、持久化会话、真实房间及生产账本保留，测试账号初始余额 0；完整恢复和上线验收尚未完成。
 - 原第一方免费练习范围为 11 款竞技游戏；source08 切换实际提交 revision10 closed，尚未重新开放。概率游戏、资金转入转出、第三方资金接入均关闭。免费练习通过不代表 13 款和资金上线通过。
 - 当前生产 release manifest SHA256 `960c380ac39a2083edbce269467ec497af70146e99f555a909a9a769e3b3f708`；游戏 build stamp `3d5bd2cb91a9439ff0fd2314eb0560e04b70254c231f12879faad32562b65d10`。以下06/07记录为保留的历史证据。
 - source06 发布时 HTML 权限 0600 导致游戏入口 404，已在锁内核对完整 manifest 后将公开运行文件权限规范化，字节/inode/mtime不变，11 个入口读回 200。打包和 delta staging 已修复此权限继承问题，24 项聚焦测试通过。
@@ -21,6 +21,8 @@
 - source08 源提交 `877ede391fab75dfd7293c9e3f6dc3e8aae9bdd8`，服务器候选目录 `/opt/oasis/releases/20261011-01`，manifest SHA `960c380ac39a2083edbce269467ec497af70146e99f555a909a9a769e3b3f708`。06→08 为41项变更、22项删除；07→08 仅两个 ingress 文件变更，游戏 build stamp 仍 `3d5bd2cb91a9439ff0fd2314eb0560e04b70254c231f12879faad32562b65d10`。实际 stage a2 原始回执 SHA `d0519116c297590127b658a054518e481100b4e37f58c27f2559d64989010dff`，1208文件验证及可读性通过，独立复核通过；前后47表、28零计数、运行状态和静态资源一致，未写 current/SQL/服务/静态发布，`healthy=false`、`source_admission=false`。
 - 2026-10-11 11:17 UTC 完整只读前置诊断 SHA `1915db0d6f76624467704ea8e468d09b50d000dea5d2304c3f75462461688a64`：current06/revision9 closed/API1545089及47表/28零计数保持，静态精确匹配上述诊断，两次 raw runtime/protection 一致。明确 healthy close completion/source admission 均 false；这是观察基线，不能当作上线验收。
 - source08 控制器 `d988172d480f1687320b3be6160a0b85caa7953db25b784214b12b2d5a38e0bf` 经40项聚焦测试及两位独立复核后实际执行。原 audit/check 及独立现场审核通过；refresh 在 `target_units_loaded` 后被 `RETIRED_PUBLIC_UNIT_CHANGED` 中止，原始失败回执 SHA `d7a770605c41f484cdb183ac047f218b52a4739f8974939bd675a3e4193f7393`。回执保留真实备份及隔离恢复通过/临时库清理、47表和28零计数、22项静态追加（1002→1024）、原history保留、06→08指针切换、revision10 closed实际提交。原回执终身 failed，不能重放 SQL10、静态追加或伪造完成。
+- 失败后完整只读诊断已实际完成，原始 SHA `b6bfecdc211844e7978464b40c0821d7dab07da80d971f261f2c6ecabce79f78`，真实执行证明 SHA `a65a4b5fc8e0dd5921e534972bb769d6b3665b5b904659c42da6054f99c026a5`，helper/SSH 均 exit0、stderr0。1208源码成员、source08 marker/env/5段历史、47表图/28零计数及静态树全部精确，16单位的原始日志同一真实boot；两次保护捕获一致。相对原partial的22项作者变更和9项原有Requires成员顺序均独立重算，无未解释外部采纳。采集完成仅代表诊断完整，健康/准入/关闭验收标志均 false；先前不完整日志采集及外层保存失败保留原字节。
+- source08 API-only 新 helper `f76563a61ecbfe176846d1e912cbd36c281db25a943d975bb3c8d058b4fad5ea` 经20项聚焦测试及独立审查后实际通过。原收据 SHA `cc69978e91471fc511fe036907b54ff24d2240cc71962c73bac7d996fb7d9950`、真实执行证明 SHA `ce87228255100af307951af2935afaa7d55016e4e8542fddcbca9766e64f5547`：仅一次 `systemctl start oasis-production-api.service`，API PID1618408/UID997/Node/source08 cwd，生产 HTTPS ready 通过。策略10 closed、app paused、23项source检查、47表图/28零检查及全部静态/保护保持，三timer仍 inactive，原CERT失败保持。健康关闭验收/源码健康授权/准入标志全部 false。剩余步骤为新链真实CERT→三个timer→真实MONITOR→完整closed10验收→另行open11，不能把可用性恢复当作上线通过。
 - 失败后原只读单位读回 SHA `c72f8e02c14768d0981194fb922346d95bc4088f9fa8da9f96caab5056127206`：六个退役服务其余字段精确一致，仅 Requires 成员顺序；原比较器只允许四个服务的顺序变化，新出现 `/oasis-backup.timer/Requires` 的两个原成员互换，原比较器拒绝。此证据是失败后的现场观察，未保存失败瞬间的 actual，不能倒填历史。临时引用全部六单位所观察到的 RequiredBy/TriggeredBy 变化未采用。后续先核对完整 source08/策略10/数据及保护，再仅恢复 API；续期与监控验收须从实际已提交状态接续。
 
 ## 最简 APK 和设备
@@ -59,7 +61,7 @@
 - 退役后旧 `/player` 跳转实际 Player，旧 demo/API/download 410，共享不可变资源、TLS、其他业务和生产实例需独立读回保持正常。
 - 独立最终读回 SHA `dabc588a288ecd74179143af72f7c410100fb5c65b45e61c46b7430794d1a5e8`：旧容器/卷/端口不存在、retained 保护 stable diff 为空、旧入口 410、实际 Player/生产 health 200，生产指针仍为 source06。服务器 `/opt/oasis` 可用约 9.34GB（十进制）。
 - 74 份历史 mock 备份已实际删除：370 文件、506,762,659 B 逻辑大小、507,858,944 B 分配大小。完成原始收据 SHA `7a7622d43942b300f22e4a31449a988df3bf83b1141670bed1e939c740cd673f`；独立读回 SHA `9866b6d89b21b00eb65f58dffd70ad833df612325d33defc79f95a987c1323e2`，74 路径全不存在、148 个原始 barrier 及完整保护通过。名义删除大小不等于磁盘净增加，保留证据也占空间。
-- 最后 `/opt/oasis/backups/20261009T155133Z` 的 5 文件共12,829,348 B仍保留，等待实际07真实备份/隔离恢复及开放收据通过后做精确删除；后续工具目前为未执行草稿。不要删除共享不可变资源、旧current03的TLS依赖或其他业务文件来凑空间。
+- 最后 `/opt/oasis/backups/20261009T155133Z` 的 5 文件共12,829,348 B仍保留，等待source08真实修复、完整关闭验收及开放收据通过后做精确删除；后续工具目前为未执行草稿。source08失败刷新已完成真实备份/隔离恢复，不重复执行。不要删除共享不可变资源、旧current03的TLS依赖或其他业务文件来凑空间。
 
 ## 证据和接手
 
