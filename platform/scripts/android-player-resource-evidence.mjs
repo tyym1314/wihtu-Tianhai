@@ -124,11 +124,23 @@ export function validateConsumedImageEvidence(snapshot,{origin,entryUrl,game,non
   const recipes=generatedScripts.filter(recipe=>recipe.sha256===receipt.sha256&&recipe.bytes===receipt.bytes);assert.ok(recipes.length>0&&recipes.length<=8&&new Set(recipes.map(recipe=>recipe.workerFunctionSha256)).size===1,'GENERATED_SCRIPT_RELEASE_PIN_REQUIRED');
   if(receipt.recipeCandidates){assert.deepEqual(receipt.recipeCandidates,recipes,'GENERATED_SCRIPT_RECIPE_CHANGED');assert.deepEqual(receipt.recipe,recipes.length===1?recipes[0]:null,'GENERATED_SCRIPT_RECIPE_CHANGED');}else{assert.equal(recipes.length,1,'GENERATED_SCRIPT_RECIPE_CHANGED');assert.deepEqual(receipt.recipe,recipes[0],'GENERATED_SCRIPT_RECIPE_CHANGED');}
   assert.ok(Number.isFinite(receipt.createdAt)&&Number.isFinite(receipt.completedAt)&&receipt.completedAt>=receipt.createdAt&&Number.isFinite(receipt.hashDurationMs)&&receipt.hashDurationMs>=0,'RESOURCE_HASH_CLOCK_UNPROVEN');
-  const delivered=pin=>requests.filter(row=>row.url===origin+pin.path&&row.frameId===scope.frameId&&['Fetch','Script'].includes(row.type)&&row.method==='GET'&&row.transferFinished===true&&!row.failed&&row.response?.status===200&&row.response.fromServiceWorker===false&&!row.redirected&&(row.contextId===undefined||row.contextId===scope.contextId));
+  // Inputs must finish before this original native Blob/objectURL observation. Later inputs
+  // are still checked, but cannot become provenance for an earlier Blob.
+  const createdAtMs=timeOrigin+receipt.createdAt;assert.ok(Number.isFinite(createdAtMs),'GENERATED_SCRIPT_BLOB_CLOCK_UNPROVEN');
+  const sourceUrls=new Set(recipes.flatMap(recipe=>recipe.sourcePins.map(pin=>origin+pin.path))),candidates=requests.filter(row=>sourceUrls.has(row.url)&&row.frameId===scope.frameId);
+  assert.ok(candidates.every(row=>typeof row.id==='string'&&row.id.length>0)&&new Set(candidates.map(row=>row.id)).size===candidates.length,'GENERATED_SCRIPT_SOURCE_ID_AMBIGUOUS');
+  for(const row of candidates){
+   assert.ok(row.contextId===scope.contextId&&['Fetch','Script'].includes(row.type)&&row.method==='GET'&&!row.failed&&!row.redirected,'GENERATED_SCRIPT_SOURCE_GET_UNPROVEN');
+   assert.ok(Number.isFinite(row.startedAtMs)&&Number.isFinite(row.startedMonotonic)&&row.startedAtMs>=timeOrigin,'GENERATED_SCRIPT_SOURCE_CLOCK_UNPROVEN');
+   if(!row.transferFinished)throw Error('GENERATED_SCRIPT_SOURCE_TRANSFER_PENDING');
+   assert.ok(row.response?.status===200&&row.response.fromServiceWorker===false,'GENERATED_SCRIPT_SOURCE_GET_UNPROVEN');
+   assert.ok(Number.isFinite(row.finishedMonotonic)&&row.finishedMonotonic>=row.startedMonotonic&&Number.isFinite(row.finishedAtMs)&&row.finishedAtMs===row.startedAtMs+(row.finishedMonotonic-row.startedMonotonic)*1000,'GENERATED_SCRIPT_SOURCE_CLOCK_UNPROVEN');
+  }
+  const delivered=pin=>candidates.filter(row=>row.url===origin+pin.path&&row.finishedAtMs<=createdAtMs);
   const active=recipes.filter(recipe=>recipe.sourcePins.every(pin=>delivered(pin).length>0));assert.ok(active.length>0,'GENERATED_SCRIPT_SOURCE_GET_UNPROVEN');assert.equal(active.length,1,'GENERATED_SCRIPT_ACTIVE_MODULE_AMBIGUOUS');const recipe=active[0];
-  const sourceRequestIds=[];for(const pin of recipe.sourcePins){assert.equal(manifest.expected.get(pin.path),pin.sha256,'GENERATED_SCRIPT_SOURCE_SHA_MISMATCH');sourceRequestIds.push(...delivered(pin).map(row=>row.id));}
+  const sourceRequestIds=[],sourceRequestFacts=[];for(const pin of recipe.sourcePins){assert.equal(manifest.expected.get(pin.path),pin.sha256,'GENERATED_SCRIPT_SOURCE_SHA_MISMATCH');for(const row of delivered(pin)){sourceRequestIds.push(row.id);sourceRequestFacts.push({id:row.id,url:row.url,frameId:row.frameId,contextId:row.contextId,method:row.method,type:row.type,redirected:row.redirected,transferFinished:row.transferFinished,failed:row.failed,response:{status:row.response.status,fromServiceWorker:row.response.fromServiceWorker},startedAtMs:row.startedAtMs,startedMonotonic:row.startedMonotonic,finishedAtMs:row.finishedAtMs,finishedMonotonic:row.finishedMonotonic});}}
   assert.ok(Array.isArray(receipt.blobUrls)&&receipt.blobUrls.length>0&&receipt.blobUrls.length<=512,'RESOURCE_OBJECT_URL_UNPROVEN');
-  const proof={kind:recipe.kind,sha256:receipt.sha256,bytes:receipt.bytes,sourcePins:recipe.sourcePins,workerFunctionSha256:recipe.workerFunctionSha256,sourceRequestIds,frameId:scope.frameId,contextId:scope.contextId,documentId,nonce,timeOrigin,source:'Exact manifest-derived Draco Worker bytes in the same native Blob/objectURL; original decoder and uniquely delivered loader module required separately; retained recipe aliases never prove delivery; script CDP response must remain readable and byte-pinned'};
+  const proof={kind:recipe.kind,sha256:receipt.sha256,bytes:receipt.bytes,sourcePins:recipe.sourcePins,workerFunctionSha256:recipe.workerFunctionSha256,sourceRequestIds,sourceRequestFacts,generatedReceiptId:receipt.id,blobObservedAtMs:createdAtMs,frameId:scope.frameId,contextId:scope.contextId,documentId,nonce,timeOrigin,source:'Exact manifest-derived Draco Worker bytes in the same native Blob/objectURL; original decoder and uniquely delivered loader module required separately; retained recipe aliases never prove delivery; script CDP response must remain readable and byte-pinned'};
   for(const blob of receipt.blobUrls){assert.ok(typeof blob.url==='string'&&new RegExp('^blob:'+origin.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'/[a-f0-9-]{36}$').test(blob.url)&&!byBlob.has(blob.url)&&!byGeneratedBlob.has(blob.url),'RESOURCE_OBJECT_URL_INVALID');assert.ok(Number.isFinite(blob.createdAt)&&blob.createdAt>=receipt.createdAt,'RESOURCE_OBJECT_URL_CLOCK_UNPROVEN');byGeneratedBlob.set(blob.url,proof);}
   total+=receipt.bytes;
  }
@@ -142,8 +154,18 @@ export function generatedScriptProofForResponse(row,evidence,{origin,manifest,bo
  const proof=evidence.byGeneratedBlob.get(row.url);assert.ok(proof,'GENERATED_SCRIPT_NATIVE_BLOB_UNPROVEN');
  assert.ok(row.frameId===proof.frameId&&row.contextId===proof.contextId&&row.method==='GET'&&row.status===200&&row.resourceType==='script'&&row.transferFinished===true,'GENERATED_SCRIPT_DELIVERY_UNPROVEN');
  assert.ok(row.original_bytes>0&&row.original_bytes===proof.bytes&&row.original_sha256===proof.sha256,'RESOURCE_NONEMPTY_CDP_BODY_CONFLICT');
- for(const pin of proof.sourcePins){assert.equal(manifest.expected.get(pin.path),pin.sha256,'GENERATED_SCRIPT_SOURCE_SHA_MISMATCH');assert.ok(bodyPins.some(source=>source.url===origin+pin.path&&source.frame===evidence.snapshot.identity.url&&source.method==='GET'&&source.status===200&&source.pin?.sha256===pin.sha256&&source.original_sha256===pin.sha256&&source.original_bytes===pin.bytes),'GENERATED_SCRIPT_RECEIVED_INPUT_BODY_PIN_REQUIRED');}
- return {...proof,deliveryResponseId:row.id,transferSource:'This exact owned Playwright worker-target response.body() and response.finished(); main-frame CDP transfer availability retained separately'};
+  assert.ok(Number.isSafeInteger(row.id)&&row.id>0&&Number.isSafeInteger(row.request_id)&&row.request_id>0,'GENERATED_SCRIPT_DELIVERY_REQUEST_REQUIRED');
+ const sourceBodyFacts=[];
+ for(const pin of proof.sourcePins){
+  assert.equal(manifest.expected.get(pin.path),pin.sha256,'GENERATED_SCRIPT_SOURCE_SHA_MISMATCH');
+  const sources=bodyPins.filter(source=>source.url===origin+pin.path&&source.frame===evidence.snapshot.identity.url);
+  // These are independent native Request/Response body candidates, not a
+  // guessed one-to-one join to a main-frame CDP ID or a host clock match.
+  for(const source of sources)assert.ok(Number.isSafeInteger(source.id)&&source.id>0&&Number.isSafeInteger(source.request_id)&&source.request_id>0&&source.method==='GET'&&source.status===200&&source.pin?.sha256===pin.sha256&&source.original_sha256===pin.sha256&&source.original_bytes===pin.bytes,'GENERATED_SCRIPT_RECEIVED_INPUT_BODY_PIN_REQUIRED');
+  const prior=sources.filter(source=>source.request_id<row.request_id&&source.id<row.id);assert.ok(prior.length>0,'GENERATED_SCRIPT_RECEIVED_INPUT_BODY_PIN_REQUIRED');
+  for(const source of prior)sourceBodyFacts.push({responseId:source.id,requestId:source.request_id,url:source.url,frame:source.frame,method:source.method,status:source.status,sha256:source.original_sha256,bytes:source.original_bytes});
+ }
+ return {...proof,sourceBodyFacts,sourceBodyBinding:'Independent native Request/Response body candidate set registered before this worker Request/Response; not a CDP-ID or clock join',deliveryRequestId:row.request_id,deliveryResponseId:row.id,deliveryUrl:row.url,transferSource:'This exact owned Playwright worker-target response.body() and response.finished(); main-frame CDP transfer availability retained separately'};
 }
 
 export function deliveryProofForRow(row,evidence,{origin,manifest}){

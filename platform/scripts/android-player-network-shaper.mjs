@@ -182,7 +182,7 @@ export async function startBlindConnectShaper({port=0,configuration=shaperConfig
   const id='tunnel-'+(++sequence),target=authority.hostname===configuration.targetHost;
   const row={id,era,host:authority.hostname,port:443,target,routeChanged:true,opened:clock(),uploadBytes:0,downloadBytes:0,closed:false};
   try{append('connections',row);}catch{client.end('HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n');return;}client.pause();
-  const upstream=connectSocket({host:authority.hostname,port:443,allowHalfOpen:true});active.set(id,{client,upstream});
+  const upstream=connectSocket({host:authority.hostname,port:443,allowHalfOpen:true});active.set(id,{client,upstream,target});
   upstream.setTimeout(30000);upstream.on('timeout',()=>upstream.destroy(Error('SHAPER_CONNECT_OR_IDLE_TIMEOUT')));
   const fail=error=>{if(!row.error){row.error=errorCode(error);try{append('errors',{connectionId:id,code:row.error});}catch{}}
    client.destroy();upstream.destroy();};
@@ -215,12 +215,9 @@ export async function startBlindConnectShaper({port=0,configuration=shaperConfig
  return {ledger,address:clone(server.address()),
   async setConfiguration(next,{calibrationRequestsComplete=false}={}){
    assert.ok(DIRECTIONS.every(d=>!queues[d].queuedBytes),'SHAPER_PROFILE_HAS_PENDING_BYTES');
-   if(active.size){assert.equal(calibrationRequestsComplete,true,'SHAPER_PROFILE_HAS_ACTIVE_CONNECTIONS');
-    // Only the separate calibration driver may close its completed tunnels.
-    // Never rotate or close connections in a continuous gameplay sample.
-    const closed=[...active.values()].map(({client,upstream})=>new Promise(resolve=>{
-     client.once('close',resolve);client.destroy();upstream.destroy();}));await Promise.all(closed);}
-   assert.equal(active.size,0,'SHAPER_PROFILE_HAS_ACTIVE_CONNECTIONS');
+   // Other hosts stay on their independent passthrough sockets. A completed
+   // HTTP request does not prove its target tunnel/keepalive connection closed.
+   assert.equal([...active.values()].filter(connection=>connection.target).length,0,'SHAPER_PROFILE_HAS_ACTIVE_CONNECTIONS');
    assert.deepEqual(next,shaperConfiguration(next));for(const queue of Object.values(queues))await queue.close();
    ledger.configurations.at(-1).finished=clock();configuration=next;era++;install();},
   close(){return closing??=(async()=>{stopping=true;const errors=[];
@@ -293,7 +290,7 @@ export function calibrationPlan(nonce){
  assert.equal(body.length,65536,'CALIBRATION_BODY_BOUND');
  return {nonce,uploadBytes:body.length,uploadSha256:hash(body),totalUploadCapBytes:196608,
   previewUrl:QA_NETWORK_ORIGIN+QA_PREVIEW.path+'?qa_net='+nonce,
-  healthUrl:QA_NETWORK_ORIGIN+'/health/ready?qa_net='+nonce,
+  healthUrl:QA_NETWORK_ORIGIN+'/health/ready',
   uploads:[0,1,2].map(index=>({url:QA_NETWORK_ORIGIN+'/api/__qa-net-'+hash(nonce+index).slice(0,32),body}))};
 }
 
@@ -372,9 +369,9 @@ export async function collectQaNetworkCalibration({shaper,scope,profile='wifi',n
   try{return await Promise.race([Promise.resolve().then(()=>work(abort.signal)),new Promise((_,reject)=>{
    timer=setTimeout(()=>{abort.abort();reject(Error(name+'_TIMEOUT_ABORT_REQUESTED_NOT_CONFIRMED'));},limit);
   })]);}finally{clearTimeout(timer);}};
- const actual=async(phase,kind,url,method='GET',body)=>{
+ const actual=async(phase,kind,url,method='GET',body,sample)=>{
   const remaining=Math.min(maxRequestMs,deadline-performance.now());assert.ok(remaining>0,'CALIBRATION_DEADLINE_EXHAUSTED');
-  const receipt=await bounded('CALIBRATION_REQUEST',signal=>request({phase,kind,url,method,body,signal,cache:'no-store',redirect:'error',contentType:body?'application/json':undefined}),remaining);
+  const receipt=await bounded('CALIBRATION_REQUEST',signal=>request({phase,kind,url,method,body,signal,cache:'no-store',redirect:'error',contentType:body?'application/json':undefined,...(kind==='health'?{sample}:{})}),remaining);
   const allowed=['schema','scope','url','method','requestId','startedMonotonicMs','finishedMonotonicMs','clockScope','redirected','fromDiskCache','fromServiceWorker','fromPrefetchCache','tlsVerified','requestBodyBytes','requestBodySha256','status','responseBody','proxyEvidence'];
   assert.ok(Object.keys(receipt).sort().join(',')===allowed.sort().join(','),'CALIBRATION_RECEIPT_FIELDS_CHANGED');
   assert.equal(receipt.schema,'android-qa-calibration-request-v1');assert.deepEqual(receipt.scope,scope);
@@ -396,7 +393,7 @@ export async function collectQaNetworkCalibration({shaper,scope,profile='wifi',n
  try{
   report.before=clone(await bounded('CALIBRATION_INITIAL_ROOT_STATE',readRootState,maxRequestMs));
   await shaper.setConfiguration(shaperConfiguration({profile:'baseline'}));
-  for(let index=0;index<3;index++)await actual('baseline','health',plan.healthUrl+'&sample='+index);
+  for(let index=0;index<3;index++)await actual('baseline','health',plan.healthUrl,'GET',undefined,index);
   report.baselineRoundTripMs=Math.min(...rows.filter(row=>row.phase==='baseline'&&row.kind==='health').map(row=>row.elapsedMs));
   const target=SHAPER_PROFILES[profile].targetRoundTripMs;
   assert.ok(report.baselineRoundTripMs<=target,'CALIBRATION_BASELINE_EXCEEDS_TARGET_CANNOT_REDUCE');
@@ -407,7 +404,7 @@ export async function collectQaNetworkCalibration({shaper,scope,profile='wifi',n
   await shaper.setConfiguration(config,{calibrationRequestsComplete:true});report.configuration=clone(config);
   await actual(profile,'preview',plan.previewUrl);
   for(let index=1;index<3;index++)await actual(profile,'upload',plan.uploads[index].url,'POST',plan.uploads[index].body);
-  for(let index=0;index<3;index++)await actual(profile,'health',plan.healthUrl+'&sample='+index);
+  for(let index=0;index<3;index++)await actual(profile,'health',plan.healthUrl,'GET',undefined,index);
   report.observedRoundTripMs=rows.filter(row=>row.phase===profile&&row.kind==='health').map(row=>row.elapsedMs);
   report.observedTransfers=rows.filter(row=>row.phase===profile&&row.kind!=='health').map(row=>({requestId:row.requestId,kind:row.kind,
    payloadBytes:row.kind==='preview'?row.responseBodyBytes:row.requestBodyBytes,elapsedMs:row.elapsedMs,
@@ -465,10 +462,10 @@ export function analyzeQaNetworkCalibration({calibration,rootProof,rttCalibratio
   assert.deepEqual(report.sourceReceipt,sourceReceipt,'CALIBRATION_SOURCE_RECEIPT_NOT_BOUND');
   const plan=calibrationPlan(report.scope.nonce),rows=report.rows;
   assert.equal(rows.length,10,'CALIBRATION_COMPLETE_REAL_REQUEST_SEQUENCE_REQUIRED');
-  const expected=[...Array.from({length:3},(_,i)=>['baseline','health',plan.healthUrl+'&sample='+i,'GET']),
+  const expected=[...Array.from({length:3},()=>['baseline','health',plan.healthUrl,'GET']),
    ['baseline','upload',plan.uploads[0].url,'POST'],[report.profile,'preview',plan.previewUrl,'GET'],
    ...[1,2].map(i=>[report.profile,'upload',plan.uploads[i].url,'POST']),
-   ...Array.from({length:3},(_,i)=>[report.profile,'health',plan.healthUrl+'&sample='+i,'GET'])];
+   ...Array.from({length:3},()=>[report.profile,'health',plan.healthUrl,'GET'])];
   assert.equal(new Set(rows.map(row=>row.requestId)).size,rows.length);
   for(const [index,row]of rows.entries()){
    assert.deepEqual([row.phase,row.kind,row.url,row.method],expected[index]);assert.deepEqual(row.scope,report.scope);

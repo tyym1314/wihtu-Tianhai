@@ -112,6 +112,7 @@ test('zero-payload passthrough connections cannot grow metadata beyond the unifi
 
 test('bounded JSON upload plan uses exact unknown routes and no extra business endpoint',()=>{
  const plan=calibrationPlan(nonce);assert.equal(plan.totalUploadCapBytes,196608);assert.equal(plan.uploads.length,3);
+ assert.equal(plan.healthUrl,QA_NETWORK_ORIGIN+'/health/ready');assert.equal(new URL(plan.healthUrl).search,'');
  for(const row of plan.uploads){assert.equal(row.body.length,65536);assert.equal(sha(row.body),plan.uploadSha256);
   assert.deepEqual(Object.keys(JSON.parse(row.body)),['nonce','padding']);assert.match(new URL(row.url).pathname,/^\/api\/__qa-net-[a-f0-9]{32}$/);}
  assert.equal(new Set(plan.uploads.map(row=>row.url)).size,3);assert.throws(()=>calibrationPlan('non-hex'),/CALIBRATION_HEX_NONCE_REQUIRED/);
@@ -143,7 +144,7 @@ async function completeDraftFixture(){
  const sourceFiles={};for(const path of Object.keys(QA_CALIBRATION_SOURCE.files))sourceFiles[path]=await readFile(new URL('../../'+path,import.meta.url));
  const sourceReceipt=qaCalibrationSourceReceipt({manifestBytes,sourceFiles});
  const preview=await readFile(new URL('../public/previews/carrom.webm',import.meta.url));
- let time=0,count=0,active=0,maxActive=0,totalUploadBytes=0,windowCalled=0;
+ let time=0,count=0,active=0,maxActive=0,totalUploadBytes=0,windowCalled=0;const healthSamples=[];
  const configuration=ledgerFixture().configurations[0].configuration;
  const ledger=ledgerFixture();ledger.rows=[];ledger.connections=[];ledger.configurations=[];
  const configurationForPhase={baseline:shaperConfiguration({profile:'baseline',burstBytes:1024,maxQueuedBytes:2048}),wifi:configuration};
@@ -166,6 +167,7 @@ async function completeDraftFixture(){
   readRootState:async()=>({syntheticUnitObservation:true}),cleanupRoot:async()=>({syntheticUnitCleanup:true}),
   runControlledWindow:async()=>{windowCalled++;return {syntheticUnitWindow:true};},request:async options=>{
    active++;maxActive=Math.max(active,maxActive);await Promise.resolve();count++;
+   if(options.kind==='health')healthSamples.push([options.phase,options.sample,options.url]);
    totalUploadBytes+=options.body?.length??0;
    const responseBody=options.kind==='preview'?preview:options.kind==='upload'?Buffer.from('{"error":{"code":"NOT_FOUND","message":"NOT_FOUND"}}'):Buffer.from('{"environment":"production","status":"ok"}');
    const started=time;time+=options.kind==='health'?(options.phase==='baseline'?10:50):options.kind==='preview'?1300:120;active--;
@@ -178,10 +180,11 @@ async function completeDraftFixture(){
     redirected:false,fromDiskCache:false,fromServiceWorker:false,fromPrefetchCache:false,tlsVerified:true,
     requestBodyBytes:options.body?.length??0,requestBodySha256:sha(options.body??Buffer.alloc(0)),status:options.kind==='upload'?404:200,responseBody,proxyEvidence};
   }});
- return {report,sourceReceipt,manifestBytes,sourceFiles,maxActive,totalUploadBytes,windowCalled};
+ return {report,sourceReceipt,manifestBytes,sourceFiles,maxActive,totalUploadBytes,windowCalled,healthSamples};
 }
 test('complete typed calibration consumes the pinned local preview, only three serial uploads and a Root window hook; it is still pending until independently analyzed',async()=>{
  const f=await completeDraftFixture();assert.equal(f.maxActive,1);assert.equal(f.totalUploadBytes,196608);assert.equal(f.windowCalled,1);
+ assert.deepEqual(f.healthSamples,['baseline','wifi'].flatMap(phase=>[0,1,2].map(sample=>[phase,sample,QA_NETWORK_ORIGIN+'/health/ready'])));
  assert.equal(f.report.rows.length,10);assert.equal(f.report.status,'measurements-collected-calibration-pending',JSON.stringify({errors:f.report.errors,cleanup:f.report.cleanup,transfers:f.report.proxyTransfersProof}));assert.equal(f.report.networkCalibrated,false);
  assert.equal(f.report.rows.find(row=>row.kind==='preview').responseBodyBytes,3144937);
  const changed=Buffer.from(f.sourceFiles['platform/server/index.mjs']);changed[0]^=1;
@@ -249,4 +252,42 @@ test('complete application bodies require enough target ciphertext inside their 
   const result=analyzeQaNetworkCalibration(value);assert.equal(result.networkCalibrated,false,kind);
   if(kind==='tiny-target'||kind==='other-host-bytes'||kind==='encoded-too-large')assert.match(result.reasons.join(','),/CALIBRATION_TARGET_ENCODED_DOWNLOAD_BYTES_TOO_SMALL/);
  }
+});
+
+async function localConnectFixture(host){
+ const upstreamSockets=new Set(),upstream=net.createServer(socket=>{upstreamSockets.add(socket);socket.on('data',bytes=>socket.write(bytes));socket.once('close',()=>upstreamSockets.delete(socket));});
+ await new Promise(resolve=>upstream.listen(0,'127.0.0.1',resolve));
+ const redirected=[],handle=await startBlindConnectShaper({configuration:shaperConfiguration({profile:'baseline'}),connectSocket:options=>{redirected.push(options);return net.connect({host:'127.0.0.1',port:upstream.address().port});}});
+ let socket;
+ try{socket=await new Promise((resolve,reject)=>{const req=http.request({host:'127.0.0.1',port:handle.address.port,method:'CONNECT',path:host+':443'});req.once('connect',(response,connected,head)=>{assert.equal(response.statusCode,200);assert.equal(head.length,0);resolve(connected);});req.once('error',reject);req.end();});}
+ catch(error){await handle.close();for(const value of upstreamSockets)value.destroy();await new Promise(resolve=>upstream.close(resolve));throw error;}
+ const echo=bytes=>new Promise((resolve,reject)=>{
+  const parts=[];let count=0;const timer=setTimeout(()=>fail(Error('LOCAL_ECHO_TIMEOUT')),3000);
+  const clean=()=>{clearTimeout(timer);socket.off('data',data);socket.off('error',fail);socket.off('close',closed);};
+  const fail=error=>{clean();reject(error);},closed=()=>fail(Error('LOCAL_TUNNEL_CLOSED'));
+  const data=value=>{parts.push(value);count+=value.length;if(count>=bytes.length){clean();const actual=Buffer.concat(parts);try{assert.deepEqual(actual,bytes);resolve(actual);}catch(error){reject(error);}}};
+  socket.on('data',data);socket.once('error',fail);socket.once('close',closed);socket.write(bytes);
+ });
+ return{handle,socket,redirected,echo,async close(){socket.destroy();await handle.close();for(const value of upstreamSockets)value.destroy();await new Promise(resolve=>upstream.close(resolve));}};
+}
+
+test('non-target live passthrough preserves bytes and sockets across profile boundaries',async()=>{
+ const local=await localConnectFixture('passthrough.invalid'),before=Buffer.from([0,1,2,255,13,10]),during=Buffer.alloc(65537,173),after=Buffer.from('same original passthrough socket');
+ try{
+  await local.echo(before);const connection=local.handle.ledger.connections[0];assert.equal(connection.target,false);assert.equal(connection.closed,false);
+  const inFlight=local.echo(during);await local.handle.setConfiguration(shaperConfiguration({profile:'wifi',uploadDelayMs:10,downloadDelayMs:10}));await inFlight;
+  assert.equal(local.socket.destroyed,false);assert.equal(connection.closed,false);await local.handle.setConfiguration(shaperConfiguration({profile:'weak',uploadDelayMs:75,downloadDelayMs:75}),{calibrationRequestsComplete:true});await local.echo(after);
+  assert.equal(local.socket.destroyed,false);assert.equal(connection.closed,false);assert.equal(local.handle.ledger.connections.length,1);assert.equal(local.handle.ledger.rows.length,0);
+  assert.deepEqual(local.handle.ledger.configurations.map(row=>row.era),[0,1,2]);assert.deepEqual(local.handle.ledger.configurations.map(row=>row.configuration.profile),['baseline','wifi','weak']);
+  assert.equal(connection.uploadBytes,before.length+during.length+after.length);assert.equal(connection.downloadBytes,connection.uploadBytes);assert.deepEqual(local.redirected,[{host:'passthrough.invalid',port:443,allowHalfOpen:true}]);
+ }finally{await local.close();}
+});
+
+test('every live target tunnel refuses reconfiguration, including completed calibration request flag',async()=>{
+ const local=await localConnectFixture(new URL(QA_NETWORK_ORIGIN).hostname);try{
+  await local.echo(Buffer.from('local target echo only'));await new Promise(resolve=>setImmediate(resolve));const configuration=structuredClone(local.handle.ledger.configurations);
+  for(const options of[undefined,{calibrationRequestsComplete:true}])await assert.rejects(local.handle.setConfiguration(shaperConfiguration({profile:'wifi'}),options),/SHAPER_PROFILE_HAS_ACTIVE_CONNECTIONS/);
+  assert.deepEqual(local.handle.ledger.configurations,configuration);assert.equal(local.socket.destroyed,false);assert.equal(local.handle.ledger.connections[0].closed,false);
+  await local.echo(Buffer.from('refusal leaves target socket and original era intact'));
+ }finally{await local.close();}
 });

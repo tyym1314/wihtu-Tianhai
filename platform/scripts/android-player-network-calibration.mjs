@@ -119,6 +119,8 @@ export function validateQaCalibrationRequestEvidence(raw,{scope,options}){
  assert.equal(pageResult.responseType,'basic');assert.ok(finite(pageResult.started)&&finite(pageResult.headerAt)&&finite(pageResult.finished)
   &&pageResult.started<=pageResult.headerAt&&pageResult.headerAt<=pageResult.finished&&pageResult.finished>pageResult.started);
  assert.equal(requests.length,1,'CALIBRATION_REQUEST_NOT_UNIQUE');const request=requests[0].event;
+ assert.ok(finite(raw.commandSent?.monotonicMs)&&finite(raw.commandReturned?.monotonicMs)&&finite(requests[0].received?.monotonicMs)
+  &&raw.commandSent.monotonicMs<=requests[0].received.monotonicMs&&requests[0].received.monotonicMs<=raw.commandReturned.monotonicMs,'CALIBRATION_REQUEST_CAPTURE_NOT_FRESH');
  assert.equal(request.frameId,raw.frameId,'CALIBRATION_REQUEST_FOREIGN_FRAME');assert.equal(request.request.url,options.url);assert.equal(request.request.method,options.method);
  assert.equal(request.redirectResponse,undefined,'CALIBRATION_REDIRECT_REFUSED');assert.equal(request.initiator.type,'script');
  assert.equal(requestExtra.length,1,'CALIBRATION_REQUEST_EXTRA_INFO_REQUIRED');assert.equal(responseExtra.length,1,'CALIBRATION_RESPONSE_EXTRA_INFO_REQUIRED');
@@ -154,7 +156,7 @@ export async function createQaCalibrationRequestAdapter({context,page,scope,prot
  for(const fn of [readIdentity,readProxyState,privateSink])assert.equal(typeof fn,'function');
  assert.ok(Number.isSafeInteger(maxRequestMs)&&maxRequestMs>0&&maxRequestMs<=30000);
  const cdp=await context.newCDPSession(page),listeners=[],contexts=new Map(),key='__oasisQaNetwork_'+scope.nonce;
- let bound,active,closed=false,documentLost=false,sequence=0,uploadCount=0,installed=false,lastFinished=-Infinity;const used=new Set(),errors=[];
+ let bound,active,closed=false,documentLost=false,sequence=0,uploadCount=0,installed=false,lastFinished=-Infinity;const used=new Set(),requestIds=new Set(),errors=[];
  const receive=shaperClock;
  const evaluate=async(fn,args)=>{const result=await cdp.send('Runtime.evaluate',{expression:'('+fn.toString()+')('+JSON.stringify(args)+')',contextId:bound.contextId,returnByValue:true,awaitPromise:true});
   if(result.exceptionDetails){if(active)active.raw.realmException=copy(result.exceptionDetails);throw Error('CALIBRATION_REALM_EVALUATION_FAILED');}
@@ -170,6 +172,8 @@ export async function createQaCalibrationRequestAdapter({context,page,scope,prot
  on('Runtime.executionContextsCleared',()=>{contexts.clear();if(bound)documentLost=true;});
  on('Network.requestWillBeSent',event=>{if(!active)return;
   if(event.request.url!==active.options.url){active.orphans.delete(event.requestId);return;}
+  if(active.eventCount>=128){active.error??=Error('CALIBRATION_CDP_EVENT_BOUND');return;}
+  if(requestIds.has(event.requestId)&&!active.ids.has(event.requestId))active.error??=Error('CALIBRATION_REQUEST_ID_REUSED');requestIds.add(event.requestId);
   active.ids.add(event.requestId);push('requests',event);
   for(const [collection,e,received]of active.orphans.get(event.requestId)??[])push(collection,e,received);active.orphans.delete(event.requestId);
  });
@@ -210,14 +214,14 @@ export async function createQaCalibrationRequestAdapter({context,page,scope,prot
    assert.equal(closed,false,'CALIBRATION_ADAPTER_CLOSED');assert.equal(active,undefined,'CALIBRATION_CONCURRENT_REQUEST_REFUSED');
    assert.equal(documentLost,false,'CALIBRATION_DOCUMENT_LOST');assert.ok(['baseline','wifi','weak'].includes(options.phase));
    assert.equal(options.cache,'no-store');assert.equal(options.redirect,'error');const url=new URL(options.url);assert.equal(url.origin,scope.origin);
-   if(options.kind==='health'){assert.equal(options.method,'GET');assert.ok([0,1,2].some(i=>options.url===plan.healthUrl+'&sample='+i));assert.equal(options.body,undefined);}
+   if(options.kind==='health'){assert.equal(options.method,'GET');assert.equal(options.url,plan.healthUrl);assert.ok([0,1,2].includes(options.sample));assert.equal(options.body,undefined);}
    else if(options.kind==='preview'){assert.equal(options.method,'GET');assert.equal(options.url,plan.previewUrl);assert.equal(options.body,undefined);}
    else{assert.equal(options.kind,'upload');assert.equal(options.method,'POST');assert.ok(plan.uploads.some(u=>u.url===options.url));assert.equal(options.contentType,'application/json');
     assert.ok(Buffer.isBuffer(options.body)&&options.body.length===65536&&hash(options.body)===plan.uploadSha256);assert.ok(uploadCount<3,'CALIBRATION_UPLOAD_CAP');}
-   const use=options.phase+' '+options.method+' '+options.url;assert.equal(used.has(use),false,'CALIBRATION_PROBE_REPEAT_REFUSED');used.add(use);
+   const use=options.phase+' '+options.method+' '+options.url+(options.kind==='health'?' '+options.sample:'');assert.equal(used.has(use),false,'CALIBRATION_PROBE_REPEAT_REFUSED');used.add(use);
    if(options.kind==='upload')uploadCount++;
    const operationId='request-'+(++sequence),raw={schema:'android-qa-original-request-evidence-v1',scope:copy(scope),bound:copy(bound),frameId:bound.frameId,
-    options:{phase:options.phase,kind:options.kind,url:options.url,method:options.method,requestBodyBytes:options.body?.length??0,requestBodySha256:hash(options.body??Buffer.alloc(0))},
+    options:{phase:options.phase,kind:options.kind,url:options.url,method:options.method,requestBodyBytes:options.body?.length??0,requestBodySha256:hash(options.body??Buffer.alloc(0)),...(options.kind==='health'?{sample:options.sample}:{})},
     requests:[],requestExtra:[],responseExtra:[],responses:[],finished:[],failed:[],servedFromCache:[],physicalPropagationRtt:false};
    const current={options,operationId,raw,ids:new Set(),orphans:new Map(),eventCount:0};current.done=new Promise(resolve=>{current.finish=resolve;});active=current;let error,cancellation;
    const abort=()=>{cancellation=evaluate(abortQaCalibrationDocument,{key,scope,operationId}).then(value=>{raw.abortAcknowledgement=value;},()=>{raw.abortAcknowledgement={failed:true};});};

@@ -57,7 +57,7 @@ export function playerTouchFrame(frame,{tap,touch}){
  */
 export async function collectPlayerEvidence({context,page,origin,manifest,out,redactor,result,resourceDrainTimeoutMs=15000,resourceOutputRoot}){
  assert.ok(Number.isSafeInteger(resourceDrainTimeoutMs)&&resourceDrainTimeoutMs>0&&resourceDrainTimeoutMs<=15000,'RESOURCE_DRAIN_BOUND');
- const cdp=await context.newCDPSession(page),tasks=new Set(),raw=[],responses=[],errors=[],requests=[],requestRows=new WeakMap(),cdpRequests=new Map(),contexts=new Map(),resourceDocuments=new Map(),rawBodyDiagnostics=[],resourceSnapshots=[],handlers=[],initHandles=[];
+ const cdp=await context.newCDPSession(page),tasks=new Set(),responseWork=new WeakMap(),raw=[],responses=[],errors=[],requests=[],requestRows=new WeakMap(),cdpRequests=new Map(),contexts=new Map(),resourceDocuments=new Map(),rawBodyDiagnostics=[],resourceSnapshots=[],handlers=[],initHandles=[];
  const imagePath=path=>!/^\/(?:api|v1)(?:\/|$)/.test(path)&&/\.(?:webp|png|jpe?g|svg|avif|gif)$/.test(path),hasImages=[...manifest.expected.keys()].some(imagePath);
  const entryUrl=hasImages?page.url():null,nonce=randomUUID();let sequence=0,totalBytes=0,closed=false;
  const rememberPost=value=>{if(value){try{redactor.remember(JSON.parse(value));}catch{redactor.add(value);}}};
@@ -70,11 +70,11 @@ export async function collectPlayerEvidence({context,page,origin,manifest,out,re
  on('Network.requestWillBeSent',event=>{
   try{assert.ok(cdpRequests.size<50000,'RESOURCE_NETWORK_RECORD_BOUND');
    const realms=[...contexts.values()].filter(realm=>realm.auxData?.isDefault&&realm.auxData.frameId===event.frameId);
-   cdpRequests.set(event.requestId,{id:event.requestId,url:event.request.url,frameId:event.frameId,contextId:realms.length===1?realms[0].id:null,method:event.request.method,type:event.type,redirected:!!event.redirectResponse||cdpRequests.has(event.requestId),transferFinished:false,response:null,failed:false});
+   cdpRequests.set(event.requestId,{id:event.requestId,url:event.request.url,frameId:event.frameId,contextId:realms.length===1?realms[0].id:null,method:event.request.method,type:event.type,startedAtMs:event.wallTime*1000,startedMonotonic:event.timestamp,redirected:!!event.redirectResponse||cdpRequests.has(event.requestId),transferFinished:false,response:null,failed:false});
   }catch(error){errors.push(error.message);}
  });
  on('Network.responseReceived',({requestId,response})=>{const row=cdpRequests.get(requestId);if(row)row.response={status:response.status,fromServiceWorker:response.fromServiceWorker===true};});
- on('Network.loadingFinished',({requestId})=>{const row=cdpRequests.get(requestId);if(row)row.transferFinished=true;});
+ on('Network.loadingFinished',({requestId,timestamp})=>{const row=cdpRequests.get(requestId);if(row){row.transferFinished=true;row.finishedMonotonic=timestamp;row.finishedAtMs=row.startedAtMs+(timestamp-row.startedMonotonic)*1000;}});
  on('Network.loadingFailed',({requestId,errorText})=>{const row=cdpRequests.get(requestId);if(row){row.failed=true;row.failure=errorText;}});
  try{
   if(hasImages){
@@ -100,8 +100,8 @@ export async function collectPlayerEvidence({context,page,origin,manifest,out,re
  async function delivery(row,{generatedScript=false}={}){
   const matches=[...cdpRequests.values()].filter(get=>get.url===row.url&&get.method===row.method);
   const cachedMatches=matches.filter(get=>resourceDocuments.get(key(get))?.owner.url===row.frame),liveRealms=[...contexts.values()].filter(realm=>realm.auxData?.isDefault);
-  let get,document;
-  if(cachedMatches.length===1&&!liveRealms.some(realm=>realm.id===cachedMatches[0].contextId)){get=cachedMatches[0];document=resourceDocuments.get(key(get));}
+  let get,document,scope;const deliveryDeadline=Date.now()+resourceDrainTimeoutMs;
+  if(!generatedScript&&cachedMatches.length===1&&!liveRealms.some(realm=>realm.id===cachedMatches[0].contextId)){get=cachedMatches[0];scope={frameId:get.frameId,contextId:get.contextId};document=resourceDocuments.get(key(scope));}
   else{
    const {frameTree}=await cdp.send('Page.getFrameTree');assert.equal(frameTree?.frame.url,entryUrl,'RESOURCE_PARENT_DOCUMENT_CHANGED');
    const frames=(frameTree.childFrames||[]).filter(child=>child.frame.url===row.frame&&child.frame.parentId===frameTree.frame.id);
@@ -110,42 +110,52 @@ export async function collectPlayerEvidence({context,page,origin,manifest,out,re
    const realms=liveRealms.filter(realm=>realm.auxData.frameId===frame.id&&realm.origin===origin);assert.equal(realms.length,1,'RESOURCE_CDP_CONTEXT_REQUIRED');
    const owned=matches.filter(candidate=>candidate.frameId===frame.id&&candidate.contextId===realms[0].id);
    if(generatedScript){assert.ok(owned.length>0&&owned.every(candidate=>candidate.type==='Script'&&!candidate.redirected&&!candidate.failed),'GENERATED_SCRIPT_CDP_SCOPE_UNPROVEN');row.cdp_request_ids=owned.map(candidate=>candidate.id);}
-   else assert.equal(owned.length,1,'RESOURCE_DELIVERY_REQUEST_AMBIGUOUS');get=owned[0];
-   const scope={frameId:frame.id,contextId:realms[0].id},end=Date.now()+resourceDrainTimeoutMs;
+   else{assert.equal(owned.length,1,'RESOURCE_DELIVERY_REQUEST_AMBIGUOUS');get=owned[0];}
+   scope={frameId:frame.id,contextId:realms[0].id};const end=deliveryDeadline;
    for(;;){
     assert.ok(Date.now()<end,'RESOURCE_DELIVERY_DRAIN_TIMEOUT');assert.ok(contexts.has(scope.contextId),'RESOURCE_GAME_EXECUTION_CONTEXT_LOST');
     const evaluated=await bounded(cdp.send('Runtime.evaluate',{expression:`(async()=>{const p=globalThis.__oasisPhysicalPerf,c=globalThis.__oasisConsumedImageEvidence;return {owner:p?{schema:p.schema,nonce:p.nonce,documentId:p.documentId,timeOrigin:p.timeOrigin,url:p.url}:null,snapshot:c?await c.drain(${resourceDrainTimeoutMs}):null};})()`,contextId:scope.contextId,returnByValue:true,awaitPromise:true}),end-Date.now(),'RESOURCE_DELIVERY_DRAIN_TIMEOUT');
     assert.ok(!evaluated.exceptionDetails,'RESOURCE_DELIVERY_EVALUATION_FAILED');const value=evaluated.result?.value,owner=value?.owner;
     document={game,scope,owner,snapshot:value?.snapshot};retainSnapshot(row,document);
     assert.ok(owner?.schema==='android-physical-performance-v1'&&owner.nonce===nonce&&owner.url===frame.url&&/^[a-f0-9]{32}$/.test(owner.documentId)&&Number.isFinite(owner.timeOrigin),'RESOURCE_NATIVE_DOCUMENT_UNPROVEN');
-    const prior=resourceDocuments.get(key(get));if(prior)assert.deepEqual(owner,prior.owner,'RESOURCE_NATIVE_DOCUMENT_CHANGED');
+    const prior=resourceDocuments.get(key(scope));if(prior)assert.deepEqual(owner,prior.owner,'RESOURCE_NATIVE_DOCUMENT_CHANGED');
     assert.ok(document.snapshot,'RESOURCE_EVIDENCE_MISSING');assert.deepEqual(document.snapshot.errors,[],'RESOURCE_EVIDENCE_ERRORS');
     assert.deepEqual(document.snapshot.identity,{nonce,documentId:owner.documentId,timeOrigin:owner.timeOrigin,url:frame.url,parentUrl:entryUrl},'RESOURCE_DOCUMENT_IDENTITY_CHANGED');
     const allReceipts=[...document.snapshot.receipts,...(document.snapshot.generatedReceipts||[])],receipt=allReceipts.find(receipt=>row.url.startsWith('blob:')?receipt.blobUrls.some(blob=>blob.url===row.url):receipt.sourceUrl===row.url);
     if((!receipt||!receipt.hashComplete||!receipt.blobUrls.length||!generatedScript&&!get.transferFinished)&&document.snapshot.phase==='loading'){
      if(row.url.startsWith('blob:')&&allReceipts.some(receipt=>receipt.hashComplete)&&!receipt)throw Error('RESOURCE_ALTERNATIVE_DELIVERY_UNPROVEN');
-     if(get.failed||get.response?.fromServiceWorker)break;await sleep(Math.min(25,Math.max(1,end-Date.now())));continue;
+     if(get?.failed||get?.response?.fromServiceWorker)break;await sleep(Math.min(25,Math.max(1,end-Date.now())));continue;
     }
     try{validateDocument(document);}catch(error){
      // A different image may have just resolved Response.blob while its native
      // object URL or transfer is still finishing. Only incomplete work retries.
      const incomplete=document.snapshot.receipts.some(receipt=>!receipt.hashComplete||!receipt.blobUrls.length||[...cdpRequests.values()].some(source=>source.url===receipt.sourceUrl&&source.frameId===scope.frameId&&!source.transferFinished&&!source.failed));
-     if(document.snapshot.phase==='loading'&&incomplete&&/RESOURCE_CONSUMED_BYTES_UNPROVEN|RESOURCE_OBJECT_URL_UNPROVEN|RESOURCE_SOURCE_GET_UNPROVEN|RESOURCE_HASH_TASKS_NOT_CLOSED/.test(error.message)){await sleep(Math.min(25,Math.max(1,end-Date.now())));continue;}throw error;
+     if(document.snapshot.phase==='loading'&&(incomplete&&/RESOURCE_CONSUMED_BYTES_UNPROVEN|RESOURCE_OBJECT_URL_UNPROVEN|RESOURCE_SOURCE_GET_UNPROVEN|RESOURCE_HASH_TASKS_NOT_CLOSED/.test(error.message)||error.message==='GENERATED_SCRIPT_SOURCE_TRANSFER_PENDING')){await sleep(Math.min(25,Math.max(1,end-Date.now())));continue;}throw error;
     }
     break;
    }
   }
-  assert.ok(!get.redirected,'RESOURCE_DELIVERY_REDIRECT_REFUSED');const evidence=validateDocument(document),proof=generatedScript?generatedScriptProofForResponse({...row,frameId:document.scope.frameId,contextId:document.scope.contextId,transferFinished:row.worker_response_finished===true},evidence,{origin,manifest,bodyPins:responses}):deliveryProofForRow(get,evidence,{origin,manifest});
+  if(!generatedScript)assert.ok(!get.redirected,'RESOURCE_DELIVERY_REDIRECT_REFUSED');const evidence=validateDocument(document);
+  if(generatedScript){
+   const paths=new Set(evidence.byGeneratedBlob.get(row.url)?.sourcePins.map(pin=>origin+pin.path)),prior=responses.filter(source=>paths.has(source.url)&&source.frame===row.frame&&source.id<row.id&&source.request_id<row.request_id);
+   // Header/body collection may finish after a later worker response. Await
+   // only sources already registered before this worker; never a later GET.
+   assert.ok(Date.now()<deliveryDeadline,'GENERATED_SCRIPT_INPUT_BODY_DRAIN_TIMEOUT');await bounded(Promise.all(prior.map(source=>responseWork.get(source))),deliveryDeadline-Date.now(),'GENERATED_SCRIPT_INPUT_BODY_DRAIN_TIMEOUT');
+  }
+  const proof=generatedScript?generatedScriptProofForResponse({...row,frameId:document.scope.frameId,contextId:document.scope.contextId,transferFinished:row.worker_response_finished===true},evidence,{origin,manifest,bodyPins:responses}):deliveryProofForRow(get,evidence,{origin,manifest});
   if(row.original_bytes>0)assert.equal(row.original_sha256,proof.sha256,'RESOURCE_NONEMPTY_CDP_BODY_CONFLICT');
-  resourceDocuments.set(key(get),document);retainSnapshot(row,document);
-  row.cdp_request_id=get.id;row.deliveryProof=proof;row.rawBodyDiagnostic.requestId=get.id;row.rawBodyDiagnostic.frameId=get.frameId;row.rawBodyDiagnostic.contextId=get.contextId;row.rawBodyDiagnostic.resolvedByIndependentDelivery=true;
-  if(generatedScript){row.rawBodyDiagnostic.mainFrameCdpWorkerTransfers=(row.cdp_request_ids||[get.id]).map(id=>{const item=cdpRequests.get(id);return {requestId:id,transferFinished:item.transferFinished,response:item.response,failed:item.failed};});row.pin={path:row.url,sha256:proof.sha256,bytes:proof.bytes,source:'Exact original readable Worker response bound to the release-manifest decoder/module recipe and the actual native Blob',sourcePins:proof.sourcePins};}
+  resourceDocuments.set(key(scope),document);retainSnapshot(row,document);
+  row.delivery_scope=scope;row.deliveryProof=proof;row.rawBodyDiagnostic.frameId=scope.frameId;row.rawBodyDiagnostic.contextId=scope.contextId;row.rawBodyDiagnostic.resolvedByIndependentDelivery=true;
+  if(generatedScript){row.rawBodyDiagnostic.playwrightRequestId=row.request_id;row.rawBodyDiagnostic.mainFrameCdpWorkerCandidates=(row.cdp_request_ids||[]).map(id=>{const item=cdpRequests.get(id);return {requestId:id,transferFinished:item.transferFinished,response:item.response,failed:item.failed};});row.pin={path:row.url,sha256:proof.sha256,bytes:proof.bytes,source:'Exact original readable Worker response bound to the release-manifest decoder/module recipe and the actual native Blob',sourcePins:proof.sourcePins};}
+  else{row.cdp_request_id=get.id;row.rawBodyDiagnostic.requestId=get.id;}
  }
  const onRequest=request=>{try{const u=new URL(request.url());if(!['http:','https:','blob:'].includes(u.protocol))return;const row={id:++sequence,at:Date.now(),url:request.url(),method:request.method(),frame:request.frame()?.url(),headers:request.headers(),postData:request.postData(),resourceType:request.resourceType()};redactor.remember(row.headers);rememberPost(row.postData);requests.push(row);requestRows.set(request,row);if(u.origin!==origin&&!['https://fonts.googleapis.com','https://fonts.gstatic.com'].includes(u.origin))errors.push('UNEXPECTED_NETWORK_ORIGIN: '+u.origin);}catch(error){errors.push('REQUEST_OBSERVATION_FAILED: '+error.message);}};
  const onResponse=response=>{
+  let row;
   const work=(async()=>{
-   const request=response.request(),u=new URL(response.url()),status=response.status(),headers=await response.allHeaders();redactor.remember(headers);
-   const row={id:responses.length+1,at:Date.now(),request_at:requestRows.get(request)?.at??null,request_id:requestRows.get(request)?.id??null,request_headers:requestRows.get(request)?.headers??null,url:response.url(),path:u.pathname,method:request.method(),status,frame:request.frame()?.url(),resourceType:request.resourceType(),headers};responses.push(row);
+   const request=response.request(),u=new URL(response.url()),status=response.status();
+   row={id:responses.length+1,at:Date.now(),request_at:requestRows.get(request)?.at??null,request_id:requestRows.get(request)?.id??null,request_headers:requestRows.get(request)?.headers??null,url:response.url(),path:u.pathname,method:request.method(),status,frame:request.frame()?.url(),resourceType:request.resourceType(),headers:null};responses.push(row);
+   const headers=await response.allHeaders();redactor.remember(headers);row.headers=headers;
    if(!response.ok())row.body_error='NON_SUCCESS_STATUS';let bytes,bodyError;
    try{bytes=await response.body();row.original_sha256=playerEvidenceHash(bytes);row.original_bytes=bytes.length;totalBytes+=bytes.length;assert.ok(totalBytes<=256*1024*1024,'EVIDENCE_BODY_BOUND_EXCEEDED');}catch(error){bodyError=error;}
    const api=u.origin===origin&&(/^\/(api|v1)\//.test(u.pathname)||['/health','/health/ready'].includes(u.pathname));
@@ -164,14 +174,14 @@ export async function collectPlayerEvidence({context,page,origin,manifest,out,re
     }
     if(bytes!==undefined){const file='body-'+row.original_sha256;await writeFile(join(out,'bodies',file),bytes,{mode:0o600,flag:'wx'}).catch(error=>{if(error.code!=='EEXIST')throw error;});row.stored_body='bodies/'+file;}
    }
-  })().catch(error=>errors.push(error.message));tasks.add(work);void work.finally(()=>tasks.delete(work));
+  })().catch(error=>errors.push(error.message));if(row)responseWork.set(row,work);tasks.add(work);void work.finally(()=>tasks.delete(work));
  };
  page.on('request',onRequest);page.on('response',onResponse);
  return{cdp,raw,responses,requests,errors,rawBodyDiagnostics,resourceSnapshots,
   async drain(){const deadline=Date.now()+20000;try{while(tasks.size){assert.ok(Date.now()<deadline,'RAW_RESPONSE_DRAIN_TIMEOUT');await bounded(Promise.all([...tasks]),deadline-Date.now(),'RAW_RESPONSE_DRAIN_TIMEOUT');}
-   // Recheck retained exact-document proofs against all later observed GETs.
-   // A repeated URL or failed transfer cannot keep an earlier provisional pass.
-   for(const row of responses.filter(row=>row.rawBodyDiagnostic?.resolvedByIndependentDelivery)){try{const get=cdpRequests.get(row.cdp_request_id),document=resourceDocuments.get(key(get)),evidence=validateDocument(document),proof=row.worker_response_finished?generatedScriptProofForResponse({...row,frameId:document.scope.frameId,contextId:document.scope.contextId,transferFinished:true},evidence,{origin,manifest,bodyPins:responses}):deliveryProofForRow(get,evidence,{origin,manifest});assert.deepEqual(proof,row.deliveryProof,'RESOURCE_DELIVERY_PROOF_CHANGED');}catch(error){row.rawBodyDiagnostic.resolvedByIndependentDelivery=false;row.rawBodyDiagnostic.deliveryError=error.message;errors.push(error.message);}}
+   // Recheck the original Blob input IDs/facts and every later observed GET.
+   // Later success cannot repair an earlier proof; failed transfers still revoke it.
+   for(const row of responses.filter(row=>row.rawBodyDiagnostic?.resolvedByIndependentDelivery)){try{const get=cdpRequests.get(row.cdp_request_id),document=resourceDocuments.get(key(row.delivery_scope)),evidence=validateDocument(document);if(row.worker_response_finished){const candidates=[...cdpRequests.values()].filter(candidate=>candidate.url===row.url&&candidate.frameId===document.scope.frameId&&candidate.contextId===document.scope.contextId);assert.ok(candidates.length>0&&candidates.every(candidate=>candidate.method==='GET'&&candidate.type==='Script'&&!candidate.redirected&&!candidate.failed),'GENERATED_SCRIPT_CDP_SCOPE_UNPROVEN');}const proof=row.worker_response_finished?generatedScriptProofForResponse({...row,frameId:document.scope.frameId,contextId:document.scope.contextId,transferFinished:true},evidence,{origin,manifest,bodyPins:responses}):deliveryProofForRow(get,evidence,{origin,manifest});assert.deepEqual(proof,row.deliveryProof,'RESOURCE_DELIVERY_PROOF_CHANGED');}catch(error){row.rawBodyDiagnostic.resolvedByIndependentDelivery=false;row.rawBodyDiagnostic.deliveryError=error.message;errors.push(error.message);}}
   }finally{result.raw_response_work_pending=tasks.size;}},
   async save(){await this.drain();await writeFile(join(out,'raw-cdp.json'),JSON.stringify(redactor.sanitize(raw),null,2),{mode:0o600});await writeFile(join(out,'network-bodies.json'),JSON.stringify(redactor.sanitize({requests,responses,errors,totalBytes,rawBodyDiagnostics,resourceSnapshots,cdpRequests:[...cdpRequests.values()],deliveryEvidenceSeparateFromCdpBody:true}),null,2),{mode:0o600});},
   async close({transportClosed=false}={}){if(closed)return;closed=true;const failures=[];
@@ -232,6 +242,15 @@ export async function runPlayerAcceptance(options){
  const screenshot=async name=>{
   const masks=page.frames().flatMap(frame=>[frame.locator('.player-welcome, input[name="username"], input[type="password"], .room-code'),frame.getByText(credentials.username,{exact:false}),...(baseline?[frame.getByText(baseline.playerId,{exact:false}),frame.getByText(baseline.externalUserId,{exact:false})]:[])]);
   await page.screenshot({path:join(out,name+'.png'),mask:masks});
+  // Supplement CDP capture with the owned QA app's actual device pixels,
+  // outside action/continuous-performance timing. Never capture another app.
+  if(/^[a-z]+-accepted-action$/.test(name))try{
+   assert.equal(androidForeground(await adb('shell','dumpsys','activity','activities')),component,'DEVICE_SCREENSHOT_OWN_QA_FOREGROUND_REQUIRED');
+   const started=Date.now(),capture=await execute('adb',playerAdbArgs(options,['exec-out','screencap','-p']),{timeout:15000,maxBuffer:16*1024*1024,encoding:'buffer'}),bytes=capture.stdout;
+   assert.ok(Buffer.isBuffer(bytes)&&bytes.length>8&&bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])),'DEVICE_SCREENSHOT_PNG_REQUIRED');
+   const file=name+'.device.png';await writeFile(join(out,file),bytes,{mode:0o600,flag:'wx'});
+   (report.device_screenshots??=[]).push({file,packageName:pkg,component,started_at_ms:started,completed_at_ms:Date.now(),bytes:bytes.length,sha256:playerEvidenceHash(bytes),source:'ADB screencap of the foreground owned QA app; visual inspection evidence, no display latency inference'});
+  }catch(error){(report.device_screenshot_errors??=[]).push({name,message:redactor.clean(error.message)});}
  };
  const stopUI=async result=>{if(page&&!page.isClosed()&&await page.locator('.player-lobby').isVisible()&&await page.locator('iframe').count()===0){result.ui_stopped=true;result.ui_stop_method='authoritative-sdk-return-unmounted-iframe';return true;}
   await adb('shell','am','force-stop',pkg);await until(async()=>!(await adb('shell','pidof',pkg).catch(error=>{if(error.code===1)return '';throw error;})),'OWNED_PLAYER_APK_STOP',10000);result.ui_stopped=true;result.ui_stop_method='force-stop-owned-qa-apk';return true;};

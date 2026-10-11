@@ -5,7 +5,7 @@ import {createHash,webcrypto} from 'node:crypto';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 import {createQaCalibrationRequestAdapter,QA_CALIBRATION_APK,qaCalibrationProxySnapshot,
- collectQaCalibrationWithAdapter,validateQaCalibrationInstallation,installQaCalibrationDocument,fetchQaCalibrationDocument} from '../scripts/android-player-network-calibration.mjs';
+ collectQaCalibrationWithAdapter,validateQaCalibrationInstallation,validateQaCalibrationRequestEvidence,installQaCalibrationDocument,fetchQaCalibrationDocument} from '../scripts/android-player-network-calibration.mjs';
 import {calibrationPlan,QA_NETWORK_ORIGIN,shaperConfiguration,shaperConfigurationSha256} from '../scripts/android-player-network-shaper.mjs';
 
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -17,14 +17,14 @@ const plan=calibrationPlan(nonce),health=Buffer.from('{"environment":"production
 const configuration=shaperConfiguration({profile:'baseline'});
 const c={id:'SYNTHETIC-tunnel',era:1,target:true,host:new URL(QA_NETWORK_ORIGIN).hostname,port:443,uploadBytes:0,downloadBytes:0};
 const installation=()=>({schema:'android-qa-calibration-installation-v1',scope:structuredClone(scope),apk:structuredClone(QA_CALIBRATION_APK),tlsErrorsIgnored:false,originalEvidenceSha256:'b'.repeat(64)});
-const optionsFor=kind=>({phase:'baseline',kind,url:kind==='upload'?plan.uploads[0].url:plan.healthUrl+'&sample=0',method:kind==='upload'?'POST':'GET',
+const optionsFor=kind=>({phase:'baseline',kind,url:kind==='upload'?plan.uploads[0].url:plan.healthUrl,method:kind==='upload'?'POST':'GET',...(kind==='health'?{sample:0}:{}),
  body:kind==='upload'?plan.uploads[0].body:undefined,contentType:kind==='upload'?'application/json':undefined,cache:'no-store',redirect:'error'});
 
 /** Entirely synthetic CDP events. This fixture never loads Playwright, ADB,
  * connects a target, or performs a fetch. Original local protocol bytes only
  * exercise the pin; successful fixtures are not real-phone acceptance. */
 function fixture(mode){
- const saved=[],calls=[],connection=structuredClone(c);let time=100,identityReads=0,lastBody,requestCount=0;
+ const saved=[],calls=[],dispatched=[],connection=structuredClone(c);let time=100,identityReads=0,lastBody,requestCount=0;
  const cdp=new EventEmitter();cdp.detach=async()=>{calls.push('detach');};
  cdp.send=async(method,args={})=>{
   calls.push(method);
@@ -36,23 +36,24 @@ function fixture(mode){
    assert.equal(args.contextId,7);const value=JSON.parse(args.expression.slice(args.expression.lastIndexOf(')(')+2,-1));
    if(args.expression.includes('function installQaCalibrationDocument'))return {result:{value:{owner:scope,url:QA_NETWORK_ORIGIN+'/',at:1,epochMs:scope.timeOrigin+1}}};
    if(args.expression.includes('function abortQaCalibrationDocument'))return {result:{value:{ownerMissing:false,cancelRequested:true,removed:!!value.remove}}};
-   assert.ok(args.expression.includes('function fetchQaCalibrationDocument'));requestCount++;lastBody=value.body;
-   const requestId='SYNTHETIC-request-'+requestCount,responseBody=value.method==='POST'?Buffer.from('{"error":{"code":"NOT_FOUND","message":"NOT_FOUND"}}'):health;
+   assert.ok(args.expression.includes('function fetchQaCalibrationDocument'));requestCount++;lastBody=value.body;dispatched.push(value);
+   const notFound=value.method==='POST'||mode==='health-404',status=notFound?404:200;
+   const requestId='SYNTHETIC-request-'+(mode==='reused-id'?1:requestCount),responseBody=notFound?Buffer.from('{"error":{"code":"NOT_FOUND","message":"NOT_FOUND"}}'):health;
    const postHeaders=value.method==='POST'?{'Content-Type':'application/json'}:{};
    // Real CDP may deliver ExtraInfo before its base event; preserve and bind it.
    cdp.emit('Network.requestWillBeSentExtraInfo',{requestId,headers:postHeaders,connectTiming:{requestTime:1}});
    cdp.emit('Network.requestWillBeSent',{requestId,frameId:mode==='foreign-frame'?'foreign':'frame',timestamp:1,wallTime:scope.timeOrigin/1000,
     request:{url:value.url,method:value.method},initiator:{type:'script'}});
    if(mode==='duplicate')cdp.emit('Network.requestWillBeSent',{requestId,frameId:'frame',timestamp:1,wallTime:scope.timeOrigin/1000,request:{url:value.url,method:value.method},initiator:{type:'script'}});
-   cdp.emit('Network.responseReceived',{requestId,timestamp:1.05,response:{url:value.url,status:value.method==='POST'?404:200,
+   cdp.emit('Network.responseReceived',{requestId,timestamp:1.05,response:{url:value.url,status,
     securityState:mode==='tls'?'insecure':'secure',securityDetails:{protocol:'TLS 1.3',validFrom:0,validTo:2100000000},
     fromDiskCache:mode==='cache',fromServiceWorker:false,fromPrefetchCache:false,protocol:'h2',connectionId:48,timing:{requestTime:1,receiveHeadersEnd:50}}});
-   if(mode!=='missing-extra')cdp.emit('Network.responseReceivedExtraInfo',{requestId,statusCode:value.method==='POST'?404:200,headers:{'Content-Type':'application/json'}});
+   if(mode!=='missing-extra')cdp.emit('Network.responseReceivedExtraInfo',{requestId,statusCode:status,headers:{'Content-Type':'application/json'}});
    cdp.emit('Network.loadingFinished',{requestId,timestamp:1.05,encodedDataLength:responseBody.length+128});
    connection.uploadBytes+=(value.body?.length??64);connection.downloadBytes+=responseBody.length+128;time+=50;
    if(mode==='context-lost')cdp.emit('Runtime.executionContextDestroyed',{executionContextId:7});
-   const start=100+(requestCount-1)*60;
-   const result={owner:scope,url:value.url,status:value.method==='POST'?404:200,redirected:false,responseType:'basic',started:start,headerAt:start+25,finished:start+50,
+   const start=100+(mode==='reused-page-result'?0:requestCount-1)*60;
+   const result={owner:scope,url:value.url,status,redirected:false,responseType:'basic',started:start,headerAt:start+25,finished:start+50,
     startedEpoch:scope.timeOrigin+start,finishedEpoch:scope.timeOrigin+start+50,responseBodyBase64:responseBody.toString('base64'),responseBodyBytes:responseBody.length,responseBodySha256:hash(responseBody)};
    if(mode==='consumed-conflict')result.responseBodySha256='f'.repeat(64);
    return {result:{value:result}};
@@ -61,7 +62,7 @@ function fixture(mode){
   if(method==='Network.getResponseBody'){
    if(mode==='unreadable')throw Error('SYNTHETIC getResponseBody unavailable');
    return {body:mode==='nonempty-conflict'?'conflicting-original-bytes':mode==='malformed'?'!notbase64!':mode==='empty'?'':
-    (lastBody?Buffer.from('{"error":{"code":"NOT_FOUND","message":"NOT_FOUND"}}'):health).toString('base64'),base64Encoded:mode!=='nonempty-conflict'};
+    (lastBody||mode==='health-404'?Buffer.from('{"error":{"code":"NOT_FOUND","message":"NOT_FOUND"}}'):health).toString('base64'),base64Encoded:mode!=='nonempty-conflict'};
   }
   return {};
  };
@@ -72,8 +73,49 @@ function fixture(mode){
    listenHost:'127.0.0.1',listenPort:40000,process:{pid:123,started:{monotonicMs:0,epochMs:scope.timeOrigin}},configuration:{era:1,configuration,sha256:shaperConfigurationSha256(configuration)},
    targetConnections:[structuredClone(connection)],rowCount:requestCount*2,totalEntries:requestCount*2+2,maxLedgerEntries:300000,overflow:false,dropped:0,errors:[]}),
   privateSink:async({name,bytes})=>{saved.push({name,bytes:Buffer.from(bytes)});return {path:'/PRIVATE-SYNTHETIC-UNIT/'+name,bytes:bytes.length,sha256:mode==='bad-sink'?'0'.repeat(64):hash(bytes)};}};
- return {adapterOptions,saved,calls,cdp,requestCount:()=>requestCount};
+ return {adapterOptions,saved,calls,dispatched,cdp,requestCount:()=>requestCount};
 }
+
+test('three same-URL health samples retain fresh native IDs, command boundaries and bodies without sending sample metadata',async()=>{
+ const f=fixture(),adapter=await createQaCalibrationRequestAdapter(f.adapterOptions),receipts=[];
+ assert.equal(plan.healthUrl,QA_NETWORK_ORIGIN+'/health/ready');
+ for(const sample of [0,1,2])receipts.push(await adapter.request({...optionsFor('health'),sample}));
+ assert.equal(new Set(receipts.map(row=>row.requestId)).size,3);assert.equal(new Set(receipts.map(row=>row.url)).size,1);
+ const raws=f.saved.filter(row=>/^qa-network-request-0[123]\.json$/.test(row.name)).map(row=>JSON.parse(row.bytes));
+ assert.deepEqual(raws.map(raw=>raw.options.sample),[0,1,2]);assert.equal(new Set(f.dispatched.map(row=>row.operationId)).size,3);
+ for(const [index,raw]of raws.entries()){
+  assert.equal(raw.requests[0].event.requestId,receipts[index].requestId);assert.equal(raw.pageResult.responseBodySha256,hash(health));
+  assert.equal(raw.pageResult.responseBodySha256,raw.cdpBody.sha256);assert.ok(raw.installationBefore&&raw.installationAfter);
+  assert.ok(raw.commandSent.monotonicMs<=raw.requests[0].received.monotonicMs&&raw.requests[0].received.monotonicMs<=raw.commandReturned.monotonicMs);
+  if(index)assert.ok(raw.pageResult.started>=raws[index-1].pageResult.finished);
+  assert.equal(f.dispatched[index].url,plan.healthUrl);assert.equal(Object.hasOwn(f.dispatched[index],'sample'),false);
+ }
+ await assert.rejects(adapter.request(optionsFor('health')),/CALIBRATION_PROBE_REPEAT_REFUSED/);
+ for(const sample of [3,'1',undefined])await assert.rejects(adapter.request({...optionsFor('health'),sample}));
+ await assert.rejects(adapter.request({...optionsFor('health'),url:plan.healthUrl+'?qa_net='+nonce+'&sample=0'}));
+ assert.equal(f.requestCount(),3);await adapter.close();
+});
+
+test('same-URL health captures reject reused native request IDs, old consumption clocks and out-of-command collection',async()=>{
+ for(const mode of ['reused-id','reused-page-result']){
+  const f=fixture(mode),adapter=await createQaCalibrationRequestAdapter(f.adapterOptions);await adapter.request(optionsFor('health'));
+  await assert.rejects(adapter.request({...optionsFor('health'),sample:1}),/CALIBRATION_REQUEST_ID_REUSED|CALIBRATION_OWNED_PERFORMANCE_CLOCK_REGRESSED/);
+  assert.match(f.saved.at(-1).name,/-failed/);await adapter.close();
+ }
+ const f=fixture(),adapter=await createQaCalibrationRequestAdapter(f.adapterOptions);await adapter.request(optionsFor('health'));
+ const original=JSON.parse(f.saved.at(-1).bytes);
+ for(const outside of ['before','after']){const raw=structuredClone(original);raw.requests[0].received.monotonicMs=outside==='before'?raw.commandSent.monotonicMs-1:raw.commandReturned.monotonicMs+1;
+  assert.throws(()=>validateQaCalibrationRequestEvidence(raw,{scope,options:optionsFor('health')}),/CALIBRATION_REQUEST_CAPTURE_NOT_FRESH/);}
+ await adapter.close();
+});
+
+test('literal health endpoint still rejects the genuine NOT_FOUND status and body contract instead of admitting 404',async()=>{
+ const f=fixture('health-404'),adapter=await createQaCalibrationRequestAdapter(f.adapterOptions);
+ await assert.rejects(adapter.request(optionsFor('health')),error=>error.actual===404&&error.expected===200);
+ const raw=JSON.parse(f.saved.at(-1).bytes);assert.equal(raw.pageResult.status,404);assert.equal(raw.pageResult.responseBodyBytes,52);
+ assert.equal(raw.pageResult.responseBodySha256,'25f169010390e1601e36cbf51501ebd84b050cd8c0c27cb3a6c92c286326a5c7');
+ assert.equal(raw.failed.length,0);assert.equal(raw.finished.length,1);assert.equal(f.requestCount(),1);await adapter.close();
+});
 
 test('fixed archived QA APK, certificate and original readback are required, clone UID and ignored TLS cannot be accepted',async()=>{
  const metadata=JSON.parse(await readFile(new URL('../review/android-player-20261010/root-native-recovery-build-20261010/artifacts/qa/build-metadata.json',import.meta.url)));
