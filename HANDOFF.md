@@ -49,7 +49,10 @@
 - source07 候选已完成真实素材并行下载/模块导入、默认大厅头像复用原始 atlas Blob、宿主确认返回时避免临时结果资源加载。21 文件冻结、168 单元测试及真实 DOM/素材检查通过；canonical build 已完成（1,761 输入 / 740 输出），尚未部署，真机性能仍需新证明。
 - source07 候选 build stamp SHA `3d5bd2cb91a9439ff0fd2314eb0560e04b70254c231f12879faad32562b65d10`，release manifest SHA `4e6ac604068a797110553b5784e3fd7468e5b9caf66ca17196381235e89bc9b5`（1,208 文件）；06→07 增量 552,455 B。实际 dist 的 Run WebGL/丢 ACK/授权恢复 3 检查及 onboarding 9 检查通过、源文件不变，均为独立本地 HTTP/PG 检查，不是手机或公开网络性能证明。
 - 新可见反馈采集器已推送，116 项验证通过：固定 WebView 150 原始 Chromium 源码与协议、保留原始 PNG/元数据和账号/iframe/页面身份、记录实际控件状态与原始权威请求，并将截图证明与连续性能采样分开。首次变化 PNG 时间仅是捕获内容的保守上界，不能代表屏幕呈现或物理输入延迟；真实07采样尚未执行。
-- 100 会话/900 秒的独立真实 HTTP/Postgres 容量工具 v2 已冻结，41 项验证通过，修复清理证据失败及进程组残留误判，绑定真实07开放收据。尚未执行负载；不得把工具准备或合成会话当作手机/真实资金验收。
+- 原容量工具 v2 为历史准备，绑定07回执；当前 source08 的 v4 已绑定真实 closed10/open11 及原执行链，正在接入最后 Mock 清理已成功的独立读回完成冻结。100 会话/900 秒真实 HTTP/Postgres 负载尚未执行，隔离负载数据必须完整清理；不得把工具准备或合成会话当作手机/真实资金验收。
+- 原标准接受与同一实际输入、权威受理序号和原始 PNG 关联的捕获内容时间上界；可见反馈门禁已修正为原100ms标准，保留归属、丢帧和超时约束。Run 的局部原始证据不能跨游戏复用，source08 逐款真实采样仍未执行。
+- 2026-10-11 新增独立弱网工具和原始 WebView 请求采集器，已通过独立复核并提交。代理所有类别记录统一受总量上限约束，每个请求需绑定目标、配置时段、双时钟和真实传输字节；原CDP请求/TLS/身份及实际消费体保留私有证据。12项代理、9项新采集器聚焦测试通过。尚未实际修改手机网络或完成真实网络校准；工具测试不代表游戏性能通过。
+- 新加载时间轴保留实际原生点击准备/发送/完成、原文档可信事件时钟、等待原因、严格可玩边界及后续 drain/资源验证时间。74项定向检查及Root独立10项通过，原加载数值、阈值、失败结果和网络标记未改；新采集器 SHA `d98b07fb97d51c0dfb461c0fabf49b61e9101e0d937bfec8c0a40fc9e41f0be9`，尚待实际source08手机采样。
 - 标准见 `platform/specs/mobile-quality-v1.md/json`：完整冷热入口各 5 次、逐款至少 15 分钟/3 完整局/30 操作、帧间隔、延迟、生命周期、内容和服务端容量等。当前尚未完成这些门槛；Android RAF/桌面 CPU 节流不等于 GPU 显示帧率或 iPhone 验收。
 
 ## Mock 清理
@@ -62,7 +65,9 @@
 - 退役后旧 `/player` 跳转实际 Player，旧 demo/API/download 410，共享不可变资源、TLS、其他业务和生产实例需独立读回保持正常。
 - 独立最终读回 SHA `dabc588a288ecd74179143af72f7c410100fb5c65b45e61c46b7430794d1a5e8`：旧容器/卷/端口不存在、retained 保护 stable diff 为空、旧入口 410、实际 Player/生产 health 200，生产指针仍为 source06。服务器 `/opt/oasis` 可用约 9.34GB（十进制）。
 - 74 份历史 mock 备份已实际删除：370 文件、506,762,659 B 逻辑大小、507,858,944 B 分配大小。完成原始收据 SHA `7a7622d43942b300f22e4a31449a988df3bf83b1141670bed1e939c740cd673f`；独立读回 SHA `9866b6d89b21b00eb65f58dffd70ad833df612325d33defc79f95a987c1323e2`，74 路径全不存在、148 个原始 barrier 及完整保护通过。名义删除大小不等于磁盘净增加，保留证据也占空间。
-- 最后 `/opt/oasis/backups/20261009T155133Z` 的 5 文件共12,829,348 B仍保留。source08修复、关闭及开放已实际完成，精确删除工具正在绑定真实回执，尚未执行。source08原刷新已完成真实备份/隔离恢复，不重复执行；共享不可变资源、旧current03的TLS依赖及其他业务保持保护。
+- 最后 `/opt/oasis/backups/20261009T155133Z` 的5文件、12,829,348 B及空目录已实际删除。原始完成回执 SHA `18b062b69edf1572d3cb164f3b24684944d670b750354cfb9dc63a446ef8ecaa`：严格保护检查、原始文件FD和16行删除日志、三个实际窗口及最终时钟读回已独立复算，删除临界段18.83秒，小于40秒预算；没有SQL、服务或定时器写入。原journal SHA `4d57cd96d05f3e305110b00b5cf866bb4a537dc18c8b76c94202cb597013c4b0` 和 started SHA `25a04d88874a9c6c73a9d1067e5a35100c6a7b0dbbbfcf9e079322dd032e4570` 已实际只读取回并核验。
+- 独立最终读回 a5、a6 均在 `FINAL_READONLY_PROTECTION_CHANGED` 拒绝，原始失败保留。只读诊断 SHA `494f2fd74540f4f052420e9904dc72106d4ee3bb6c70945c68aaab40f712e8fa` 确认唯一变化为四个已退役服务 Requires 原成员顺序及对应派生差异记录；其余七个完整保护部分、锁、备份父目录、目标不存在和输入FD检查通过。诊断准入仍为 false。
+- 新独立只读工具 v4 SHA `14a2226306cea497ba1464de6d32627635a45b2c7bb04faede96c7daf6f5194d` 仅修正原四个服务已验证的顺序比较，原定时器/未知域/其他七部分仍严格，原删除工具和历史失败字节未改。实际 a7 成功读回 SHA `551ca3dfdc1994b5669c691421a1480459378cd8aefd9e7223cebf0117890abf`、原执行证明 SHA `17964d5aaa57651a693f709e67dada72a4555cd6d76b220c7a28eaaa910e593f`：helper/SSH exit0、stderr0、原FD保持，5文件/目录不存在；原始双快照比较、16行journal及四定时器配置已独立复算。容量实际负载、手机完整游戏验收和APK交付仍待完成，不把清理通过当作完整上线通过。source08原生产备份、共享不可变资源、旧current03的TLS依赖及其他业务继续保护。
 
 ## 证据和接手
 
@@ -84,6 +89,6 @@
 - `firstparty-release-20261010/root-refresh07-v2-actual-3h40kmon/`：v2 原 audit/approval/check/partial、原 API 与定时器恢复、失败资源检查及独立完整恢复读回；全部历史原字节保留。
 - `firstparty-release-20261010/root-refresh07-v3-actual-kf7jcutf/`：已提交 revision9 的原关闭失败、API 精确恢复及三组差异的原始诊断。
 - `firstparty-release-20261010/root-refresh07-v4-actual-96_yewxh/`：实际 audit/check、仅三 timer start 的原失败、完整静态 snapshot 和证书/监控 job 故障读回。
-- `firstparty-release-20261010/root-refresh08-actual-mm23x344/`：source08原失败、实际API恢复、新接续关闭及开放的原始回执、执行证明和完整只读证据。未完成最后Mock备份删除、source08新真机性能、容量负载及APK公网交付。
+- `firstparty-release-20261010/root-refresh08-actual-mm23x344/`：source08原失败、实际API恢复、新接续关闭及开放、最后5个Mock备份文件实际删除的原始回执/执行证明/journal、原始失败读回和新v4独立清理读回成功。source08新真机性能、容量负载及APK公网交付尚未完成。
 
 后续操作前重新检查 git、部署指针、进程归属、空间及自有房间；保护历史 receipt/controller 外部 SHA，不得修改冻结历史文件来绕过状态变化。完成后提供实际可用交付物、最终提交/推送及 git status 读回。
