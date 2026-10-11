@@ -5,6 +5,7 @@ import {constants} from 'node:fs';
 import {basename,dirname,join,resolve} from 'node:path';
 import {validateBuildConfiguration} from '../android-player/build-config.mjs';
 import {ARENA_IDS} from '../shared/games.mjs';
+import {NATIVE_HEALTH_SOURCE08,validateNativeHealthProducerContract} from '../deploy/native-browser-checks.mjs';
 
 export const playerEvidenceHash=value=>createHash('sha256').update(value).digest('hex');
 const id=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(value);
@@ -15,7 +16,7 @@ const terminal=status=>['settled','cancelled','voided'].includes(status);
 
 export function playerAcceptanceArguments(argv){
  const result={mode:'basic',run:false};
- const keys={'--metadata':'metadata','--credentials-file':'credentialsFile','--platform-manifest':'platformManifest','--apksigner':'apksigner','--output':'output','--adb-port':'adbPort','--serial':'serial','--mode':'mode','--games':'games'};
+ const keys={'--metadata':'metadata','--credentials-file':'credentialsFile','--platform-manifest':'platformManifest','--health-producer-contract':'healthProducerContract','--apksigner':'apksigner','--output':'output','--adb-port':'adbPort','--serial':'serial','--mode':'mode','--games':'games'};
  const seen=new Set();
  for(let i=0;i<argv.length;i++){
   const flag=argv[i];assert.ok(!seen.has(flag),'DUPLICATE_ARGUMENT');seen.add(flag);
@@ -104,6 +105,43 @@ export async function readPlayerCredentials(path,redactor,{openFile=open,statPat
  let value;try{value=JSON.parse(bytes);}catch{throw Error('PRIVATE_CREDENTIAL_JSON_INVALID');}redactor.remember(value);
  assert.ok(exact(value,['username','password'])&&typeof value.username==='string'&&/^[A-Za-z0-9][A-Za-z0-9_.-]{2,63}$/.test(value.username)&&typeof value.password==='string'&&value.password.length>=12&&value.password.length<=256,'PRIVATE_CREDENTIAL_SCHEMA_INVALID');
  return Object.freeze(value);
+}
+
+/** Read one frozen local producer selection. Root must independently confirm the
+ * live deployment; historical receipt/source hashes are not a fresh remote check. */
+export async function readNativeHealthProducerContract(path,{root,origin,openFile=open,statPath=lstat}={}){
+ const fields=['dev','ino','mode','uid','gid','nlink','size','mtimeNs','ctimeNs'];
+ const same=(a,b)=>fields.every(key=>a[key]===b[key]);
+ const metadata=info=>Object.fromEntries(fields.map(key=>[key,String(info[key])]));
+ async function readStable(file,{limit,privateContract=false}={}){
+  const valid=info=>info.isFile()&&!info.isSymbolicLink()&&info.nlink===1n&&(!privateContract||(info.mode&0o7777n)===0o600n&&info.uid===BigInt(process.getuid()));
+  const before=await statPath(file,{bigint:true});assert.ok(valid(before),'HEALTH_PRODUCER_FILE_IDENTITY_INVALID');assert.ok(before.size>0n&&before.size<=BigInt(limit),'HEALTH_PRODUCER_FILE_SIZE_INVALID');
+  let handle;try{
+   handle=await openFile(file,constants.O_RDONLY|constants.O_NOFOLLOW|constants.O_NONBLOCK);const opened=await handle.stat({bigint:true});assert.ok(valid(opened)&&same(before,opened),'HEALTH_PRODUCER_FILE_REPLACED');
+   const buffer=Buffer.alloc(Number(opened.size)+1);let size=0;
+   while(size<buffer.length){const {bytesRead}=await handle.read(buffer,size,buffer.length-size,size);if(bytesRead===0)break;size+=bytesRead;}
+   const after=await handle.stat({bigint:true}),pathAfter=await statPath(file,{bigint:true});assert.ok(valid(after)&&valid(pathAfter)&&same(opened,after)&&same(opened,pathAfter)&&BigInt(size)===opened.size,'HEALTH_PRODUCER_FILE_CHANGED');
+   const bytes=buffer.subarray(0,size);return{bytes,sha256:playerEvidenceHash(bytes),metadata:metadata(after)};
+  }finally{await handle?.close();}
+ }
+ const contractPath=resolve(path),input=await readStable(contractPath,{limit:16384,privateContract:true});
+ let value;try{value=JSON.parse(input.bytes);}catch{throw Error('HEALTH_PRODUCER_CONTRACT_JSON_INVALID');}
+ const contract=validateNativeHealthProducerContract(value,{origin});
+ const manifest=await readStable(contract.release_manifest.path,{limit:2*1024*1024});assert.equal(manifest.sha256,contract.release_manifest.sha256,'HEALTH_PRODUCER_ACTUAL_MANIFEST_MISMATCH');
+ const raw=JSON.parse(manifest.bytes),sourcePins={};
+ for(const [name,expected]of Object.entries(NATIVE_HEALTH_SOURCE08.sourceSha256)){
+  assert.equal(raw?.[name],expected,'HEALTH_PRODUCER_ACTUAL_MANIFEST_SOURCE_MISMATCH');
+  const source=await readStable(join(root,name.slice('platform/'.length)),{limit:2*1024*1024});assert.equal(source.sha256,expected,'HEALTH_PRODUCER_ACTUAL_SOURCE_MISMATCH');sourcePins[name]=source.sha256;
+ }
+ validateNativeHealthProducerContract(contract,{origin,manifestSha256:manifest.sha256,sourcePins});
+ const deployment=await readStable(contract.deployment_evidence.path,{limit:8*1024*1024});assert.equal(deployment.sha256,contract.deployment_evidence.sha256,'HEALTH_PRODUCER_ACTUAL_DEPLOYMENT_EVIDENCE_MISMATCH');
+ // These paths were read from the original e520 receipt, not guessed from the
+ // local build stamp. A failed capacity receipt cannot satisfy this authority.
+ const authority=JSON.parse(deployment.bytes);assert.equal(authority.schema,1,'HEALTH_PRODUCER_DEPLOYMENT_SCHEMA_INVALID');assert.equal(authority.passed,true,'HEALTH_PRODUCER_DEPLOYMENT_NOT_CONFIRMED');assert.equal(authority.phase,'complete_free_open','HEALTH_PRODUCER_DEPLOYMENT_NOT_CONFIRMED');
+ assert.equal(authority.target_manifest_sha256,manifest.sha256,'HEALTH_PRODUCER_DEPLOYMENT_MANIFEST_MISMATCH');assert.equal(authority.target_release,'/opt/oasis/releases/20261011-01','HEALTH_PRODUCER_DEPLOYMENT_RELEASE_MISMATCH');
+ assert.equal(authority.final?.inspection?.environment,'production','HEALTH_PRODUCER_DEPLOYMENT_ENVIRONMENT_MISMATCH');assert.equal(authority.final?.https?.passed,true,'HEALTH_PRODUCER_DEPLOYMENT_TLS_UNPROVEN');assert.equal(authority.final.https.origin,origin,'HEALTH_PRODUCER_DEPLOYMENT_ORIGIN_MISMATCH');
+ assert.equal(authority.final?.state?.runtime_profile?.manifest_sha256,manifest.sha256,'HEALTH_PRODUCER_RUNTIME_MANIFEST_MISMATCH');assert.equal(authority.final.state.runtime_profile.public_origin,origin,'HEALTH_PRODUCER_RUNTIME_ORIGIN_MISMATCH');assert.equal(authority.final.state.runtime_profile.release,authority.target_release,'HEALTH_PRODUCER_RUNTIME_RELEASE_MISMATCH');
+ return Object.freeze({contract,sha256:input.sha256,provenance:Object.freeze({contract_path:contractPath,contract_metadata:input.metadata,release_manifest:{...contract.release_manifest,metadata:manifest.metadata},source_sha256:sourcePins,deployment_evidence:{...contract.deployment_evidence,metadata:deployment.metadata},selection:'Explicit frozen source08 production producer contract',fresh_deployment_confirmation:false,live_confirmation_owner:'Root execution wrapper; not this local contract reader',consumer_mode:'producer-bound-native-arraybuffer',runtime_byte_cap:false,producer_max_body_bytes:42,post_read_body_limit_bytes:16384})});
 }
 
 export function assertPlayerLobbyBaseline({metadata,session,wallet,recovery,appId,username}){

@@ -16,7 +16,7 @@ import {parseAndroidForwards,ownedAndroidForward,assertAndroidForwardsRestored,a
 import {installNativeFetchProbe,observeNativeBrowser,runNativeActionOnce,nativeErrorsEmpty,createNativeCleanupApi} from '../deploy/native-browser-checks.mjs';
 import {formatPlayerMinor} from '../src/pages/PlayerClient.mjs';
 import {installOwnedPlayerResourceEvidence,validateConsumedImageEvidence,deliveryProofForRow,generatedScriptProofForResponse} from './android-player-resource-evidence.mjs';
-import {playerAcceptanceArguments,readPlayerArtifact,createPlayerEvidenceRedactor,readPlayerCredentials,assertPlayerLobbyBaseline,assertPlayerZeroWallet,assertOwnedPlayerArenaState,assertPlayerReturnReadback,playerResourceManifest,assertPlayerResourceBody,assertInstalledPlayerArtifact,playerEvidenceHash,playerShellSourcePins,playerRunResumeEvidence} from './android-player-acceptance-checks.mjs';
+import {playerAcceptanceArguments,readPlayerArtifact,createPlayerEvidenceRedactor,readPlayerCredentials,readNativeHealthProducerContract,assertPlayerLobbyBaseline,assertPlayerZeroWallet,assertOwnedPlayerArenaState,assertPlayerReturnReadback,playerResourceManifest,assertPlayerResourceBody,assertInstalledPlayerArtifact,playerEvidenceHash,playerShellSourcePins,playerRunResumeEvidence} from './android-player-acceptance-checks.mjs';
 
 const ROOT=fileURLToPath(new URL('../',import.meta.url)),execute=promisify(execFile);
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -215,10 +215,12 @@ export async function runPlayerAcceptance(options){
  const manifestPath=resolve(options.platformManifest),manifestInfo=await lstat(manifestPath);assert.ok(manifestInfo.isFile()&&!manifestInfo.isSymbolicLink(),'RELEASE_MANIFEST_FILE_REQUIRED');
  const manifestBytes=await readFile(manifestPath),manifest=playerResourceManifest(JSON.parse(manifestBytes)),manifestSha=playerEvidenceHash(manifestBytes);
  const runtimePins=await verifyPlayerAcceptanceRuntime(ROOT,manifest.inputs);
+ const healthProducerContract=options.healthProducerContract?await readNativeHealthProducerContract(options.healthProducerContract,{root:ROOT,origin:artifact.origin}):null;
  const out=resolve(options.output);await mkdir(out,{mode:0o700});await mkdir(join(out,'bodies'),{mode:0o700});
  const report={schema:'android-real-player-acceptance-v1',mode:options.mode,started_at:new Date().toISOString(),passed:false,executed:false,physical_device:false,
   scope:'Signed real Player QA shell; production cookie identity and zero wallet; one trusted Android/UI action per admitted arena and original-session return/cleanup. Not complete game, frame-rate, iPhone or third-party transfer acceptance.',
   artifact:{metadataSha256:artifact.metadataSha256,apkSha256:artifact.apkSha256,certificateSha256:artifact.certificateSha256,origin:artifact.origin,appId:artifact.appId,packageName:artifact.packageName,sourceEvidence:artifact.sourceEvidence},release:{manifestSha256:manifestSha,runtimePins},games:[],resources:{events:[],errors:[]},lifecycle:{included:options.mode==='lifecycle',separate_report:options.mode==='lifecycle',basic_smoke_is_not_recovery_acceptance:true}};
+ if(healthProducerContract)report.health_producer_contract=healthProducerContract;
  const save=async()=>writeFile(join(out,'report.json'),JSON.stringify(redactor.sanitize(report),null,2)+'\n',{mode:0o600});await save();
  if(!options.run){report.preflight_passed=true;report.scope='Local artifact/source/signature preflight only. No ADB, login, network, device or acceptance run.';await save();return report;}
  const credentials=await readPlayerCredentials(options.credentialsFile,redactor),origin=artifact.origin,pkg=artifact.packageName,component=pkg+'/com.tianyahuyu.oasis.player.MainActivity';
@@ -275,7 +277,7 @@ export async function runPlayerAcceptance(options){
   forward={serial:options.serial,local:'tcp:'+port,port,remote};ownedAndroidForward(localBefore,await forwards(),forward);report.resources.events.push({event:'forward-created',...forward});
   browser=await chromium.connectOverCDP('http://127.0.0.1:'+port,{isWebView:true,noDefaults:true,timeout:15000});assert.equal(browser.contexts().length,1,'EXACT_PLAYER_CONTEXT_REQUIRED');context=browser.contexts()[0];
   await until(()=>context.pages().length===1,'EXACT_PLAYER_PAGE');page=context.pages()[0];await until(()=>page.url()===artifact.entryUrl,'EXACT_PLAYER_ENTRY');page.setDefaultTimeout(45000);await page.waitForLoadState('networkidle',{timeout:30000});
-  probe=await installNativeFetchProbe(context,{clean:redactor.clean});await probe.attach(page);const dir='connection-'+(++connection);await mkdir(join(out,dir),{mode:0o700});evidence=await collectPlayerEvidence({context,page,origin,manifest,out:join(out,dir),redactor,result:report});
+  probe=await installNativeFetchProbe(context,{clean:redactor.clean,healthProducerContract});await probe.attach(page);const dir='connection-'+(++connection);await mkdir(join(out,dir),{mode:0o700});evidence=await collectPlayerEvidence({context,page,origin,manifest,out:join(out,dir),redactor,result:report});
   report.resources.events.push({event:'fresh-measured-webview',connection,evidence:dir,initial_unobserved_document_excluded:true});
   await page.reload({waitUntil:'domcontentloaded'});await page.locator('.player-lobby').waitFor();
  };
@@ -354,6 +356,7 @@ export async function runPlayerAcceptance(options){
    active=null;
   }
   report.installed_after=await installed();assert.deepEqual(report.installed_after,report.installed_before,'PLAYER_APK_CHANGED_DURING_ACCEPTANCE');assert.deepEqual(await playerShellSourcePins(join(ROOT,'android-player')),artifact.sourceEvidence.files,'PLAYER_SOURCE_CHANGED_DURING_ACCEPTANCE');assert.equal(playerEvidenceHash(await readFile(manifestPath)),manifestSha,'RELEASE_MANIFEST_CHANGED_DURING_ACCEPTANCE');
+  if(healthProducerContract)assert.equal((await readNativeHealthProducerContract(options.healthProducerContract,{root:ROOT,origin:artifact.origin})).sha256,healthProducerContract.sha256,'HEALTH_PRODUCER_CONTRACT_CHANGED_DURING_ACCEPTANCE');
   for(const[name,digest]of Object.entries(runtimePins))assert.equal(playerEvidenceHash(await readFile(join(ROOT,name))),digest,'RUNTIME_SOURCE_CHANGED_DURING_ACCEPTANCE: '+name);
   report.basic_passed=report.full_catalog&&report.games.every(g=>g.passed&&g.cleanup?.passed);report.passed=options.mode==='basic'&&report.basic_passed;
  }catch(error){report.failure=redactor.clean(error.stack);}
@@ -363,7 +366,7 @@ export async function runPlayerAcceptance(options){
   try{await closeConnection();}catch(error){report.resources.errors.push(redactor.clean(error.message));}
   try{await apiContext?.dispose();}catch(error){report.resources.errors.push(redactor.clean(error.message));}
   if(forward){try{assert.deepEqual((await forwards()).filter(r=>r.local===forward.local),[{serial:forward.serial,local:forward.local,remote:forward.remote}],'OWNED_FORWARD_REPLACED_NO_REMOVE');await adb('forward','--remove',forward.local);}catch(error){report.resources.errors.push(redactor.clean(error.message));}}
-  if(started){try{await adb('shell','am','force-stop',pkg);if(foreground)await adb('shell','am','start','-n',foreground);report.resources.restoredForeground=androidForeground(await adb('shell','dumpsys','activity','activities'));assert.equal(report.resources.restoredForeground,foreground,'ORIGINAL_FOREGROUND_NOT_RESTORED');}catch(error){report.resources.errors.push(redactor.clean(error.message));}}
+  if(started){try{await adb('shell','am','force-stop',pkg);if(foreground){await adb('shell','am','start','-n',foreground);await until(async()=>{report.resources.restoredForeground=androidForeground(await adb('shell','dumpsys','activity','activities'));return report.resources.restoredForeground===foreground;},'ORIGINAL_FOREGROUND_NOT_RESTORED',10000);}else report.resources.restoredForeground=androidForeground(await adb('shell','dumpsys','activity','activities'));assert.equal(report.resources.restoredForeground,foreground,'ORIGINAL_FOREGROUND_NOT_RESTORED');}catch(error){report.resources.errors.push(redactor.clean(error.message));}}
   if(beforeForwards){try{report.resources.afterForwards=await forwards();assertAndroidForwardsRestored(beforeForwards,report.resources.afterForwards);}catch(error){report.resources.errors.push(redactor.clean(error.message));}}
   report.resources.passed=report.resources.errors.length===0;report.basic_passed=report.full_catalog&&report.games.length===ARENA_IDS.length&&report.games.every(g=>g.passed&&g.post_close_drained&&g.cleanup?.passed);report.passed=options.mode==='basic'&&report.basic_passed&&!report.failure&&report.resources.passed;report.finished_at=new Date().toISOString();await save();
  }

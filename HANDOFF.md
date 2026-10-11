@@ -1,4 +1,4 @@
-# 游戏平台交接 — 2026-10-11
+# 游戏平台交接 — 2026-10-12
 
 用户要求：界面和游戏流畅、达到上线标准；提供最简 APK；删除其他 Mock 应用及数据；使用真实数据和接口，已连接本机 Android 手机。工作仍在进行，尚未达到完整第三方接入上线标准。
 
@@ -64,8 +64,10 @@
 - `current08-native-basic-a4` 实际报告 SHA `ab512a60767383ffa5a0574c5cbc1a747b5e608ad1c46428a08fc2a838bfd958`：Match、Golf、Carrom、Darts、Ludo、Jackaroo、Domino 七款完成真实操作/权威确认、返回、自有房间清理及 post-close drain。逐 Blob 的原始生成时钟/源 GET 完成时钟和原生 Request/Response 独立绑定已修复，27项针对性验证通过；本轮 Golf 资源证据通过。补存前台 QA 的 Android 原生截图，Golf 球场实际可见，此前 CDP 截图不能作为球场未渲染证据。这仍是逐款一次操作的基础验收。
 - a4 在 Pool 玩法前拒绝：唯一 `/health` GET 消费完整42B/EOF、最终 signal=false，无 timeout/cancel；同一 CDP 请求却以 `ERR_ABORTED` 结束。原严格门槛、失败报告均保留，Pool 无房间或玩法操作。随后 force-stop 清理产生 TargetClosed/正文不可用，立即恢复原 QA 前台的严格读回也未通过；`resources.passed=false`，完整 forwards 已恢复。不能把七款操作成功声明为完整11款或上线通过。
 - 弱网实际 v2 在 QA Activity 短类名处拒绝，v3 修正完整类名后首次 baseline 切换被两个非目标后台直通连接阻挡；原始报告分别 SHA `27c70a1fd5868970ef0cd238b214d1480702795c073830ed63790eb814b0c3c9`、`444245820d6afb3a581980420b98294d2c20a3249f81d6bf2dcf1c78267ced72`。最小修复保留非目标 socket/字节、活跃目标仍拒绝切换。v4 实际报告 SHA `617b63069ad7c9ce5aab28faec9d6c4005697c6a69c952a24d54085b286720ea`：首个带查询参数的 `/health/ready` 被真实接口返回404，尚未校准。三轮六项关闭/原网络最终读回均通过；正在修正健康请求地址及跨请求唯一证据，阈值未变。
-- 容量 v8 诊断工具已正式封存，helper SHA `c6661f4ddd4e71f7b2948d12bd8746d86439d268e76d5bf9c18cfe68335781a1`。仅通过私有单入口 ESM loader 加入 IPC/退出/原始日志和临时文件清理证据，真实 source08、子服务器/引擎、所有13款、100用户/900秒及资源和阈值保持。原入口磁盘 SHA 与实际诊断模块 SHA 分别记录；诊断本身不能通过容量门禁。Root已核唯一冻结增量，11项工具及31项相关检查通过，尚未实际重跑。
-- 对固定 `/tmp/oasis-release-bench-G0qyZs` 已完成两遍只读消费审计：231进程、11个严格空FD/环境/命令的僵尸、零活动引用；仅三个固定 sandbox seed 凭据文件，原始 SHA/元数据保留且无秘密正文输出。不能证明它由 v7 独占创建，后续只作为用户授权的未用 Mock 数据精确清理，当前尚未删除。
+- 容量 v8 已实际运行失败，helper SHA `c6661f4ddd4e71f7b2948d12bd8746d86439d268e76d5bf9c18cfe68335781a1`。真实 source08、子服务器/引擎、所有13款、100用户/计划900秒及原2CPU/2GiB内存/1GiB PGDATA tmpfs和阈值保持；私有单入口 ESM loader 的原磁盘入口及实际诊断模块分别留证。原始 driver SHA `816d97647348bc60c668490c27500922447fdc4501021de91b7eea68ba3e492a`、benchmark report SHA `dd3946253b4851717348e240fdc4189c49ee81affa8e36e4c2115c55cd8d017d`：实际503.421秒、125116次HTTP、40个非预期错误，completed=false，容量未通过。17:55:41.969 UTC 专用PG写 `pg_wal/xlogtemp.110` 报空间不足，随后API子进程断开并exit1；df读回PGDATA 1GiB临时盘使用99%。九份原始产物和执行来源均已独立复核。此因果只解释v8，不能倒填旧v7缺失的退出原因。
+- v8 原四项进程/容器/网络/PG凭据清理通过，原生产及其它业务完整快照、release和准入前后一致；新增TMPDIR清理拒绝 `OWN_TEMP_CHILD_SCOPE_CHANGED`，不能声称全清理。实际只读盘点确认seed子目录已由benchmark删除，剩余是专有父目录内 `tsx-0` 的三个编译缓存，合计38743B；精确补清理仍待执行。下一轮v9拟保持原2CPU及完整100×900/13款/阈值，给专用PG 3GiB内存和2GiB PGDATA tmpfs、保持默认WAL及durability参数，明确记录不同基础设施预算，不能称原2GiB内存容量或生产磁盘等效通过。
+- 固定 `/tmp/oasis-release-bench-G0qyZs` 的三个未用 sandbox seed 凭据及空目录已实际精确删除，完成post SHA `64451b4fd9ca49aa7be3f1fe8f561ba14cb604c3424e747f3b0b4c63d2339199`。两次232进程完整扫描均无消费者，原文件完整FD/SHA及删除前CAS通过，v7原helper/driver保护前后一致。原a1至a4失败原件保留；a4的自有枚举临时FD问题由独立Linux自己PID只读探针复现，a5仅保活scandir枚举器，原复用/权限/身份保护未放宽。无法证明原目录由v7独占创建，完成证据只称用户授权的未用Mock数据清理；v8编译缓存仍属另一未完成清理。
+- Pool健康挑战可选修复已完成本地：默认仍为原16KiB bounded stream；仅显式source08固定origin/manifest/三源码SHA和原开放收据的私有合同选择原生arrayBuffer，严格验证完整42B及SHA。明确producer-bound、runtime_byte_cap=false，原5秒/10秒、唯一GET、同文档及CDP错误门槛不变；260项作者检查及Root独立8项通过。Root合同 SHA `722ef43aa2738a28c601ebc0fdc38b4b1ebb782f04fffaf7f133465f47c4b030` 仅本地读取通过，不代替新实际部署确认或手机验收；basic-a5和网络v5仍待新的实际运行。
 - 标准见 `platform/specs/mobile-quality-v1.md/json`：完整冷热入口各 5 次、逐款至少 15 分钟/3 完整局/30 操作、帧间隔、延迟、生命周期、内容和服务端容量等。当前尚未完成这些门槛；Android RAF/桌面 CPU 节流不等于 GPU 显示帧率或 iPhone 验收。
 
 ## Mock 清理

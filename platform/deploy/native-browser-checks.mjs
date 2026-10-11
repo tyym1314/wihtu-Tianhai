@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {resolve} from 'node:path';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHash} from 'node:crypto';
 import {runPracticeInputBaseline,verifyRunPracticeInputAction} from '../scripts/android-game-actions.mjs';
 import {createRunSnapshotObserver,runSnapshotRequest} from './run-snapshot-observer.mjs';
 
@@ -12,6 +12,40 @@ const assets=new Set(['document','script','stylesheet','image','media','font']);
 const message=error=>String(error?.message||error);
 const pollCancellationReasons=new Set(['OASIS_ROOM_POLL_STOPPED','OASIS_ROOM_POLL_BACKGROUND']);
 const fetchClockUncertaintyMs=1;
+
+// One reviewed producer version. This is a source-derived successful-response
+// bound, not a runtime byte cap on Response.arrayBuffer() or a live deployment check.
+export const NATIVE_HEALTH_SOURCE08=Object.freeze({
+ origin:'https://oasis-player.43.98.202.236.sslip.io',
+ manifestSha256:'960c380ac39a2083edbce269467ec497af70146e99f555a909a9a769e3b3f708',
+ deploymentEvidenceSha256:'e520860b8fd9fdf9b2da7de73aaf983a6ca28ca3e69b0c0ef7b8ebeb86b5fcf9',
+ sourceSha256:Object.freeze({
+  'platform/server/index.mjs':'7df0bca77ef21fa88f7ce94b365320d0dac2e593f15f3cf6f437545e72b667f3',
+  'platform/server/security.mjs':'20b83d7852a3852c9274152f342d8503f3db709f0fd9cf6a46dab7b43548438f',
+  'platform/server/runtime-mode.mjs':'5879393d788327354b9f34f82a1ec0be268d49a2463c17be0f52f1a85a931d1f',
+ }),
+ bodyBytes:42,bodySha256:'497add72f0f622772613ee2efaee64243b3a2cfcddb80476b239d80ecc852ddb',
+});
+
+export function validateNativeHealthProducerContract(value,{origin,manifestSha256,sourcePins}={}){
+ const exact=(item,keys)=>item&&typeof item==='object'&&!Array.isArray(item)&&Object.keys(item).length===keys.length&&keys.every(key=>Object.hasOwn(item,key));
+ const path=value=>typeof value==='string'&&value.startsWith('/')&&!value.includes('\0')&&resolve(value)===value;
+ assert.ok(exact(value,['schema','origin','method','path','environment','release_manifest','source_sha256','expected_body','deployment_evidence']),'HEALTH_PRODUCER_CONTRACT_SCHEMA_INVALID');
+ assert.equal(value.schema,'root-source08-native-health-producer-contract-v1','HEALTH_PRODUCER_CONTRACT_SCHEMA_INVALID');
+ assert.equal(value.origin,NATIVE_HEALTH_SOURCE08.origin,'HEALTH_PRODUCER_ORIGIN_MISMATCH');
+ assert.equal(value.method,'GET','HEALTH_PRODUCER_METHOD_MISMATCH');assert.equal(value.path,'/health','HEALTH_PRODUCER_PATH_MISMATCH');assert.equal(value.environment,'production','HEALTH_PRODUCER_ENVIRONMENT_MISMATCH');
+ assert.ok(exact(value.release_manifest,['path','sha256'])&&path(value.release_manifest.path),'HEALTH_PRODUCER_MANIFEST_INVALID');
+ assert.equal(value.release_manifest.sha256,NATIVE_HEALTH_SOURCE08.manifestSha256,'HEALTH_PRODUCER_MANIFEST_MISMATCH');
+ assert.deepEqual(value.source_sha256,NATIVE_HEALTH_SOURCE08.sourceSha256,'HEALTH_PRODUCER_SOURCE_MISMATCH');
+ assert.ok(exact(value.expected_body,['bytes','sha256']),'HEALTH_PRODUCER_BODY_INVALID');
+ assert.equal(value.expected_body.bytes,NATIVE_HEALTH_SOURCE08.bodyBytes,'HEALTH_PRODUCER_BODY_MISMATCH');assert.equal(value.expected_body.sha256,NATIVE_HEALTH_SOURCE08.bodySha256,'HEALTH_PRODUCER_BODY_MISMATCH');
+ assert.ok(exact(value.deployment_evidence,['path','sha256'])&&path(value.deployment_evidence.path),'HEALTH_PRODUCER_DEPLOYMENT_EVIDENCE_INVALID');
+ assert.equal(value.deployment_evidence.sha256,NATIVE_HEALTH_SOURCE08.deploymentEvidenceSha256,'HEALTH_PRODUCER_DEPLOYMENT_EVIDENCE_MISMATCH');
+ if(origin!==undefined)assert.equal(origin,value.origin,'HEALTH_PRODUCER_ARTIFACT_ORIGIN_MISMATCH');
+ if(manifestSha256!==undefined)assert.equal(manifestSha256,value.release_manifest.sha256,'HEALTH_PRODUCER_ACTUAL_MANIFEST_MISMATCH');
+ if(sourcePins!==undefined)assert.deepEqual(sourcePins,value.source_sha256,'HEALTH_PRODUCER_ACTUAL_SOURCE_MISMATCH');
+ return Object.freeze({...value,release_manifest:Object.freeze({...value.release_manifest}),source_sha256:Object.freeze({...value.source_sha256}),expected_body:Object.freeze({...value.expected_body}),deployment_evidence:Object.freeze({...value.deployment_evidence})});
+}
 
 export function createNativeFetchEvidence({clean=String}={}){
  const frames=new WeakMap(),documents=new Map(),events=[],errors=[],network=new Map(),networkDocuments=new Map(),listeners=new Set();
@@ -248,24 +282,40 @@ function nativeFetchProbe({bindingName,flushName,networkBindingName}){
 }
 
 /** Serialized challenge consumer. Telemetry never changes its request or verdict. */
-export async function nativeFetchChallengeConsumer(challengeUrl){
- const controller=new AbortController();let timer,result,bytes=0,eof=false,retainedBytes=0,dropped=0,recordErrors=0;
+export async function nativeFetchChallengeConsumer(input){
+ const producer=input!==null&&typeof input==='object'?input.producerBound:null,challengeUrl=typeof input==='string'?input:input?.challengeUrl;
+ const controller=new AbortController();let timer,result,bytes=0,eof=false,nativeBodyComplete=false,retainedBytes=0,dropped=0,recordErrors=0;
  const events=[],retained=new Uint8Array(16384),describe=error=>({name:String(error?.name||'').slice(0,256),message:String(error?.message||'').slice(0,256)});
  const record=(kind,more={})=>{try{if(events.length>=256){dropped++;return;}const now=performance.now();events.push({sequence:events.length+1,kind,at_ms:performance.timeOrigin+now,performance_now_ms:now,wall_ms:Date.now(),...more});}catch{recordErrors++;}};
  const aborted=()=>record('signal-abort',{reason:describe(controller.signal.reason),signal_aborted:controller.signal.aborted});
  controller.signal.addEventListener('abort',aborted);
  record('fetch-start',{url:challengeUrl,signal_aborted:controller.signal.aborted});
- try{result=await Promise.race([(async()=>{const response=await globalThis.fetch(challengeUrl,{method:'GET',credentials:'omit',cache:'no-store',redirect:'error',signal:controller.signal});
+ try{result=await Promise.race([(async()=>{
+  if(typeof input!=='string'&&(!producer||Object.keys(input).length!==2||Object.keys(producer).length!==3||producer.mode!=='producer-bound-native-arraybuffer'||producer.bytes!==42||producer.sha256!=='497add72f0f622772613ee2efaee64243b3a2cfcddb80476b239d80ecc852ddb'||challengeUrl!=='https://oasis-player.43.98.202.236.sslip.io/health'))throw Error('CHALLENGE_PRODUCER_CONTRACT_INVALID');
+  const response=await globalThis.fetch(challengeUrl,{method:'GET',credentials:'omit',cache:'no-store',redirect:'error',signal:controller.signal});
   record('fetch-fulfilled',{status:response.status,url:response.url,redirected:response.redirected,signal_aborted:controller.signal.aborted});
-  const reader=response.body?.getReader();let reads=0;if(reader)for(;;){record('reader-read-start',{read:++reads,bytes});const chunk=await reader.read();record('reader-read-result',{read:reads,done:chunk.done,chunk_bytes:chunk.value?.byteLength??0,bytes});if(chunk.done){eof=true;break;}bytes+=chunk.value.byteLength;if(bytes>16384){record('reader-cancel-start',{bytes,limit:16384});await reader.cancel();record('reader-cancel-done',{bytes});throw Error('CHALLENGE_BODY_LIMIT');}retained.set(chunk.value,retainedBytes);retainedBytes+=chunk.value.byteLength;}
-  record('body-done',{bytes,eof});return{status:response.status,url:response.url,redirected:response.redirected,bytes};})(),new Promise((_resolve,reject)=>{timer=setTimeout(()=>{record('timeout-fired',{delay_ms:5000});controller.abort();reject(Error('CHALLENGE_TIMEOUT'));},5000);})]);}
+  if(producer){
+   if(response.status!==200||response.url!==challengeUrl||response.redirected!==false)throw Error('CHALLENGE_PRODUCER_RESPONSE_INVALID');
+   record('native-body-start');
+   // The pinned successful producer emits 42 bytes. Native arrayBuffer reads the
+   // whole response before validation; it does not truncate a changed producer.
+   const body=new Uint8Array(await response.arrayBuffer());bytes=body.byteLength;nativeBodyComplete=true;record('native-body-complete',{bytes});
+   if(bytes>16384)throw Error('CHALLENGE_BODY_LIMIT');retained.set(body);retainedBytes=bytes;
+   const expected='{"status":"ok","environment":"production"}';
+   if(bytes!==42||body.some((value,index)=>value!==expected.charCodeAt(index)))throw Error('CHALLENGE_PRODUCER_BODY_MISMATCH');
+  }else{
+   const reader=response.body?.getReader();let reads=0;if(reader)for(;;){record('reader-read-start',{read:++reads,bytes});const chunk=await reader.read();record('reader-read-result',{read:reads,done:chunk.done,chunk_bytes:chunk.value?.byteLength??0,bytes});if(chunk.done){eof=true;break;}bytes+=chunk.value.byteLength;if(bytes>16384){record('reader-cancel-start',{bytes,limit:16384});await reader.cancel();record('reader-cancel-done',{bytes});throw Error('CHALLENGE_BODY_LIMIT');}retained.set(chunk.value,retainedBytes);retainedBytes+=chunk.value.byteLength;}
+   record('body-done',{bytes,eof});
+  }
+  return{status:response.status,url:response.url,redirected:response.redirected,bytes};})(),new Promise((_resolve,reject)=>{timer=setTimeout(()=>{record('timeout-fired',{delay_ms:5000});controller.abort();reject(Error('CHALLENGE_TIMEOUT'));},5000);})]);}
  catch(error){record('consumer-rejected',{error:describe(error),signal_aborted:controller.signal.aborted});result={failed:true};}
  finally{clearTimeout(timer);record('consumer-final',{signal_aborted:controller.signal.aborted,reason:controller.signal.aborted?describe(controller.signal.reason):null,bytes,eof});controller.signal.removeEventListener('abort',aborted);}
  let bodyBase64=null;try{bodyBase64=btoa(String.fromCharCode(...retained.subarray(0,retainedBytes)));}catch{recordErrors++;}
- return {...result,consumer_telemetry:{schema:'native-fetch-challenge-consumer-telemetry-v1',diagnostic_only:true,events,event_limit:256,dropped_events:dropped,record_errors:recordErrors,capture_complete:dropped===0&&recordErrors===0,signal_aborted:controller.signal.aborted,signal_reason:controller.signal.aborted?describe(controller.signal.reason):null,bytes,eof,body_retained_bytes:retainedBytes,body_complete:eof&&retainedBytes===bytes,body_base64:bodyBase64}};
+ return {...result,consumer_telemetry:{schema:'native-fetch-challenge-consumer-telemetry-v1',diagnostic_only:true,mode:producer?'producer-bound-native-arraybuffer':'bounded-stream',runtime_byte_cap:!producer,producer_max_body_bytes:producer?42:null,native_body_complete:nativeBodyComplete,events,event_limit:256,dropped_events:dropped,record_errors:recordErrors,capture_complete:dropped===0&&recordErrors===0,signal_aborted:controller.signal.aborted,signal_reason:controller.signal.aborted?describe(controller.signal.reason):null,bytes,eof,body_retained_bytes:retainedBytes,body_complete:(eof||nativeBodyComplete)&&retainedBytes===bytes,body_base64:bodyBase64}};
 }
 
-export async function installNativeFetchProbe(context,{clean=String}={}){
+export async function installNativeFetchProbe(context,{clean=String,healthProducerContract=null}={}){
+ if(healthProducerContract!==null){const contract=validateNativeHealthProducerContract(healthProducerContract.contract);assert.match(healthProducerContract.sha256??'',/^[a-f0-9]{64}$/,'HEALTH_PRODUCER_CONTRACT_SHA_REQUIRED');healthProducerContract=Object.freeze({...healthProducerContract,contract});}
  const evidence=createNativeFetchEvidence({clean}),suffix=randomUUID().replaceAll('-',''),bindingName=`__oasisNativeFetch_${suffix}`,flushName=`__oasisNativeFlush_${suffix}`,networkBindingName=`__oasisNativeNetwork_${suffix}`;
  const attachedPages=new WeakSet(),pageErrors=new WeakMap(),errorSubscribers=new WeakMap(),networkFlushes=[];let sessionSequence=0;
  const observeErrors=page=>{
@@ -315,13 +365,18 @@ export async function installNativeFetchProbe(context,{clean=String}={}){
    // No nonce/header is added. inspectChallenge requires one request across the
    // entire CDP collection, so any other same-URL candidate fails closed.
    const challenge=new URL('/health',url);
-   const received=await frame.evaluate(nativeFetchChallengeConsumer,challenge.href);
+   if(healthProducerContract!==null){assert.equal(parsed.origin,healthProducerContract.contract.origin,'HEALTH_PRODUCER_FRAME_ORIGIN_MISMATCH');observation.producer_contract={sha256:healthProducerContract.sha256,contract:healthProducerContract.contract,provenance:healthProducerContract.provenance};}
+   const received=await frame.evaluate(nativeFetchChallengeConsumer,healthProducerContract===null?challenge.href:{challengeUrl:challenge.href,producerBound:{mode:'producer-bound-native-arraybuffer',bytes:healthProducerContract.contract.expected_body.bytes,sha256:healthProducerContract.contract.expected_body.sha256}});
    stillOpen();
    observation.http={status:received?.status??null,url_matches:received?.url===challenge.href,redirected:received?.redirected??null,bytes:received?.bytes??null,failed:received?.failed===true};
    observation.consumer_telemetry=received?.consumer_telemetry??null;
+   if(healthProducerContract!==null){
+    const telemetry=received?.consumer_telemetry,body=typeof telemetry?.body_base64==='string'?Buffer.from(telemetry.body_base64,'base64'):null;
+    observation.producer_body={bytes:body?.length??null,sha256:body?createHash('sha256').update(body).digest('hex'):null,passed:Boolean(received?.failed!==true&&received?.bytes===42&&telemetry?.mode==='producer-bound-native-arraybuffer'&&telemetry.runtime_byte_cap===false&&telemetry.producer_max_body_bytes===42&&telemetry.native_body_complete===true&&telemetry.eof===false&&telemetry.signal_aborted===false&&telemetry.bytes===42&&telemetry.body_retained_bytes===42&&telemetry.body_complete===true&&body?.length===42&&createHash('sha256').update(body).digest('hex')===NATIVE_HEALTH_SOURCE08.bodySha256)};
+   }
    const after=await frame.evaluate(async name=>typeof globalThis[name]==='function'?await globalThis[name]():null,flushName);stillOpen();observation.after=shape(after);await evidence.networkFlush();stillOpen();
    observation.challenge=evidence.inspectChallenge(frame,before.document_id,challenge.href,before.event_seq,after?.event_seq);
-   if(!valid(after)||after.document_id!==before.document_id||received?.status!==200||received.url!==challenge.href||received.redirected!==false||!observation.challenge.passed)throw Error('FETCH_PROBE_CHALLENGE_FAILED');
+   if(!valid(after)||after.document_id!==before.document_id||received?.status!==200||received.url!==challenge.href||received.redirected!==false||!observation.challenge.passed||healthProducerContract!==null&&!observation.producer_body.passed)throw Error('FETCH_PROBE_CHALLENGE_FAILED');
    observation.passed=true;observation.verification='same-document-fetch-challenge';
    return Object.freeze({...after,verification:observation.verification,challenge:Object.freeze({...observation.challenge})});
   })(),new Promise((_resolve,reject)=>{deadline=setTimeout(()=>reject(Error('FETCH_PROBE_CHALLENGE_TIMEOUT')),10000);})]);}
