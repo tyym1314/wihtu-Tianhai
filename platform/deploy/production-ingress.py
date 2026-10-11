@@ -23,6 +23,8 @@ import urllib.request
 BASE = Path('/opt/oasis')
 HOST = 'oasis-player.43.98.202.236.sslip.io'
 ORIGIN = 'https://' + HOST
+PUBLIC_READY = ORIGIN + '/health/ready'
+LOCAL_READY = 'http://127.0.0.1:18891/health/ready'
 PRIVATE = BASE / 'production-ingress-private'
 WEBROOT = BASE / 'production-player-acme-webroot'
 BRIDGE = Path('/etc/nginx/conf.d/oasis-production-player-acme.conf')
@@ -32,7 +34,7 @@ CERT = BASE / 'acme/config/live/oasis-production-player'
 CERTBOT = BASE / 'certbot/bin/certbot'
 RENEW_SERVICE = Path('/etc/systemd/system/oasis-production-player-certificate.service')
 RENEW_TIMER = Path('/etc/systemd/system/oasis-production-player-certificate.timer')
-LOCK = BASE / '.production-ingress-lock'
+LOCK = PRIVATE / '.production-ingress-lock'
 HELPER_MEMBERS = {'units': 'platform/deploy/production-ingress-units.py',
                   'runtime': 'platform/deploy/production-instance/provision.py',
                   'certificate': 'platform/deploy/production-ingress-cert.py'}
@@ -327,7 +329,29 @@ def public_get(url, expected=None):
     return body
 
 
-def check(binding):
+def production_health(url):
+    require(url in (PUBLIC_READY, LOCAL_READY), 'PRODUCTION_HEALTH_SCOPE_CHANGED')
+    body = public_get(url)
+    health = json.loads(body)
+    require(isinstance(health, dict) and health.get('environment') == 'production'
+            and health.get('status') == 'ok', 'PRODUCTION_HEALTH_REQUIRED')
+    return body
+
+
+def owned_directory(path, mode, create=False):
+    if not path.exists() and not path.is_symlink():
+        require(create, 'OWNED_DIRECTORY_CHANGED')
+        path.mkdir(mode=mode)
+        path.chmod(mode)
+    info = path.lstat()
+    require(stat.S_ISDIR(info.st_mode) and info.st_uid == 0
+            and (path != PRIVATE or info.st_gid == 0)
+            and stat.S_IMODE(info.st_mode) == mode, 'OWNED_DIRECTORY_CHANGED')
+
+
+def check(binding, require_public_https=True):
+    if PRIVATE.exists() or PRIVATE.is_symlink():
+        owned_directory(PRIVATE, 0o700)
     configs = configurations(binding)
     own = {}
     for name, expected in configs.items():
@@ -345,13 +369,17 @@ def check(binding):
     certificate_scope = {'default_cli_configs': helper.default_cli_guard()}
     if (PRIVATE / 'certbot-cli.ini').exists():
         certificate_scope = helper.scope_check('renew' if CERT.exists() else 'certonly')
+    health_url, health_scope = PUBLIC_READY, 'public-production-https-ready'
+    if not require_public_https and not TLS.exists() and not TLS.is_symlink():
+        health_url, health_scope = LOCAL_READY, 'production-loopback-bootstrap-ready'
     return {'schema': 'production-ingress-check-v1', 'binding': binding,
             'certificate_units': certificate_unit_guard(binding),
             'certificate_scope': certificate_scope,
             'protected': protected_files(), 'proxy': proxy,
             'proxy_protected': proxy_configs(proxy), 'own': own,
             'shared_lock': file_pin(BASE / 'private/release.lock'),
-            'public_health': sha(public_get('https://game.tianyahuyu.com/health')),
+            'public_health': sha(production_health(health_url)),
+            'health_url': health_url, 'health_scope': health_scope,
             'read_only': True, 'checked_at_ms': int(time.time() * 1000)}
 
 
@@ -361,12 +389,7 @@ def prepare_acme(binding, expected_proxy):
     configs = configurations(binding)
     for directory, mode in [(PRIVATE, 0o700), (WEBROOT, 0o755),
                             (WEBROOT / '.well-known', 0o755), (WEBROOT / '.well-known/acme-challenge', 0o755)]:
-        if not directory.exists():
-            directory.mkdir(mode=mode)
-            directory.chmod(mode)
-        info = directory.lstat()
-        require(stat.S_ISDIR(info.st_mode) and info.st_uid == 0
-                and stat.S_IMODE(info.st_mode) == mode, 'OWNED_DIRECTORY_CHANGED')
+        owned_directory(directory, mode, create=True)
     load_bound_helper(binding, 'certificate').prepare_cli_config()
     exact_file(BRIDGE, configs[str(BRIDGE)])
     local = PRIVATE / 'proxy-acme.conf'
@@ -447,11 +470,14 @@ def main():
     binding = release_binding(Path(args.release), args.manifest_sha256)
     if args.stage == 'check':
         require(args.output and args.output.is_absolute(), 'EXCLUSIVE_OUTPUT_REQUIRED')
-        exact_file(args.output, canonical(check(binding)), 0o600)
+        exact_file(args.output, canonical(check(binding, require_public_https=False)), 0o600)
         print('PRODUCTION_INGRESS_CHECK_PASSED')
         return
-    require(not LOCK.exists(), 'INGRESS_OPERATION_RUNNING')
-    LOCK.mkdir(mode=0o700)
+    if PRIVATE.exists() or PRIVATE.is_symlink():
+        owned_directory(PRIVATE, 0o700)
+    else:
+        require(args.stage == 'acme', 'OWNED_DIRECTORY_CHANGED')
+    lock_created = False
     shared_lock = None
     try:
         shared_lock = os.open(BASE / 'private/release.lock', os.O_RDWR | os.O_NOFOLLOW)
@@ -462,7 +488,7 @@ def main():
         release_lock_guard(shared_lock, lock_pin)
         fcntl.flock(shared_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         release_lock_guard(shared_lock, lock_pin)
-        before = check(binding)
+        before = check(binding, require_public_https=args.stage == 'renew')
         require(before['shared_lock'] == lock_pin, 'SHARED_RELEASE_LOCK_REPLACED')
         if args.stage != 'renew':
             require(args.check_file, 'CHECK_RECEIPT_REQUIRED')
@@ -473,8 +499,14 @@ def main():
                     and receipt['proxy_protected'] == before['proxy_protected']
                     and receipt['certificate_units'] == before['certificate_units']
                     and receipt['certificate_scope'] == before['certificate_scope']
-                    and receipt['shared_lock'] == before['shared_lock'], 'CHECK_RECEIPT_STALE')
+                    and receipt['shared_lock'] == before['shared_lock']
+                    and receipt.get('health_url') == before['health_url']
+                    and receipt.get('health_scope') == before['health_scope'], 'CHECK_RECEIPT_STALE')
             require(0 <= int(time.time() * 1000) - receipt['checked_at_ms'] < 15 * 60 * 1000, 'CHECK_RECEIPT_EXPIRED')
+        owned_directory(PRIVATE, 0o700, create=args.stage == 'acme')
+        require(not LOCK.exists() and not LOCK.is_symlink(), 'INGRESS_OPERATION_RUNNING')
+        LOCK.mkdir(mode=0o700)
+        lock_created = True
         operation = {'acme': lambda value: prepare_acme(value, before['proxy']),
                      'certificate': lambda value: certificate(value, before['proxy']), 'start': start,
                      'renew': lambda value: certificate(value, before['proxy'], renew=True)}[args.stage]
@@ -483,12 +515,13 @@ def main():
         require(protected_files() == before['protected'], 'OTHER_VHOST_CHANGED')
         require(proxy_identity() == before['proxy'], 'SHARED_PROXY_CHANGED')
         require(proxy_configs(before['proxy']) == before['proxy_protected'], 'OTHER_PROXY_VHOST_CHANGED')
-        public_get('https://game.tianyahuyu.com/health')
+        production_health(PUBLIC_READY if args.stage in ('start', 'renew') else before['health_url'])
         print('PRODUCTION_INGRESS_' + args.stage.upper() + '_PASSED')
     finally:
         if shared_lock is not None:
             os.close(shared_lock)
-        LOCK.rmdir()
+        if lock_created:
+            LOCK.rmdir()
 
 
 if __name__ == '__main__':

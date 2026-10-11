@@ -14,7 +14,11 @@
 - 已仅恢复原 API 和三个定时器；2026-10-10 12:20 UTC 独立完整只读读回通过，SHA `6ebe18d675da5c342bc46ad61f34936e6f827f808dbe209ea6cbcb9c4704b225`。API 实际 PID 1005937、定时器 active/jobs idle、原配置及生产指针全 pin 不变、策略 revision8 open；47 表图完全一致、28 项完整性计数为零，HTTPS/静态资源/retired410及player302通过。候选切换工具正在修复有界任务等待及当前06资源检查误用候选成员的问题；恢复不能当作07发布完成。
 - v3 实际关闭阶段于 2026-10-10 提交 revision9 closed，随后在定时器恢复后的最终读回遇到 `ADMISSION_ONESHOT_TRANSITION`。失败处理再次停止 API 和三个定时器；当前指针仍为06，没有切源或追加静态资源。原 partial SHA `2d6743697a2028afb27cc4e9c1d05658acca72567295799e76f99aa753a6db56`、已提交策略及七步原历史保留，不能重放 close SQL 或把失败收据改成成功。
 - 2026-10-11 恢复前发现三组精确保护差异：主证书 renewal.conf 仅 ARI 下次重试时间改变；12 条原监听输出各增加4个尾部空格，端口/进程/正文不变；DB RequiredBy 两个原成员顺序互换。原配置通过完整历史 SHA 重建，明确不是原文件备份，当前文件改写时间与实际主证书任务成功日志同秒。新恢复证明只采纳这些已审差异，不增加通用忽略规则或改历史保护文件。
-- 2026-10-11 实际 API 恢复通过，原始收据 SHA `c824d610cd915725adf8a03963367630aebd218d5a6c945e6abd69fb1273ca3e`：仅执行一次 `systemctl start oasis-production-api.service`，API 实际 PID1545089；current06、revision9 closed、47表图及28项零计数保持一致，已提交 marker 的新 fullpin 绑定原 partial。三个定时器仍 inactive；尚未完成 close 验收接续、source07 切换、重新开放或新真机性能采样。
+- 2026-10-11 实际 API 恢复通过，原始收据 SHA `c824d610cd915725adf8a03963367630aebd218d5a6c945e6abd69fb1273ca3e`：仅执行一次 `systemctl start oasis-production-api.service`，API 实际 PID1545089；current06、revision9 closed、47表图及28项零计数保持一致，已提交 marker 的新 fullpin 绑定原 partial。当时三个定时器 inactive，后续状态如下。
+- v4 关闭验收接续的实际 fresh audit/check 通过，47 表及28项零计数一致；仅启动三个生产定时器，未重复 SQL、停止 API 或切源。随后 `SOURCE07_AUTHORED_STATIC_CHANGED` 拒绝，原始 partial SHA `e992d5e5920ec58fee46deb5969bfe201f1ecf83c098f1fa113d7257df5b5a6f`。2026-10-11 11:03 UTC 现场回读：API PID1545089 active、current06/revision9 closed、三个 timer active；证书 service 实际 FAILED/exit1，监控正确报告该故障。没有 source07 开放或新真机性能样本。
+- 原 BASIS 完整静态只读 snapshot SHA `dd8d8ad62b035d103febfa2516b1eb278cfac1ceae07dde74f1e7fd2ba6f9735`：1,002 静态文件、25 registry receipt、11目录、head、其他祖先全部一致，仅 `/opt/oasis` 的 ctime/mtime 改变。实际 job/journal 读回 SHA `d7844eeb7c0310ffa5bdbc5720c42c0766e2f087c252a96f2212d6bec437c861`：生产证书 renew 的旧 `https://game.tianyahuyu.com/health` 依赖收到合法退役的410，其 finally 删除 `.production-ingress-lock`，时间与祖先变化一致。不能只忽略时间戳或清除 failed 状态来声称通过。
+- 新 immutable source08 的入口修复已通过本地及独立复核，两轮各115项：续期前后检查真实公网 production ready，操作锁移至已有 root700 私有目录；首装仅在 TLS 尚不存在时使用明确标记的 loopback production ready，完成后仍验证 HTTPS。继承 source07 游戏优化，06/07 冻结文件保持原字节；新包、修复后实际续期、数据恢复演练和开放验收尚未完成。
+- 2026-10-11 11:17 UTC 完整只读前置诊断 SHA `1915db0d6f76624467704ea8e468d09b50d000dea5d2304c3f75462461688a64`：current06/revision9 closed/API1545089及47表/28零计数保持，静态精确匹配上述诊断，两次 raw runtime/protection 一致。明确 healthy close completion/source admission 均 false；这是观察基线，不能当作上线验收。
 
 ## 最简 APK 和设备
 
@@ -72,5 +76,7 @@
 - `firstparty-release-20261010/root-public-retirement-resume-a2/`：新鲜 v2 audit/check、实际完成收据及独立最终读回；未来 source07 控制器必须从完成退役的保护接续，不能调用仍检查旧测试库的历史构造器。
 - `firstparty-release-20261010/root-mock-backup-purge-v2-a1sx6k8i/`：74 份备份的实际删除、原始 barrier/journal及独立最终读回。
 - `firstparty-release-20261010/root-refresh07-v2-actual-3h40kmon/`：v2 原 audit/approval/check/partial、原 API 与定时器恢复、失败资源检查及独立完整恢复读回；全部历史原字节保留。
+- `firstparty-release-20261010/root-refresh07-v3-actual-kf7jcutf/`：已提交 revision9 的原关闭失败、API 精确恢复及三组差异的原始诊断。
+- `firstparty-release-20261010/root-refresh07-v4-actual-96_yewxh/`：实际 audit/check、仅三 timer start 的原失败、完整静态 snapshot 和证书/监控 job 故障读回。
 
 后续操作前重新检查 git、部署指针、进程归属、空间及自有房间；保护历史 receipt/controller 外部 SHA，不得修改冻结历史文件来绕过状态变化。完成后提供实际可用交付物、最终提交/推送及 git status 读回。
