@@ -103,24 +103,41 @@ export async function assertRuntimeSources(root,pins){
  return {count:Object.keys(pins).length,pinsSha256:hash(JSON.stringify(pins)),verifiedAt:new Date().toISOString()};
 }
 
+/** Close-path host bound only; a timeout is failure, never cancellation or cleanup completion. */
+export async function boundedPerformanceTeardown({operation,stage,timeoutMs,checkpoint=async()=>{}}){
+ assert.equal(typeof operation,'function','TEARDOWN_OPERATION_REQUIRED');assert.equal(typeof checkpoint,'function','TEARDOWN_CHECKPOINT_REQUIRED');
+ assert.ok(typeof stage==='string'&&/^[A-Z_]{1,64}$/.test(stage),'TEARDOWN_STAGE_REQUIRED');assert.ok(Number.isSafeInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=20000,'BOUNDED_TEARDOWN_TIMEOUT_REQUIRED');
+ await checkpoint(stage,'started');let timer;
+ try{const value=await Promise.race([Promise.resolve().then(operation),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Object.assign(Error('PERFORMANCE_TEARDOWN_TIMEOUT: '+stage),{code:'PERFORMANCE_TEARDOWN_TIMEOUT',stage,timeoutMs})),timeoutMs);timer.ref();})]);await checkpoint(stage,'returned');return value;}
+ catch(error){await checkpoint(stage,error?.code==='PERFORMANCE_TEARDOWN_TIMEOUT'?'timed-out':'failed');throw error;}finally{clearTimeout(timer);}
+}
+
+/** Small sanitized progress ledger; the last entered step survives the history cap. */
+export function recordPerformanceCheckpoint(report,{stage,outcome='started',roundId=null,atEpochMs=Date.now()}){
+ assert.ok(typeof stage==='string'&&/^[A-Z_]{1,64}$/.test(stage),'TEARDOWN_STAGE_REQUIRED');assert.ok(['started','returned','failed','timed-out'].includes(outcome),'TEARDOWN_OUTCOME_REQUIRED');
+ assert.ok(roundId===null||typeof roundId==='string'&&/^[a-z]+-(?:cold|warm)-[1-9][0-9]*$/.test(roundId),'TEARDOWN_ROUND_REQUIRED');assert.ok(Number.isFinite(atEpochMs),'TEARDOWN_CHECKPOINT_CLOCK_REQUIRED');
+ const progress=report.progress??={schema:'owned-performance-progress-v1',limit:256,total:0,records:[],omitted:0};
+ const row={sequence:++progress.total,stage,outcome,roundId,atEpochMs};progress.latest=row;if(progress.records.length<progress.limit)progress.records.push(row);else progress.omitted++;return row;
+}
+
 /** Observation failures must never suppress independently proven own cleanup. */
-export async function cleanupPerformanceRound({active,baseline,stopUI,api,until,newId,clean=String}){
+export async function cleanupPerformanceRound({active,baseline,stopUI,api,until,newId,clean=String,checkpoint=async()=>{}}){
  const{state,result,observer,collector,round,nativeTaps=[]}=active;round.observerErrors??=[];
  const observationError=(stage,error)=>{round.observerErrors.push(stage+': '+clean(error.message));};
- try{await stopUI(round);result.ui_stopped=round.uiStopped;}catch(error){round.cleanup={attempted:false,passed:false,error:'UI_STOP: '+clean(error.message)};}
- try{await observer.drain({final:false});}catch(error){observationError('NATIVE_DRAIN_BEFORE_CLEANUP',error);}
+ await checkpoint('ROUND_UI_STOP','started');try{await stopUI(round);result.ui_stopped=round.uiStopped;}catch(error){round.cleanup={attempted:false,passed:false,error:'UI_STOP: '+clean(error.message)};}
+ await checkpoint('ROUND_NATIVE_DRAIN','started');try{await observer.drain({final:false});}catch(error){observationError('NATIVE_DRAIN_BEFORE_CLEANUP',error);}
  if(round.uiStopped===true){
-  try{
+  await checkpoint('ROUND_OWNED_API_CLEANUP','started');try{
    if(state.androidBaseline){assertOwnedPlayerArenaState(state,baseline);state.phase='cleanup';round.cleanup=await cleanupOwnedAndroidSession({state,arenaGames:ARENA_IDS,api,until,newId,uiStopped:true,clean});}
    else{assert.equal((state.creations?.length||0)+(state.actionRequests?.length||0)+(state.inputsRequests?.length||0),0,'MUTATION_WITHOUT_CLEAN_BASELINE');assert.equal(state.practiceRequested,false,'PRACTICE_WITHOUT_CLEAN_BASELINE');round.cleanup={passed:true,attempted:false};}
   }catch(error){round.cleanup={attempted:false,passed:false,error:'OWNED_SCOPE_CLEANUP: '+clean(error.message)};}
  }
- try{await observer.drain({final:true});}catch(error){observationError('NATIVE_FINAL_DRAIN',error);}
+ await checkpoint('ROUND_NATIVE_FINAL_DRAIN','started');try{await observer.drain({final:true});}catch(error){observationError('NATIVE_FINAL_DRAIN',error);}
  round.nativeObserverPassed=nativeErrorsEmpty(result)&&!round.observerErrors.some(error=>error.startsWith('NATIVE_'));round.nativeEvidence=result;
- try{await collector?.drain();}catch(error){observationError('CDP_DRAIN',error);}
+ await checkpoint('ROUND_CDP_DRAIN','started');try{await collector?.drain();}catch(error){observationError('CDP_DRAIN',error);}
  round.actions=collector?.actions||[];round.observerErrors.push(...(result.observer_errors||[]).map(error=>error.message),...(!round.nativeObserverPassed?['NATIVE_FUNCTIONAL_OBSERVATIONS_FAILED']:[]));
- try{await collector?.close();}catch(error){observationError('CDP_CLOSE',error);}round.network=collector?.summary();round.observerErrors.push(...(collector?.errors||[]));
- try{observer.detach();}catch(error){observationError('NATIVE_DETACH',error);}
+ await checkpoint('ROUND_CDP_CLOSE','started');try{await collector?.close();}catch(error){observationError('CDP_CLOSE',error);}round.network=collector?.summary();round.observerErrors.push(...(collector?.errors||[]));
+ await checkpoint('ROUND_NATIVE_DETACH','started');try{observer.detach();}catch(error){observationError('NATIVE_DETACH',error);}
  if(round.sampleBoundaries?.start||round.visibleFeedbackPhases?.length)partitionPerformanceRoundActions(round);
  round.nativeTapOutcomes=classifyOwnedNativeTapOutcomes({receipts:nativeTaps,requests:collector?.actionRequestDiagnostics?.()??[],actions:round.allObservedActions??round.actions,observationStage:'After original network drain and own cleanup'});
  return round.cleanup;
@@ -391,7 +408,7 @@ export async function capturePerformanceVisibleFeedbackPhase({round,collector,or
 }
 
 /** No raw CDP headers, cookies, authorization, launch exchange or API bodies leave memory. */
-export async function createPhysicalNetworkCollector({context,page,origin,game,state,baseline,manifest,nonce,round,entryUrl,drainTimeoutMs=20000}){
+export async function createPhysicalNetworkCollector({context,page,origin,game,state,baseline,manifest,nonce,round,entryUrl,drainTimeoutMs=20000,checkpoint=async()=>{}}){
  assert.ok(Number.isSafeInteger(drainTimeoutMs)&&drainTimeoutMs>0&&drainTimeoutMs<=20000,'BOUNDED_DRAIN_TIMEOUT_REQUIRED');
  const cdp=await context.newCDPSession(page),contexts=new Map(),requests=new Map(),tasks=new Set(),errors=[],records=[],actions=[],rawBodyDiagnostics=[];let candidateFrame=null,scope=null,bytes=0,closed=false,resourceSnapshot=null,resourceEvidence=null,resourceFrozen=false,resourceFinalized=false;
  const handlers=[],on=(event,fn)=>{cdp.on(event,fn);handlers.push({event,fn});};
@@ -440,9 +457,10 @@ export async function createPhysicalNetworkCollector({context,page,origin,game,s
  await cdp.send('Page.enable');await cdp.send('Runtime.enable');await cdp.send('Network.enable');await cdp.send('Network.setCacheDisabled',{cacheDisabled:false});
  async function bind(){const{frameTree}=await cdp.send('Page.getFrameTree');scope=assertGameContext({tree:frameTree,contexts:[...contexts.values()],origin,game,topUrl:page.url()});assert.equal(scope.frameId,candidateFrame,'OBSERVED_FRAME_IDENTITY_MISMATCH');return scope;}
  async function evaluate(expression){assert.ok(scope&&contexts.has(scope.contextId),'GAME_EXECUTION_CONTEXT_LOST');const value=await cdp.send('Runtime.evaluate',{expression,contextId:scope.contextId,returnByValue:true,awaitPromise:true});assert.ok(!value.exceptionDetails,'GAME_PROBE_EVALUATION_FAILED');return value.result.value;}
- async function verifyResourceEvidence({freeze=false,finish=false}={}){
-  assert.ok(entryUrl,'RESOURCE_PARENT_ENTRY_REQUIRED');const probe=await evaluate('(()=>{const p=globalThis.__oasisPhysicalPerf;return {schema:p.schema,nonce:p.nonce,documentId:p.documentId,url:p.url,timeOrigin:p.timeOrigin,frames:[],longTasks:[],gestures:[]};})()');verifyProbe(probe,{origin,game,nonce,documentId:round.documentId});
-  const began=Date.now();try{resourceSnapshot=await evaluate(finish?'globalThis.__oasisConsumedImageEvidence.stop()':'globalThis.__oasisConsumedImageEvidence.drain(15000)');}catch(error){try{resourceSnapshot=await evaluate('globalThis.__oasisConsumedImageEvidence.snapshot()');}catch{}if(resourceSnapshot)round.resourceEvidence={...resourceSnapshot,loadingDrainMs:Date.now()-began,verificationError:error.message,hashingPerturbsLoading:true,hashingDuringFrameSampling:resourceSnapshot.phase==='sampling'&&resourceSnapshot.pendingTasks>0};throw error;}
+ async function verifyResourceEvidence({freeze=false,finish=false,teardown=false}={}){
+  const readResource=(expression,stage)=>teardown?boundedPerformanceTeardown({operation:()=>evaluate(expression),stage,timeoutMs:drainTimeoutMs,checkpoint}):evaluate(expression);
+  assert.ok(entryUrl,'RESOURCE_PARENT_ENTRY_REQUIRED');const probe=await readResource('(()=>{const p=globalThis.__oasisPhysicalPerf;return {schema:p.schema,nonce:p.nonce,documentId:p.documentId,url:p.url,timeOrigin:p.timeOrigin,frames:[],longTasks:[],gestures:[]};})()','RESOURCE_FINAL_PROBE');verifyProbe(probe,{origin,game,nonce,documentId:round.documentId});
+  const began=Date.now();try{resourceSnapshot=await readResource(finish?'globalThis.__oasisConsumedImageEvidence.stop()':'globalThis.__oasisConsumedImageEvidence.drain(15000)','RESOURCE_FINAL_STOP');}catch(error){try{resourceSnapshot=await readResource('globalThis.__oasisConsumedImageEvidence.snapshot()','RESOURCE_FINAL_SNAPSHOT');}catch{}if(resourceSnapshot)round.resourceEvidence={...resourceSnapshot,loadingDrainMs:Date.now()-began,verificationError:error.message,hashingPerturbsLoading:true,hashingDuringFrameSampling:resourceSnapshot.phase==='sampling'&&resourceSnapshot.pendingTasks>0};throw error;}
   round.resourceEvidence={...resourceSnapshot,loadingDrainMs:Date.now()-began,hashingPerturbsLoading:true,hashingDuringFrameSampling:false,rawCdpBodyDiagnosticsRetained:true};
   assert.ok(!rawBodyDiagnostics.some(d=>d.nonemptyPublicBodyConflict),'RESOURCE_NONEMPTY_CDP_BODY_CONFLICT');
   resourceEvidence=validateConsumedImageEvidence(resourceSnapshot,{origin,entryUrl,game,nonce,documentId:round.documentId,timeOrigin:probe.timeOrigin,scope,manifest,requests:[...requests.values()]});
@@ -462,7 +480,10 @@ export async function createPhysicalNetworkCollector({context,page,origin,game,s
   async drain(){const end=Date.now()+drainTimeoutMs;try{while(tasks.size){const remaining=end-Date.now();assert.ok(remaining>0,'PERFORMANCE_NETWORK_DRAIN_TIMEOUT');let timer;try{await Promise.race([Promise.all([...tasks]),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('PERFORMANCE_NETWORK_DRAIN_TIMEOUT')),remaining);})]);}finally{clearTimeout(timer);}}}finally{round.pendingWork=tasks.size;}},
   summary(){const staticRows=records.filter(r=>r.static),images=staticRows.filter(r=>r.type==='Image'||/\.(?:png|webp|svg|jpg|jpeg)$/.test(r.path)),snapshots=records.filter(r=>r.method==='GET'&&/^\/api\/pvp\/rooms\//.test(r.path));return {staticEncodedBytes:staticRows.length?staticRows.reduce((s,r)=>s+r.encodedTransferBytes,0):null,imageMaxEncodedBytes:images.length?Math.max(...images.map(r=>r.encodedTransferBytes)):staticRows.length?0:null,snapshotMaxEncodedBytes:snapshots.length?Math.max(...snapshots.map(r=>r.encodedTransferBytes)):null,records,rawBodyDiagnostics,bodyPinsOnly:rawBodyDiagnostics.length===0,deliveryEvidenceSeparateFromCdpBody:true,transferCompletionSeparateFromBodyVerification:true,headersStored:false,apiBodiesStored:false,encodedScope:'Unmodified actual CDP encodedDataLength includes transport headers, including any 304 header transfer; cache delivery flags are separate'};},
   cacheFacts(){return {diskCacheSeen:records.some(r=>r.cache.disk),memoryCacheSeen:records.some(r=>r.cache.memory),reuseObserved:records.some(r=>r.cache.disk||r.cache.memory||r.status===304)};},
-  async close(){if(closed)return;closed=true;try{await this.drain();if(scope&&round.documentId&&!resourceFinalized)try{await verifyResourceEvidence({finish:true});}catch(error){errors.push('RESOURCE_FINAL_EVIDENCE: '+error.message);}for(const diagnostic of rawBodyDiagnostics)if(!diagnostic.resolvedByIndependentDelivery)errors.push('RESOURCE_ALTERNATIVE_DELIVERY_UNPROVEN: '+diagnostic.path);if(resourceFrozen&&!resourceFinalized)errors.push('RESOURCE_SAMPLING_EVIDENCE_NOT_FINALIZED');}finally{for(const {event,fn}of handlers)cdp.off(event,fn);await cdp.detach();}}
+  async close(){if(closed)return;closed=true;let failed=false,failure;
+   try{await checkpoint('CDP_CLOSE_NETWORK_DRAIN','started');await this.drain();if(scope&&round.documentId&&!resourceFinalized)try{await verifyResourceEvidence({finish:true,teardown:true});}catch(error){errors.push('RESOURCE_FINAL_EVIDENCE: '+error.message);}for(const diagnostic of rawBodyDiagnostics)if(!diagnostic.resolvedByIndependentDelivery)errors.push('RESOURCE_ALTERNATIVE_DELIVERY_UNPROVEN: '+diagnostic.path);if(resourceFrozen&&!resourceFinalized)errors.push('RESOURCE_SAMPLING_EVIDENCE_NOT_FINALIZED');}
+   catch(error){failed=true;failure=error;}finally{for(const {event,fn}of handlers)cdp.off(event,fn);try{await boundedPerformanceTeardown({operation:()=>cdp.detach(),stage:'CDP_DETACH',timeoutMs:drainTimeoutMs,checkpoint});}catch(error){if(failed)errors.push('CDP_DETACH: '+error.message);else{failed=true;failure=error;}}}if(failed)throw failure;
+  }
  };
 }
 
@@ -595,6 +616,7 @@ export async function runAndroidPerformance(options){
  const credentials=await readPlayerCredentials(options.credentialsFile,redactor),origin=artifact.origin,pkg=artifact.packageName,component=pkg+'/com.tianyahuyu.oasis.player.MainActivity';
  const adb=async(...args)=>(await execute('adb',physicalAdbArgs(options,args),{timeout:45000,maxBuffer:4*1024*1024})).stdout.trim(),forwards=async()=>parseAndroidForwards(await adb('forward','--list'));
  let beforeForwards,foreground,forward,browser,context,page,apiContext,baseline,ownedStarted=false,active=null,resourceInstrumentation=null;
+ const checkpoint=async(stage,outcome='started')=>{recordPerformanceCheckpoint(report,{stage,outcome,roundId:active?.round.id??null});try{await save();}catch(error){report.resources.errors.push('PROGRESS_SAVE: '+redactor.clean(error.message));}};
  const beforeState={};
  const tapAuthority=()=>{if(!active?.state.room)return {available:false,recordedAtEpochMs:Date.now(),reason:'No original owned room reply has been retained yet'};return {...failureAuthority(active.state,{game:active.round.game,baseline}),available:true,recordedAtEpochMs:Date.now(),clockSource:'Collector host epoch at snapshot read; separate from event DOM performance clock'};};
  const tapEvaluators=createOwnedNativeTapEvaluators();
@@ -619,8 +641,8 @@ export async function runAndroidPerformance(options){
  };
  const stopUI=async round=>{if(page&&!page.isClosed()&&await page.locator('.player-lobby').isVisible()&&await page.locator('iframe').count()===0){round.uiStopped=true;return;}await adb('shell','am','force-stop',pkg);await until(async()=>!(await adb('shell','pidof',pkg).catch(e=>{if(e.code===1)return '';throw e;})),'OWN_QA_UI_STOP');round.uiStopped=true;};
  const cleanup=async()=>{
-  if(!active)return;const current=active,{state,result,round}=current;
-  try{await cleanupPerformanceRound({active:current,baseline,stopUI,api:createNativeCleanupApi({page:{request:apiContext},origin,state,result,clean:redactor.clean}),until,newId:()=> 'physical_cleanup_'+randomUUID().replaceAll('-',''),clean:redactor.clean});}
+  if(!active)return;await checkpoint('ROUND_CLEANUP','started');const current=active,{state,result,round}=current;
+  try{await cleanupPerformanceRound({active:current,baseline,stopUI,api:createNativeCleanupApi({page:{request:apiContext},origin,state,result,clean:redactor.clean}),until,newId:()=> 'physical_cleanup_'+randomUUID().replaceAll('-',''),clean:redactor.clean,checkpoint});}
   catch(error){round.cleanup={attempted:false,passed:false,error:redactor.clean(error.message)};round.observerErrors??=[];round.observerErrors.push('ROUND_CLEANUP_UNEXPECTED: '+redactor.clean(error.message));}
   finally{active=null;}
  };
@@ -630,8 +652,8 @@ export async function runAndroidPerformance(options){
   report.device={serial:options.serial,adbPort:options.adbPort,model:await adb('shell','getprop','ro.product.model'),os:await adb('shell','getprop','ro.build.version.release'),api:Number(await adb('shell','getprop','ro.build.version.sdk')),abi:await adb('shell','getprop','ro.product.cpu.abilist'),webview:parseWebViewProvider(await adb('shell','dumpsys','webviewupdate')),refresh:parseRefresh(await adb('shell','dumpsys','display')),thermalBefore:parseThermal(await adb('shell','dumpsys','thermalservice'))};
   beforeForwards=await forwards();foreground=androidForeground(await adb('shell','dumpsys','activity','activities'));report.resources.foregroundBeforeHash=hash(foreground);beforeState.webview=report.device.webview;ownedStarted=true;
   await adb('shell','am','force-stop',pkg);await adb('shell','am','start','-n',component);await until(async()=>/^\d+$/.test(await adb('shell','pidof',pkg).catch(e=>{if(e.code===1)return '';throw e;})),'OWN_QA_PID');const pid=await adb('shell','pidof',pkg),remote='localabstract:webview_devtools_remote_'+pid;
-  await until(async()=>(await adb('shell','cat','/proc/net/unix')).includes('@webview_devtools_remote_'+pid),'OWN_QA_DEBUG_SOCKET');const existing=await forwards(),port=await adb('forward','tcp:0',remote);forward={serial:options.serial,port:Number(port),local:'tcp:'+port,remote};ownedAndroidForward(existing,await forwards(),forward);report.resources.events.push({event:'owned-forward-created',...forward});
-  browser=await chromium.connectOverCDP('http://127.0.0.1:'+port,{isWebView:true,noDefaults:true,timeout:15000});assert.equal(browser.contexts().length,1);context=browser.contexts()[0];await until(()=>context.pages().length===1,'OWN_QA_SINGLE_PAGE');page=context.pages()[0];await until(()=>page.url()===artifact.entryUrl,'ACTUAL_PLAYER_ENTRY');page.setDefaultTimeout(45000);
+  await until(async()=>(await adb('shell','cat','/proc/net/unix')).includes('@webview_devtools_remote_'+pid),'OWN_QA_DEBUG_SOCKET');const existing=await forwards(),port=await adb('forward','tcp:0',remote);forward={serial:options.serial,port:Number(port),local:'tcp:'+port,remote};ownedAndroidForward(existing,await forwards(),forward);report.resources.events.push({event:'owned-forward-created',...forward});await checkpoint('CONNECT_CDP','started');
+  browser=await chromium.connectOverCDP('http://127.0.0.1:'+port,{isWebView:true,noDefaults:true,timeout:15000});await checkpoint('CONNECT_CDP','returned');assert.equal(browser.contexts().length,1);context=browser.contexts()[0];await until(()=>context.pages().length===1,'OWN_QA_SINGLE_PAGE');page=context.pages()[0];await until(()=>page.url()===artifact.entryUrl,'ACTUAL_PLAYER_ENTRY');page.setDefaultTimeout(45000);
   // Identity/authentication run before attaching any network body observer.
   await page.reload({waitUntil:'domcontentloaded'});await page.locator('.player-lobby').waitFor();const existingLogin=await topRead('/api/player/session');
   if(existingLogin.status===200)assert.equal(existingLogin.body.player?.username,credentials.username,'INHERITED_LOGIN_PRESERVED');else{assert.equal(existingLogin.status,401);assert.equal(existingLogin.body.error?.code,'LOGIN_REQUIRED');await page.locator('input[name="username"]').fill(credentials.username);await page.locator('input[name="password"]').fill(credentials.password);const login=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/player/login'&&r.request().method()==='POST');await tap(page.getByRole('button',{name:'登录',exact:true}));assert.equal((await login).status(),200);}
@@ -645,9 +667,9 @@ export async function runAndroidPerformance(options){
    const round={id:game+'-'+cacheMode+'-'+iteration,game,cacheMode,iteration,passed:false,entry:null,actions:[],measurementPhase:'entry',motion:{pairs:[],method:'Actual decoded scene pixels in separate before/after proof phases; full proof RAF intervals retained. Continuous RAF uses exact start/end callback timestamps and contains no screenshots.'},observerErrors:[]};report.rounds.push(round);
    const state={game,token:null,sessionId:null,playerId:null,appId:null,room:null,ownedRooms:new Set(),practiceRequested:false,spins:[],acks:new Set(),returning:false,phase:'entry'},result={game,observer_errors:[]};
    const observer=ownedObserver(page,{origin,state,result,clean:redactor.clean,remember:body=>{redactor.remember(body);if(body.access_token){assert.equal(body.scope?.app_id,baseline.appId);assert.equal(body.external_user_id,baseline.externalUserId);state.appId=body.scope.app_id;}}});
-   let collector,touch,sampling=false,samplingPump,pumpError;active={state,result,observer,collector:null,round,nonce,nativeTaps:[]};
+   let collector,touch,sampling=false,samplingPump,pumpError;active={state,result,observer,collector:null,round,nonce,nativeTaps:[]};await checkpoint('ROUND_START','started');
    try{
-    collector=await createPhysicalNetworkCollector({context,page,origin,game,state,baseline,manifest,nonce,round,entryUrl:artifact.entryUrl});active.collector=collector;
+    collector=await createPhysicalNetworkCollector({context,page,origin,game,state,baseline,manifest,nonce,round,entryUrl:artifact.entryUrl,checkpoint});active.collector=collector;
     round.cache={sessionId:cacheSession,cacheDisabled:false,routing:false,cookiesCleared:false,httpCacheCleared:cacheMode==='cold',mainDocumentReloaded:false,sameContext:true,primed:primed.has(game),passed:false};
     round.lobbyReadiness={};await preparePerformanceLobbyForEntry({cacheMode,diagnostic:round.lobbyReadiness,waitLobby:(stage,diagnostic)=>waitForPerformanceLobbyWallet({page,cdp:collector.cdp,artifact,baseline,stage,diagnostic}),reloadCold:async()=>{await collector.clearOwnHttpCache();await page.reload({waitUntil:'domcontentloaded'});await page.locator('.player-games').waitFor();round.cache.mainDocumentReloaded=true;}});
     assert.equal(page.url(),artifact.entryUrl,'PLAYER_DOCUMENT_CHANGED');if(cacheMode==='cold')await collector.clearOwnHttpCache();const start=Date.now();round.startedAt=new Date(start).toISOString();round.loadTimeline=createPerformanceLoadTimeline({roundId:round.id,game,nonce,entryUrl:artifact.entryUrl,startEpochMs:start});await tap(page.locator('.player-game-card').filter({has:page.getByText(ARENA_GAMES[game].name,{exact:true})}));
@@ -693,21 +715,21 @@ export async function runAndroidPerformance(options){
     state.returning=true;state.phase='returning';await adb('shell','input','keyevent','4');await sleep(200);const leave=frame.getByRole('button',{name:'确认离开',exact:true});if(!frame.isDetached()&&await leave.isVisible())await tap(leave);const confirm=frame.locator('[data-return="confirm"]');if(!frame.isDetached()&&await confirm.isVisible())await tap(confirm);await page.locator('.player-games').waitFor();assert.equal(await page.locator('iframe').count(),0);round.returned=true;round.uiStopped=true;
     await collector.drain();Object.assign(round.cache,collector.cacheFacts());try{assertCachePosture(round.cache,{mode:cacheMode,sessionId:cacheSession});round.cache.passed=true;}catch(error){round.cache.error=redactor.clean(error.message);}
    }catch(error){await capturePerformanceRoundFailure({round,error,collector,state,baseline,origin,game,nonce,nativeTaps:active.nativeTaps,clean:redactor.clean});}
-   finally{sampling=false;await samplingPump;try{await touch?.release();}catch(error){round.observerErrors.push(redactor.clean(error.message));}await cleanup();round.finishedAt=new Date().toISOString();await save();}
+   finally{sampling=false;await checkpoint('ROUND_SAMPLING_STOP','started');await samplingPump;await checkpoint('ROUND_TOUCH_RELEASE','started');try{await touch?.release();}catch(error){round.observerErrors.push(redactor.clean(error.message));}await cleanup();round.finishedAt=new Date().toISOString();await save();}
    assertPerformanceRoundContinuation(round);assert.ok(page&&!page.isClosed()&&await page.locator('.player-games').isVisible(),'RETAINED_PLAYER_CONTEXT_LOST');assert.deepEqual((await requiredRead('/api/player/recovery?app_id='+artifact.appId)).sessions,[],'OWN_OBLIGATION_REMAINS');assertPlayerZeroWallet(await requiredRead('/api/player/wallet?app_id='+artifact.appId),artifact.appId,baseline);if(round.returned&&round.network?.records?.length&&!round.error)primed.add(game);
   }
   report.games=options.games.map(game=>evaluateAndroidPerformance(game,report.rounds.filter(r=>r.game===game),standards.thresholds,{sampleMs:options.sampleMs,networkCalibrated:false}));report.status=report.games.some(g=>g.status==='fail')?'fail':'partial';
  }catch(error){report.failure=redactor.clean(error.message);report.status='fail';}
  finally{
-  await cleanup();
-  try{await apiContext?.dispose();}catch(error){report.resources.errors.push(redactor.clean(error.message));}
-  try{await resourceInstrumentation?.dispose();}catch(error){report.resources.errors.push('RESOURCE_INIT_DISPOSE: '+redactor.clean(error.message));}
-  try{await browser?.close();}catch(error){report.resources.errors.push(redactor.clean(error.message));}
-  if(forward)try{assert.deepEqual((await forwards()).filter(r=>r.local===forward.local),[{serial:forward.serial,local:forward.local,remote:forward.remote}]);await adb('forward','--remove',forward.local);report.resources.events.push({event:'owned-forward-removed',local:forward.local});}catch(error){report.resources.errors.push(redactor.clean(error.message));}
-  if(ownedStarted)try{await adb('shell','am','force-stop',pkg);if(foreground){await adb('shell','am','start','-n',foreground);report.resources.foregroundRestoreEvidence={};const restored=await waitForOriginalAndroidForeground({read:()=>adb('shell','dumpsys','activity','activities'),expected:foreground,evidence:report.resources.foregroundRestoreEvidence});report.resources.foregroundRestoredHash=hash(restored);}}catch(error){report.resources.errors.push(redactor.clean(error.message));}
-  if(beforeForwards)try{assertAndroidForwardsRestored(beforeForwards,await forwards());report.resources.forwardsRestored=true;}catch(error){report.resources.errors.push(redactor.clean(error.message));}
-  if(report.device)try{report.device.thermalAfter=parseThermal(await adb('shell','dumpsys','thermalservice'));assert.deepEqual(parseWebViewProvider(await adb('shell','dumpsys','webviewupdate')),beforeState.webview||report.device.webview);}catch(error){report.resources.errors.push(redactor.clean(error.message));}
-  try{const finalSources=Object.fromEntries(await Promise.all(sourceFiles.map(async path=>[path,hash(await readFile(join(ROOT,path)))])));assert.deepEqual(finalSources,sources,'MEASUREMENT_SOURCE_CHANGED');report.runtimeSources.after=await assertRuntimeSources(ROOT,runtimePins);assert.equal(hash(await readFile(manifestPath)),report.releaseManifestSha256,'RELEASE_MANIFEST_CHANGED');}catch(error){report.resources.errors.push(redactor.clean(error.message));}
+  await checkpoint('FINAL_CLEANUP','started');await cleanup();
+  try{await boundedPerformanceTeardown({operation:()=>apiContext?.dispose(),stage:'API_CONTEXT_DISPOSE',timeoutMs:12000,checkpoint});}catch(error){report.resources.errors.push(redactor.clean(error.message));}
+  try{await boundedPerformanceTeardown({operation:()=>resourceInstrumentation?.dispose(),stage:'RESOURCE_INIT_DISPOSE',timeoutMs:15000,checkpoint});}catch(error){report.resources.errors.push('RESOURCE_INIT_DISPOSE: '+redactor.clean(error.message));}
+  try{await boundedPerformanceTeardown({operation:()=>browser?.close(),stage:'BROWSER_CLOSE',timeoutMs:15000,checkpoint});}catch(error){report.resources.errors.push(redactor.clean(error.message));}
+  await checkpoint('OWNED_FORWARD_REMOVE','started');if(forward)try{assert.deepEqual((await forwards()).filter(r=>r.local===forward.local),[{serial:forward.serial,local:forward.local,remote:forward.remote}]);await adb('forward','--remove',forward.local);report.resources.events.push({event:'owned-forward-removed',local:forward.local});}catch(error){report.resources.errors.push(redactor.clean(error.message));}
+  await checkpoint('FOREGROUND_RESTORE','started');if(ownedStarted)try{await adb('shell','am','force-stop',pkg);if(foreground){await adb('shell','am','start','-n',foreground);report.resources.foregroundRestoreEvidence={};const restored=await waitForOriginalAndroidForeground({read:()=>adb('shell','dumpsys','activity','activities'),expected:foreground,evidence:report.resources.foregroundRestoreEvidence});report.resources.foregroundRestoredHash=hash(restored);}}catch(error){report.resources.errors.push(redactor.clean(error.message));}
+  await checkpoint('FORWARD_READBACK','started');if(beforeForwards)try{assertAndroidForwardsRestored(beforeForwards,await forwards());report.resources.forwardsRestored=true;}catch(error){report.resources.errors.push(redactor.clean(error.message));}
+  await checkpoint('DEVICE_READBACK','started');if(report.device)try{report.device.thermalAfter=parseThermal(await adb('shell','dumpsys','thermalservice'));assert.deepEqual(parseWebViewProvider(await adb('shell','dumpsys','webviewupdate')),beforeState.webview||report.device.webview);}catch(error){report.resources.errors.push(redactor.clean(error.message));}
+  await checkpoint('FINAL_SOURCE_READBACK','started');try{const finalSources=Object.fromEntries(await Promise.all(sourceFiles.map(async path=>[path,hash(await readFile(join(ROOT,path)))])));assert.deepEqual(finalSources,sources,'MEASUREMENT_SOURCE_CHANGED');report.runtimeSources.after=await assertRuntimeSources(ROOT,runtimePins);assert.equal(hash(await readFile(manifestPath)),report.releaseManifestSha256,'RELEASE_MANIFEST_CHANGED');}catch(error){report.resources.errors.push(redactor.clean(error.message));}
   if(report.executed)report.games=options.games.map(game=>evaluateAndroidPerformance(game,report.rounds.filter(r=>r.game===game),standards.thresholds,{sampleMs:options.sampleMs,networkCalibrated:false}));
   report.observedCatalog=[...new Set(report.rounds.filter(r=>r.roomIdHash).map(r=>r.game))];report.catalogComplete=report.fullCatalog&&report.observedCatalog.length===ARENA_IDS.length;finalizePerformanceStatus(report,{shortDiagnostic:options.shortDiagnostic});report.finishedAt=new Date().toISOString();await save();
  }

@@ -141,3 +141,25 @@ node --test scripts/android-player-performance-checks.test.mjs
 Exit `0` means local preflight passed or all declared report gates passed;
 `1` is failure and `2` is honest partial evidence. A selected subset never
 claims all 11 games.
+
+
+Latest actual A8 (2026-10-12): the single run exited `13` after 12.250 seconds
+with `Detected unsettled top-level await`. Only preflight was saved: zero PNGs,
+zero rounds and no continuous performance evidence. The exact pending await is
+unproven. Root removed only its own `tcp:63604`, restored the original QA
+foreground and retained the inherited cloud forward. Real-account recovery was
+`[]`, available/reserved wallet balances were zero, and the new owned login was
+logged out. The original failure audit SHA is
+`6e1dfa9d61efb8328150a1a0c1e78abebc22fbdb3288f5cfda84c699b7977784`.
+
+The applied collector change bounds close-path waits and records sanitized
+progress. Gameplay, sampling and thresholds remain unchanged. All 116 related tests, including seven new
+maintained mechanism tests, passed with empty stderr;
+the application receipt is 3736 bytes, SHA
+`4eabc018f7ac415801ad542749f7aef3253a1ad57ab5f69f222863ff9b3c7770`.
+A fresh physical performance run remains pending. The first ordinary Node20 ABBA
+attempt failed during loader initialization, before any shot or timing sample.
+Its seven cleanup/source/protected-state checks passed; Root original audit SHA
+is `43f369b144a34134a3614d378dcc29f6dd8bf86ac6f666dd195d3f803529a5f0`.
+Mac mixed-capacity preparation has not been executed. Performance, capacity and
+release admission remain unaccepted.
