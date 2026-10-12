@@ -8,6 +8,20 @@ Player artifact verifier.
 
 ## Current validation state — 2026-10-12
 
+The final native-input preparation now checks the same element's enabled state
+immediately before ADB input. Its 43 focused tests passed and commit
+`0ffbe49c164f2cddc04e80cb6b97f7b0adce3021` is pushed. A state change before input
+keeps the original observation and retries within the existing bound. Trusted
+events, document identity, clocks, feedback and performance limits are retained.
+This change has not yet passed a new physical performance run.
+
+Source09 was actually staged and all 1,210 release members verified. Staging
+kept the production source08 pointer, 47 relations, processes and static assets
+unchanged; it did not activate the candidate. The latest mixed A5 attempt failed
+at a lossless-metadata check before any browser or measurement. Root separately
+removed its own container, network and 11 secrets and independently verified
+the restored protected baseline. The original failure remains failed.
+
 The latest physical A9 run failed with
 `OWNED_NATIVE_TAP_EXACT_TRUSTED_CLICK_REQUIRED`. Its original playable entry
 was 11,001 ms, continuous sampling reached only 1,695 ms, and resource evidence

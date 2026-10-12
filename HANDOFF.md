@@ -4,6 +4,9 @@
 
 ## 当前部署
 
+- source09 已实际完成 immutable staging，1,210 个成员核对通过；原始回执 SHA `2e8e97e4abdbb7e203295f47956271f17d90e4ff035bdeb68ef7b9164edfa412`。47 表、生产进程、现有静态资源和 current 均保持原状。这只是候选准备，尚未切换生产或建立新版手机证明。
+- mixed A5 实际失败于测试程序跨 Python/JavaScript 传递纳秒时丢失 117 ns；创建了 100 个真实零余额测试账号，但未创建浏览器、没有性能测量。原始失败和三项安全清理拒绝保留。Root 另行精确清理本轮容器、网络和 11 份凭据，随后独立回读确认进程、监听和资源消失，完整保护状态恢复。审计 SHA `26098ea648033b2e043a21de9219de94b64e2b83f732b685c0b7f249f8c299dc` 的 passed 仅代表原件分析与恢复成功，容量仍未通过。
+- 原生输入采集器已新增发送 ADB 点击前的最后一次同元素启用状态检查，43 项聚焦测试通过，提交 `0ffbe49c164f2cddc04e80cb6b97f7b0adce3021` 已推送。控件在准备阶段变为不可点击时保存原状态并重试；可信输入、时钟、归属、反馈及性能门槛保持。新版实机验证仍待实际 source09 切换。
 - 最新真机 A9 实际运行仍失败：`OWNED_NATIVE_TAP_EXACT_TRUSTED_CLICK_REQUIRED`；原可玩入口耗时 11,001 ms，连续样本仅 1,695 ms，资源证据未 finalize，不能判为入口、连续性能或上线通过。30 张原 PNG、失败及 CDP/resource 错误完整保留。Root 独立核对自有房间取消、原 QA 前台及完整 forward 恢复；真实账号 recovery `[]`、available/reserved 均 0，自有新登录已精确撤销。失败审计 `root-phone-teardown-formal-a9-20261012/root-original-failure-audit.json`，SHA `4b9e60c84d9bb2cbefd3f118980b836b1977511d5b29a4eaa3a761a2fa176848`。
 - 本地 Run 产品修正已应用：实际帧回调只在控件状态边界变化时同步 React；Run 范围 CSS 修正原全局 `:active` 的 1 px 位移覆盖反馈 `scale(.94)`，两种 CSS 加载顺序的浏览器回归通过。可见反馈校验接受规范中的 click `isPrimary=false`，down/up 仍须为 true，可信性、同一 pointer、顺序、时间、PNG 及 0.5 几何等原门槛保持。A9 原失败保持失败；这些修正尚未建立新部署的真机证明。
 - Carrom/Pool 保序轴向排除优化已应用到 canonical 源码。普通服务器 Node20 ABBA a2 的完整结果均与原结果字节一致，平均计算时间分别改善约 16% / 17.5%；P95 并非全部变好。184 次完整 shot、160 次计时及原始产物已独立复核，自有子进程清理和保护检查通过；这只是固定物理诊断，容量门禁仍未通过。
