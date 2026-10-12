@@ -9,13 +9,15 @@ function acquire(cache,url,load,options){
 }
 export function acquireRunImageSource(url,options){
  return acquire(images,url,async({signal})=>{
-  const response=await fetch(url,{signal,mode:'no-cors',credentials:'include'});if(!response.ok)throw new Error('Run image download failed');
+  // Share the real connection with launch/model requests at lower urgency.
+  // Every original texture still participates in the complete readiness gate.
+  const response=await fetch(url,{signal,mode:'no-cors',credentials:'include',priority:'low'});if(!response.ok)throw new Error('Run image download failed');
   const blob=await response.blob();if(signal.aborted)throw runAssetAborted(signal);return blob;
  },options);
 }
 export function acquireRunModelSource(url,options){
  return acquire(models,url,async({signal})=>{
-  const response=await fetch(url,{signal});if(!response.ok)throw new Error('Run scenery download failed');
+  const response=await fetch(url,{signal,priority:'high'});if(!response.ok)throw new Error('Run scenery download failed');
   const data=await response.arrayBuffer();if(signal.aborted)throw runAssetAborted(signal);return data;
  },options);
 }
