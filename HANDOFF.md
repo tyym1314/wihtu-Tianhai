@@ -4,6 +4,18 @@
 
 ## 当前部署
 
+- 最新真机 A9 实际运行仍失败：`OWNED_NATIVE_TAP_EXACT_TRUSTED_CLICK_REQUIRED`；原可玩入口耗时 11,001 ms，连续样本仅 1,695 ms，资源证据未 finalize，不能判为入口、连续性能或上线通过。30 张原 PNG、失败及 CDP/resource 错误完整保留。Root 独立核对自有房间取消、原 QA 前台及完整 forward 恢复；真实账号 recovery `[]`、available/reserved 均 0，自有新登录已精确撤销。失败审计 `root-phone-teardown-formal-a9-20261012/root-original-failure-audit.json`，SHA `4b9e60c84d9bb2cbefd3f118980b836b1977511d5b29a4eaa3a761a2fa176848`。
+- 本地 Run 产品修正已应用：实际帧回调只在控件状态边界变化时同步 React；Run 范围 CSS 修正原全局 `:active` 的 1 px 位移覆盖反馈 `scale(.94)`，两种 CSS 加载顺序的浏览器回归通过。可见反馈校验接受规范中的 click `isPrimary=false`，down/up 仍须为 true，可信性、同一 pointer、顺序、时间、PNG 及 0.5 几何等原门槛保持。A9 原失败保持失败；这些修正尚未建立新部署的真机证明。
+- Carrom/Pool 保序轴向排除优化已应用到 canonical 源码。普通服务器 Node20 ABBA a2 的完整结果均与原结果字节一致，平均计算时间分别改善约 16% / 17.5%；P95 并非全部变好。184 次完整 shot、160 次计时及原始产物已独立复核，自有子进程清理和保护检查通过；这只是固定物理诊断，容量门禁仍未通过。
+- 全量隔离发布测试 a2 实际 2,924/2,924 通过、0 fail/0 skip，35.076 秒、stderr 0，独立测试数据库已删除，11 个源 pin 前后不变。初始 a1 的两个旧 fixture 时钟/登记编号失败原件保留。产品提交 `6bae9b59ff625bfd0f76fa2c24a9b531e225a932` 的 `build:release` 和独立 build verify 均成功；source09 完整包及 source08→09 增量包已生成，增量 529,579 B，新 manifest SHA `c84892177a4523910874bf4281a004bde426ebb588a9ce215d8f75971c70e01d`。原始记录在 `root-product-fixes-validation-20261012-a2/` 与 `root-product-fixes-build-20261012-a1/`；实际生产刷新和新版真机结果仍待验证。
+- Mac/server mixed 容量 a1/a2/a3 均在前置检查阶段拒绝，未进入负载，原失败及自有 forward 清理记录保留。新的 server a2 准备修正 basis 冻结绑定并保留真实 admission guard；未建立实际容量结果。
+- 当前已确认生产仍为 source08：`/opt/oasis/production-current` 指向 `20261011-01`，API 18891、数据库 18893，第一方 11 款免费练习 revision11 open/app active。release manifest SHA `960c380ac39a2083edbce269467ec497af70146e99f555a909a9a769e3b3f708`，build stamp SHA `3d5bd2cb91a9439ff0fd2314eb0560e04b70254c231f12879faad32562b65d10`。本地新产品修正尚未部署到该实例。
+- 最简 QA/release APK 均为 20,883 B；真实接口和设备基础验证已有证据，公网 APK 交付、完整手机/受控网络/全 13 款内容与服务端容量验收仍未完成，尚未达到第三方接入上线标准。
+
+## 部署及验收历史
+
+以下保留原 A8、物理基准 a1 及 source06/07/08 接续过程；其中“待验证”“未执行”等描述是当时状态，当前状态以上述读回为准。
+
 - 最新真机 A8 单次执行 12.250 秒后 exit13，stderr 为 `Detected unsettled top-level await`；仅保存 preflight、0 PNG/0 rounds，没有连续性能数据，精确停滞 await 尚未证实。Root 只移除自有 `tcp:63604` 并恢复原 QA 前台，原 cloud forward 保持；真实账号 recovery `[]`、available/reserved 均 0，新自有登录已 logout。原始失败审计 `root-phone-css-formal-a8-20261012/root-original-failure-audit.json`，SHA `6e1dfa9d61efb8328150a1a0c1e78abebc22fbdb3288f5cfda84c699b7977784`。
 - Root 随后仅应用采集器关闭路径的有界等待及脱敏 progress；当前 collector SHA `937eea04de1d675b9b542f507c1964cc7e9713210a7ef427c82f1758cf656d25`。新增7项维护机制测试，相关116/116通过、stderr0；应用证明 `root-bounded-teardown-application-a1-20261012/root-application.json` 为3736 B、SHA `4eabc018f7ac415801ad542749f7aef3253a1ad57ab5f69f222863ff9b3c7770`。原玩法、采样及门槛保持，修复后的真机性能尚未验证。
 - 普通 Node20 ABBA 固定物理基准 a1 已单次实际执行，但首个 A 子进程在 loader initialize 导入 helper 时因未初始化的 `helpers.need` 失败；没有 shot 或性能样本。原始10文件102086 B已取回，Root审计 SHA `43f369b144a34134a3614d378dcc29f6dd8bf86ac6f666dd195d3f803529a5f0`；原回执七项自有清理/源码/保护状态检查全通过。加载修复待新 a2 验证。Mac mixed 容量准备未实际执行；性能、容量及第三方接入上线门槛仍未通过。
