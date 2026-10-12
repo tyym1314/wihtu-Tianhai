@@ -6,21 +6,43 @@ fund a wallet or use a Mock backend. Without `--run`, it only verifies local
 artifact, signature and source pins. A contract fixture is refused by the shared
 Player artifact verifier.
 
-## Current validation state — 2026-10-12
+## Current validation state — observed 2026-10-12 03:08 UTC
 
 The final native-input preparation now checks the same element's enabled state
 immediately before ADB input. Its 43 focused tests passed and commit
 `0ffbe49c164f2cddc04e80cb6b97f7b0adce3021` is pushed. A state change before input
-keeps the original observation and retries within the existing bound. Trusted
+keeps the original observation without sending that native input; the existing
+bounded preparation can wait again. Trusted
 events, document identity, clocks, feedback and performance limits are retained.
 This change has not yet passed a new physical performance run.
 
 Source09 was actually staged and all 1,210 release members verified. Staging
 kept the production source08 pointer, 47 relations, processes and static assets
-unchanged; it did not activate the candidate. The latest mixed A5 attempt failed
-at a lossless-metadata check before any browser or measurement. Root separately
-removed its own container, network and 11 secrets and independently verified
-the restored protected baseline. The original failure remains failed.
+unchanged; it did not activate the candidate. As of this observation, production
+still serves source08. Healthy09 a1/a2 read-only close audits exited `2` with
+`RETIRED_PUBLIC_UNIT_CHANGED` / `PREMUTATION_RETIREMENT_PROTECTION_CHANGED`;
+both retain `no_business_mutation=true` and a null receipt. The next healthy
+close/refresh/open continuation has not established source09 activation.
+
+Mixed A6 exited `1` after 21.173 seconds: the real `/mark.svg` returned HTTP502
+and its complete 40-byte body failed the original validation; those failed body
+bytes were not retained. It registered
+100 zero-wallet users and closed its one browser context, but retained pending
+HTTP1 and failed cleanup. Mixed A7 exited `1` after 99.144 seconds with
+`ORIGINAL_RENDERER_REQUEST_FAILED`; all nine contexts closed, pending HTTP145
+and failed cleanup remained, and 91 owned native rooms were cancelled with zero
+Run rooms. Neither attempt entered a valid measurement window. Their original
+failures and three parent cleanup refusals each remain preserved.
+
+Root separately recovered each exact owned container, network, 11 secrets,
+process group/listener, local forward and account file; recovery and independent
+fresh reads each exited `0` and verified the full original protected baseline.
+A6 audit SHA is `86aeaf1d328c91f8613939e1aed51a129e8e9383aea8b54caf7f6b3cc669bd79`,
+recovery receipt `03a364aa5e4232bf2b37b1fe58e0dcd0b27359633d253268c60e94976f259dfd`.
+A7 audit SHA is `10104ff6996f83fdd46c45b95de381161068cd068ba4b39d5a8ea5c5fee153de`,
+recovery receipt `99844e3431c68de762645a97a36a23c25d3de6a35a8fae6bb0239dfaf725a064`.
+These audit passes cover original-evidence analysis and recovery only; capacity
+and release acceptance remain false.
 
 The latest physical A9 run failed with
 `OWNED_NATIVE_TAP_EXACT_TRUSTED_CLICK_REQUIRED`. Its original playable entry
@@ -54,10 +76,23 @@ prepared; production refresh and new physical results remain pending.
 
 Mac/server mixed-capacity a1/a2/a3 refused during preflight and never entered
 load. The new server a2 preparation corrects the frozen basis binding while
-retaining the real admission guard. The 20,883-byte minimal APK exists;
-public APK delivery and complete device, network, content and capacity release
-gates remain incomplete. Confirmed production still serves source08; the local
-product changes have not been deployed there.
+retaining the real admission guard.
+
+VMOS `localhost:56576` Android17/API37/WebView154.0.8037.106 now has the minimal
+20,883-byte nondebug release APK. Its installed base.apk SHA
+`92f40b68ae6223e4fbdb0462a8dff32f5589fc33aa030fe68e27364abf92ac2e` matches the signed
+original. The actual current08 guest login page, native BACK closing its Activity,
+relaunch and HOME/resume passed. Root originals are
+`.local/root-vmos-minimal-release-postinstall-a2/actual-postinstall.json` and
+`.local/root-vmos-minimal-release-guest-lifecycle-a2/actual-lifecycle.json`
+(SHA `b6246d54a7023c093b8937b3fb880bec787e52b0f09ade660c34ecf184558297`). Initial
+install-output and window-focus parser refusals remain retained; no reinstall,
+account or game was started. Root uninstalled only the owned mock/smoke packages
+and freshly verified absence; unrelated apps remain. This is native guest
+compatibility evidence. Game/offline-retry, actual source09 WebView resources,
+physical performance and release acceptance remain pending; the nondebug release
+does not expose CDP. Public APK delivery and complete device, network, content
+and capacity release gates remain incomplete.
 
 ## Collector operation
 

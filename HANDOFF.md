@@ -2,18 +2,20 @@
 
 用户要求：界面和游戏流畅、达到上线标准；提供最简 APK；删除其他 Mock 应用及数据；使用真实数据和接口，已连接本机 Android 手机。工作仍在进行，尚未达到完整第三方接入上线标准。
 
-## 当前部署
+## 当前部署（2026-10-12 03:08 UTC 观察）
 
-- source09 已实际完成 immutable staging，1,210 个成员核对通过；原始回执 SHA `2e8e97e4abdbb7e203295f47956271f17d90e4ff035bdeb68ef7b9164edfa412`。47 表、生产进程、现有静态资源和 current 均保持原状。这只是候选准备，尚未切换生产或建立新版手机证明。
-- mixed A5 实际失败于测试程序跨 Python/JavaScript 传递纳秒时丢失 117 ns；创建了 100 个真实零余额测试账号，但未创建浏览器、没有性能测量。原始失败和三项安全清理拒绝保留。Root 另行精确清理本轮容器、网络和 11 份凭据，随后独立回读确认进程、监听和资源消失，完整保护状态恢复。审计 SHA `26098ea648033b2e043a21de9219de94b64e2b83f732b685c0b7f249f8c299dc` 的 passed 仅代表原件分析与恢复成功，容量仍未通过。
-- 原生输入采集器已新增发送 ADB 点击前的最后一次同元素启用状态检查，43 项聚焦测试通过，提交 `0ffbe49c164f2cddc04e80cb6b97f7b0adce3021` 已推送。控件在准备阶段变为不可点击时保存原状态并重试；可信输入、时钟、归属、反馈及性能门槛保持。新版实机验证仍待实际 source09 切换。
+- source09 已实际完成 immutable staging，1,210 个成员核对通过；原始回执 SHA `2e8e97e4abdbb7e203295f47956271f17d90e4ff035bdeb68ef7b9164edfa412`。47 表、生产进程、现有静态资源和 current 均保持原状。截至本次观察仍为 source08；healthy09 a1/a2 的只读 close audit 分别以 `RETIRED_PUBLIC_UNIT_CHANGED` / `PREMUTATION_RETIREMENT_PROTECTION_CHANGED` 原 exit2 拒绝，均 `no_business_mutation=true`、receipt=null。后续关闭/刷新/开放接续正在准备，尚无 source09 已激活或新版手机证明。
+- mixed A6 实际 21.173 秒/exit1：真实 `/mark.svg` 响应 HTTP502，完整40 B body 的原校验失败，失败body原字节未留存；100 个真实零余额账号、1 个浏览器 context 创建并关闭，pending HTTP1/cleanup=false，未进入测量。A7 实际 99.144 秒/exit1，`ORIGINAL_RENDERER_REQUEST_FAILED`；9 个 context 全部关闭但 pending HTTP145/cleanup=false，100 个真实零余额账号、91 个 native 房间已取消、Run 房间0，仍没有有效测量窗口。两轮原失败和各三项父级清理拒绝保留，不构成容量或上线通过。
+- A6/A7 随后的 Root 精确恢复均实际 exit0，独立 fresh read 均 exit0：本轮容器、网络、11 份凭据、进程组、监听以及 Mac 自有 forward/账号文件已消失，完整原保护状态恢复。A6 审计 `.local/root-firstparty-mixed-formal-a4/root-a6-original-failure-and-recovery-audit.json` SHA `86aeaf1d328c91f8613939e1aed51a129e8e9383aea8b54caf7f6b3cc669bd79`，恢复 receipt SHA `03a364aa5e4232bf2b37b1fe58e0dcd0b27359633d253268c60e94976f259dfd`；A7 审计 `.local/root-firstparty-mixed-formal-a5/root-a7-original-failure-and-recovery-audit.json` SHA `10104ff6996f83fdd46c45b95de381161068cd068ba4b39d5a8ea5c5fee153de`，恢复 receipt SHA `99844e3431c68de762645a97a36a23c25d3de6a35a8fae6bb0239dfaf725a064`。审计 passed 只代表原件分析和恢复成功，原 workload 仍失败。
+- 原生输入采集器已新增发送 ADB 点击前的最后一次同元素启用状态检查，43 项聚焦测试通过，提交 `0ffbe49c164f2cddc04e80cb6b97f7b0adce3021` 已推送。控件在准备阶段变为不可点击时保存原状态、不发送该次 native input，由既有有界准备流程重新等待；可信输入、时钟、归属、反馈及性能门槛保持。新版实机验证仍待实际 source09 切换。
 - 最新真机 A9 实际运行仍失败：`OWNED_NATIVE_TAP_EXACT_TRUSTED_CLICK_REQUIRED`；原可玩入口耗时 11,001 ms，连续样本仅 1,695 ms，资源证据未 finalize，不能判为入口、连续性能或上线通过。30 张原 PNG、失败及 CDP/resource 错误完整保留。Root 独立核对自有房间取消、原 QA 前台及完整 forward 恢复；真实账号 recovery `[]`、available/reserved 均 0，自有新登录已精确撤销。失败审计 `root-phone-teardown-formal-a9-20261012/root-original-failure-audit.json`，SHA `4b9e60c84d9bb2cbefd3f118980b836b1977511d5b29a4eaa3a761a2fa176848`。
 - 本地 Run 产品修正已应用：实际帧回调只在控件状态边界变化时同步 React；Run 范围 CSS 修正原全局 `:active` 的 1 px 位移覆盖反馈 `scale(.94)`，两种 CSS 加载顺序的浏览器回归通过。可见反馈校验接受规范中的 click `isPrimary=false`，down/up 仍须为 true，可信性、同一 pointer、顺序、时间、PNG 及 0.5 几何等原门槛保持。A9 原失败保持失败；这些修正尚未建立新部署的真机证明。
 - Carrom/Pool 保序轴向排除优化已应用到 canonical 源码。普通服务器 Node20 ABBA a2 的完整结果均与原结果字节一致，平均计算时间分别改善约 16% / 17.5%；P95 并非全部变好。184 次完整 shot、160 次计时及原始产物已独立复核，自有子进程清理和保护检查通过；这只是固定物理诊断，容量门禁仍未通过。
 - 全量隔离发布测试 a2 实际 2,924/2,924 通过、0 fail/0 skip，35.076 秒、stderr 0，独立测试数据库已删除，11 个源 pin 前后不变。初始 a1 的两个旧 fixture 时钟/登记编号失败原件保留。产品提交 `6bae9b59ff625bfd0f76fa2c24a9b531e225a932` 的 `build:release` 和独立 build verify 均成功；source09 完整包及 source08→09 增量包已生成，增量 529,579 B，新 manifest SHA `c84892177a4523910874bf4281a004bde426ebb588a9ce215d8f75971c70e01d`。原始记录在 `root-product-fixes-validation-20261012-a2/` 与 `root-product-fixes-build-20261012-a1/`；实际生产刷新和新版真机结果仍待验证。
 - Mac/server mixed 容量 a1/a2/a3 均在前置检查阶段拒绝，未进入负载，原失败及自有 forward 清理记录保留。新的 server a2 准备修正 basis 冻结绑定并保留真实 admission guard；未建立实际容量结果。
 - 当前已确认生产仍为 source08：`/opt/oasis/production-current` 指向 `20261011-01`，API 18891、数据库 18893，第一方 11 款免费练习 revision11 open/app active。release manifest SHA `960c380ac39a2083edbce269467ec497af70146e99f555a909a9a769e3b3f708`，build stamp SHA `3d5bd2cb91a9439ff0fd2314eb0560e04b70254c231f12879faad32562b65d10`。本地新产品修正尚未部署到该实例。
-- 最简 QA/release APK 均为 20,883 B；真实接口和设备基础验证已有证据，公网 APK 交付、完整手机/受控网络/全 13 款内容与服务端容量验收仍未完成，尚未达到第三方接入上线标准。
+- VMOS `localhost:56576` 的 Android17/API37/WebView154.0.8037.106 已实际安装 20,883 B 最简非 debug release APK，设备 base.apk SHA `92f40b68ae6223e4fbdb0462a8dff32f5589fc33aa030fe68e27364abf92ac2e` 与原签名产物一致。当前08 guest 登录页启动、系统 BACK关闭本Activity、relaunch、HOME/前台恢复通过；原件为 `.local/root-vmos-minimal-release-postinstall-a2/actual-postinstall.json` 与 `.local/root-vmos-minimal-release-guest-lifecycle-a2/actual-lifecycle.json`，后者 SHA `b6246d54a7023c093b8937b3fb880bec787e52b0f09ade660c34ecf184558297`。初次安装操作器误判两行Success、首次窗口focus解析拒绝的原记录均保留；没有重装、登录、开户或游戏。仅自有 `com.tianyahuyu.oasis.mock` / `.smoke` 已卸载并独立读回不存在，Android清除其包数据；voicemaker及其它应用保持。
+- 最简 QA/release APK 均为 20,883 B。VMOS 基础 guest 兼容性通过不代表游戏、断网重试、source09 实际资源、实体手机性能或上线通过；这些及公网 APK 交付、受控网络、全13款内容与服务端容量验收仍未完成，尚未达到第三方接入上线标准。
 
 ## 部署及验收历史
 
