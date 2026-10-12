@@ -1,6 +1,12 @@
 import {BOARD,POCKETS,strikerPosition,shotDirection} from './geometry.mjs';
 export const PHYSICS=Object.freeze({dt:1/240,maxSeconds:12,maxSpeed:18,friction:2.4,coinRestitution:.91,wallRestitution:.8,stopSpeed:.025,sampleHz:30});
 const round=n=>Math.round(n*1e9)/1e9,sample=n=>Math.round(n*1e4)/1e4;
+// Fixed frozen radius data enables exclusions; accessor/invalid geometry falls back.
+function fixedAxisRadius(value,key){try{const d=Object.getOwnPropertyDescriptor(value,key);return Object.isFrozen(value)&&d&&Object.hasOwn(d,'value')&&Number.isFinite(d.value)&&d.value>=0?d.value:NaN;}catch{return NaN;}}
+function outsideAxes(dx,dy,limit){return Number.isFinite(dx)&&Number.isFinite(dy)&&Number.isFinite(limit)&&limit>=0&&(dx>limit||dx< -limit||dy>limit||dy< -limit);}
+const coinAxisRadius=fixedAxisRadius(BOARD,'coinRadius'),strikerAxisRadius=fixedAxisRadius(BOARD,'strikerRadius');
+const pairAxisLimit=Number.isFinite(coinAxisRadius)&&Number.isFinite(strikerAxisRadius)?2*(coinAxisRadius>strikerAxisRadius?coinAxisRadius:strikerAxisRadius):NaN;
+const captureAxisLimit=fixedAxisRadius(BOARD,'captureRadius');
 /** Fixed-step planar disc physics. Only server engine calls this to create an authoritative result. */
 export function simulateShot(coins,seat,count,action){
  const pos=strikerPosition(seat,count,action.offset),dir=shotDirection(seat,count,action.angle);
@@ -8,13 +14,13 @@ export function simulateShot(coins,seat,count,action){
  bodies.push({id:'striker',kind:'striker',x:pos.x,y:pos.y,r:BOARD.strikerRadius,m:1.5,vx:dir.x*action.power*PHYSICS.maxSpeed,vy:dir.y*action.power*PHYSICS.maxSpeed,active:true});
  const trajectory=[],events=[],pocketed=[],ejected=[];let t=0,fault=false,lastHit=-100;
  const frame=()=>trajectory.push({t,positions:bodies.map(b=>[b.id,sample(b.x),sample(b.y),b.active?1:0])});frame();
- const capture=()=>{for(const b of bodies){if(!b.active)continue;const p=POCKETS.find(p=>Math.hypot(b.x-p.x,b.y-p.y)<BOARD.captureRadius);if(p){b.active=false;b.vx=b.vy=0;pocketed.push(b.id);events.push({type:'pocket',id:b.id,kind:b.kind,pocket:p.id,t,x:sample(p.x),y:sample(p.y)});}else if(Math.abs(b.x)>BOARD.half+1||Math.abs(b.y)>BOARD.half+1){b.active=false;b.vx=b.vy=0;ejected.push(b.id);events.push({type:'ejected',id:b.id,kind:b.kind,t,x:sample(b.x),y:sample(b.y)});}}};
+ const capture=()=>{for(const b of bodies){if(!b.active)continue;const p=POCKETS.find(p=>{const dx=b.x-p.x,dy=b.y-p.y;return !outsideAxes(dx,dy,captureAxisLimit)&&Math.hypot(dx,dy)<BOARD.captureRadius;});if(p){b.active=false;b.vx=b.vy=0;pocketed.push(b.id);events.push({type:'pocket',id:b.id,kind:b.kind,pocket:p.id,t,x:sample(p.x),y:sample(p.y)});}else if(Math.abs(b.x)>BOARD.half+1||Math.abs(b.y)>BOARD.half+1){b.active=false;b.vx=b.vy=0;ejected.push(b.id);events.push({type:'ejected',id:b.id,kind:b.kind,t,x:sample(b.x),y:sample(b.y)});}}};
  for(let step=1;step<=PHYSICS.maxSeconds/PHYSICS.dt;step++){
   t=Math.round(step*PHYSICS.dt*1000);
   for(const b of bodies){if(!b.active)continue;const speed=Math.hypot(b.vx,b.vy),next=Math.max(0,speed-PHYSICS.friction*PHYSICS.dt),f=speed?next/speed:0;b.vx*=f;b.vy*=f;b.x+=b.vx*PHYSICS.dt;b.y+=b.vy*PHYSICS.dt;}
   capture();
   for(let pass=0;pass<2;pass++){
-   for(let i=0;i<bodies.length;i++){const a=bodies[i];if(!a.active)continue;for(let j=i+1;j<bodies.length;j++){const b=bodies[j];if(!b.active)continue;let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),limit=a.r+b.r;if(d>=limit)continue;if(d<1e-10){dx=1;dy=0;d=1e-10;}const nx=dx/(d<1e-9?1:d),ny=dy/(d<1e-9?1:d),invA=1/a.m,invB=1/b.m,sum=invA+invB,overlap=limit-d+.00001;a.x-=nx*overlap*invA/sum;a.y-=ny*overlap*invA/sum;b.x+=nx*overlap*invB/sum;b.y+=ny*overlap*invB/sum;const approach=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
+   for(let i=0;i<bodies.length;i++){const a=bodies[i];if(!a.active)continue;for(let j=i+1;j<bodies.length;j++){const b=bodies[j];if(!b.active)continue;let dx=b.x-a.x,dy=b.y-a.y,d=outsideAxes(dx,dy,pairAxisLimit)?Infinity:Math.hypot(dx,dy),limit=a.r+b.r;if(d>=limit)continue;if(d<1e-10){dx=1;dy=0;d=1e-10;}const nx=dx/(d<1e-9?1:d),ny=dy/(d<1e-9?1:d),invA=1/a.m,invB=1/b.m,sum=invA+invB,overlap=limit-d+.00001;a.x-=nx*overlap*invA/sum;a.y-=ny*overlap*invA/sum;b.x+=nx*overlap*invB/sum;b.y+=ny*overlap*invB/sum;const approach=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
     if(approach<0){const impulse=-(1+PHYSICS.coinRestitution)*approach/sum;a.vx-=impulse*nx*invA;a.vy-=impulse*ny*invA;b.vx+=impulse*nx*invB;b.vy+=impulse*ny*invB;if(t-lastHit>35){events.push({type:'hit',a:a.id,b:b.id,t,x:sample((a.x+b.x)/2),y:sample((a.y+b.y)/2),strength:sample(Math.min(1,Math.abs(approach)/12))});lastHit=t;}}
    }}
    capture();

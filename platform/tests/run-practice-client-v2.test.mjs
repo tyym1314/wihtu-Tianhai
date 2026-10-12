@@ -7,11 +7,44 @@ import {createRunPracticeInputOutbox} from '../arena/run/practice-input-outbox.m
 import {selectRunPracticeInputRequest,readRunPracticeRoomProfile,matchesRunPracticeRequest} from '../arena/run/practice-profile-contract.mjs';
 import {createRunPracticePresentationEvents} from '../arena/run/practice-presentation-events.mjs';
 import {createRunPracticeFallHelp} from '../arena/run/practice-fall-help.mjs';
+import {createRunControlFrameSync,readRunControlState} from '../arena/run/control-frame-sync.mjs';
 import {MS,ROOM,SELF,owned,start,advance,apply,publicRoom,knownFall} from './run-practice-client-v2-fixture.mjs';
 const scope={roomId:ROOM,playerKey:SELF,clockEpoch:1};
 const controller=(profile=P.v2)=>createRunPracticeController({...scope,profile,makeRequestId:()=> 'v2_request'});
 function ready(e=start(),at=0){const m=controller(e.profileId?P.v2:P.v1);assert.equal(m.receive({room:publicRoom(e),receivedAt:at}).ok,true);return m;}
 function ack(m,h,r,at){return m.transport.resolve({token:h.token,receipt:{request_id:h.requestId,run_inputs:publicRoom(r.envelope,r).run_inputs},now:at});}
+
+test('rendered natural collision and recovery refresh controls only at their boundaries',()=>{
+ let e=start();while(e.current.players[0].hits===0&&e.serverTick<1000)e=advance(e,e.serverTick+1);
+ assert.equal(e.current.players[0].hits,1,'the unmodified course produces a natural first collision');
+ const hitTick=e.current.tick,recoveryTick=e.current.players[0].stunUntilTick;
+ assert.equal(recoveryTick-hitTick,48,'the original 0.8-second recovery is unchanged');
+ const head=hitTick-2,m=ready(advance(start(),head)),updates=[];
+ const sync=createRunControlFrameSync(()=>{
+  const sample=m.peek(),state=readRunControlState(sample.pose.visualPlayer,sample.pose.controlTick);
+  updates.push({tick:sample.pose.controlTick,...state});
+ });
+ for(let frame=0;frame<=recoveryTick-head+2;frame++){
+  const sample=m.sample(frame*MS),before=m.state().statistics.samples;
+  sync(m.peek());assert.equal(m.peek(),sample);assert.equal(m.state().statistics.samples,before,'HUD reads never advance the controller');
+  assert.equal(sync(m.peek()),false,'the same rendered state cannot request a second HUD refresh');
+  const controls=readRunControlState(sample.pose.visualPlayer,sample.pose.controlTick);
+  if(sample.pose.visualPlayer.hits===0)assert.equal(controls.busy,false);
+  else assert.equal(controls.busy,sample.pose.controlTick<recoveryTick);
+ }
+ assert.deepEqual(updates.map(update=>update.busy),[false,true,false]);
+ assert.ok(updates[1].tick>=hitTick&&updates[1].tick<hitTick+2);
+ assert.equal(updates[2].tick,recoveryTick);
+ assert.ok(updates.every(update=>!update.jumping&&!update.sliding&&!update.changing));
+});
+
+test('normal rendered motion keeps the HUD clock cadence and a controller hold refreshes readiness once',()=>{
+ const m=ready(),updates=[],sync=createRunControlFrameSync(()=>updates.push(m.peek().mode));
+ for(let frame=0;frame<100;frame++){m.sample(frame*MS/10);sync(m.peek());}
+ assert.deepEqual(updates,['provisional'],'position, time and speed do not cause per-frame React work');
+ m.sample(P.v2.leaseMs);assert.equal(sync(m.peek()),true);
+ assert.equal(sync(m.peek()),false);assert.deepEqual(updates,['provisional','hold']);
+});
 
 test('negotiation requires the exact advertised tuple, while old scalar/old server remain unchanged',()=>{
  const capabilities=runPracticeProfileCapability(),context={run_practice_input_protocol:P.v1.protocol,run_practice_input_profiles:capabilities};

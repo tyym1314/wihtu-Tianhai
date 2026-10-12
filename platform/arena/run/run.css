@@ -33,3 +33,12 @@
 /* The authoritative start gate is visible after the first real WebGL frame. */
 .run-start-overlay{position:absolute;z-index:4;top:40%;left:50%;transform:translate(-50%,-50%);width:min(78%,300px);display:flex;flex-direction:column;align-items:center;gap:7px;padding:17px 15px;border:1px solid #f7d898;border-radius:17px;background:#113641ed;box-shadow:0 12px 36px #092b37a8;color:#fff2ca;text-align:center;pointer-events:none}
 .run-start-overlay small{font-size:11px;font-weight:700;line-height:1.4}.run-start-overlay strong{font-size:clamp(35px,9vw,58px);line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 3px 8px #071d2b}.run-start-overlay span{font-size:9px;line-height:1.5;color:#e7e4cc}
+
+/* Run thumb controls keep their hit position while pressed; feedback wins
+   over the shell's generic active translation in either CSS load order. */
+.run-scene .run-main-controls>button:active,
+.run-scene .run-direction-controls>button:active{transform:none}
+.run-scene.run-feedback-jump .run-main-controls>.run-jump,
+.run-scene.run-feedback-slide .run-direction-controls>.run-slide,
+.run-scene.run-feedback-left .run-direction-controls>[data-testid=run-left],
+.run-scene.run-feedback-right .run-direction-controls>[data-testid=run-right]{transform:scale(.94)}

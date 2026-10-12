@@ -15,11 +15,18 @@ const worker=Buffer.from(['/* draco decoder */',decoder.toString(),'','/* worker
 const manifest={expected:new Map([[loaderPath,hash(loader)],[decoderPath,hash(decoder)],[imagePath,hash('actual image')]])};
 const recipe=deriveDracoWorkerPin({origin,manifest,loaderUrl:origin+loaderPath,loaderBytes:loader,decoderUrl:origin+decoderPath,decoderBytes:decoder});
 const config=resourceEvidenceConfiguration({origin,entryUrl,games:['golf'],manifest,nonce,generatedScripts:[recipe]}),scope={frameId:'actual-child',contextId:9};
-const gets=recipe.sourcePins.map((pin,i)=>({id:'original-public-'+i,url:origin+pin.path,frameId:scope.frameId,contextId:scope.contextId,type:pin.role==='decoder-text'?'Fetch':'Script',method:'GET',transferFinished:true,response:{status:200,fromServiceWorker:false}}));
-const bodyPins=recipe.sourcePins.map(pin=>({url:origin+pin.path,frame:origin+'/play/golf',method:'GET',status:200,pin:{sha256:pin.sha256},original_sha256:pin.sha256,original_bytes:pin.bytes}));
+// Local source transfers finish at document-relative 40/70 ms, before the
+// native Blob observation at 100 ms. CDP monotonic seconds have their own
+// anchor; wall time uses the collector's original per-request conversion.
+const blobObservationStartMs=100;
+const gets=recipe.sourcePins.map((pin,i)=>{
+ const start=20+i*30,end=40+i*30,startedAtMs=timeOrigin+start,startedMonotonic=1+start/1000,finishedMonotonic=1+end/1000;
+ return{id:'original-public-'+i,url:origin+pin.path,frameId:scope.frameId,contextId:scope.contextId,type:pin.role==='decoder-text'?'Fetch':'Script',method:'GET',transferFinished:true,response:{status:200,fromServiceWorker:false},startedAtMs,startedMonotonic,finishedMonotonic,finishedAtMs:startedAtMs+(finishedMonotonic-startedMonotonic)*1000};
+});
+const bodyPins=recipe.sourcePins.map((pin,i)=>({id:i+1,request_id:i+1,url:origin+pin.path,frame:origin+'/play/golf',method:'GET',status:200,pin:{sha256:pin.sha256},original_sha256:pin.sha256,original_bytes:pin.bytes}));
 function actualRealm({configuration=config}={}){
  const original=new WeakMap();class ResponseFixture{constructor(blob){original.set(this,Promise.resolve(blob));}get url(){return origin+imagePath;}get status(){return 200;}get type(){return'basic';}blob(){return original.get(this);}}
- let id=0,clock=1;class NativeURL extends URL{static createObjectURL(){return'blob:'+origin+'/'+String(++id).padStart(8,'0')+'-0000-0000-0000-000000000000';}static revokeObjectURL(){}}
+ let id=0,clock=blobObservationStartMs;class NativeURL extends URL{static createObjectURL(){return'blob:'+origin+'/'+String(++id).padStart(8,'0')+'-0000-0000-0000-000000000000';}static revokeObjectURL(){}}
  const parent={location:{href:entryUrl}},realm=vm.createContext({URL:NativeURL,Response:ResponseFixture,Blob,parent,top:parent,location:{href:origin+'/play/golf'},crypto:webcrypto,performance:{timeOrigin,now:()=>clock++},setTimeout,clearTimeout,__oasisPhysicalPerf:{schema:'android-physical-performance-v1',nonce,documentId,timeOrigin,url:origin+'/play/golf'}});
  vm.runInContext('('+installConsumedImageEvidence.toString()+')('+JSON.stringify(configuration)+')',realm);return realm;
 }
@@ -41,11 +48,23 @@ test('local derivation inputs must be real manifest output files, hash-matched a
 
 test('same native generated Blob/objectURL has exact script bytes, retains source pins, and requires readable original worker response and both received public bodies',async()=>{
  const f=await generated();assert.deepEqual(f.snap.errors,[]);assert.equal(f.snap.receipts.length,0);assert.equal(f.snap.generatedReceipts.length,1);assert.equal(f.snap.totalHashedBytes,worker.length);
- const evidence=validateConsumedImageEvidence(f.snap,args),row={id:1,url:f.url,frameId:scope.frameId,contextId:scope.contextId,resourceType:'script',method:'GET',status:200,transferFinished:true,original_bytes:worker.length,original_sha256:hash(worker)};
- assert.equal(generatedScriptProofForResponse(row,evidence,{origin,manifest,bodyPins}).sha256,hash(worker));
- for(const mutation of [{original_bytes:0},{original_sha256:hash('nonempty conflicting script')},{transferFinished:false},{contextId:10},{resourceType:'image'},{method:'POST'}])assert.throws(()=>generatedScriptProofForResponse({...row,...mutation},evidence,{origin,manifest,bodyPins}));
- for(const pins of [bodyPins.slice(1),bodyPins.map(pin=>({...pin,pin:undefined})),bodyPins.map(pin=>({...pin,original_sha256:hash('conflict')}))])assert.throws(()=>generatedScriptProofForResponse(row,evidence,{origin,manifest,bodyPins:pins}),/RECEIVED_INPUT_BODY_PIN_REQUIRED/);
+ const evidence=validateConsumedImageEvidence(f.snap,args),row={id:3,request_id:3,url:f.url,frameId:scope.frameId,contextId:scope.contextId,resourceType:'script',method:'GET',status:200,transferFinished:true,original_bytes:worker.length,original_sha256:hash(worker)};
+ const proof=generatedScriptProofForResponse(row,evidence,{origin,manifest,bodyPins});assert.equal(proof.sha256,hash(worker));assert.equal(proof.blobObservedAtMs,timeOrigin+blobObservationStartMs);
+ assert.deepEqual(proof.sourceRequestIds,gets.map(get=>get.id));assert.ok(proof.sourceRequestFacts.every(get=>get.finishedAtMs<proof.blobObservedAtMs));assert.deepEqual(proof.sourceBodyFacts.map(body=>[body.requestId,body.responseId]),[[1,1],[2,2]]);assert.equal(proof.deliveryRequestId,3);assert.equal(proof.deliveryResponseId,3);
+ for(const mutation of [{original_bytes:0},{original_sha256:hash('nonempty conflicting script')},{transferFinished:false},{contextId:10},{resourceType:'image'},{method:'POST'},{id:undefined},{request_id:undefined}])assert.throws(()=>generatedScriptProofForResponse({...row,...mutation},evidence,{origin,manifest,bodyPins}));
+ for(const pins of [bodyPins.slice(1),bodyPins.map(pin=>({...pin,pin:undefined})),bodyPins.map(pin=>({...pin,original_sha256:hash('conflict')})),bodyPins.map(pin=>({...pin,id:undefined})),bodyPins.map(pin=>({...pin,request_id:undefined})),bodyPins.map(pin=>({...pin,id:3})),bodyPins.map(pin=>({...pin,request_id:3}))])assert.throws(()=>generatedScriptProofForResponse(row,evidence,{origin,manifest,bodyPins:pins}),/RECEIVED_INPUT_BODY_PIN_REQUIRED/);
  f.realm.__oasisConsumedImageEvidence.stop();
+});
+
+test('generated Blob provenance refuses missing or changed source clocks and sources that finish after the Blob',async()=>{
+ const f=await generated();
+ try{
+  for(const mutate of [get=>delete get.startedAtMs,get=>delete get.startedMonotonic,get=>delete get.finishedAtMs,get=>delete get.finishedMonotonic,get=>get.finishedAtMs++,get=>get.finishedMonotonic=get.startedMonotonic-1,get=>{get.startedAtMs=timeOrigin-1;get.finishedAtMs=get.startedAtMs+(get.finishedMonotonic-get.startedMonotonic)*1000;}]){
+   const requests=structuredClone(gets);mutate(requests[1]);assert.throws(()=>validateConsumedImageEvidence(f.snap,{...args,requests}),/GENERATED_SCRIPT_SOURCE_CLOCK_UNPROVEN/);
+  }
+  const later=structuredClone(gets);later[1].finishedMonotonic=later[1].startedMonotonic+1;later[1].finishedAtMs=later[1].startedAtMs+(later[1].finishedMonotonic-later[1].startedMonotonic)*1000;
+  assert.ok(later[1].finishedAtMs>timeOrigin+f.snap.generatedReceipts[0].createdAt);assert.throws(()=>validateConsumedImageEvidence(f.snap,{...args,requests:later}),/GENERATED_SCRIPT_SOURCE_GET_UNPROVEN/);
+ }finally{f.realm.__oasisConsumedImageEvidence.stop();}
 });
 
 test('unknown bytes/images, wrong document and wrong/unfinished/foreign original source GET remain failures',async()=>{
