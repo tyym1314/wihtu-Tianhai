@@ -179,8 +179,8 @@ def policy_sql(core, data, expected):
     app_change="status='paused'";ddl=''
     if expected['profile']!=data['policy']['profile']:
         require(data['policy']['profile']=='firstparty-free-v1' and expected['profile']=='firstparty-internal-games-v1'
-                and data['app']['game_ids']==data['policy']['game_ids']
-                and len(data['app']['game_ids'])==11 and len(set(data['app']['game_ids']))==11
+                and set(data['app']['game_ids'])==set(data['policy']['game_ids'])
+                and len(data['app']['game_ids'])==len(data['policy']['game_ids'])==11 and len(set(data['app']['game_ids']))==11
                 and set(expected['game_ids'])==set(data['app']['game_ids'])|{'thunder','tiger'}
                 and len(expected['game_ids'])==13, 'REFRESH_INTERNAL_GAME_DELTA_CHANGED')
         games=core.literal(json.dumps(expected['game_ids'],separators=(',',':')))+'::jsonb'

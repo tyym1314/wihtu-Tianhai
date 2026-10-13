@@ -36,6 +36,16 @@ class InternalGamesContract(unittest.TestCase):
   self.assertIn("status='paused',game_ids=",sql);self.assertIn("profile='firstparty-internal-games-v1',game_ids=",sql)
   for verb in ('CREATE TABLE','DELETE','INSERT','DROP TABLE'):self.assertNotIn(verb,sql)
   bad=copy.deepcopy(expected);bad['game_ids'].append('mock');self.assertRaises(r.Refusal,r.policy_sql,c,data,bad)
+ def test_game_order_may_differ_but_original_cas_keeps_exact_arrays(self):
+  data,approval=self.inputs();data['app']['game_ids']=list(reversed(data['policy']['game_ids']))
+  self.assertNotEqual(data['app']['game_ids'],data['policy']['game_ids'])
+  expected=r.refresh_policy(data['policy'],approval,r.TARGET,'5'*64,'6'*64,target_profile=a.INTERNAL_PROFILE)
+  original,_=c.policy_transaction_sql('open',data,{},'6'*64);sql=r.policy_sql(c,data,expected)
+  self.assertEqual(sql[:sql.index('ALTER TABLE')],original[:original.index('UPDATE gp_apps')])
+  bad=copy.deepcopy(data);bad['app']['game_ids'][0]=bad['app']['game_ids'][1]
+  self.assertRaises(r.Refusal,r.policy_sql,c,bad,expected)
+  bad=copy.deepcopy(data);bad['policy']['game_ids'].append(bad['policy']['game_ids'][0])
+  self.assertRaises(r.Refusal,r.policy_sql,c,bad,expected)
  def test_runtime_changes_only_three_explicit_lines_and_closed_profile_remains_invalid(self):
   env=runtime_fixture.free_env();env.update(OASIS_ADMISSION_RELEASE=str(r.SOURCE),OASIS_ADMISSION_MANIFEST_SHA256=r.SOURCE_MANIFEST)
   raw=('# local contract fixture\n'+''.join(k+'='+v+'\n' for k,v in env.items())).encode()
