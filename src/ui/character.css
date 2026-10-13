@@ -53,6 +53,15 @@
 .hero-character-reduced .character-staff-light:before{display:none}
 .hero-character-reduced .character-energy{display:none}
 @media(max-width:600px),(pointer:coarse){
+  /* Keep the shadow static instead of filtering the animated artwork and flash
+     as one offscreen group. The original character texture supplies its outline. */
+  .character-rig{filter:none}
+  .character-rig:before{content:"";position:absolute;inset:0;background:#070e2599;mask:var(--character-image) center/100% 100% no-repeat;filter:blur(5px);transform:translate(-3px,1px);pointer-events:none}
+  /* The glow keeps its original staff center and world-space dimensions. Only
+     its transparent carrier shrinks; reaction scale/opacity keyframes stay intact. */
+  .character-energy{inset:auto;left:calc(var(--character-staff-x) - 28%);top:calc(var(--character-staff-y) - 28%);width:56%;aspect-ratio:1;transform-origin:50% 50%;mix-blend-mode:normal}
+  .character-energy:before{left:50%;top:50%;width:100%}
+  .character-energy:after{left:50%;top:50%;width:80.3571428571%}
   /* Prepare only the four existing reaction targets while the real rig is ready.
      Their first transform/opacity animation can reuse layers instead of promoting
      the clipped artwork during the paid gesture. Artwork and keyframes stay intact. */
