@@ -233,7 +233,7 @@ async function replay(c,s,body,digest){const old=(await c.query('SELECT * FROM p
 async function remember(c,s,body,digest,r,response){await c.query('INSERT INTO pvp_requests(app_id,external_user_id,request_id,digest,room_id,response,response_status) VALUES($1,$2,$3,$4,$5,$6,$7)',[s.app_id,s.external_user_id,body.request_id,digest,r.id,response.body,response.status]);return response;}
 function player(s,index,now,bot=false){return{external_user_id:s.external_user_id,name:bot?`BOT ${index}`:s.external_user_id,seat_index:index,ready:bot,bot,last_seq:0,last_seen_at:now,forfeited:false};}
 export async function routePvp(session,method,path,body={},options={}){
- if(!path.startsWith('/api/pvp/rooms'))return null;checkSession(session);const s=session;let app=method==='POST'?await appById(s.app_id):undefined;
+ if(!path.startsWith('/api/pvp/rooms'))return null;checkSession(session);const s=session,actionRequest=method==='POST'&&/^\/api\/pvp\/rooms\/[A-Za-z0-9_-]+\/action$/.test(path);let app=method==='POST'&&!actionRequest?await appById(s.app_id):undefined;
  if(method==='POST'&&!/^[A-Za-z0-9_-]{8,128}$/.test(body.request_id||''))fail(400,'REQUEST_ID_REQUIRED');
  const digest=requestDigest(method,path,body);
  if(method==='POST'&&path==='/api/pvp/rooms'){

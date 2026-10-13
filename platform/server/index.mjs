@@ -119,8 +119,14 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
     fail(404,'NOT_FOUND');
   }
   if(path==='/api/arena/session'&&req.method==='GET'){
-    const s=await authenticated(req,()=>playSession(req));limiter.player(s,'pvp','GET',path);if(!ARENA_IDS.includes(s.game_id))fail(403,'GAME_SESSION_REQUIRED');const app=await appById(s.app_id);
-    const active=(await pool.query('SELECT r.id,r.game_id FROM pvp_active_users u JOIN pvp_rooms r ON r.id=u.room_id WHERE u.app_id=$1 AND u.external_user_id=$2',[s.app_id,s.external_user_id])).rows[0];
+    const s=await authenticated(req,()=>playSession(req));limiter.player(s,'pvp','GET',path);if(!ARENA_IDS.includes(s.game_id))fail(403,'GAME_SESSION_REQUIRED');// One fresh snapshot binds both reads to the authenticated App and user.
+    // No identity, balance or admission response is retained across requests.
+    const found=(await pool.query(`SELECT a.*,r.id AS __arena_active_id,r.game_id AS __arena_active_game
+      FROM gp_apps a LEFT JOIN pvp_active_users u ON u.app_id=a.id AND u.external_user_id=$2
+      LEFT JOIN pvp_rooms r ON r.id=u.room_id WHERE a.id=$1`,[s.app_id,s.external_user_id])).rows[0];
+    if(!found)fail(404,'NOT_FOUND');
+    const {__arena_active_id:activeId,__arena_active_game:activeGame,...app}=found;
+    const active=activeId==null?undefined:{id:activeId,game_id:activeGame};
     let balance=null,balance_error=null;try{balance=await walletBalance(app,s.external_user_id);}catch(e){balance_error='BALANCE_UNAVAILABLE';}
     return send(res,200,{session_id:s.id,external_user_id:s.external_user_id,game_id:s.game_id,scope:scope(app),balance,balance_error,competitive_fee_bps:app.competitive_fee_bps,
       ...(s.admission_profile==='firstparty-free-v1'?{admission_profile:s.admission_profile,admission_revision:String(s.admission_revision),free_training_only:true,financial_admission_enabled:false,allowed_room_modes:['bot-practice']}:{}),

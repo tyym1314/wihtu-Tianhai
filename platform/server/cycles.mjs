@@ -88,8 +88,12 @@ async function advanceUnlocked(cycleId){
 }
 export const advanceCycle=cycleId=>locked('cycle:'+cycleId,()=>advanceUnlocked(cycleId));
 function balanceMinor(response){const b=response.balance||response;return b.available_minor??b.total_minor??b.balance_minor;}
-export async function publicSession(s){
+async function readSessionBalance(s){
   const app=await appById(s.app_id),b=await walletBalance(app,s.external_user_id),minor=balanceMinor(b);if(minor===undefined)fail(503,'WALLET_INVALID_BALANCE');
+  return {app,minor};
+}
+export async function publicSession(s){return serializePublicSession(s,await readSessionBalance(s));}
+async function serializePublicSession(s,{app,minor}){
   // Persisted session provenance describes this accepted session. New rooms
   // independently recheck current App and admission policy in their transaction.
   if(s.admission_profile===FIRSTPARTY_FREE_PROFILE)return{mode:'production',platformMode:'production',sessionId:s.id,epoch:0,stateVersion:s.state.version,balance:Number(minor)/10**app.currency_scale,betChoices:[],mathVersion:null,pendingRound:null,freeSpins:0,freeMultiplier:0,lockedBet:null,admission_profile:s.admission_profile,admission_revision:String(s.admission_revision),...publicAdmissionCapability({profile:s.admission_profile,game_ids:[]})};
@@ -106,12 +110,13 @@ export async function spin(session,body){
     if(prior){if(prior.bet!==body.bet)fail(409,'IDEMPOTENCY_CONFLICT');return {session:await publicSession(s),round:prior.payload};}
     if(s.state.pendingPlay)fail(409,'ROUND_PENDING','先完成当前回合演出');
     if(body.expectedVersion!==s.state.version)fail(409,'STATE_CHANGED','会话已更新，请恢复当前状态');
-    const app=await appById(s.app_id);let cycle,index=0;
+    let cycle,index=0;
     if(s.state.cycleId){cycle=(await pool.query('SELECT * FROM gp_cycles WHERE id=$1',[s.state.cycleId])).rows[0];if(cycle?.result&&s.state.nextIndex<cycle.result.rounds.length)index=s.state.nextIndex;else cycle=null;}
     if(!cycle){
       cycle=(await pool.query('SELECT * FROM gp_cycles WHERE session_id=$1 AND request_id=$2',[s.id,body.requestId])).rows[0];
       if(cycle&&Number(cycle.stake_minor)!==body.bet*100)fail(409,'IDEMPOTENCY_CONFLICT');
       if(!cycle){
+        const app=await appById(s.app_id);
         await assertNewFinancialAdmission(pool,app);
         if(app.status!=='active'||!app.game_ids.includes(s.game_id))fail(403,'GAME_DISABLED');
         const m=getProfile(s.game_id,app.math_profile),cid=id('cycle');
@@ -121,11 +126,15 @@ export async function spin(session,body){
       }
       if(cycle.status==='REJECTED')fail(409,cycle.error?.code||'WALLET_REJECTED');cycle=await advanceCycle(cycle.id);
     }else if(Number(cycle.stake_minor)!==body.bet*100)fail(409,'LOCKED_BET','免费转沿用已冻结的投注');
-    const engine=cycle.result.rounds[index],stateBefore=await publicSession(s),roundId=id('round');
+    // One validated, request-local balance snapshot after confirmed settlement.
+    // Replays and independent session reads obtain their own fresh snapshot.
+    const balance=await readSessionBalance(s);
+    if(s.admission_profile!==FIRSTPARTY_FREE_PROFILE)getProfile(s.game_id,balance.app.math_profile);
+    const engine=cycle.result.rounds[index],stateBefore={balance:Number(balance.minor)/(s.admission_profile===FIRSTPARTY_FREE_PROFILE?10**balance.app.currency_scale:100)},roundId=id('round');
     const payload={id:roundId,requestId:body.requestId,epoch:0,bet:body.bet,win:engine.totalWin/100,balanceBefore:index===0?stateBefore.balance-Number(cycle.payout_minor)/100+body.bet:stateBefore.balance,balanceAfter:stateBefore.balance,balanceScope:'complete_cycle',createdAt:new Date().toISOString(),engine,isFreeSpin:index>0,freeSpinsBefore:engine.freeSpinsBefore||0,freeSpinsAfter:engine.freeSpinsAfter||0,cycleId:cycle.id,settlementStatus:'SETTLED'};
     const state={version:s.state.version+1,pendingPlay:roundId,cycleId:cycle.id,nextIndex:index+1};
     await tx(async c=>{await c.query('INSERT INTO gp_plays(id,session_id,request_id,cycle_id,round_index,bet,payload) VALUES($1,$2,$3,$4,$5,$6,$7)',[roundId,s.id,body.requestId,cycle.id,index,body.bet,payload]);await c.query('UPDATE gp_sessions SET state=$1 WHERE id=$2',[state,s.id]);});
-    s={...s,state};return {session:await publicSession(s),round:payload};
+    s={...s,state};return {session:await serializePublicSession(s,balance),round:payload};
   });
 }
 export async function acknowledge(s,body){return locked('session:'+s.id,async()=>{
