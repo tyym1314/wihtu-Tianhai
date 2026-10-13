@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
+import {probabilityCoinsToMinor} from '../scripts/android-player-acceptance-checks.mjs';
 
 let fixtureSequence=0;
 const clone=value=>structuredClone(value);
@@ -31,8 +32,8 @@ async function loadFixture(options={}){
 function createFixture(options){
  const game=options.game||'thunder',app={id:'app_fixture',partner_id:'partner_fixture',environment:options.production?'production':'sandbox',wallet_scope_id:'scope_fixture',currency_id:'COIN',currency_scale:options.scale??2,status:'active',game_ids:['thunder','tiger'],math_profile:options.profile||'99'};
  const f={trace:[],balanceReads:0,appReads:0,playWrites:0,idSequence:0,locks:[],tails:new Map(),cycles:new Map(),plays:new Map(),operations:new Map(),app};
- const result={gameId:game,mathVersion:game+'-platform-99-v1',mathConfigHash:'a'.repeat(64),grossPayoutMinor:500,rounds:[{totalWin:300,freeSpinsBefore:0,freeSpinsAfter:1,nextFreeMultiplier:2},{totalWin:200,freeSpinsBefore:1,freeSpinsAfter:0,nextFreeMultiplier:0}]};
- const makeCycle=id=>({id,session_id:'session_fixture',app_id:app.id,external_user_id:'player_fixture',game_id:game,request_id:'request_old',stake_minor:'1000',math_profile:'99',math_version:result.mathVersion,math_hash:result.mathConfigHash,max_payout_minor:'10000000',payout_minor:'500',status:'SETTLED',result:clone(result)});
+ const result={gameId:game,mathVersion:game+'-platform-99-v1',mathConfigHash:'a'.repeat(64),grossPayoutMinor:options.grossPayoutMinor??500,rounds:clone(options.rounds||[{totalWin:300,freeSpinsBefore:0,freeSpinsAfter:1,nextFreeMultiplier:2},{totalWin:200,freeSpinsBefore:1,freeSpinsAfter:0,nextFreeMultiplier:0}])};
+ const makeCycle=id=>({id,session_id:'session_fixture',app_id:app.id,external_user_id:'player_fixture',game_id:game,request_id:'request_old',stake_minor:'1000',math_profile:'99',math_version:result.mathVersion,math_hash:result.mathConfigHash,max_payout_minor:'10000000',payout_minor:String(result.grossPayoutMinor),status:'SETTLED',result:clone(result)});
  const old=options.continuation?'cycle_free':options.previous?'cycle_old':null;if(old)f.cycles.set(old,makeCycle(old));
  f.session={id:'session_fixture',app_id:app.id,external_user_id:'player_fixture',game_id:game,state:{version:0,pendingPlay:options.pending?'round_pending':null,cycleId:old,nextIndex:options.continuation?1:options.previous?2:0},...(options.freeProfile?{admission_profile:'firstparty-free-v1',admission_revision:'7'}:{})};
  if(options.replay){const payload={id:'round_existing',requestId:'request_fixture',bet:10,engine:clone(result.rounds[0]),balanceAfter:7};f.plays.set('round_existing',{id:'round_existing',session_id:f.session.id,request_id:'request_fixture',bet:options.replayBet??10,payload});}
@@ -60,6 +61,7 @@ function createFixture(options){
   f.event('sql',{sql});
   if(sql==='SELECT * FROM gp_apps WHERE id=$1 FOR SHARE'){assert.equal(args.length,1);assert.equal(args[0],app.id);return rows([clone(app)]);}
   if(sql.startsWith('SELECT * FROM gp_sessions')){assert.equal(args[0],f.session.id);return rows([clone(f.session)]);}
+  if(sql==='SELECT * FROM gp_plays WHERE id=$1 AND session_id=$2')return rows([...f.plays.values()].filter(p=>p.id===args[0]&&p.session_id===args[1]).map(clone));
   if(sql.startsWith('SELECT * FROM gp_plays'))return rows([...f.plays.values()].filter(p=>p.session_id===args[0]&&p.request_id===args[1]).map(clone));
   if(sql.startsWith('SELECT payload FROM gp_plays'))return rows(f.plays.has(args[0])?[{payload:clone(f.plays.get(args[0]).payload)}]:[]);
   if(sql.startsWith('SELECT * FROM gp_cycles WHERE id='))return rows(f.cycles.has(args[0])?[clone(f.cycles.get(args[0]))]:[]);
@@ -72,6 +74,8 @@ function createFixture(options){
   if(sql.startsWith('UPDATE gp_cycles SET status=')){const id=args.at(-1),c=f.cycles.get(id);if(sql.includes("status='RESULT_FIXED'")){Object.assign(c,{status:'RESULT_FIXED',seed_enc:args[0],result:clone(args[1]),result_hash:args[2],payout_minor:args[3]});f.event('result.fixed');}else if(sql.includes("status='SETTLED'")){c.status='SETTLED';f.event('cycle.settled');}else if(sql.includes("status='AUTHORIZED'"))c.status='AUTHORIZED';else if(sql.includes("status='ACCEPTED'"))c.status='ACCEPTED';else if(sql.includes('jsonb_build_object')){f.cycles.get(args[2]).status=args[0];}else throw Error('UNHANDLED_CYCLE_UPDATE');return rows([]);}
   if(sql.startsWith('SELECT 1 FROM gp_operations'))return rows([...f.operations.values()].some(op=>op.aggregate_id===args[0]&&op.state==='REJECTED')?[{}]:[]);
   if(sql.startsWith('INSERT INTO gp_plays')){const [id,session_id,request_id,cycle_id,round_index,bet,payload]=args;f.plays.set(id,{id,session_id,request_id,cycle_id,round_index,bet,payload:clone(payload)});f.playWrites++;f.event('play.insert');return rows([]);}
+  if(sql==='UPDATE gp_plays SET acknowledged=true WHERE id=$1'){f.plays.get(args[0]).acknowledged=true;f.event('play.acknowledge');return rows([]);}
+  if(sql==="UPDATE gp_sessions SET state=jsonb_set(state,'{pendingPlay}','null') WHERE id=$1 AND state->>'pendingPlay'=$2"){assert.equal(args[0],f.session.id);if(f.session.state.pendingPlay===args[1])f.session.state.pendingPlay=null;f.event('session.acknowledge');return rows([]);}
   if(sql.startsWith('UPDATE gp_sessions SET state=')){assert.equal(args[1],f.session.id);if(options.failPlayCommit)throw Object.assign(Error('fixture commit unavailable'),{code:'P0001'});f.session.state=clone(args[0]);f.event('session.update');return rows([]);}
   throw Error('UNHANDLED_FIXTURE_QUERY:'+sql);
  };
@@ -81,6 +85,53 @@ function createFixture(options){
 const request={requestId:'request_fixture',bet:10,expectedVersion:0};
 const count=(f,kind)=>f.trace.filter(row=>row.kind===kind).length;
 const submit=l=>l.module.spin(l.fixture.session,request);
+
+// Source20 physical Tiger row 32: wallet 988840, stake 1000, payout/engine 1820.
+// Its old divided-Number inverse exposed balanceBefore=9880.199999999999.
+for(const amounts of [
+  {scale:2,available:'988840',payout:1820,bet:10,before:'988020',after:9888.4,prior:9880.2,win:18.2,replay:'988941',latest:'989999'},
+  {scale:6,available:'10000',payout:1,bet:.001,before:'10999',after:.01,prior:.010999,win:.000001,replay:'10001',latest:'10002'},
+ ])test(`Tiger witnessed settlement at scale ${amounts.scale} projects integer minor amounts exactly and freezes the stored round across fresh-balance replay`,async()=>{
+  const l=await loadFixture({game:'tiger',scale:amounts.scale,grossPayoutMinor:amounts.payout,rounds:[{totalWin:amounts.payout,freeSpinsBefore:0,freeSpinsAfter:0,nextFreeMultiplier:0}],balances:[amounts.available,amounts.replay,amounts.latest]});try{
+   const body={...request,bet:amounts.bet},first=await l.module.spin(l.fixture.session,body),f=l.fixture,round=clone(first.round);
+   assert.equal(round.balanceBefore,amounts.prior);assert.equal(round.balanceAfter,amounts.after);assert.equal(round.win,amounts.win);
+   assert.equal(probabilityCoinsToMinor(round.balanceBefore,amounts.scale),amounts.before);
+   assert.equal(probabilityCoinsToMinor(round.balanceAfter,amounts.scale),amounts.available);
+   assert.equal(probabilityCoinsToMinor(round.bet,amounts.scale),'1000');assert.equal(probabilityCoinsToMinor(round.win,amounts.scale),String(amounts.payout));
+   assert.equal(round.engine.totalWin,amounts.payout);assert.equal(round.isFreeSpin,false);assert.equal(round.balanceScope,'complete_cycle');
+   assert.equal(first.session.balance,round.balanceAfter);assert.equal(first.session.pendingRound.id,round.id);
+   const persisted=f.plays.get(round.id);assert.deepEqual(persisted.payload,round);assert.equal(persisted.round_index,0);assert.equal(persisted.bet,amounts.bet);
+   const cycle=clone([...f.cycles.values()][0]),operations=clone([...f.operations.values()]);
+   assert.equal(cycle.status,'SETTLED');assert.equal(cycle.stake_minor,'1000');assert.equal(cycle.payout_minor,String(amounts.payout));assert.equal(cycle.result.grossPayoutMinor,amounts.payout);
+   assert.equal(JSON.parse(operations.find(op=>op.path.endsWith('/settle')).raw_body).gross_payout_minor,String(amounts.payout));
+   const replay=await l.module.spin(f.session,body),latest=await l.module.publicSession(f.session);
+   assert.equal(probabilityCoinsToMinor(replay.session.balance,amounts.scale),amounts.replay);assert.equal(probabilityCoinsToMinor(latest.balance,amounts.scale),amounts.latest);
+   assert.deepEqual(replay.round,round);assert.deepEqual(f.plays.get(round.id).payload,round);assert.deepEqual([...f.cycles.values()],[cycle]);assert.deepEqual([...f.operations.values()],operations);
+   assert.equal(f.balanceReads,3);assert.equal(f.playWrites,1);assert.equal(f.plays.size,1);assert.equal(f.cycles.size,1);
+   for(const kind of ['wallet.authorize','wallet.accept','math.compute','result.fixed','wallet.settle'])assert.equal(count(f,kind),1);
+   assert.ok(f.trace.findIndex(row=>row.kind==='wallet.settle')<f.trace.findIndex(row=>row.kind==='wallet.balance'));
+  }finally{l.dispose();}
+});
+
+test('Thunder natural bonus continuation retains one settled cycle and does not reconstruct a second charged balance',async()=>{
+ const l=await loadFixture({game:'thunder',grossPayoutMinor:1820,rounds:[{totalWin:1800,freeSpinsBefore:0,freeSpinsAfter:1,nextFreeMultiplier:2},{totalWin:20,freeSpinsBefore:1,freeSpinsAfter:0,nextFreeMultiplier:0}],balances:['988840','988841','988942','989999','990000','990001']});try{
+  const first=await submit(l),f=l.fixture,paid=clone(first.round),cycle=clone([...f.cycles.values()][0]),operations=clone([...f.operations.values()]);
+  assert.equal(probabilityCoinsToMinor(paid.balanceBefore,2),'988020');assert.equal(first.session.freeSpins,1);assert.equal(first.session.lockedBet,10);
+  const ack=await l.module.acknowledge(f.session,{roundId:paid.id});assert.equal(ack.session.pendingRound,null);assert.equal(ack.session.stateVersion,1);
+  const body={requestId:'request_bonus',bet:10,expectedVersion:1},bonus=await l.module.spin(f.session,body),frozen=clone(bonus.round);
+  assert.equal(bonus.round.cycleId,paid.cycleId);assert.equal(bonus.round.isFreeSpin,true);assert.equal(bonus.round.freeSpinsBefore,1);assert.equal(bonus.round.freeSpinsAfter,0);
+  assert.equal(bonus.round.win,.2);assert.equal(bonus.round.engine.totalWin,20);
+  assert.equal(bonus.round.balanceBefore,9889.42);assert.equal(bonus.round.balanceAfter,9889.42);assert.equal(bonus.session.balance,9889.42);
+  assert.equal(probabilityCoinsToMinor(bonus.round.balanceBefore,2),'988942');assert.equal(bonus.session.freeSpins,0);assert.equal(bonus.session.lockedBet,null);
+  assert.deepEqual(f.plays.get(paid.id).payload,paid);assert.deepEqual(f.plays.get(bonus.round.id).payload,frozen);assert.equal(f.plays.get(bonus.round.id).round_index,1);
+  const replay=await l.module.spin(f.session,body);assert.equal(replay.session.balance,9899.99);assert.deepEqual(replay.round,frozen);
+  assert.equal((await l.module.publicSession(f.session)).balance,9900);
+  const done=await l.module.acknowledge(f.session,{roundId:bonus.round.id});assert.equal(done.session.pendingRound,null);assert.equal(done.session.freeSpins,0);assert.equal(done.session.stateVersion,2);assert.equal(done.session.balance,9900.01);
+  assert.deepEqual([...f.cycles.values()],[cycle]);assert.deepEqual([...f.operations.values()],operations);assert.deepEqual(f.plays.get(bonus.round.id).payload,frozen);
+  assert.equal(f.balanceReads,6);assert.equal(f.playWrites,2);assert.equal(f.plays.size,2);assert.equal(f.cycles.size,1);assert.equal(count(f,'play.acknowledge'),2);
+  for(const kind of ['wallet.authorize','wallet.accept','math.compute','result.fixed','wallet.settle'])assert.equal(count(f,kind),1);
+ }finally{l.dispose();}
+});
 
 test('settled spin uses one fresh balance for its frozen round and response, after wallet settlement',async()=>{
  for(const options of [{},{previous:true},{continuation:true}]){

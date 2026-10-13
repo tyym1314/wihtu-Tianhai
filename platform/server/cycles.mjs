@@ -138,7 +138,10 @@ export async function spin(session,body){
     const balance=await readSessionBalance(s);
     if(s.admission_profile!==FIRSTPARTY_FREE_PROFILE)getProfile(s.game_id,balance.app.math_profile);
     const engine=cycle.result.rounds[index],stateBefore={balance:Number(balance.minor)/unitsPerCoin(balance.app.currency_scale)},roundId=id('round');
-    const payload={id:roundId,requestId:body.requestId,epoch:0,bet:body.bet,win:engine.totalWin/unitsPerCoin(balance.app.currency_scale),balanceBefore:index===0?stateBefore.balance-Number(cycle.payout_minor)/unitsPerCoin(balance.app.currency_scale)+body.bet:stateBefore.balance,balanceAfter:stateBefore.balance,balanceScope:'complete_cycle',createdAt:new Date().toISOString(),engine,isFreeSpin:index>0,freeSpinsBefore:engine.freeSpinsBefore||0,freeSpinsAfter:engine.freeSpinsAfter||0,cycleId:cycle.id,settlementStatus:'SETTLED'};
+    // Reverse the settled cycle in integer minor units before converting once
+    // for presentation; subtracting divided coin values introduces extra digits.
+    const balanceBeforeMinor=index===0?BigInt(balance.minor)-BigInt(cycle.payout_minor)+BigInt(cycle.stake_minor):BigInt(balance.minor);
+    const payload={id:roundId,requestId:body.requestId,epoch:0,bet:body.bet,win:engine.totalWin/unitsPerCoin(balance.app.currency_scale),balanceBefore:Number(balanceBeforeMinor)/unitsPerCoin(balance.app.currency_scale),balanceAfter:stateBefore.balance,balanceScope:'complete_cycle',createdAt:new Date().toISOString(),engine,isFreeSpin:index>0,freeSpinsBefore:engine.freeSpinsBefore||0,freeSpinsAfter:engine.freeSpinsAfter||0,cycleId:cycle.id,settlementStatus:'SETTLED'};
     const state={version:s.state.version+1,pendingPlay:roundId,cycleId:cycle.id,nextIndex:index+1};
     await tx(async c=>{await c.query('INSERT INTO gp_plays(id,session_id,request_id,cycle_id,round_index,bet,payload) VALUES($1,$2,$3,$4,$5,$6,$7)',[roundId,s.id,body.requestId,cycle.id,index,body.bet,payload]);await c.query('UPDATE gp_sessions SET state=$1 WHERE id=$2',[state,s.id]);});
     s={...s,state};return {session:await serializePublicSession(s,balance),round:payload};
