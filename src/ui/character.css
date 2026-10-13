@@ -52,6 +52,15 @@
 .hero-character-reduced .character-staff-light{transform:translate(-50%,-50%)!important;opacity:.48}
 .hero-character-reduced .character-staff-light:before{display:none}
 .hero-character-reduced .character-energy{display:none}
+@media(max-width:600px),(pointer:coarse){
+  /* Prepare only the four existing reaction targets while the real rig is ready.
+     Their first transform/opacity animation can reuse layers instead of promoting
+     the clipped artwork during the paid gesture. Artwork and keyframes stay intact. */
+  .hero-character-ready:not(.hero-character-reduced) .character-body-pose,
+  .hero-character-ready:not(.hero-character-reduced) .character-arm-pose,
+  .hero-character-ready:not(.hero-character-reduced) .character-head-pose{will-change:transform}
+  .hero-character-ready:not(.hero-character-reduced) .character-energy{will-change:transform,opacity}
+}
 @keyframes character-chest-breathe{0%,100%{transform:translateY(1px) scaleY(1)}48%{transform:translateY(-2px) scaleY(1.011)}}
 @keyframes character-head-look{0%,100%{transform:rotate(-1.4deg) translateY(0)}30%{transform:rotate(.7deg) translateY(-1px)}58%{transform:rotate(2deg) translateY(-2px)}82%{transform:rotate(-.3deg) translateY(-.5px)}}
 @keyframes character-cape-wind{0%{transform:rotate(-1deg) skewX(-.5deg) scaleX(.99)}55%{transform:rotate(1.3deg) skewX(1.8deg) scaleX(1.027)}100%{transform:rotate(-.2deg) skewX(-1.1deg) scaleX(1.006)}}
