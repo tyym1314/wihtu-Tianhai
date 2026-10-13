@@ -43,10 +43,21 @@ export async function playOneProbabilityCycle(frame,game,{state,tap,readSession,
  const bet=frame.locator('#bet-value');await bet.waitFor({timeout:Math.max(1,deadline-now())});await guard();await tap(bet);const choice=frame.locator(game==='tiger'?'[data-bet="'+selectedBet+'"]':'[data-value="'+selectedBet+'"]');await choice.waitFor({timeout:Math.max(1,deadline-now())});await guard();await tap(choice);
  const spin=frame.locator('#spin');await spin.waitFor({timeout:Math.max(1,deadline-now())});await guard();await beforePaidSpin();await guard();await tap(spin);
  while(now()<deadline){
-  await guard();await drain();const current=await read();
+  await guard();await drain();const current=await read();await drain();await guard();
   if(state.spins.filter(s=>!s.isFreeSpin).length>1)throw Error('MULTIPLE_PAID_CYCLES_REFUSED');
   const cycles=new Set(state.spins.map(s=>s.cycleId));if(cycles.size>1)throw Error('MULTIPLE_PROBABILITY_CYCLES_REFUSED');
-  if(current.pendingRound&&!state.spins.some(s=>s.id===current.pendingRound.id))throw Error('UNOBSERVED_PROBABILITY_PRESENTATION_PRESERVED');
+  if(current.pendingRound&&!state.spins.some(s=>s.id===current.pendingRound.id)){
+   // A session GET can observe the committed round before the UI spin body is
+   // delivered. Wait only for that exact original, owned POST; never ACK an
+   // unknown round or submit another spin to resolve an observation race.
+   const requests=(state.probabilityRequests||[]).filter(p=>p.type==='spin'),pending=current.pendingRound;
+   const matching=requests.filter(p=>p.request_id===pending.requestId),original=matching[0];
+   if(typeof pending.requestId!=='string'||!pending.requestId||matching.length!==1||requests.length!==state.spins.length+1
+    ||original.path!=='/api/play/'+game+'/spin'||original.method!=='POST'||original.game_frame_request!==true
+    ||original.session_id!==state.sessionId||original.player_id!==state.playerId||original.phase!=='playing'
+    ||original.transport_error||(original.status!==null&&original.status!==200))throw Error('UNOBSERVED_PROBABILITY_PRESENTATION_PRESERVED');
+   await wait(Math.min(1000,Math.max(1,deadline-now())));continue;
+  }
   const close=frame.locator(game==='tiger'?'#continue':'.celebration-close');
   if(await close.isVisible()){await guard();await tap(close);}
   else if(current.pendingRound===null&&current.freeSpins>0&&state.spins.length&&await spin.isEnabled()){await guard();await tap(spin);}

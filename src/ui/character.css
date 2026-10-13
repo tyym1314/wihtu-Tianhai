@@ -16,7 +16,7 @@
   --character-staff-x:73%;
   --character-staff-y:14%;
 }
-.hero.hero-character-ready .hero-art,.bonus-mode .hero.hero-character-ready .hero-art{background-image:url('/assets/hero-scene.png');background-size:100% auto;background-position:center top;animation:none;transform:none;filter:none;will-change:auto}
+.hero.hero-character-ready .hero-art,.bonus-mode .hero.hero-character-ready .hero-art{background-image:url('/assets/hero-scene-release.png');background-size:100% auto;background-position:center top;animation:none;transform:none;filter:none;will-change:auto}
 .bonus-mode .hero.hero-character-ready .hero-art{filter:hue-rotate(23deg) saturate(1.13)}
 .hero.hero-character-ready .motion-character,.hero.hero-character-ready .motion-staff-halo,.hero.hero-character-ready .hero-aura,.hero.hero-character-ready .hero-atmosphere:before{display:none}
 .hero.hero-character-ready .hero-energy{opacity:.32}

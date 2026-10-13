@@ -10,6 +10,9 @@ type Wave = Point & { life: number; maxLife: number; radius: number; color: stri
 type Bolt = { points: Point[]; branches: Point[][]; life: number; maxLife: number; strength: number };
 type Counter = { element: HTMLElement; from: number; value: number; target: number; start: number; duration: number; format: (value: number) => string; resolve: () => void };
 const DECORATIVE_SYMBOLS: SymbolId[] = ['sapphire', 'emerald', 'ruby', 'amethyst', 'pearl', 'amber', 'crown', 'chalice', 'emerald', 'ruby', 'sapphire', 'amethyst'];
+// Six rows cover the five-row window even between symbols. A second copy
+// keeps the wrap seamless without rasterizing two twelve-row strips.
+const REEL_CYCLE_ROWS = 6;
 const MAX_PARTICLES = 200;
 
 /** All randomness here is decorative. Only supplied server cells are used at reel landing. */
@@ -19,6 +22,7 @@ export class GameMotion {
   private atmosphere: HTMLElement | null = null;
   private resizeObserver: ResizeObserver;
   private media = matchMedia('(prefers-reduced-motion: reduce)');
+  private compactEffects = matchMedia('(max-width: 600px), (pointer: coarse)');
   private particles: Particle[] = [];
   private waves: Wave[] = [];
   private bolts: Bolt[] = [];
@@ -87,8 +91,12 @@ export class GameMotion {
     this.heroHeight = this.shell.querySelector<HTMLElement>('.hero')?.offsetHeight ?? this.height * .25;
     this.boardBounds = { x: boardRect.left - shellRect.left, y: boardRect.top - shellRect.top, width: boardRect.width, height: boardRect.height };
     const ratio = Math.min(devicePixelRatio || 1, 1.75);
-    this.canvas.width = Math.max(1, Math.round(this.width * ratio));
-    this.canvas.height = Math.max(1, Math.round(this.height * ratio));
+    const pixelWidth = Math.max(1, Math.round(this.width * ratio));
+    const pixelHeight = Math.max(1, Math.round(this.height * ratio));
+    // Assigning an unchanged canvas dimension still clears and reallocates its
+    // backing store. Spins and win effects measure often without resizing.
+    if (this.canvas.width !== pixelWidth) this.canvas.width = pixelWidth;
+    if (this.canvas.height !== pixelHeight) this.canvas.height = pixelHeight;
     this.context?.setTransform(ratio, 0, 0, ratio, 0, 0);
   };
 
@@ -147,13 +155,13 @@ export class GameMotion {
       const strip = document.createElement('div');
       strip.className = 'motion-reel-strip';
       // Two identical strips make the wrap mathematically seamless; no outcome is sampled here.
-      const cycle = Array.from({ length: 12 }, (_, row) => this.reelSymbol(DECORATIVE_SYMBOLS[(row * 5 + column * 3 + this.generation) % DECORATIVE_SYMBOLS.length], cellHeight)).join('');
+      const cycle = Array.from({ length: REEL_CYCLE_ROWS }, (_, row) => this.reelSymbol(DECORATIVE_SYMBOLS[(row * 5 + column * 3 + this.generation) % DECORATIVE_SYMBOLS.length], cellHeight)).join('');
       strip.innerHTML = cycle + cycle;
       reel.appendChild(strip); layer.appendChild(reel);
       const animation = this.track(strip.animate([
-        { transform: `translate3d(0,${-12 * cellHeight}px,0)` },
+        { transform: `translate3d(0,${-REEL_CYCLE_ROWS * cellHeight}px,0)` },
         { transform: 'translate3d(0,0,0)' },
-      ], { duration: (this.quick() ? 450 : 650) + column * 21, iterations: Infinity, easing: 'linear' }));
+      ], { duration: ((this.quick() ? 450 : 650) + column * 21) * REEL_CYCLE_ROWS / 12, iterations: Infinity, easing: 'linear' }));
       animation.currentTime = column * 47;
       this.reelAnimations.push(animation);
     }
@@ -178,7 +186,9 @@ export class GameMotion {
       const final = Array.from({ length: 5 }, (_, row) => finalBoard[row * 6 + column]);
       if (final.some(cell => !cell)) { reel.classList.add('stopped'); return; }
       const symbols = final.map(cell => this.reelSymbol(cell.symbol, cellHeight, cell.multiplier));
-      for (let row = 0; row < 15; row++) symbols.push(this.reelSymbol(DECORATIVE_SYMBOLS[(row * 7 + column * 3) % DECORATIVE_SYMBOLS.length], cellHeight));
+      // The reveal starts ten rows down; five final plus ten decorative rows
+      // cover that viewport. Rows beyond it are never visible.
+      for (let row = 0; row < 10; row++) symbols.push(this.reelSymbol(DECORATIVE_SYMBOLS[(row * 7 + column * 3) % DECORATIVE_SYMBOLS.length], cellHeight));
       strip.innerHTML = symbols.join('');
       reel.classList.add('landing');
       const animation = this.track(strip.animate([
@@ -289,7 +299,8 @@ export class GameMotion {
   }
 
   private addParticle(particle: Omit<Particle, 'maxLife' | 'angle' | 'spin'>) {
-    if (this.particles.length >= MAX_PARTICLES) this.particles.shift();
+    const limit = this.compactEffects.matches ? 120 : MAX_PARTICLES;
+    if (this.particles.length >= limit) this.particles.splice(0, this.particles.length - limit + 1);
     this.particles.push({ ...particle, maxLife: particle.life, angle: this.random() * Math.PI * 2, spin: (this.random() - .5) * 8 });
   }
 
@@ -302,7 +313,7 @@ export class GameMotion {
     if (context) {
       context.clearRect(0, 0, this.width, this.height);
       if (now >= this.nextAmbient) {
-        this.nextAmbient = now + 120;
+        this.nextAmbient = now + (this.compactEffects.matches ? 180 : 120);
         this.addParticle({ x: this.width * (.05 + this.random() * .9), y: this.heroHeight * (.3 + this.random() * .75), vx: 4 + this.random() * 8, vy: -8 - this.random() * 19, life: 1.7 + this.random(), radius: .7 + this.random() * 1.2, color: this.random() > .3 ? '#82d4ff' : '#f4cc7d', kind: 'spark' });
       }
       if (now >= this.nextArc) { this.nextArc = now + 3900 + this.random() * 3200; if (!this.celebration) this.lightning(.3); }

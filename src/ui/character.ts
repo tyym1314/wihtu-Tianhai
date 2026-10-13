@@ -38,7 +38,7 @@ export class HeroCharacter {
     this.media.addEventListener('change', this.syncVisibility);
     this.syncVisibility();
     // Swap away from the painted character only when both independent assets loaded.
-    for (const source of ['/assets/hero-scene.png', '/assets/hero-character.png']) {
+    for (const source of ['/assets/hero-scene-release.png', '/assets/hero-character.png']) {
       const image = new Image();
       image.decoding = 'async';
       image.onload = () => {

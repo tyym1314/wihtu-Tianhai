@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-13T05:56:56.675Z",
+  "generatedAt": "2026-10-13T09:02:16.829Z",
   "status": "PLATFORM_PRESENTATION_BUILD",
   "sourceFilesVerifiedUnchanged": 23,
   "outputDirectory": "platform/legacy/dist",
@@ -24,7 +24,7 @@
     },
     {
       "path": "src/style.css",
-      "sha256": "f79db89cd0e74ff1010aecd5f6edccd5bc58fc4e5003d6d5f0950060b517f776"
+      "sha256": "335f7b97358a59d82e03a6a76dd99cc5eaa29fe2b9e573a5cdac29e2c2c09159"
     },
     {
       "path": "src/tiger/PERFORMANCE-20261007.md",
@@ -84,11 +84,11 @@
     },
     {
       "path": "src/ui/character.css",
-      "sha256": "9e091c745ad09fc70842164a284e81149c5cb29c7cd6a48831b21aa82004008d"
+      "sha256": "0674c487da70ae1546934cd2a1c9ffde851b62c2df66b4f0e628d07861b255b2"
     },
     {
       "path": "src/ui/character.ts",
-      "sha256": "224e16f4b7a6fd4c210bec96faa83f4735503fdb166b7be39dda32c1fd885543"
+      "sha256": "6282c092dd2d61011c8488b407bddaafd9973e1ce1a93fa0bc66210f1055e7b0"
     },
     {
       "path": "src/ui/i18n.ts",
@@ -96,11 +96,11 @@
     },
     {
       "path": "src/ui/motion.css",
-      "sha256": "e2452307579897e86a078f2dc8634be493bf20f6647bf09416532d7a6cb2a8eb"
+      "sha256": "b8b9d90d9949db30f7d90e58421ddd0aef40451920cedecd759ba4202b68cfec"
     },
     {
       "path": "src/ui/motion.ts",
-      "sha256": "b3a4f34b8d2173204d34f27f9fc17466a3744160e3f7691ac6a3fb68dec710e2"
+      "sha256": "3a2b06a91a18cd58c85d0ae56508384c0dd2e125d29c2c83034fae65cc56461b"
     }
   ]
 }

@@ -1,7 +1,7 @@
 .motion-enabled{--motion-blue:#82dcff}
 .motion-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:26;pointer-events:none;contain:strict}
 .motion-hero-atmosphere{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
-.motion-character{position:absolute;inset:0;background:url('/assets/thunder-main.png') center top/100% auto no-repeat;clip-path:polygon(61% 14%,82% 10%,99% 27%,100% 100%,55% 100%,54% 67%);transform-origin:77% 100%;animation:tt-character-breathe 6s ease-in-out infinite;will-change:filter,transform}
+.motion-character{position:absolute;inset:0;background:url('/assets/thunder-main-release.png') center top/100% auto no-repeat;clip-path:polygon(61% 14%,82% 10%,99% 27%,100% 100%,55% 100%,54% 67%);transform-origin:77% 100%;animation:tt-character-breathe 6s ease-in-out infinite;will-change:filter,transform}
 .bonus-mode .motion-character{background-image:url('/assets/thunder-free.png')}
 .motion-character-aura{position:absolute;left:55%;top:17%;width:46%;height:85%;background:radial-gradient(ellipse at 60% 48%,#90ceff00 31%,#509aff55 59%,transparent 70%);mix-blend-mode:screen;opacity:.6;animation:tt-hero-aura 4.4s ease-in-out infinite}
 .motion-staff-halo{position:absolute;left:83%;top:15%;width:24%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff 0%,#e4ffff88 5%,#61c9ff44 15%,#247cff25 37%,transparent 65%);mix-blend-mode:screen;animation:tt-staff-charge 3.7s ease-in-out infinite}
@@ -21,6 +21,12 @@
 .motion-reel.landing:before{opacity:.22;transition:opacity .3s}
 .motion-reel.stopped{visibility:hidden}
 .motion-reel.landing:after{background:linear-gradient(0deg,transparent 30%,#bde7ff33 52%,transparent 74%);animation:tt-reel-glint .55s ease-out both}
+/* Moving sprites already carry their artwork and light. Keep the transform
+   animation on touch screens without an extra filtered surface per sprite. */
+@media(max-width:600px),(pointer:coarse){
+ .motion-reel-strip,.motion-reel.landing .motion-reel-strip{filter:none;transition:none}
+ .motion-reel-symbol .symbol-art{filter:none!important}
+}
 .motion-enabled .is-spinning .symbol-art,.motion-enabled.is-spinning .board>.cell .symbol-art{animation:none;filter:none;opacity:1}
 .motion-cell-impact{animation:tt-cell-impact .6s cubic-bezier(.15,.6,.15,1) both}
 .motion-board-impact{animation:tt-board-impact .38s ease-out both}

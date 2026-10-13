@@ -9,7 +9,9 @@
  .bottom-nav button{min-height:44px}
  .experience,.game-shell{height:100svh;min-height:0}
  .game-shell{display:flex;flex-direction:column}
- .hero{height:calc(clamp(108px,18svh,140px) + var(--thunder-safe-top));aspect-ratio:auto;flex:none}
+ /* The title is part of the artwork; reserve its full header crop on short
+    screens as well, instead of clipping it with a viewport-height clamp. */
+ .hero{height:calc(100vw/2.1 + var(--thunder-safe-top));aspect-ratio:auto;flex:none}
  .topbar{top:max(10px,var(--thunder-safe-top))}
  .play-area{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:25px minmax(0,1fr) 24px auto;min-width:0;min-height:0;flex:1;padding-inline:12px}
  .feature-bar{min-height:0;padding:3px 3px 5px}
