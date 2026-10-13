@@ -49,6 +49,9 @@ const thunderFile=path.join(stage,'src/main.ts');let thunder=await readFile(thun
 thunder=thunder.replace("import { GAME_CONFIG, INITIAL_BOARD, SYMBOLS } from './game/engine';",`import { GAME_CONFIG as LEGACY_GAME_CONFIG, INITIAL_BOARD, SYMBOLS } from './game/engine';\nimport { platformConfig } from '../bridge';\nconst GAME_CONFIG = { ...LEGACY_GAME_CONFIG, get targetRtp() { return platformConfig.targetRtp ?? LEGACY_GAME_CONFIG.targetRtp; }, get paytableScale() { return LEGACY_GAME_CONFIG.paytableScale * (platformConfig.payoutScale?.numerator ?? 1) / (platformConfig.payoutScale?.denominator ?? 1); }, get mathVersion() { return platformConfig.version ?? platformConfig.mathVersion ?? LEGACY_GAME_CONFIG.mathVersion; } };`);
 thunder=thunder.replace('cumulative += step.baseWin / 100;','cumulative += (result.cycleWinCapReached ? step.settledWin : step.baseWin) / 100;');
 thunder=thunder.replace("${number(step.baseWin / 100)}","${number((result.cycleWinCapReached ? step.settledWin : step.baseWin) / 100)}");
+// Only monetary minor-unit expressions change units; percentages/paytables stay exact.
+thunder=thunder.replaceAll('(result.cycleWinCapReached ? step.settledWin : step.baseWin) / 100','(result.cycleWinCapReached ? step.settledWin : step.baseWin) / (platformConfig.unitsPerCoin ?? 100)');
+thunder=thunder.replaceAll('number(result.baseWin / 100)', 'number(result.baseWin / (platformConfig.unitsPerCoin ?? 100))');
 thunder=thunder.replace('MAX ${GAME_CONFIG.maxWinMultiple}×','MAX ${result.cycleWinCapReached ? 10000 : GAME_CONFIG.maxWinMultiple}×');
 thunder=thunder.replaceAll("${cp('target')} 99%","${cp('target')} ${Math.round(GAME_CONFIG.targetRtp * 100)}%");
 thunder=thunder.replace("['INTERNAL_ERROR', 'HTTP_ERROR']","['INTERNAL_ERROR', 'HTTP_ERROR', 'SETTLEMENT_PENDING', 'WALLET_PENDING']");

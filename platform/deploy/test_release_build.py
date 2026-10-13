@@ -52,14 +52,11 @@ class ReleaseBuildGateTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'STALE_BUILD_OUTPUTS'):
             verify(self.root)
 
-    def test_rejects_changed_partner_kit_source_after_build(self):
+    def test_rejects_changed_server_source_after_build(self):
         for name in ('platform/server/wallet/index.mjs',
                      'platform/server/wallet/security.mjs',
                      'platform/server/wallet/schema.sql',
-                     'platform/server/math/index.ts',
-                     'platform/examples/partner-wallet/server.mjs',
-                     'platform/examples/partner-wallet/config.example.json',
-                     'platform/examples/partner-wallet/README.md'):
+                     'platform/server/math/index.ts'):
             with self.subTest(source=name):
                 path = self.root / name
                 path.parent.mkdir(parents=True, exist_ok=True)

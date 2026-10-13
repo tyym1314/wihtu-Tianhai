@@ -4,7 +4,7 @@ import {id,hash,seal,unseal,fail} from './security.mjs';
 import {appById,scope,audit,validate} from './platform.mjs';
 import {getProfile,playCycle} from './math/index.ts';
 import {walletRequest,validatedWalletBalance} from './wallet-binding.mjs';
-import {assertNewFinancialAdmission,FIRSTPARTY_FREE_PROFILE,publicAdmissionCapability} from './production-admission.mjs';
+import {assertNewFinancialAdmission,FIRSTPARTY_FREE_PROFILE,FIRSTPARTY_INTERNAL_PROFILE,publicAdmissionCapability,unitsPerCoin} from './production-admission.mjs';
 export {walletRequest} from './wallet-binding.mjs';
 export const walletBalance=validatedWalletBalance;
 const recoveryBatchSize=20,recoveryLock='recovery:probability';
@@ -99,39 +99,46 @@ async function serializePublicSession(s,{app,minor}){
   if(s.admission_profile===FIRSTPARTY_FREE_PROFILE)return{mode:'production',platformMode:'production',sessionId:s.id,epoch:0,stateVersion:s.state.version,balance:Number(minor)/10**app.currency_scale,betChoices:[],mathVersion:null,pendingRound:null,freeSpins:0,freeMultiplier:0,lockedBet:null,admission_profile:s.admission_profile,admission_revision:String(s.admission_revision),...publicAdmissionCapability({profile:s.admission_profile,game_ids:[]})};
   let pending=null,remaining=0,freeMultiplier=0,lockedBet=null,mathVersion=getProfile(s.game_id,app.math_profile).version;
   if(s.state.pendingPlay)pending=(await pool.query('SELECT payload FROM gp_plays WHERE id=$1',[s.state.pendingPlay])).rows[0]?.payload||null;
-  if(s.state.cycleId){const cycle=(await pool.query('SELECT * FROM gp_cycles WHERE id=$1',[s.state.cycleId])).rows[0];if(cycle?.result){if(s.state.pendingPlay||s.state.nextIndex<cycle.result.rounds.length)mathVersion=cycle.math_version;remaining=cycle.result.rounds[Math.max(0,s.state.nextIndex-1)]?.freeSpinsAfter||0;freeMultiplier=cycle.result.rounds[Math.max(0,s.state.nextIndex-1)]?.nextFreeMultiplier||0;lockedBet=remaining?Number(cycle.stake_minor)/100:null;}}
-  return {mode:'demo',platformMode:'sandbox',sessionId:s.id,epoch:0,stateVersion:s.state.version,balance:Number(minor)/100,betChoices:[10,50,100,200,500],mathVersion,pendingRound:pending,freeSpins:remaining,freeMultiplier,lockedBet};
+  if(s.state.cycleId){const cycle=(await pool.query('SELECT * FROM gp_cycles WHERE id=$1',[s.state.cycleId])).rows[0];if(cycle?.result){if(s.state.pendingPlay||s.state.nextIndex<cycle.result.rounds.length)mathVersion=cycle.math_version;remaining=cycle.result.rounds[Math.max(0,s.state.nextIndex-1)]?.freeSpinsAfter||0;freeMultiplier=cycle.result.rounds[Math.max(0,s.state.nextIndex-1)]?.nextFreeMultiplier||0;lockedBet=remaining?Number(cycle.stake_minor)/unitsPerCoin(app.currency_scale):null;}}
+  return {mode:s.admission_profile===FIRSTPARTY_INTERNAL_PROFILE?'production':'demo',platformMode:s.admission_profile===FIRSTPARTY_INTERNAL_PROFILE?'production':'sandbox',sessionId:s.id,epoch:0,stateVersion:s.state.version,balance:Number(minor)/unitsPerCoin(app.currency_scale),unitsPerCoin:unitsPerCoin(app.currency_scale),betChoices:getProfile(s.game_id,app.math_profile).config.stakeMinorChoices.map(value=>value/unitsPerCoin(app.currency_scale)),mathVersion,pendingRound:pending,freeSpins:remaining,freeMultiplier,lockedBet,...(s.admission_profile===FIRSTPARTY_INTERNAL_PROFILE?publicAdmissionCapability({profile:s.admission_profile,open:true,game_ids:app.game_ids}):{})};
 }
 export async function spin(session,body){
-  if(!/^[A-Za-z0-9_-]{8,128}$/.test(body.requestId||'')||![10,50,100,200,500].includes(body.bet)||!Number.isSafeInteger(body.expectedVersion))fail(400,'INVALID_REQUEST');
+  if(!/^[A-Za-z0-9_-]{8,128}$/.test(body.requestId||'')||typeof body.bet!=='number'||!Number.isFinite(body.bet)||body.bet<=0||!Number.isSafeInteger(body.expectedVersion))fail(400,'INVALID_REQUEST');
   return locked('session:'+session.id,async()=>{
     let s=(await pool.query('SELECT * FROM gp_sessions WHERE id=$1',[session.id])).rows[0];
     const prior=(await pool.query('SELECT * FROM gp_plays WHERE session_id=$1 AND request_id=$2',[s.id,body.requestId])).rows[0];
     if(prior){if(prior.bet!==body.bet)fail(409,'IDEMPOTENCY_CONFLICT');return {session:await publicSession(s),round:prior.payload};}
     if(s.state.pendingPlay)fail(409,'ROUND_PENDING','先完成当前回合演出');
     if(body.expectedVersion!==s.state.version)fail(409,'STATE_CHANGED','会话已更新，请恢复当前状态');
+    const sessionApp=await appById(s.app_id),factor=unitsPerCoin(sessionApp.currency_scale),stake=body.bet*factor,stakeMinor=String(stake);
+    if(!Number.isSafeInteger(stake)||![1000,5000,10000,20000,50000].includes(stake))fail(400,'INVALID_REQUEST');
     let cycle,index=0;
     if(s.state.cycleId){cycle=(await pool.query('SELECT * FROM gp_cycles WHERE id=$1',[s.state.cycleId])).rows[0];if(cycle?.result&&s.state.nextIndex<cycle.result.rounds.length)index=s.state.nextIndex;else cycle=null;}
     if(!cycle){
       cycle=(await pool.query('SELECT * FROM gp_cycles WHERE session_id=$1 AND request_id=$2',[s.id,body.requestId])).rows[0];
-      if(cycle&&Number(cycle.stake_minor)!==body.bet*100)fail(409,'IDEMPOTENCY_CONFLICT');
+      if(cycle&&cycle.stake_minor!==stakeMinor)fail(409,'IDEMPOTENCY_CONFLICT');
       if(!cycle){
-        const app=await appById(s.app_id);
-        await assertNewFinancialAdmission(pool,app);
-        if(app.status!=='active'||!app.game_ids.includes(s.game_id))fail(403,'GAME_DISABLED');
-        const m=getProfile(s.game_id,app.math_profile),cid=id('cycle');
-        // Exactly one unresolved cycle per session, even when a client changes request ID.
-        const pending=(await pool.query("SELECT id FROM gp_cycles WHERE session_id=$1 AND (status NOT IN ('SETTLED','REJECTED') OR (status='SETTLED' AND NOT EXISTS(SELECT 1 FROM gp_plays p WHERE p.cycle_id=gp_cycles.id)))",[s.id])).rows[0];if(pending)fail(409,'ROUND_PENDING','有一局正在查单，请恢复原请求');
-        cycle=(await pool.query('INSERT INTO gp_cycles(id,session_id,app_id,external_user_id,game_id,request_id,stake_minor,math_profile,math_version,math_hash,max_payout_minor) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *',[cid,s.id,app.id,s.external_user_id,s.game_id,body.requestId,String(body.bet*100),app.math_profile,m.version,m.hash,String(BigInt(body.bet*100)*BigInt(m.maxMultiplier))])).rows[0];
+        cycle=await tx(async c=>{
+          // Keep App and reviewed policy locks through the new-cycle commit.
+          // Closing admission cannot race a separate approval read.
+          const app=(await c.query('SELECT * FROM gp_apps WHERE id=$1 FOR SHARE',[s.app_id])).rows[0];
+          if(!app)fail(404,'NOT_FOUND');
+          await assertNewFinancialAdmission(c,app,{gameId:s.game_id});
+          if(app.status!=='active'||!app.game_ids.includes(s.game_id))fail(403,'GAME_DISABLED');
+          if(unitsPerCoin(app.currency_scale)!==factor)fail(409,'INTERNAL_COIN_SCOPE_CHANGED');
+          const m=getProfile(s.game_id,app.math_profile),cid=id('cycle');
+          const pending=(await c.query("SELECT id FROM gp_cycles WHERE session_id=$1 AND (status NOT IN ('SETTLED','REJECTED') OR (status='SETTLED' AND NOT EXISTS(SELECT 1 FROM gp_plays p WHERE p.cycle_id=gp_cycles.id)))",[s.id])).rows[0];if(pending)fail(409,'ROUND_PENDING','有一局正在查单，请恢复原请求');
+          return(await c.query('INSERT INTO gp_cycles(id,session_id,app_id,external_user_id,game_id,request_id,stake_minor,math_profile,math_version,math_hash,max_payout_minor) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *',[cid,s.id,app.id,s.external_user_id,s.game_id,body.requestId,stakeMinor,app.math_profile,m.version,m.hash,String(BigInt(stakeMinor)*BigInt(m.maxMultiplier))])).rows[0];
+        });
       }
       if(cycle.status==='REJECTED')fail(409,cycle.error?.code||'WALLET_REJECTED');cycle=await advanceCycle(cycle.id);
-    }else if(Number(cycle.stake_minor)!==body.bet*100)fail(409,'LOCKED_BET','免费转沿用已冻结的投注');
+    }else if(cycle.stake_minor!==stakeMinor)fail(409,'LOCKED_BET','免费转沿用已冻结的投注');
     // One validated, request-local balance snapshot after confirmed settlement.
     // Replays and independent session reads obtain their own fresh snapshot.
     const balance=await readSessionBalance(s);
     if(s.admission_profile!==FIRSTPARTY_FREE_PROFILE)getProfile(s.game_id,balance.app.math_profile);
-    const engine=cycle.result.rounds[index],stateBefore={balance:Number(balance.minor)/(s.admission_profile===FIRSTPARTY_FREE_PROFILE?10**balance.app.currency_scale:100)},roundId=id('round');
-    const payload={id:roundId,requestId:body.requestId,epoch:0,bet:body.bet,win:engine.totalWin/100,balanceBefore:index===0?stateBefore.balance-Number(cycle.payout_minor)/100+body.bet:stateBefore.balance,balanceAfter:stateBefore.balance,balanceScope:'complete_cycle',createdAt:new Date().toISOString(),engine,isFreeSpin:index>0,freeSpinsBefore:engine.freeSpinsBefore||0,freeSpinsAfter:engine.freeSpinsAfter||0,cycleId:cycle.id,settlementStatus:'SETTLED'};
+    const engine=cycle.result.rounds[index],stateBefore={balance:Number(balance.minor)/unitsPerCoin(balance.app.currency_scale)},roundId=id('round');
+    const payload={id:roundId,requestId:body.requestId,epoch:0,bet:body.bet,win:engine.totalWin/unitsPerCoin(balance.app.currency_scale),balanceBefore:index===0?stateBefore.balance-Number(cycle.payout_minor)/unitsPerCoin(balance.app.currency_scale)+body.bet:stateBefore.balance,balanceAfter:stateBefore.balance,balanceScope:'complete_cycle',createdAt:new Date().toISOString(),engine,isFreeSpin:index>0,freeSpinsBefore:engine.freeSpinsBefore||0,freeSpinsAfter:engine.freeSpinsAfter||0,cycleId:cycle.id,settlementStatus:'SETTLED'};
     const state={version:s.state.version+1,pendingPlay:roundId,cycleId:cycle.id,nextIndex:index+1};
     await tx(async c=>{await c.query('INSERT INTO gp_plays(id,session_id,request_id,cycle_id,round_index,bet,payload) VALUES($1,$2,$3,$4,$5,$6,$7)',[roundId,s.id,body.requestId,cycle.id,index,body.bet,payload]);await c.query('UPDATE gp_sessions SET state=$1 WHERE id=$2',[state,s.id]);});
     s={...s,state};return {session:await serializePublicSession(s,balance),round:payload};

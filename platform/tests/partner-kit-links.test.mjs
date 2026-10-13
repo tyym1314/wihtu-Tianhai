@@ -43,21 +43,14 @@ test('existing external and section links remain intact',()=>{
  assert.equal(rewriteKitLinks('specs/android.md',text,new Map(),new Set()),text);
 });
 
-test('the public Android document links only to a real deployed APK and its own real section',async()=>{
+test('the Android document describes verification only and links to the actual source module',async()=>{
  const text=await readFile(join(root,'specs/android-webview-integration.md'),'utf8');
- assert.ok(!text.includes('../android-smoke/README.md'));
- assert.ok(text.includes('## 显式选择验收目标'));
- assert.ok(markdownLinks(text).some(link=>link.target==='#显式选择验收目标'));
- const metadata=JSON.parse(await readFile(join(root,'public/downloads/android-smoke-build.json'),'utf8'));
+ assert.match(text,/仅用于验证游戏是否可上线/);
+ assert.doesNotMatch(text,/\/downloads\//);
  for(const {target}of markdownLinks(text)){
   if(target.startsWith('#'))continue;
-  assert.equal(target,apk);
-  const path=join(root,'public'+target),info=await lstat(path);
+  const path=resolve(root,'specs',target),info=await lstat(path);
   assert.ok(info.isFile()&&!info.isSymbolicLink());
-  assert.equal(metadata.apk,posix.basename(target));
-  assert.equal(metadata.variant,'historical-live');
-  assert.equal(metadata.origin,'https://game.tianyahuyu.com');
-  assert.equal(sha(await readFile(path)),metadata.sha256);
  }
 });
 
@@ -106,11 +99,11 @@ test('the built ZIP has valid hashes and working local links without inventing A
     assert.ok(files.has(member),`${name}: missing ${member}`);localLinks++;
    }
   }
-  assert.equal(externalApkLinks,1);assert.ok(localLinks>5);
+  assert.equal(externalApkLinks,0);assert.ok(localLinks>5);
   const android=files.get('specs/android-webview-integration.md').toString();
-  assert.match(android,/\[显式选择验收目标\]\(#显式选择验收目标\)/);
-  assert.match(android,/## 显式选择验收目标/);
+  assert.match(android,/仅用于验证游戏是否可上线/);
+  assert.doesNotMatch(android,/\/downloads\//);
   const phaseF=files.get('specs/phase-f-self-integration.md').toString();
-  assert.match(phaseF,/\[完整沙箱接入包\]\(\.\.\/README\.md\)（本接入包）/);
+  assert.doesNotMatch(phaseF,/\/downloads\/oasis-partner-sandbox-kit\.zip/);
  }finally{await rm(temporary,{recursive:true,force:true});}
 });

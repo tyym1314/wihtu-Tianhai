@@ -35,7 +35,14 @@ def package(repo, out):
                 or not path.resolve().is_relative_to(repo.resolve())):
             raise ValueError('UNSAFE_RELEASE_PATH: ' + str(path.relative_to(repo)))
     # Keep the existing symlink rejection even for newly excluded metadata.
-    files = {p for p in files if not is_local_metadata(p.relative_to(repo))}
+    def is_deploy_test_or_mock(path):
+        relative = path.relative_to(repo)
+        return (relative.parts[:2] == ('platform', 'deploy')
+                and ('mock-sandbox' in relative.parts or 'fixtures' in relative.parts
+                     or path.name.startswith('test_') or '.test.' in path.name))
+
+    files = {p for p in files if not is_local_metadata(p.relative_to(repo))
+             and not is_deploy_test_or_mock(p)}
     manifest = {str(p.relative_to(repo)): hashlib.sha256(p.read_bytes()).hexdigest()
                 for p in sorted(files)}
     for asset in retained['assets']:

@@ -22,7 +22,7 @@ async function loadFixture(options={}){
   './platform.mjs':prefix+'export const appById=id=>f.appById(id);export const scope=app=>f.scope(app);export const audit=(...args)=>f.audit(...args);export const validate=(...args)=>f.validate(...args);',
   './math/index.ts':prefix+'export const getProfile=(...args)=>f.getProfile(...args);export const playCycle=(...args)=>f.playCycle(...args);',
   './wallet-binding.mjs':prefix+'export const walletRequest=(...args)=>f.walletRequest(...args);export const validatedWalletBalance=(...args)=>f.validatedWalletBalance(...args);',
-  './production-admission.mjs':prefix+'export const FIRSTPARTY_FREE_PROFILE="firstparty-free-v1";export const assertNewFinancialAdmission=(...args)=>f.assertNewFinancialAdmission(...args);export const publicAdmissionCapability=info=>f.publicAdmissionCapability(info);',
+  './production-admission.mjs':prefix+'export const FIRSTPARTY_FREE_PROFILE="firstparty-free-v1";export const FIRSTPARTY_INTERNAL_PROFILE="firstparty-internal-games-v1";export const unitsPerCoin=scale=>{if(!Number.isInteger(scale)||scale<0||scale>6)throw Error("INTERNAL_COIN_PRECISION_INVALID");return 10**scale;};export const assertNewFinancialAdmission=(...args)=>f.assertNewFinancialAdmission(...args);export const publicAdmissionCapability=info=>f.publicAdmissionCapability(info);',
  };
  const rewritten=bytes.toString().replace(/from '(\.\/[^']+)'/g,(_match,specifier)=>{assert.ok(dependencies[specifier],'UNEXPECTED_RELATIVE_IMPORT');return `from '${data(dependencies[specifier])}'`;});
  try{return{module:await import(data(rewritten)),fixture:f,dispose(){delete globalThis[key];}};}catch(error){delete globalThis[key];throw error;}
@@ -46,7 +46,7 @@ function createFixture(options){
  f.validate=(name,body)=>{assert.equal(name,'Operation');assert.ok(body.operation_id&&(body.receipt||body.state==='REJECTED'));};
  f.assertNewFinancialAdmission=async(_db,a)=>{f.event('admission.check');if(a.environment==='production')f.fail(403,'PRODUCTION_FINANCIAL_ACCEPTANCE_REQUIRED');};
  f.publicAdmissionCapability=info=>({admission_profile:info?.profile||'closed',admission_open:info?.open===true,free_training_only:info?.profile==='firstparty-free-v1',financial_admission_enabled:false,allowed_room_modes:info?.profile==='firstparty-free-v1'?['bot-practice']:[],game_ids:info?.game_ids||[]});
- f.getProfile=(id,profile='99')=>{f.event('math.profile',{game:id,profile});if(!['thunder','tiger'].includes(id))throw new RangeError('Unknown probability game');if(!['98','99'].includes(profile))throw new RangeError('Unknown math profile');return{version:id+'-platform-'+profile+'-v1',hash:'a'.repeat(64),maxMultiplier:10000};};
+ f.getProfile=(id,profile='99')=>{f.event('math.profile',{game:id,profile});if(!['thunder','tiger'].includes(id))throw new RangeError('Unknown probability game');if(!['98','99'].includes(profile))throw new RangeError('Unknown math profile');return{version:id+'-platform-'+profile+'-v1',hash:'a'.repeat(64),maxMultiplier:10000,config:{stakeMinorChoices:[1000,5000,10000,20000,50000]}};};
  f.playCycle=()=>{f.event('math.compute');assert.ok([...f.operations.values()].some(op=>op.path.endsWith('/accept')&&op.state==='SUCCEEDED'),'NO_MATH_BEFORE_CONFIRMED_ACCEPT');return clone(result);};
  f.validatedWalletBalance=async(a,user)=>{f.balanceReads++;f.event('wallet.balance',{number:f.balanceReads});assert.equal(a.id,app.id);assert.deepEqual(f.scope(a),f.scope(app));assert.equal(user,f.session.external_user_id);if(options.balanceErrorAt===f.balanceReads)f.fail(503,'WALLET_INVALID_SCOPE');if(options.missingBalanceAt===f.balanceReads)return{balance:{}};return{balance:{available_minor:(options.balances||['123456','234567'])[f.balanceReads-1]||'345678'}};};
  f.walletRequest=async(a,method,path,raw,requestId)=>{
@@ -58,6 +58,7 @@ function createFixture(options){
  f.locked=async(key,fn)=>{const before=f.tails.get(key);let release;const tail=new Promise(resolve=>release=resolve);f.tails.set(key,tail);await before;f.locks.push(key);f.event('lock.enter',{key});try{return await fn();}finally{f.event('lock.leave',{key});assert.equal(f.locks.pop(),key);release();if(f.tails.get(key)===tail)f.tails.delete(key);}};
  f.query=async(sql,args=[])=>{
   f.event('sql',{sql});
+  if(sql==='SELECT * FROM gp_apps WHERE id=$1 FOR SHARE'){assert.equal(args.length,1);assert.equal(args[0],app.id);return rows([clone(app)]);}
   if(sql.startsWith('SELECT * FROM gp_sessions')){assert.equal(args[0],f.session.id);return rows([clone(f.session)]);}
   if(sql.startsWith('SELECT * FROM gp_plays'))return rows([...f.plays.values()].filter(p=>p.session_id===args[0]&&p.request_id===args[1]).map(clone));
   if(sql.startsWith('SELECT payload FROM gp_plays'))return rows(f.plays.has(args[0])?[{payload:clone(f.plays.get(args[0]).payload)}]:[]);
@@ -122,7 +123,7 @@ test('request bodies and publicSession arguments cannot inject the private balan
   const response=await l.module.spin(l.fixture.session,{...request,balance:999999,app_id:'foreign_app',external_user_id:'foreign_user',minor:'999999',app:{id:'foreign_app'}});
   assert.equal(response.session.balance,40);assert.equal(response.round.balanceAfter,40);
   const read=await l.module.publicSession(l.fixture.session,{app:{id:'foreign_app',currency_scale:9},minor:'999999'});
-  assert.equal(read.balance,50);assert.equal(l.fixture.appReads,2);assert.equal(l.fixture.balanceReads,2);
+  assert.equal(read.balance,50);assert.equal(l.fixture.appReads,3);assert.equal(l.fixture.balanceReads,2);
   assert.equal(Object.hasOwn(l.module,'readSessionBalance'),false);assert.equal(Object.hasOwn(l.module,'serializePublicSession'),false);
  }finally{l.dispose();}
 });

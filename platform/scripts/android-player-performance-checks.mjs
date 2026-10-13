@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {ARENA_IDS} from '../shared/games.mjs';
+import {assertPlayerDeviceSelection,playerCatalog,PLAYER_FREE_PROFILE} from './android-player-acceptance-checks.mjs';
 import {statistics,percentile} from './mobile-quality-metrics.mjs';
 import {runPracticeInputBaseline,verifyRunPracticeInputAction} from './android-game-actions.mjs';
 import {VISIBLE_FEEDBACK_PROTOCOL_SHA256,assertVisibleFeedbackImplementation,assertVisibleFeedbackCaptureResolution} from './android-player-visible-feedback.mjs';
@@ -40,12 +41,12 @@ export function finalizePerformanceStatus(report,{shortDiagnostic=false}={}){
 }
 
 export function performanceArguments(argv,thresholds){
- const options={run:false,adbPort:5037,serial:'46dcfd25',games:[...ARENA_IDS],sampleMs:thresholds.minimum_active_sample_ms,repetitions:thresholds.entry_repetitions,roomMs:60000,runFeedbackResolution:'device'};
- const keys={'--metadata':'metadata','--platform-manifest':'platformManifest','--credentials-file':'credentialsFile','--apksigner':'apksigner','--output':'output','--adb-port':'adbPort','--serial':'serial','--games':'games','--sample-ms':'sampleMs','--room-ms':'roomMs','--repetitions':'repetitions','--feedback-protocol':'feedbackProtocolFile','--feedback-source-dir':'feedbackSourceDir','--run-feedback-resolution':'runFeedbackResolution'};
+ const options={run:false,adbPort:5037,serial:'46dcfd25',profile:PLAYER_FREE_PROFILE,deviceRole:'physical',games:[...ARENA_IDS],sampleMs:thresholds.minimum_active_sample_ms,repetitions:thresholds.entry_repetitions,roomMs:60000,runFeedbackResolution:'device'};
+ const keys={'--metadata':'metadata','--platform-manifest':'platformManifest','--credentials-file':'credentialsFile','--apksigner':'apksigner','--output':'output','--adb-port':'adbPort','--serial':'serial','--games':'games','--sample-ms':'sampleMs','--room-ms':'roomMs','--repetitions':'repetitions','--feedback-protocol':'feedbackProtocolFile','--feedback-source-dir':'feedbackSourceDir','--run-feedback-resolution':'runFeedbackResolution','--profile':'profile','--device-role':'deviceRole','--health-producer-contract':'healthProducerContract'};
  const seen=new Set();for(let i=0;i<argv.length;i++){const flag=argv[i];assert.ok(!seen.has(flag),'DUPLICATE_ARGUMENT');seen.add(flag);if(flag==='--run'){options.run=true;continue;}assert.ok(keys[flag],'UNKNOWN_ARGUMENT');const value=argv[++i];assert.ok(value&&!value.startsWith('--'),'ARGUMENT_VALUE_REQUIRED');options[keys[flag]]=value;}
  for(const key of ['metadata','platformManifest','apksigner','output'])assert.ok(options[key],key.toUpperCase()+'_REQUIRED');
  for(const key of ['adbPort','sampleMs','roomMs','repetitions']){options[key]=Number(options[key]);assert.ok(Number.isSafeInteger(options[key]),'INTEGER_ARGUMENT_REQUIRED');}
- assert.equal(options.adbPort,5037,'AUTHORIZED_ADB_PORT_REQUIRED');assert.equal(options.serial,'46dcfd25','AUTHORIZED_PHYSICAL_SERIAL_REQUIRED');
+ assertPlayerDeviceSelection(options);playerCatalog(options.profile);
  assert.ok(options.sampleMs>=1000&&options.sampleMs<=900000,'SAMPLE_MS_OUT_OF_RANGE');assert.ok(options.roomMs>=1000&&options.roomMs<=900000,'ROOM_MS_OUT_OF_RANGE');assert.ok(options.repetitions>=1&&options.repetitions<=20,'REPETITIONS_OUT_OF_RANGE');
  if(typeof options.games==='string')options.games=options.games==='priority'?[...PRIORITY_GAMES]:options.games.split(',');
  assert.ok(options.games.length&&new Set(options.games).size===options.games.length&&options.games.every(game=>ARENA_IDS.includes(game)),'ONLY_ADMITTED_ARENA_GAMES');
@@ -54,7 +55,7 @@ export function performanceArguments(argv,thresholds){
  options.fullCatalog=options.games.length===ARENA_IDS.length;options.shortDiagnostic=options.sampleMs<thresholds.minimum_active_sample_ms||options.repetitions<thresholds.entry_repetitions;return options;
 }
 
-export function physicalAdbArgs(options,args){assert.equal(options.adbPort,5037);assert.equal(options.serial,'46dcfd25');return ['-H','127.0.0.1','-P','5037','-s','46dcfd25',...args];}
+export function physicalAdbArgs(options,args){assertPlayerDeviceSelection(options);return ['-H','127.0.0.1','-P','5037','-s',options.serial,...args];}
 export function parseWebViewProvider(text){const match=text.match(/Current WebView package \(name, version\): \(([A-Za-z0-9_.]+), ([0-9.]+)\)/);assert.ok(match,'SYSTEM_WEBVIEW_PROVIDER_UNPROVEN');assert.match(text,/WebView package dirty:\s*false/,'SYSTEM_WEBVIEW_PROVIDER_DIRTY');assert.match(text,/Any WebView package installed:\s*true/,'SYSTEM_WEBVIEW_PROVIDER_MISSING');return {packageName:match[1],version:match[2]};}
 export function parseThermal(text){const value=text.match(/Thermal Status:\s*(\d+)/);return value?{available:true,status:Number(value[1])}:{available:false,status:null};}
 export function parseRefresh(text){const value=text.match(/mActiveSfDisplayMode=.*?peakRefreshRate=([0-9.]+).*?vsyncRate=([0-9.]+)/);return value?{available:true,peakHz:Number(value[1]),vsyncHz:Number(value[2])}:{available:false,peakHz:null,vsyncHz:null};}

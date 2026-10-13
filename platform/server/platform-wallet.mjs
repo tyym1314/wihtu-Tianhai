@@ -1,6 +1,8 @@
 import {ledgerRequest} from './wallet/index.mjs';
 import {WalletError} from './wallet/security.mjs';
 import {fail} from './security.mjs';
+import {FIRSTPARTY_INTERNAL_PROFILE,readProductionAdmission} from './production-admission.mjs';
+import {issueInternalGameCoins} from './internal-game-coins.mjs';
 
 const fields=['partner_id','app_id','environment','wallet_scope_id','currency_id'];
 const scopeOf=app=>({partner_id:app.partner_id,app_id:app.id,environment:app.environment,wallet_scope_id:app.wallet_scope_id,currency_id:app.currency_id});
@@ -32,6 +34,11 @@ export async function ensurePlatformWalletAccount(db,appId,playerId,externalUser
  const inserted=await db.query(`INSERT INTO wallet_users(scope_id,external_user_id,available) VALUES($1,$2,0)
   ON CONFLICT DO NOTHING RETURNING external_user_id`,[scopeId(row),externalUserId]);
  if(inserted.rowCount)await db.query("INSERT INTO gp_audit(actor,action,app_id,detail) VALUES($1,'wallet.account_opened',$2,$3)",[playerId,appId,{external_user_id:externalUserId,opening_balance_minor:'0',provider:'platform'}]);
+ const selected=(await db.query('SELECT profile FROM gp_production_admission WHERE app_id=$1',[appId])).rows[0];
+ if(selected?.profile===FIRSTPARTY_INTERNAL_PROFILE){
+  const admission=await readProductionAdmission(db,row,{intent:'metadata'});
+  if(admission.open)await issueInternalGameCoins(db,admission,externalUserId,playerId);
+ }
 }
 
 export async function platformWalletRequest(db,app,binding,method,path,raw,requestId){

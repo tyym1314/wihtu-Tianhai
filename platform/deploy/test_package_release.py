@@ -134,8 +134,13 @@ class PackageRetainedAssetTest(unittest.TestCase):
             package_module.package(self.repo, out)
         self.assertFalse(out.exists())
 
-    def test_real_archive_and_both_manifests_exclude_only_local_metadata(self):
-        excluded = ('src/.DS_Store', 'src/._engine.mjs', 'src/Thumbs.db',
+    def test_real_archive_excludes_local_metadata_and_deploy_test_or_mock_sources(self):
+        excluded = ('platform/deploy/mock-sandbox/install.py',
+                    'platform/deploy/fixtures/history/PROVENANCE.json',
+                    'platform/deploy/production-instance/fixtures/old/bootstrap.mjs',
+                    'platform/deploy/test_stage_delta.py',
+                    'platform/deploy/production-instance/production-instance.test.mjs',
+                    'src/.DS_Store', 'src/._engine.mjs', 'src/Thumbs.db',
                     'platform/server/desktop.ini', 'platform/shared/.idea/workspace.xml',
                     'platform/specs/.vscode/settings.json', 'platform/deploy/.cache/check.json',
                     'platform/dist/.DS_Store', 'platform/arena/dist/._index.html',

@@ -20,3 +20,6 @@ CREATE INDEX IF NOT EXISTS wallet_reservations_expiry ON wallet_reservations(sco
 CREATE INDEX IF NOT EXISTS wallet_probability_expiry ON wallet_probability(scope_id,expires_at) WHERE state='AUTHORIZED';
 CREATE INDEX IF NOT EXISTS wallet_ledger_operations ON wallet_ledger(scope_id,operation_id);
 CREATE TABLE IF NOT EXISTS wallet_operation_ids (partner_id text NOT NULL, app_id text NOT NULL, environment text NOT NULL, operation_id text NOT NULL, scope_id text NOT NULL REFERENCES wallet_scopes, PRIMARY KEY(partner_id,app_id,environment,operation_id));
+
+-- Bounded nonredeemable coin issuer account; existing 47-table structure remains.
+ALTER TABLE wallet_scopes ADD COLUMN IF NOT EXISTS internal_coin_issued bigint NOT NULL DEFAULT 0 CHECK(internal_coin_issued>=0);

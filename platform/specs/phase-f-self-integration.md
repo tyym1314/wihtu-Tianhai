@@ -6,7 +6,7 @@
 
 ## 1. 组件与准备
 
-平台部署命令在仓库的 `platform/` 目录执行；合作方钱包和宿主命令也可在[完整沙箱接入包](/downloads/oasis-partner-sandbox-kit.zip)解压后的包根目录执行，无需取得平台源码。包内带有独立 `package.json`、依赖锁和 README，先运行 `npm ci` 与 `npm run verify`。平台初次部署见[平台 README](../README.md)；已有本地平台时由部署方更新环境并重启，不要并行启动第二份同端口服务。
+本文中的命令在仓库的 `platform/` 目录执行。钱包与宿主示例保留在源码中，先运行 `npm ci` 安装依赖。平台初次部署见[平台 README](../README.md)；已有本地平台时由部署方更新环境并重启，不要并行启动第二份同端口服务。
 
 | 组件 | 默认位置 | 身份与用途 |
 |---|---|---|
@@ -34,11 +34,11 @@ OASIS_WALLET_ALLOWED_ORIGINS='http://127.0.0.1:8801' npm run server
 
 合作方可改自己的 App 名称、启停状态，以及当前十三款游戏的开关；不能修改 RTP 数学档位、竞技费率、合作方身份或其他 App。费率/数学配置由平台管理员管理。初始默认竞技费率为 500 bps，即 5%；对局创建后条款冻结。
 
-固定游戏 ID：`carrom, match, golf, darts, ludo, pool, bowling, jackaroo, domino, run, thunder, tiger`。实际可启动游戏以签名 `GET /v1/games` 的 `available` 和 `modes` 为准。
+固定游戏 ID：`carrom, match, golf, darts, ludo, pool, bowling, jackaroo, domino, run, towerlink, thunder, tiger`。实际可启动游戏以签名 `GET /v1/games` 的 `available` 和 `modes` 为准。
 
 ## 3. 准备独立钱包数据库和私有配置
 
-下载[完整合作方沙箱接入包 ZIP](/downloads/oasis-partner-sandbox-kit.zip)。包内 `examples/partner-wallet/README.md` 与 `config.example.json` 提供钱包入口和占位配置；还包含钱包依赖源码、BFF/H5、Node SDK、公开协议和四条数学版本元数据。包不含真实密钥、token、运行报告或游戏素材；所有 `REPLACE_...` 配置需在私有文件中填写。
+仓库中的 `examples/partner-wallet/README.md` 与 `config.example.json` 提供钱包入口和占位配置；BFF/H5、Node SDK 和公开协议也保留在源码中。所有 `REPLACE_...` 配置需在私有文件中填写，不向公开静态目录写入真实密钥、token 或运行报告。
 
 由数据库管理员创建独立测试库，例如：
 

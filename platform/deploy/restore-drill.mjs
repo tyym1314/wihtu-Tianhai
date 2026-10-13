@@ -130,9 +130,11 @@ SELECT json_build_object(
 
 // Keep the legacy literal usable for pre-transfer backups. New databases must
 // project the signed clearing account into the ledger, never exempt it.
-export function restoreAuditSQL(transfers=true){
- if(!transfers)return RESTORE_AUDIT_SQL;
- return RESTORE_AUDIT_SQL.replace('), mismatches AS (',
+export function restoreAuditSQL(transfers=true,{internalGameCoins=false}={}){
+ const base=internalGameCoins?RESTORE_AUDIT_SQL.replace('), mismatches AS (',
+  " UNION ALL SELECT scope_id,'internal_coin_issuance',-internal_coin_issued,0 FROM wallet_scopes\n), mismatches AS ("):RESTORE_AUDIT_SQL;
+ if(!transfers)return base;
+ return base.replace('), mismatches AS (',
   " UNION ALL SELECT scope_id,account,net_minor,0 FROM wallet_transfer_clearing\n), mismatches AS (")
   .replace(/\);\s*$/,`)::jsonb || (SELECT audit::jsonb FROM (${TRANSFER_AUDIT_SQL.trim().replace(/;$/,'')}) transfer_audit)
  || jsonb_build_object('pending_transfers',(SELECT count(*) FROM gp_transfers WHERE state='PENDING'));`);

@@ -44,7 +44,7 @@ ALTER TABLE gp_sessions ADD COLUMN IF NOT EXISTS admission_revision bigint CHECK
 -- independently reviewed production operation records the exact source/scope.
 CREATE TABLE IF NOT EXISTS gp_production_admission (
  app_id text PRIMARY KEY REFERENCES gp_apps(id),
- profile text NOT NULL CHECK(profile='firstparty-free-v1'),
+ profile text NOT NULL CHECK(profile IN ('firstparty-free-v1','firstparty-internal-games-v1')),
  state text NOT NULL DEFAULT 'closed' CHECK(state IN ('closed','open')),
  revision bigint NOT NULL CHECK(revision>0),scope jsonb NOT NULL,
  currency_scale int NOT NULL CHECK(currency_scale BETWEEN 0 AND 6),
@@ -57,3 +57,7 @@ CREATE TABLE IF NOT EXISTS gp_production_admission (
 -- Additive environment support. A runtime identity still forbids mixed-environment databases.
 ALTER TABLE gp_apps DROP CONSTRAINT IF EXISTS gp_apps_environment_check;
 ALTER TABLE gp_apps ADD CONSTRAINT gp_apps_environment_check CHECK(environment IN ('sandbox','production'));
+
+-- Explicit internal nonredeemable coins are separate from the old zero-ledger profile.
+ALTER TABLE gp_production_admission DROP CONSTRAINT IF EXISTS gp_production_admission_profile_check;
+ALTER TABLE gp_production_admission ADD CONSTRAINT gp_production_admission_profile_check CHECK(profile IN ('firstparty-free-v1','firstparty-internal-games-v1'));

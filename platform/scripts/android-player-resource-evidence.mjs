@@ -1,5 +1,6 @@
 /** Actual consumed public image bytes; no Response clone/read, refetch or decoded-pixel proof. */
 import assert from 'node:assert/strict';
+import {RELEASED_IDS} from '../shared/games.mjs';
 import {createHash} from 'node:crypto';
 import {readFile,lstat} from 'node:fs/promises';
 import {join} from 'node:path';
@@ -35,7 +36,7 @@ export async function dracoWorkerResourcePins({origin,manifest,root=resourceRoot
 
 export function resourceEvidenceConfiguration({origin,entryUrl,games,manifest,nonce,generatedScripts=generatedPinsByManifest.get(manifest)||[]}){
  const base=new URL(origin),entry=new URL(entryUrl);assert.equal(base.protocol,'https:');assert.equal(base.origin,origin);assert.equal(entry.origin,origin);
- assert.ok(Array.isArray(games)&&games.length>0&&games.length<=11&&new Set(games).size===games.length&&games.every(game=>/^[a-z]+$/.test(game)),'RESOURCE_GAMES_INVALID');
+ assert.ok(Array.isArray(games)&&games.length>0&&games.length<=RELEASED_IDS.length&&new Set(games).size===games.length&&games.every(game=>RELEASED_IDS.includes(game)),'RESOURCE_GAMES_INVALID');
  assert.ok(typeof nonce==='string'&&nonce.length>=16&&nonce.length<=128,'RESOURCE_NONCE_INVALID');
  const expected=Object.fromEntries([...manifest.expected].filter(([path])=>imagePath(path)));
  assert.ok(Object.keys(expected).length>0&&Object.keys(expected).length<=2048,'RESOURCE_IMAGE_MANIFEST_BOUND');

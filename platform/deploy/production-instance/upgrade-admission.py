@@ -7,6 +7,7 @@ import copy
 import datetime as dt
 import fcntl
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -394,7 +395,7 @@ def policy_projection(alias='q'):
  return 'json_build_object('+','.join(values)+')'
 
 
-def snapshot_sql(app_id, *, policy_exists=True):
+def snapshot_sql(app_id, *, policy_exists=True, profile='firstparty-free-v1'):
  require(re.fullmatch('app_[A-Za-z0-9_-]{1,124}',app_id or ''),'ADMISSION_APP_ID_INVALID')
  app='json_build_object('+','.join(literal(name)+',a.'+name for name in APP_FIELDS)+')'
  policy='(SELECT '+policy_projection()+' FROM gp_production_admission q WHERE q.app_id='+literal(app_id)+')' if policy_exists else 'null'
@@ -402,6 +403,11 @@ def snapshot_sql(app_id, *, policy_exists=True):
                    'wallet_operation_ids','gp_cycles','gp_operations','gp_plays','gp_transfers','gp_transfer_accounts',
                    'gp_transfer_outbox','wallet_transfer_clearing','gp_transfer_bindings')
  financial='+'.join('(SELECT count(*) FROM '+name+')' for name in financial_tables)
+ require(profile in ('firstparty-free-v1','firstparty-internal-games-v1'),'ADMISSION_PROFILE_INVALID')
+ internal_field=''
+ if profile=='firstparty-internal-games-v1':
+  spec=importlib.util.spec_from_file_location('snapshot_internal_admission',Path(__file__).with_name('admission-runtime.py')); admission=importlib.util.module_from_spec(spec); spec.loader.exec_module(admission)
+  internal_field=", 'internal_audit',("+admission.internal_audit_sql().strip().rstrip(';')+")"
  return """BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
 SET LOCAL statement_timeout='20s';
 SELECT json_build_object(
@@ -420,20 +426,22 @@ SELECT json_build_object(
   +(SELECT count(*) FROM wallet_scopes WHERE treasury_available<>0 OR treasury_reserved<>0 OR treasury_inbound<>0 OR fee_available<>0 OR fee_pending<>0 OR ledger_version<>0),
  'pending_rooms',(SELECT count(*) FROM pvp_rooms WHERE status NOT IN ('settled','cancelled','voided')),
  'pending_pvp_operations',(SELECT count(*) FROM pvp_operations WHERE state='PENDING'),
- 'active_users',(SELECT count(*) FROM pvp_active_users)
+ 'active_users',(SELECT count(*) FROM pvp_active_users){internal_field}
 );
 COMMIT;
-""".format(app=app,app_id=literal(app_id),policy=policy,financial=financial)
+""".format(app=app,app_id=literal(app_id),policy=policy,financial=financial,internal_field=internal_field)
 
 
-def validate_database(value, a, args, *, action):
+def validate_database(value, a, args, *, action, profile=None):
+ profile=profile or getattr(args,'profile',a.FREE_PROFILE)
+ require(profile in (a.FREE_PROFILE,a.INTERNAL_PROFILE),'ADMISSION_PROFILE_INVALID')
  require(value.get('database')=='oasis_production' and type(value.get('database_oid')) is int and value['database_oid']==OID
          and value.get('environment')=='production' and type(value.get('apps')) is int and value['apps']==1,'ADMISSION_DATABASE_IDENTITY_CHANGED')
  app=value.get('app');require(isinstance(app,dict) and app.get('id')==args.app_id
          and app.get('partner_id')=='partner_oasis_platform' and app.get('environment')=='production'
          and app.get('wallet_url')=='' and app.get('status') in ('active','paused'),'ADMISSION_APP_CHANGED')
  require(type(app.get('currency_scale')) is int and 0<=app['currency_scale']<=6
-         and isinstance(app.get('game_ids'),list) and len(app['game_ids'])==11 and set(app['game_ids'])==a.ARENA_GAMES,
+         and isinstance(app.get('game_ids'),list) and len(app['game_ids'])==(13 if profile==a.INTERNAL_PROFILE else 11) and set(app['game_ids'])==(a.RELEASED_GAMES if profile==a.INTERNAL_PROFILE else a.ARENA_GAMES),
          'ADMISSION_GAME_OR_CURRENCY_SCOPE_CHANGED')
  scope={name:app['id'] if name=='app_id' else app[name] for name in a.SCOPE_FIELDS}
  require(all(a.identifier(item) for item in scope.values()) and isinstance(app.get('allowed_origins'),list)
@@ -446,9 +454,12 @@ def validate_database(value, a, args, *, action):
  require(isinstance(wallet,dict) and all(wallet.get(name)==scope[name] for name in a.SCOPE_FIELDS)
          and wallet.get('scope_id')==':'.join(scope[name] for name in a.SCOPE_FIELDS)
          and wallet.get('currency_scale')==app['currency_scale'],'ADMISSION_WALLET_SCOPE_CHANGED')
- require(all(str(wallet.get(name))=='0' for name in ('treasury_available','treasury_reserved','treasury_inbound',
-         'fee_available','fee_pending','ledger_version')) and value.get('financial_rows')==0 and value.get('nonzero_money')==0,
-         'ADMISSION_FINANCIAL_STATE_NOT_EMPTY')
+ if profile==a.FREE_PROFILE:
+  require(all(str(wallet.get(name))=='0' for name in ('treasury_available','treasury_reserved','treasury_inbound','fee_available','fee_pending','ledger_version')) and value.get('financial_rows')==0 and value.get('nonzero_money')==0,'ADMISSION_FINANCIAL_STATE_NOT_EMPTY')
+ else:
+  internal=value.get('internal_audit')
+  require(isinstance(internal,dict) and set(internal)=={'internal_coin_integrity_errors','internal_financial_scope_errors'} and all(type(v) is int and v==0 for v in internal.values()),'ADMISSION_INTERNAL_LEDGER_INTEGRITY_FAILED')
+  require(all(re.fullmatch(r'(0|[1-9][0-9]{0,18})',str(wallet.get(name))) and int(wallet[name])<=9223372036854775807 for name in ('treasury_available','treasury_reserved','treasury_inbound','fee_available','fee_pending','ledger_version','internal_coin_issued')),'ADMISSION_INTERNAL_LEDGER_STATE_INVALID')
  counts=value.get('counts');require(isinstance(counts,dict) and all(type(item) is int and item>=0 for item in counts.values()),
                                   'ADMISSION_DATABASE_COUNTS_INVALID')
  if action in ('upgrade','approve'):

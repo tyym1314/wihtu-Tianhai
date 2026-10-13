@@ -17,6 +17,7 @@ import {migrateWalletBindings} from './wallet-binding.mjs';
 import {routeIntegration} from './integration-routes.mjs';
 import {migrateIntegrationChecks,recoverIntegrationChecks} from './integration-checks.mjs';
 import {operationsStatus} from './operations-status.mjs';
+import {unitsPerCoin,firstpartyProfile,publicAdmissionCapability,assertExternalFinancialRouteAllowed} from './production-admission.mjs';
 import {publicAdmissionStatus} from './admission-status.mjs';
 import {enginePoolStats,closeEnginePool} from './pvp/engine-pool.mjs';
 import {runtime,preflightRuntime,migrateRuntime,assertProductionAppReady} from './runtime-mode.mjs';
@@ -92,7 +93,7 @@ async function adminRoutes(req,res,path,b){
   fail(404,'NOT_FOUND');
 }
 export function createPlatformServer(){return createServer(async(req,res)=>{beginRoomReadTiming(req,res,{sink:roomTimingSink});beginGameEntryTiming(req,res);try{
-  const path=req.url||'/';if(path.includes('?')&&path.startsWith('/v1/'))fail(400,'INVALID_TARGET');
+  const path=req.url||'/';assertExternalFinancialRouteAllowed(runtime,path);if(path.includes('?')&&path.startsWith('/v1/'))fail(400,'INVALID_TARGET');
   if(path==='/health/ready'&&req.method==='GET'){await pool.query('SELECT 1');return send(res,200,{status:'ok',environment:runtime.environment});}
   if(path==='/health'&&req.method==='GET')return send(res,200,{status:'ok',environment:runtime.environment});
   if(path.startsWith('/legacy/')||path.startsWith('/arena/')||path.startsWith('/play/'))return await serveLegacy(req,res,path);
@@ -129,7 +130,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
     const active=activeId==null?undefined:{id:activeId,game_id:activeGame};
     let balance=null,balance_error=null;try{balance=await walletBalance(app,s.external_user_id);}catch(e){balance_error='BALANCE_UNAVAILABLE';}
     return send(res,200,{session_id:s.id,external_user_id:s.external_user_id,game_id:s.game_id,scope:scope(app),balance,balance_error,competitive_fee_bps:app.competitive_fee_bps,
-      ...(s.admission_profile==='firstparty-free-v1'?{admission_profile:s.admission_profile,admission_revision:String(s.admission_revision),free_training_only:true,financial_admission_enabled:false,allowed_room_modes:['bot-practice']}:{}),
+      ...(firstpartyProfile(s.admission_profile)?{...publicAdmissionCapability({profile:s.admission_profile,open:true,game_ids:app.game_ids}),admission_revision:String(s.admission_revision)}:{}),
       ...(s.game_id==='run'?{run_practice_input_protocol:RUN_PRACTICE_INPUT_PROTOCOL,run_practice_input_profiles:runPracticeProfileCapability(),run_practice_courses:runPracticeCourseCapability()}:{}),
       active_room_id:active?.game_id===s.game_id?active.id:null,other_active_game:active&&active.game_id!==s.game_id?active.game_id:null});
   }
@@ -138,13 +139,13 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
   if(play){const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability',req.method,path);if(req.method==='POST')checkOrigin(req);if(s.game_id!==play[1])fail(403,'SCOPE_FORBIDDEN');const route=play[2];
     if(route==='session'&&req.method==='GET'){
       // Reattach a result fixed/settled during a lost response or process restart.
-      if(!s.state.pendingPlay){const lost=(await pool.query("SELECT c.* FROM gp_cycles c WHERE c.session_id=$1 AND c.status!='REJECTED' AND NOT EXISTS(SELECT 1 FROM gp_plays p WHERE p.cycle_id=c.id) ORDER BY c.created_at LIMIT 1",[s.id])).rows[0];if(lost){const r=await spin(s,{requestId:lost.request_id,bet:Number(lost.stake_minor)/100,expectedVersion:s.state.version});return send(res,200,r.session);}}
+      if(!s.state.pendingPlay){const lost=(await pool.query("SELECT c.* FROM gp_cycles c WHERE c.session_id=$1 AND c.status!='REJECTED' AND NOT EXISTS(SELECT 1 FROM gp_plays p WHERE p.cycle_id=c.id) ORDER BY c.created_at LIMIT 1",[s.id])).rows[0];if(lost){const r=await spin(s,{requestId:lost.request_id,bet:Number(lost.stake_minor)/unitsPerCoin((await appById(s.app_id)).currency_scale),expectedVersion:s.state.version});return send(res,200,r.session);}}
       return send(res,200,await publicSession(s));
     }
     if(route==='spin'&&req.method==='POST')return send(res,200,await spin(s,body));
     if(route==='ack'&&req.method==='POST')return send(res,200,await acknowledge(s,body));
     if(route==='history'&&req.method==='GET')return send(res,200,{rounds:(await pool.query('SELECT payload FROM gp_plays WHERE session_id=$1 ORDER BY created_at DESC LIMIT 20',[s.id])).rows.map(r=>r.payload)});
-    if(route==='config'&&req.method==='GET'){let profile=(await appById(s.app_id)).math_profile;if(s.state.cycleId){const current=(await pool.query('SELECT * FROM gp_cycles WHERE id=$1',[s.state.cycleId])).rows[0];if(current?.result&&(s.state.pendingPlay||s.state.nextIndex<current.result.rounds.length))profile=current.math_profile;}return send(res,200,{...getProfile(s.game_id,profile),demoOnly:true,unitsPerCoin:100,betChoices:[10,50,100,200,500]});}
+    if(route==='config'&&req.method==='GET'){const configured=await appById(s.app_id);let profile=configured.math_profile;if(s.state.cycleId){const current=(await pool.query('SELECT * FROM gp_cycles WHERE id=$1',[s.state.cycleId])).rows[0];if(current?.result&&(s.state.pendingPlay||s.state.nextIndex<current.result.rounds.length))profile=current.math_profile;}return send(res,200,{...getProfile(s.game_id,profile),demoOnly:configured.environment!=='production',unitsPerCoin:unitsPerCoin(configured.currency_scale),...publicAdmissionCapability({profile:s.admission_profile,open:true,game_ids:configured.game_ids}),betChoices:getProfile(s.game_id,profile).config.stakeMinorChoices.map(value=>value/unitsPerCoin(configured.currency_scale))});}
     fail(405,'METHOD_NOT_ALLOWED');
   }
   fail(404,'NOT_FOUND');

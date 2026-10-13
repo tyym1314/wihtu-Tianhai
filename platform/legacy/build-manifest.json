@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-10T10:46:48.742Z",
+  "generatedAt": "2026-10-13T05:56:56.675Z",
   "status": "PLATFORM_PRESENTATION_BUILD",
-  "sourceFilesVerifiedUnchanged": 24,
+  "sourceFilesVerifiedUnchanged": 23,
   "outputDirectory": "platform/legacy/dist",
   "htmlRoutes": [
     "/play/thunder",
@@ -10,10 +10,6 @@
   "assetBase": "/legacy/",
   "authentication": "server-bound host-origin and nonce channel; one-time code; Bearer in game bridge memory only",
   "originalSources": [
-    {
-      "path": "src/.DS_Store",
-      "sha256": "1505a02525b10ec67be1576288e821ae8fa32723c3961077218634de648d88a4"
-    },
     {
       "path": "src/game/engine.ts",
       "sha256": "58fc823228724deb9e9c203898680834ee2c800b01c464a9a5af4935906f122d"
