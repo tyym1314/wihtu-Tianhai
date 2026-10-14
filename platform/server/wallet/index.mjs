@@ -103,9 +103,10 @@ async function releaseAuthorization(c,a,state,operationId=c.operationId){
 export async function registerMathProfiles(pool,{scope,math_profiles=[]}){
  return withScope(pool,scopeId(scope),async c=>{for(const p of math_profiles){if(!['thunder','tiger'].includes(p.game_id)||!/^[a-f0-9]{64}$/.test(p.math_config_hash)||!/^[A-Za-z0-9_.-]{1,96}$/.test(p.math_version))fail('INVALID_REQUEST','Invalid approved math profile',400);amount(p.max_payout_multiplier);const old=(await c.db.query('SELECT * FROM wallet_math_profiles WHERE scope_id=$1 AND game_id=$2 AND math_version=$3',[c.id,p.game_id,p.math_version])).rows[0];if(old&&(old.math_config_hash!==p.math_config_hash||old.max_payout_multiplier!==p.max_payout_multiplier))fail('IDEMPOTENCY_CONFLICT','Immutable math version already registered');await c.db.query('INSERT INTO wallet_math_profiles(scope_id,game_id,math_version,math_config_hash,max_payout_multiplier) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING',[c.id,p.game_id,p.math_version,p.math_config_hash,p.max_payout_multiplier]);}return {registered:math_profiles.length};});
 }
-export async function provisionWallet(pool,{scope,key_id,secret_base64,users=[],treasury_minor,math_profiles=[],testProductionScope=false}){
- // testProductionScope lets a test stand this reference wallet in for a partner's own production wallet.
- if(scope?.environment!=='sandbox'&&!(testProductionScope===true&&process.env.NODE_ENV!=='production'))fail('REFERENCE_PROVISION_SANDBOX_ONLY','Reference opening balances are restricted to sandbox',403);
+export async function provisionWallet(pool,{scope,key_id,secret_base64,users=[],treasury_minor,math_profiles=[],partnerOwnedScope=false}){
+ // partnerOwnedScope: this reference implementation runs as a partner's own, separate wallet
+ // (its own process and database), so it may hold that partner's production scope.
+ if(scope?.environment!=='sandbox'&&partnerOwnedScope!==true)fail('REFERENCE_PROVISION_SANDBOX_ONLY','Reference opening balances are restricted to sandbox',403);
  for(const k of fields)if(typeof scope[k]!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(scope[k]))fail('INVALID_REQUEST','Invalid scope',400);
  if(!['sandbox','production'].includes(scope.environment)||!/^[A-Za-z0-9_-]{1,128}$/.test(key_id)||typeof secret_base64!=='string'||Buffer.from(secret_base64,'base64').length<32)fail('INVALID_REQUEST','Invalid provision key',400);
  amount(treasury_minor);const id=scopeId(scope);

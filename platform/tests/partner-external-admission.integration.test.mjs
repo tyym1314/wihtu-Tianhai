@@ -67,7 +67,7 @@ test('a new partner App starts paused with an external wallet and cannot launch 
 test('binding the partner HTTPS wallet and activating admits partner-signed sessions',async()=>{
  const key=uid('wk'),secret=randomBytes(32).toString('base64');
  walletScope=platform.scope(app);
- await wallet.provisionWallet(pool,{scope:walletScope,key_id:key,secret_base64:secret,users:['alice','bob'].map(external_user_id=>({external_user_id,balance_minor:'100000'})),treasury_minor:'1000000000',testProductionScope:true});
+ await wallet.provisionWallet(pool,{scope:walletScope,key_id:key,secret_base64:secret,users:['alice','bob'].map(external_user_id=>({external_user_id,balance_minor:'100000'})),treasury_minor:'1000000000',partnerOwnedScope:true});
  const {getProfile}=await import('../server/math/index.ts');
  await wallet.registerMathProfiles(pool,{scope:walletScope,math_profiles:['thunder','tiger'].map(game=>{const m=getProfile(game,'99');return{game_id:game,math_version:m.version,math_config_hash:m.hash,max_payout_multiplier:String(m.maxMultiplier)};})});
  await assert.rejects(binding.configureWallet(app.id,{wallet_url:'http://wallet.partner.example',wallet_key_id:key,wallet_secret_base64:secret},'fixture'),{code:'WALLET_HTTPS_REQUIRED'});

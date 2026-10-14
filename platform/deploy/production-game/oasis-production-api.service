@@ -1,0 +1,26 @@
+[Unit]
+Description=OASIS closed production API
+Requires=oasis-production-db.service
+After=oasis-production-db.service
+
+[Service]
+Type=simple
+User=oasis-prod
+Group=oasis-prod
+WorkingDirectory=/opt/oasis/releases/20261015-01/platform
+EnvironmentFile=/opt/oasis/production-instance-private/runtime.env
+ExecStart=/usr/bin/node --import tsx server/index.mjs
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=45
+MemoryMax=2G
+TasksMax=256
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+UMask=0077
+ReadWritePaths=/opt/oasis/production-instance-private
+
+[Install]
+WantedBy=multi-user.target
