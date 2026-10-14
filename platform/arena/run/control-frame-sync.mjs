@@ -31,6 +31,9 @@ export function readRunPracticeControlReadiness(controller,{at,sceneReady,foregr
  return {ready:sceneReady&&foreground&&inputs?.ready===true,inputs,
   allowed:Object.fromEntries(['left','right','jump','slide','item'].map(type=>[type,sceneReady&&foreground&&inputs?.actions?.[type]?.ok===true]))};
 }
+const SYNC_REASONS=new Set(['provisional-budget-expired','awaiting-new-head','no-authority','transport-stopped','epoch-mismatch','input-expired','processed-outcome-unknown','terminal-awaiting-commit','work-limit','accepted-history-invalid']);
+// True only when actions are blocked by synchronization, not by a hit, fall or airborne state.
+export function runPracticeSyncBlocked(readiness){const actions=Object.values(readiness?.inputs?.actions||{});return !readiness?.inputs||actions.length>0&&actions.every(a=>!a.ok)&&actions.some(a=>SYNC_REASONS.has(a.reason));}
 export function runInputRejectionMessage(reason,locale='zh'){
  const messages={
   zh:{busy:'正在恢复，请稍候再操作',ground:'请等落地或滑铲结束后再操作',sync:'正在同步比赛，请稍候再试',wait:'当前动作暂不可用，请稍候再试',item:'当前没有可用道具'},

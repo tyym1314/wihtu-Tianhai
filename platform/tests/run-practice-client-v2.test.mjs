@@ -7,7 +7,7 @@ import {createRunPracticeInputOutbox} from '../arena/run/practice-input-outbox.m
 import {selectRunPracticeInputRequest,readRunPracticeRoomProfile,matchesRunPracticeRequest} from '../arena/run/practice-profile-contract.mjs';
 import {createRunPracticePresentationEvents} from '../arena/run/practice-presentation-events.mjs';
 import {createRunPracticeFallHelp} from '../arena/run/practice-fall-help.mjs';
-import {createRunControlFrameSync,readRunControlState} from '../arena/run/control-frame-sync.mjs';
+import {createRunControlFrameSync,readRunControlState,runPracticeSyncBlocked} from '../arena/run/control-frame-sync.mjs';
 import {MS,ROOM,SELF,owned,start,advance,apply,publicRoom,knownFall} from './run-practice-client-v2-fixture.mjs';
 const scope={roomId:ROOM,playerKey:SELF,clockEpoch:1};
 const controller=(profile=P.v2)=>createRunPracticeController({...scope,profile,makeRequestId:()=> 'v2_request'});
@@ -201,4 +201,12 @@ test('actual committed own falls duplicated in both bounded tails sound/help onc
  e=advance(e,3768);room=publicRoom(e);assert.equal(events.receive(room),true);assert.equal(help.receive(room),true);
  assert.equal(events.drain(room.game.snapshotTick).filter(e=>e.tick===3396).length,0);assert.ok(events.state().played<=304);assert.ok(help.state().seen<=64);
  const malformed=structuredClone(room);malformed.run_inputs.committedOwnEvents[0].playerKey='bot_0';const before=events.state();assert.equal(events.receive(malformed),false);assert.deepEqual(events.state(),before);
+});
+
+test('a hit/fall BUSY state is not reported as a synchronization delay',()=>{
+ const all=reason=>({inputs:{actions:Object.fromEntries(['left','right','jump','slide','item'].map(t=>[t,{ok:false,reason}]))}});
+ assert.equal(runPracticeSyncBlocked(all('BUSY')),false);
+ assert.equal(runPracticeSyncBlocked(all('provisional-budget-expired')),true);
+ assert.equal(runPracticeSyncBlocked({inputs:{actions:{left:{ok:true},jump:{ok:false,reason:'AIRBORNE'}}}}),false);
+ assert.equal(runPracticeSyncBlocked(null),true);
 });

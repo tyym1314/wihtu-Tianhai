@@ -10,7 +10,10 @@ export function subscribeHostState(listener:(state:any)=>void){stateListeners.ad
 export function registerPresentationHost(adapter:{prepareBack?:()=>{pending?:boolean}}){prepareBack=adapter.prepareBack||null;}
 function hostBack(){
  if(document.querySelector('.oasis-return-dialog'))return;
- const detail=prepareBack?.()||{},dialog=document.createElement('dialog');dialog.className='oasis-return-dialog';
+ const detail=prepareBack?.()||{};
+ // Nothing in flight: return immediately instead of asking the player to confirm.
+ if(prepareBack&&!detail.pending){gameBridge?.completeReturn({reason:'user',status:'idle'});return;}
+ const dialog=document.createElement('dialog');dialog.className='oasis-return-dialog';
  dialog.innerHTML='<h2>返回应用？</h2><p>已提交的游戏结果会保留。返回不会撤销投入或表示已退款；重新进入可继续查询与恢复。</p><div><button data-return="cancel">继续游戏</button><button data-return="confirm">返回应用</button></div>';
  dialog.querySelector('[data-return="cancel"]')!.addEventListener('click',()=>dialog.remove());dialog.querySelector('[data-return="confirm"]')!.addEventListener('click',()=>{gameBridge?.completeReturn({reason:'user',status:detail.pending?'pending':'idle'});dialog.remove();});document.body.append(dialog);dialog.showModal();
 }
