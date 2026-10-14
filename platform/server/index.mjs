@@ -17,7 +17,7 @@ import {migrateWalletBindings} from './wallet-binding.mjs';
 import {routeIntegration} from './integration-routes.mjs';
 import {migrateIntegrationChecks,recoverIntegrationChecks} from './integration-checks.mjs';
 import {operationsStatus} from './operations-status.mjs';
-import {unitsPerCoin,firstpartyProfile,publicAdmissionCapability,assertExternalFinancialRouteAllowed} from './production-admission.mjs';
+import {unitsPerCoin,firstpartyProfile,partnerProfile,publicAdmissionCapability,assertExternalFinancialRouteAllowed} from './production-admission.mjs';
 import {publicAdmissionStatus} from './admission-status.mjs';
 import {enginePoolStats,closeEnginePool} from './pvp/engine-pool.mjs';
 import {runtime,preflightRuntime,migrateRuntime,assertProductionAppReady} from './runtime-mode.mjs';
@@ -130,7 +130,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
     const active=activeId==null?undefined:{id:activeId,game_id:activeGame};
     let balance=null,balance_error=null;try{balance=await walletBalance(app,s.external_user_id);}catch(e){balance_error='BALANCE_UNAVAILABLE';}
     return send(res,200,{session_id:s.id,external_user_id:s.external_user_id,game_id:s.game_id,scope:scope(app),balance,balance_error,competitive_fee_bps:app.competitive_fee_bps,
-      ...(firstpartyProfile(s.admission_profile)?{...publicAdmissionCapability({profile:s.admission_profile,open:true,game_ids:app.game_ids}),admission_revision:String(s.admission_revision)}:{}),
+      ...(firstpartyProfile(s.admission_profile)||partnerProfile(s.admission_profile)?{...publicAdmissionCapability({profile:s.admission_profile,open:true,game_ids:app.game_ids}),admission_revision:String(s.admission_revision)}:{}),
       ...(s.game_id==='run'?{run_practice_input_protocol:RUN_PRACTICE_INPUT_PROTOCOL,run_practice_input_profiles:runPracticeProfileCapability(),run_practice_courses:runPracticeCourseCapability()}:{}),
       active_room_id:active?.game_id===s.game_id?active.id:null,other_active_game:active&&active.game_id!==s.game_id?active.game_id:null});
   }

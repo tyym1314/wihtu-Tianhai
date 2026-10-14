@@ -4,7 +4,9 @@ import {ARENA_IDS,LEGACY_IDS,RELEASED_IDS,allowedCapacity} from '../shared/games
 export const FIRSTPARTY_FREE_PROFILE='firstparty-free-v1';
 export const FIRSTPARTY_INTERNAL_PROFILE='firstparty-internal-games-v1';
 export const INTERNAL_GAME_COINS=Object.freeze({coin_scope:'internal-nonredeemable',initial_player_coins:'10000',initial_treasury_coins:'1000000000',external_financial_admission_enabled:false,deposit_enabled:false,withdrawal_enabled:false,thirdparty_financial_admission_enabled:false});
+export const PARTNER_EXTERNAL_PROFILE='partner-external-v1';
 export const firstpartyProfile=profile=>[FIRSTPARTY_FREE_PROFILE,FIRSTPARTY_INTERNAL_PROFILE].includes(profile);
+export const partnerProfile=profile=>profile===PARTNER_EXTERNAL_PROFILE;
 export function unitsPerCoin(scale){require(Number.isInteger(scale)&&scale>=0&&scale<=6,'INTERNAL_COIN_PRECISION_INVALID');return 10**scale;}
 const identifier=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(value);
 const sha=value=>typeof value==='string'&&/^[a-f0-9]{64}$/.test(value);
@@ -24,16 +26,38 @@ export function installProductionAdmissionRuntime(config){
 }
 
 export function productionAdmissionConfiguration(env,production){
- if(!production)return{admissionProfile:'sandbox',firstpartyAppId:null,admissionRelease:null,admissionManifest:null};
+ if(!production)return{admissionProfile:'sandbox',firstpartyAppId:null,admissionRelease:null,admissionManifest:null,partnerAdmission:false};
  if(env.OASIS_PRODUCTION_ADMISSION_ENABLED!==undefined&&env.OASIS_PRODUCTION_ADMISSION_ENABLED!=='0')throw Error('GENERIC_PRODUCTION_ADMISSION_FORBIDDEN');
+ if(env.OASIS_PARTNER_ADMISSION!==undefined&&!['0','1'].includes(env.OASIS_PARTNER_ADMISSION))throw Error('INVALID_PARTNER_ADMISSION');
+ // Third-party Apps: partner-signed sessions settle only through their own HTTPS wallet.
+ const partnerAdmission=env.OASIS_PARTNER_ADMISSION==='1';
  const profile=env.OASIS_ADMISSION_PROFILE||'closed';
  if(!['closed',FIRSTPARTY_FREE_PROFILE,FIRSTPARTY_INTERNAL_PROFILE].includes(profile))throw Error('INVALID_ADMISSION_PROFILE');
  if(profile==='closed'){
   if(['OASIS_FIRSTPARTY_APP_ID','OASIS_ADMISSION_RELEASE','OASIS_ADMISSION_MANIFEST_SHA256'].some(key=>env[key]!==undefined))throw Error('CLOSED_ADMISSION_CONFIG_AMBIGUOUS');
-  return{admissionProfile:'closed',firstpartyAppId:null,admissionRelease:null,admissionManifest:null};
+  return{admissionProfile:'closed',firstpartyAppId:null,admissionRelease:null,admissionManifest:null,partnerAdmission};
  }
  if(!identifier(env.OASIS_FIRSTPARTY_APP_ID)||!env.OASIS_FIRSTPARTY_APP_ID.startsWith('app_')||!release(env.OASIS_ADMISSION_RELEASE)||!sha(env.OASIS_ADMISSION_MANIFEST_SHA256))throw Error('FIRSTPARTY_ADMISSION_CONFIG_REQUIRED');
- return{admissionProfile:profile,firstpartyAppId:env.OASIS_FIRSTPARTY_APP_ID,admissionRelease:env.OASIS_ADMISSION_RELEASE,admissionManifest:env.OASIS_ADMISSION_MANIFEST_SHA256};
+ return{admissionProfile:profile,firstpartyAppId:env.OASIS_FIRSTPARTY_APP_ID,admissionRelease:env.OASIS_ADMISSION_RELEASE,admissionManifest:env.OASIS_ADMISSION_MANIFEST_SHA256,partnerAdmission};
+}
+
+/** A third-party production App: active, partner-owned and bound to its own HTTPS wallet. */
+export function isPartnerApp(config,app){return config?.production===true&&config.partnerAdmission===true&&app?.environment==='production'&&app.id!==config.firstpartyAppId&&app.partner_id!=='partner_oasis_platform';}
+export function validatePartnerAdmission({config,app,binding,intent='session',gameId,room}={}){
+ require(['activate','register','session','room','existing-ready','recovery','metadata'].includes(intent),'INVALID_ADMISSION_INTENT');
+ require(isPartnerApp(config,app)&&fields.every(field=>identifier(scopeOf(app)[field])),'PARTNER_APP_REQUIRED');
+ const info={profile:PARTNER_EXTERNAL_PROFILE,state:'open',open:app.status==='active',revision:'1',app,game_ids:[...app.game_ids],release:null,manifest_sha256:null,proof_sha256:null};
+ if(intent==='metadata'||intent==='recovery')return info;
+ // Partner players are the partner's own users; the hosted platform account flow is first-party only.
+ if(intent==='register')reject('PLAYER_BFF_NOT_AVAILABLE');
+ require(binding?.provider==='external'&&typeof binding.wallet_url==='string'&&binding.wallet_url.startsWith('https://')&&binding.wallet_key_id&&app.wallet_url===binding.wallet_url&&fields.every(field=>binding.scope?.[field]===scopeOf(app)[field]),'PRODUCTION_EXTERNAL_WALLET_REQUIRED');
+ if(intent==='existing-ready'){
+  require(fields.every(field=>room?.scope?.[field]===scopeOf(app)[field])&&info.game_ids.includes(room.game_id),'PARTNER_ROOM_NOT_ACCEPTED');
+  return info;
+ }
+ require(intent==='activate'||app.status==='active','APP_PAUSED');
+ if(gameId!==undefined)require(info.game_ids.includes(gameId),'GAME_DISABLED');
+ return info;
 }
 
 export function validateFirstpartyAdmission({config,app,policy,binding,walletScope,intent='session',gameId,practice,entryMinor,room}={}){
@@ -77,6 +101,13 @@ export function assertFreePracticeRoom(room){
 export async function readProductionAdmission(db,app,options={}){
  const config=options.runtimeConfig||configuredRuntime;
  if(app?.environment!=='production')return{profile:'sandbox',state:'open',open:true,revision:null,app,game_ids:app?.game_ids||[]};
+ if(isPartnerApp(config,app)){
+  const current=(await db.query('SELECT * FROM gp_apps WHERE id=$1 FOR SHARE',[app.id])).rows[0];
+  require(current&&fields.every(field=>scopeOf(current)[field]===scopeOf(app)[field])&&current.currency_scale===app.currency_scale,'PARTNER_APP_CONFIG_CHANGED');
+  const binding=(await db.query('SELECT * FROM gp_wallet_bindings WHERE app_id=$1 FOR SHARE',[app.id])).rows[0];
+  // Activation validates the requested status/game grant against the locked row.
+  return validatePartnerAdmission({...options,config,app:options.intent==='activate'?{...current,status:app.status,game_ids:app.game_ids}:current,binding});
+ }
  require(config?.production&&firstpartyProfile(config.admissionProfile),'PRODUCTION_ACCEPTANCE_REQUIRED');
  const current=(await db.query('SELECT * FROM gp_apps WHERE id=$1 FOR SHARE',[app.id])).rows[0];
  require(current&&fields.every(field=>scopeOf(current)[field]===scopeOf(app)[field])&&current.currency_scale===app.currency_scale&&current.wallet_url===app.wallet_url&&sameList(current.allowed_origins,app.allowed_origins)&&sameList(current.game_ids,app.game_ids),'FIRSTPARTY_APP_CONFIG_CHANGED');
@@ -90,9 +121,10 @@ export async function readProductionAdmission(db,app,options={}){
  return validateFirstpartyAdmission({...options,config,app:current,policy,binding,walletScope});
 }
 
-export function productionAdmissionSnapshot(info){return firstpartyProfile(info?.profile)?{admission_profile:info.profile,admission_revision:info.revision,admission_release:info.release,admission_manifest_sha256:info.manifest_sha256,admission_proof_sha256:info.proof_sha256}:{};}
-export function publicAdmissionCapability(info){const internal=info?.profile===FIRSTPARTY_INTERNAL_PROFILE;return{admission_profile:info?.profile||'closed',admission_open:info?.open===true,free_training_only:info?.profile===FIRSTPARTY_FREE_PROFILE,financial_admission_enabled:internal&&info?.open===true,probability_admission_enabled:internal&&info?.open===true,internal_game_coins:internal,...INTERNAL_GAME_COINS,allowed_room_modes:firstpartyProfile(info?.profile)?['bot-practice']:[],game_ids:info?.game_ids||[]};}
-export async function assertNewFinancialAdmission(db,app,{gameId}={}){if(app?.environment!=='production')return;require(configuredRuntime?.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE,'PRODUCTION_FINANCIAL_ACCEPTANCE_REQUIRED');const info=await readProductionAdmission(db,app,{intent:'session',gameId});require(info.profile===FIRSTPARTY_INTERNAL_PROFILE&&LEGACY_IDS.includes(gameId),'PRODUCTION_FINANCIAL_ACCEPTANCE_REQUIRED');return info;}
+// Partner rooms send these terms to the partner wallet, whose terms schema is closed.
+export function productionAdmissionSnapshot(info){if(partnerProfile(info?.profile))return{};return firstpartyProfile(info?.profile)?{admission_profile:info.profile,admission_revision:info.revision,admission_release:info.release,admission_manifest_sha256:info.manifest_sha256,admission_proof_sha256:info.proof_sha256}:{};}
+export function publicAdmissionCapability(info){if(partnerProfile(info?.profile))return{admission_profile:info.profile,admission_open:info.open===true,free_training_only:false,financial_admission_enabled:info.open===true,probability_admission_enabled:info.open===true,internal_game_coins:false,coin_scope:'partner-wallet',allowed_room_modes:['bot-practice','paid','social'],game_ids:info.game_ids||[]};const internal=info?.profile===FIRSTPARTY_INTERNAL_PROFILE;return{admission_profile:info?.profile||'closed',admission_open:info?.open===true,free_training_only:info?.profile===FIRSTPARTY_FREE_PROFILE,financial_admission_enabled:internal&&info?.open===true,probability_admission_enabled:internal&&info?.open===true,internal_game_coins:internal,...INTERNAL_GAME_COINS,allowed_room_modes:firstpartyProfile(info?.profile)?['bot-practice']:[],game_ids:info?.game_ids||[]};}
+export async function assertNewFinancialAdmission(db,app,{gameId}={}){if(app?.environment!=='production')return;if(isPartnerApp(configuredRuntime,app)){const info=await readProductionAdmission(db,app,{intent:'session',gameId});require(LEGACY_IDS.includes(gameId),'PRODUCTION_FINANCIAL_ACCEPTANCE_REQUIRED');return info;}require(configuredRuntime?.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE,'PRODUCTION_FINANCIAL_ACCEPTANCE_REQUIRED');const info=await readProductionAdmission(db,app,{intent:'session',gameId});require(info.profile===FIRSTPARTY_INTERNAL_PROFILE&&LEGACY_IDS.includes(gameId),'PRODUCTION_FINANCIAL_ACCEPTANCE_REQUIRED');return info;}
 
 /** This internal-coin profile never authorizes cash or a third-party gateway. */
 export function assertExternalFinancialRouteAllowed(config,path){

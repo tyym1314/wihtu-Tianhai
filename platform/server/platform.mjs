@@ -7,7 +7,7 @@ import {id,hash,seal,unseal,localDir,fail,verifySignature} from './security.mjs'
 import {provisionWallet} from './wallet/index.mjs';
 import {getProfile} from './math/index.ts';
 import {ARENA_IDS,RELEASED_IDS} from '../shared/games.mjs';
-import {FIRSTPARTY_FREE_PROFILE,FIRSTPARTY_INTERNAL_PROFILE} from './production-admission.mjs';
+import {FIRSTPARTY_FREE_PROFILE,FIRSTPARTY_INTERNAL_PROFILE,PARTNER_EXTERNAL_PROFILE,isPartnerApp} from './production-admission.mjs';
 import {runtime,assertProductionAppReady} from './runtime-mode.mjs';
 import {resolveHostOrigin,assertExchangeOrigin} from './launch-policy.mjs';
 import {loginCredential} from './credentials.mjs';
@@ -24,13 +24,14 @@ export async function audit(actor,action,app_id,detail={},db=pool){await db.quer
 export async function appById(appId){const r=await pool.query('SELECT * FROM gp_apps WHERE id=$1',[appId]);if(!r.rowCount)fail(404,'NOT_FOUND');return r.rows[0];}
 export async function createApp(name,options='partner_oasis_demo') {
   const partner=typeof options==='string'?options:options.partnerId||'partner_oasis_demo',actor=typeof options==='object'?options.actor||'admin':'admin';
-  const walletProvider=typeof options==='object'?options.walletProvider:undefined;
-  if(walletProvider!==undefined&&(!runtime.production||!['platform','external'].includes(walletProvider)))fail(400,'INVALID_WALLET_PROVIDER');
+  // Third-party production Apps always settle through their own wallet.
+  const walletProvider=typeof options==='object'&&options.walletProvider!==undefined?options.walletProvider:runtime.partnerAdmission?'external':undefined;
+  if(walletProvider!==undefined&&(!runtime.production||!['platform','external'].includes(walletProvider)||runtime.partnerAdmission&&walletProvider!=='external'))fail(400,'INVALID_WALLET_PROVIDER');
   if(typeof partner!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(partner))fail(400,'INVALID_PARTNER');
   if(typeof name!=='string'||name.trim().length<2||name.length>60)fail(400,'INVALID_NAME','应用名称需要 2–60 个字符');
   if(runtime.production&&partner==='partner_oasis_demo')fail(400,'PRODUCTION_PARTNER_REQUIRED');
   const app={id:id('app'),name:name.trim(),partner_id:partner,environment:runtime.environment,wallet_scope_id:id('wallet'),currency_id:'COIN',currency_scale:2,status:'active',game_ids:[...RELEASED_IDS],competitive_fee_bps:500,wallet_url:process.env.OASIS_REFERENCE_WALLET_URL||'http://127.0.0.1:8798',math_profile:'99'};
-  if(runtime.production){app.status='paused';app.game_ids=[...ARENA_IDS];app.wallet_url='';}
+  if(runtime.production){app.status='paused';app.game_ids=runtime.partnerAdmission?[...RELEASED_IDS]:[...ARENA_IDS];app.wallet_url='';}
   const credentials={key_id:id('pk'),secret_base64:randomBytes(32).toString('base64')};
   const walletKey={key_id:id('wk'),secret_base64:randomBytes(32).toString('base64')};
   // Idempotent reference-wallet provisioning precedes visibility of this new App.
@@ -65,24 +66,27 @@ export async function login(username,password){
 }
 export async function adminUser(req){const token=req.headers.cookie?.split(';').map(x=>x.trim()).find(x=>x.startsWith('oasis_admin='))?.split('=')[1];if(!token)return null;const r=await pool.query('SELECT a.id FROM gp_admin_sessions s JOIN gp_admins a ON a.id=s.admin_id WHERE token_hash=$1 AND expires_at>now()',[hash(token)]);return r.rowCount?{id:r.rows[0].id,name:'平台管理员',role:'platform_admin'}:null;}
 export async function createSession(app,b,raw,{playerId=null}={}){
-  // A partner signature authenticates the App, never a production player.
-  // Only the platform BFF can supply a player ID from its HttpOnly session.
-  if(runtime.production&&!playerId)fail(403,'PLAYER_BFF_REQUIRED');
-  if(!runtime.production){validate('CreateSessionRequest',b);for(const[k,v]of Object.entries(scope(app)))if(b[k]!==v)fail(403,'SCOPE_FORBIDDEN');}
+  // A first-party production player comes only from the platform BFF session.
+  // A third-party production App authenticates its own users with its HMAC key
+  // and settles through its own bound wallet.
+  const hosted=runtime.production&&!!playerId;
+  if(runtime.production&&!playerId&&!isPartnerApp(runtime,app))fail(403,'PLAYER_BFF_REQUIRED');
+  if(hosted&&isPartnerApp(runtime,app))fail(403,'PLAYER_BFF_NOT_AVAILABLE');
+  if(!hosted){validate('CreateSessionRequest',b);for(const[k,v]of Object.entries(scope(app)))if(b[k]!==v)fail(403,'SCOPE_FORBIDDEN');}
   return tx(async c=>{
     // Login takes the player row before the App row. Keep the same order here:
     // taking App FOR UPDATE first would deadlock with a concurrent login that
     // holds player FOR UPDATE and then checks App FOR SHARE.
-    if(runtime.production){
+    if(hosted){
       const player=(await c.query('SELECT id FROM gp_players WHERE id=$1 AND active FOR SHARE',[playerId])).rows[0];
       if(!player)fail(401,'LOGIN_REQUIRED');
     }
     // Configuration binding and session admission share this lock. A stale
     // authenticated App object cannot route a new session to an old wallet.
     app=(await c.query('SELECT * FROM gp_apps WHERE id=$1 FOR UPDATE',[app.id])).rows[0];if(!app)fail(404,'NOT_FOUND');
-    const externalUserId=runtime.production?await appPlayerId(c,app.id,playerId):b.external_user_id;
-    if(runtime.production&&b.external_user_id!==undefined&&b.external_user_id!==externalUserId)fail(403,'SCOPE_FORBIDDEN');
-    const request=runtime.production?{...b,external_user_id:externalUserId}:b;
+    const externalUserId=hosted?await appPlayerId(c,app.id,playerId):b.external_user_id;
+    if(hosted&&b.external_user_id!==undefined&&b.external_user_id!==externalUserId)fail(403,'SCOPE_FORBIDDEN');
+    const request=hosted?{...b,external_user_id:externalUserId}:b;
     validate('CreateSessionRequest',request);
     for(const[k,v]of Object.entries(scope(app)))if(request[k]!==v)fail(403,'SCOPE_FORBIDDEN');
     await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',['launch:'+app.id+':'+request.request_id]);
@@ -126,7 +130,7 @@ export async function exchange(b){validate('ExchangeLaunchRequest',b);return tx(
   return {session_id:s.id,access_token:token,token_type:'Bearer',expires_in:900,game_entry_url:origin+'/play/'+s.game_id,scope:scope(app),external_user_id:s.external_user_id,host_origin:hostOrigin,game_id:s.game_id};
 });}
 export async function playSession(req){const token=req.headers.authorization?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1];if(!token)fail(401,'SESSION_REQUIRED');const s=(await pool.query('SELECT * FROM gp_sessions WHERE token_hash=$1 AND token_expires_at>now()',[hash(token)])).rows[0];if(!s)fail(401,'SESSION_EXPIRED','请返回应用重新打开游戏');return s;}
-export function gamesFor(app){return {partner_id:app.partner_id,app_id:app.id,environment:app.environment,as_of:new Date().toISOString(),games:catalog.filter(g=>app.game_ids.includes(g.id)).map(g=>({game_id:g.id,title:g.name||g.title||g.id,category:g.category,available:app.status==='active'&&RELEASED_IDS.includes(g.id),configuration_version:runtime.production&&runtime.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE?FIRSTPARTY_INTERNAL_PROFILE:'sandbox-v1',modes:g.id==='towerlink'?[{mode_id:'competitive',player_counts:[2],team_size:1,rule_version:g.ruleVersion},{mode_id:'social',player_counts:[2,3,4],team_size:1,rule_version:g.ruleVersion},{mode_id:'practice',player_counts:[2,3,4],team_size:1,rule_version:g.ruleVersion}]:g.id==='carrom'?[{mode_id:'duel',player_counts:[2],team_size:1,rule_version:g.ruleVersion},{mode_id:'teams',player_counts:[4],team_size:2,rule_version:g.ruleVersion}]:[{mode_id:'default',player_counts:g.players||[1],team_size:g.id==='jackaroo'?2:1,rule_version:g.ruleVersion||'sandbox-v1'}],locales:['zh','en'],...(['thunder','tiger'].includes(g.id)?{math_profiles:['98','99'].map(p=>{const m=getProfile(g.id,p);return {math_version:m.version,math_config_hash:m.hash,target_rtp_bps:Number(p)*100,validation_status:runtime.production&&runtime.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE?'internal-coins-statistical-model-uncertified':'draft',max_cycle_payout_description:runtime.production&&runtime.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE?`Internal nonredeemable game coins, maximum ${m.maxMultiplier} times stake; target RTP is not exact theoretical certification`:`Sandbox profile, maximum ${m.maxMultiplier} times stake; not approved for production`};})}:{})}))};}
+export function gamesFor(app){const partner=isPartnerApp(runtime,app);return {partner_id:app.partner_id,app_id:app.id,environment:app.environment,as_of:new Date().toISOString(),games:catalog.filter(g=>app.game_ids.includes(g.id)).map(g=>({game_id:g.id,title:g.name||g.title||g.id,category:g.category,available:app.status==='active'&&RELEASED_IDS.includes(g.id),configuration_version:partner?PARTNER_EXTERNAL_PROFILE:runtime.production&&runtime.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE?FIRSTPARTY_INTERNAL_PROFILE:'sandbox-v1',modes:g.id==='towerlink'?[{mode_id:'competitive',player_counts:[2],team_size:1,rule_version:g.ruleVersion},{mode_id:'social',player_counts:[2,3,4],team_size:1,rule_version:g.ruleVersion},{mode_id:'practice',player_counts:[2,3,4],team_size:1,rule_version:g.ruleVersion}]:g.id==='carrom'?[{mode_id:'duel',player_counts:[2],team_size:1,rule_version:g.ruleVersion},{mode_id:'teams',player_counts:[4],team_size:2,rule_version:g.ruleVersion}]:[{mode_id:'default',player_counts:g.players||[1],team_size:g.id==='jackaroo'?2:1,rule_version:g.ruleVersion||'sandbox-v1'}],locales:['zh','en'],...(['thunder','tiger'].includes(g.id)?{math_profiles:['98','99'].map(p=>{const m=getProfile(g.id,p);return {math_version:m.version,math_config_hash:m.hash,target_rtp_bps:Number(p)*100,validation_status:partner?'statistical-model-uncertified':runtime.production&&runtime.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE?'internal-coins-statistical-model-uncertified':'draft',max_cycle_payout_description:partner?`Partner wallet coins, maximum ${m.maxMultiplier} times stake; target RTP from 10M-cycle simulation, not third-party certified`:runtime.production&&runtime.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE?`Internal nonredeemable game coins, maximum ${m.maxMultiplier} times stake; target RTP is not exact theoretical certification`:`Sandbox profile, maximum ${m.maxMultiplier} times stake; not approved for production`};})}:{})}))};}
 
 // One-time local upgrade. Existing disabled/custom entitlement selections are preserved.
 export async function upgradeArenaSandbox(){

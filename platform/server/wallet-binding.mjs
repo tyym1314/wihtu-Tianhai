@@ -50,7 +50,10 @@ function allowedOrigins(){return new Set((process.env.OASIS_WALLET_ALLOWED_ORIGI
 export function validateWalletOrigin(value,{external=false}={}){
   const origin=normalizedOrigin(value),allowed=allowedOrigins();
   if(!external)allowed.add(referenceOrigin());
-  if(!allowed.has(origin))fail(403,'WALLET_ORIGIN_NOT_ALLOWED','Wallet origin is not in this deployment allowlist');
+  // Partner production instances accept each partner's own public HTTPS wallet.
+  // Requests still resolve DNS once and refuse any non-public address.
+  const openPartnerWallets=external&&process.env.OASIS_ENVIRONMENT==='production'&&process.env.OASIS_PARTNER_ADMISSION==='1'&&origin.startsWith('https://');
+  if(!allowed.has(origin)&&!openPartnerWallets)fail(403,'WALLET_ORIGIN_NOT_ALLOWED','Wallet origin is not in this deployment allowlist');
   if(external&&origin===referenceOrigin())fail(409,'REFERENCE_WALLET_NOT_EXTERNAL');
   return origin;
 }
@@ -148,6 +151,9 @@ async function requestJson(origin,method,path,headers,raw){
   }catch(e){if(e instanceof ApiError)throw e;fail(503,'WALLET_UNKNOWN','Wallet outcome is unknown; retain the original operation ID and query it');}finally{clearTimeout(timer);}
 }
 
+let transport=requestJson;
+/** Test-only: route an HTTPS partner wallet to a loopback reference wallet. */
+export function setWalletTransportForTests(fn){if(process.env.NODE_ENV==='production')throw Error('TEST_SEAM_FORBIDDEN');transport=fn||requestJson;}
 /** Shared transport for probability, PvP and balance probes. No money retry is performed here. */
 export async function walletRequest(app,method,path,raw='',requestId=id('walletquery')){
   if(!app||!safeId(app.id)||!['GET','POST'].includes(method)||typeof raw!=='string'||!/^\/wallet\/v1(?:\/[A-Za-z0-9_-]+)+$/.test(path)||!safeId(requestId)||(method==='GET'&&raw))fail(400,'INVALID_WALLET_REQUEST');
@@ -159,7 +165,7 @@ export async function walletRequest(app,method,path,raw='',requestId=id('walletq
   const key=(await pool.query("SELECT * FROM gp_keys WHERE app_id=$1 AND direction='platform-to-wallet' AND active AND ($2::text IS NULL OR id=$2) ORDER BY created_at DESC LIMIT 1",[app.id,binding?.wallet_key_id||null])).rows[0];
   if(!key)fail(503,'WALLET_NOT_CONFIGURED');
   const headers=sign({key_id:key.id,secret_base64:unseal(key.secret_enc),direction:'platform-to-wallet',method,path,raw,request_id:requestId});
-  const {status,body}=await requestJson(origin,method,path,headers,raw);
+  const {status,body}=await transport(origin,method,path,headers,raw);
   if(!body||typeof body!=='object'||Array.isArray(body))fail(503,'WALLET_INVALID_RESPONSE');
   if(status>=400&&!(body.state==='REJECTED'&&body.operation_id===requestId))fail(status,body.error?.code||body.code||'WALLET_ERROR','Wallet request rejected; inspect the original operation ID');
   return body;

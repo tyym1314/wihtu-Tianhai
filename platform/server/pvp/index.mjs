@@ -9,7 +9,7 @@ import {supportsRules} from './rule-support.mjs';
 import {runEngineTask} from './engine-pool.mjs';
 import {bowlingPreparations} from './bowling-preparation.mjs';
 import {assertProductionAppReady} from '../runtime-mode.mjs';
-import {FIRSTPARTY_FREE_PROFILE,firstpartyProfile,productionAdmissionSnapshot} from '../production-admission.mjs';
+import {FIRSTPARTY_FREE_PROFILE,firstpartyProfile,partnerProfile,productionAdmissionSnapshot} from '../production-admission.mjs';
 import {ARENA_GAMES,allowedCapacity,teamSizeFor} from '../../shared/games.mjs';
 import {getTrainingLesson} from '../../arena/towerlink/training.mjs';
 import {PRACTICE_RULE_VERSION as RUN_PRACTICE_RULE_VERSION,PRACTICE_INPUT_RULE_VERSION as RUN_INPUT_RULE_VERSION,RUN_SCENE_READY_POLICY} from '../../arena/run/engine.mjs';
@@ -253,7 +253,7 @@ export async function routePvp(session,method,path,body={},options={}){
   return transaction(async c=>{await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`pvpcreate:${s.app_id}:${s.external_user_id}`]);await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`pvpreq:${s.app_id}:${s.external_user_id}:${body.request_id}`]);const repeated=await replay(c,s,body,digest);if(repeated)return repeated;
    const admission=await assertProductionAppReady(c,app,{intent:'room',gameId:s.game_id,practice,entryMinor:body.entry_minor});
    if(admission)app=admission.app;checkNew(app,s.game_id);
-   if(app.environment==='production'&&(!firstpartyProfile(s.admission_profile)||!s.player_id))fail(403,'FIRSTPARTY_PLAYER_SESSION_REQUIRED');
+   if(app.environment==='production'&&!(partnerProfile(admission?.profile)&&partnerProfile(s.admission_profile))&&(!firstpartyProfile(s.admission_profile)||!s.player_id))fail(403,'FIRSTPARTY_PLAYER_SESSION_REQUIRED');
    if((await c.query('SELECT 1 FROM pvp_active_users WHERE app_id=$1 AND external_user_id=$2',[s.app_id,s.external_user_id])).rowCount)fail(409,'ALREADY_IN_ROOM');
    const now=roomNow(null,options.now),fee=practice||social?0:Number(app.competitive_fee_bps??500);if(!practice&&!social&&![300,500,800,1000].includes(fee))fail(409,'INVALID_APP_FEE');
    const players=[player(s,0,now)];if(practice)for(let i=1;i<body.capacity;i++)players.push(player({external_user_id:`bot_${i}_${randomBytes(12).toString('hex')}`},i,now,true));
@@ -313,8 +313,8 @@ export async function routePvp(session,method,path,body={},options={}){
   return transaction(async c=>{await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`pvpreq:${s.app_id}:${s.external_user_id}:${body.request_id}`]);const repeated=await replay(c,s,body,digest);if(repeated)return repeated;
    let actionReceipt;
    if(verb==='join'){
-    if(app.environment==='production')fail(403,'FIRSTPARTY_FREE_PRACTICE_ONLY');
-    checkNew(app,s.game_id);await assertProductionAppReady(c,app);if(r.status!=='waiting')fail(409,'ROOM_NOT_JOINABLE');if(now>=r.expires_at||r.ready_deadline_at&&now>=r.ready_deadline_at)fail(409,'READY_TIMEOUT');
+    if(app.environment==='production'&&!partnerProfile(s.admission_profile))fail(403,'FIRSTPARTY_FREE_PRACTICE_ONLY');
+    const joinAdmission=await assertProductionAppReady(c,app,{intent:'session',gameId:s.game_id});if(joinAdmission)app=joinAdmission.app;checkNew(app,s.game_id);if(r.status!=='waiting')fail(409,'ROOM_NOT_JOINABLE');if(now>=r.expires_at||r.ready_deadline_at&&now>=r.ready_deadline_at)fail(409,'READY_TIMEOUT');
     if(!member){if(r.players.length>=r.capacity)fail(409,'ROOM_FULL');if((await c.query('SELECT 1 FROM pvp_active_users WHERE app_id=$1 AND external_user_id=$2',[s.app_id,s.external_user_id])).rowCount)fail(409,'ALREADY_IN_ROOM');
      try{await c.query('INSERT INTO pvp_active_users(app_id,external_user_id,room_id) VALUES($1,$2,$3)',[s.app_id,s.external_user_id,r.id]);}catch(e){if(e.code==='23505')fail(409,'ALREADY_IN_ROOM');throw e;}
      const joined=player(s,r.players.length,now);if(r.terms.team_size===2)joined.team_id=r.players.length%2?'team_b':'team_a';r.players.push(joined);if(r.players.length===r.capacity)r.ready_deadline_at=now+30000;
