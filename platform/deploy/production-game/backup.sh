@@ -20,6 +20,8 @@ set -- production-instance-private/state/master.key production-instance-private/
 for f in partner-demo/config.json partner-demo/env; do [ -f "/opt/oasis/$f" ] && set -- "$@" "$f"; done
 tar -czf "$TMP/private-config.tar.gz" -C /opt/oasis "$@"
 readlink -f /opt/oasis/production-current > "$TMP/release.txt"
+# The monitor only counts backups bound to this environment and database.
+printf '{"schema":3,"environment":"production","database":"oasis_production","release":"%s","at":"%s"}\n' "$(cat "$TMP/release.txt")" "$TS" > "$TMP/runtime-identity.json"
 (cd "$TMP" && sha256sum -- * > SHA256SUMS)
 mv -T "$TMP" "$DEST/$TS"
 trap - EXIT
