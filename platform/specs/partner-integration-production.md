@@ -22,7 +22,13 @@
 | `thunder` | 雷霆 | 概率 | 1 |
 | `tiger` | 虎虎生财 | 概率 | 1 |
 
-竞技游戏：玩家自建好友房（入场 10/50/100/200 币），全员准备后冻结并扣除入场费，冠军（或胜队）分得奖池，平台按 App 配置的服务费率（默认 5%）收取服务费。每款都提供免费 BOT 练习（不扣币）。所有判定都在平台服务端完成，客户端不能提交分数。
+竞技游戏：入场 10/50/100/200 币，满员且全员就绪后冻结并扣除入场费，冠军（或胜队）分得奖池，平台按 App 配置的服务费率（默认 5%）收取服务费。所有判定都在平台服务端完成，客户端不能提交分数。三种开局方式：
+
+- **快速匹配**：自动撮合**同一 App 内**选择相同游戏、人数和入场费的真人玩家，满员后自动开局；最长等待 120 秒，未匹配到不收费。
+- **好友房**：创建房间后把房间码发给好友加入（可在你的 App 聊天里分享）。
+- **免费练习**：对战明示的 BOT，不扣币。
+
+**语言**：所有游戏支持简体中文、英文、阿拉伯语（阿语界面为从右到左；棋盘与赛道方向不镜像）。
 
 概率游戏：每次投注是一个完整周期（含免费转），开奖前先在你的钱包冻结投注与最高派彩责任；数学模型为 1000 万周期仿真验证的 RTP 98%/99% 两档，未经第三方认证。
 
@@ -56,7 +62,7 @@ POST https://game.tianyahuyu.com/v1/sessions
   "request_id": "launch_7f3c...（你持久化的唯一业务号）",
   "external_user_id": "<你的用户 ID，1–128 位 [A-Za-z0-9_-]>",
   "game_id": "bowling",
-  "locale": "zh-CN",
+  "locale": "en",
   "host_platform": "android"
 }
 ```
@@ -64,6 +70,7 @@ POST https://game.tianyahuyu.com/v1/sessions
 返回：`session_id`、`launch_code`（60 秒内一次有效）、`expires_at`、`entry_url`。
 
 - 签名规则见[接入教程第 3 节](integration-guide.md#3-hmac-sha256-签名规范--request-authentication)与[固定签名向量](examples/signature-vector.json)；Node.js 可直接使用 [sdk-node.mjs](examples/sdk-node.mjs) 的 `OasisClient.createSession()`。
+- `locale` 决定游戏语言：`zh-CN`、`en` 或 `ar`。
 - 网络超时请用**相同 request_id 和相同正文**重试，平台返回同一结果；新的启动意图使用新 request_id。
 - 使用平台启动页（第 4.1 节）时**不要传 `host_origin`**。只有在你自己的网页里用 iframe 嵌入（第 4.2 节）时，才传入并在“接入”页登记你的网页 Origin。
 
@@ -74,8 +81,10 @@ POST https://game.tianyahuyu.com/v1/sessions
 用全屏 WebView 打开：
 
 ```
-https://game.tianyahuyu.com/launch/?game=<game_id>#code=<launch_code>&session=<session_id>
+https://game.tianyahuyu.com/launch/?game=<game_id>&lang=<zh|en|ar>#code=<launch_code>&session=<session_id>
 ```
+
+`lang` 可选，建议与 `/v1/sessions` 的 `locale` 一致；省略时按会话语言或设备语言。
 
 启动码放在 `#` 片段中，不会发送到任何服务器日志；页面加载后会立即从地址栏移除。
 

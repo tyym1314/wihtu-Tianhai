@@ -23,18 +23,19 @@ async function loadConfig(path){
 }
 const html=(users,platform)=>`<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Demo Partner App</title>
 <style>body{margin:0;font-family:-apple-system,"PingFang SC",sans-serif;background:#0f1530;color:#eef}header{padding:22px 18px 8px}h1{margin:0;font-size:20px}small{opacity:.7}
-.users,.games{display:grid;gap:10px;padding:10px 18px}.users{grid-template-columns:repeat(2,1fr)}.games{grid-template-columns:repeat(3,1fr)}
+.langs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:4px 18px}.users,.games{display:grid;gap:10px;padding:10px 18px}.users{grid-template-columns:repeat(2,1fr)}.games{grid-template-columns:repeat(3,1fr)}
 button{border:1px solid #3d4a85;background:#18214a;color:#eef;border-radius:12px;padding:12px 8px;font-size:14px}button.sel{border-color:#f3c76b;background:#2a2a52}
 .bal{display:block;font-size:12px;color:#f3c76b;margin-top:4px}#msg{padding:6px 18px;color:#f99;min-height:20px}</style></head><body>
 <header><h1>Demo Partner App</h1><small>第三方接入演示 · 演示币 · 平台 ${platform}</small></header>
 <div class="users" id="users">${users.map((u,i)=>`<button data-user="${u}" class="${i?'':'sel'}">${u}<span class="bal" id="bal-${u}">…</span></button>`).join('')}</div>
-<div id="msg"></div><div class="games">${GAMES.map(([id,name])=>`<button data-game="${id}">${name}</button>`).join('')}</div>
+<div class="langs" id="langs">${[['zh','中文'],['en','English'],['ar','العربية']].map(([l,n],i)=>`<button data-lang="${l}" class="${i?'':'sel'}">${n}</button>`).join('')}</div><div id="msg"></div><div class="games">${GAMES.map(([id,name])=>`<button data-game="${id}">${name}</button>`).join('')}</div>
 <script>
-let user=${JSON.stringify(users[0])};
+let user=${JSON.stringify(users[0])},lang='zh';
+document.getElementById('langs').onclick=e=>{const b=e.target.closest('[data-lang]');if(!b)return;lang=b.dataset.lang;for(const x of document.querySelectorAll('[data-lang]'))x.classList.toggle('sel',x===b);};
 document.getElementById('users').onclick=e=>{const b=e.target.closest('[data-user]');if(!b)return;user=b.dataset.user;for(const x of document.querySelectorAll('[data-user]'))x.classList.toggle('sel',x===b);};
 async function balances(){try{const r=await fetch('/demo/balances',{cache:'no-store'});const d=await r.json();for(const [u,v] of Object.entries(d))document.getElementById('bal-'+u).textContent=(Number(v)/100).toLocaleString()+' 币';}catch{}}
 document.querySelector('.games').onclick=async e=>{const b=e.target.closest('[data-game]');if(!b)return;document.getElementById('msg').textContent='';
- try{const r=await fetch('/demo/launch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({user,game:b.dataset.game})});const d=await r.json();if(!r.ok)throw new Error(d.error||r.status);location.href=d.url;}
+ try{const r=await fetch('/demo/launch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({user,game:b.dataset.game,lang})});const d=await r.json();if(!r.ok)throw new Error(d.error||r.status);location.href=d.url;}
  catch(err){document.getElementById('msg').textContent='启动失败：'+err.message;}};
 balances();addEventListener('pageshow',balances);
 </script></body></html>`;
@@ -58,10 +59,10 @@ export async function startPartnerDemo({configPath=process.env.OASIS_DEMO_CONFIG
    if(path==='/demo/balances'&&req.method==='GET'){const rows=(await pool.query('SELECT external_user_id,available FROM wallet_users WHERE scope_id=$1',[scopeId])).rows;return send(res,200,Object.fromEntries(rows.filter(r=>users.includes(r.external_user_id)).map(r=>[r.external_user_id,r.available])));}
    if(path==='/demo/launch'&&req.method==='POST'){
     let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>1024)return send(res,413,{error:'too large'});}
-    const {user,game}=JSON.parse(raw||'{}');
-    if(!users.includes(user)||!GAMES.some(([id])=>id===game))return send(res,400,{error:'invalid user or game'});
-    const s=await client.createSession({requestId:'demo_'+randomBytes(12).toString('hex'),externalUserId:user,gameId:game,locale:'zh',hostPlatform:'web'});
-    return send(res,200,{url:`${config.platform_base_url}/launch/?game=${game}#code=${encodeURIComponent(s.launch_code)}&session=${encodeURIComponent(s.session_id)}`});
+    const {user,game,lang='zh'}=JSON.parse(raw||'{}');
+    if(!users.includes(user)||!GAMES.some(([id])=>id===game)||!['zh','en','ar'].includes(lang))return send(res,400,{error:'invalid user or game'});
+    const s=await client.createSession({requestId:'demo_'+randomBytes(12).toString('hex'),externalUserId:user,gameId:game,locale:lang,hostPlatform:'web'});
+    return send(res,200,{url:`${config.platform_base_url}/launch/?game=${game}&lang=${lang}#code=${encodeURIComponent(s.launch_code)}&session=${encodeURIComponent(s.session_id)}`});
    }
    send(res,404,{error:'not found'});
   }catch(error){send(res,error.status&&error.status<500?error.status:502,{error:error.code||error.message||'error'});}

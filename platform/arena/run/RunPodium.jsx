@@ -1,3 +1,4 @@
+import {t as $t} from '../shared/i18n.mjs';
 import React,{useEffect,useRef,useState}from'react';
 import * as T from'three';
 import{RoomEnvironment}from'three/examples/jsm/environments/RoomEnvironment.js';
@@ -10,7 +11,7 @@ export default function RunPodium({players=[],meId, className=''}){
  useEffect(()=>{
   if(!mount.current)return;let renderer,dead=false,raf,observer;const models=[],disposables=[],root=mount.current;
   const mobileQuality=window.matchMedia?.('(pointer: coarse)').matches||Math.min(window.innerWidth,window.innerHeight)<=600;
-  try{renderer=new T.WebGLRenderer({antialias:!mobileQuality,alpha:true,powerPreference:'high-performance'});}catch{setError('角色领奖台暂不可用');return;}
+  try{renderer=new T.WebGLRenderer({antialias:!mobileQuality,alpha:true,powerPreference:'high-performance'});}catch{setError($t("角色领奖台暂不可用"));return;}
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobileQuality?1.2:1.5));renderer.setClearColor(0x000000,0);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1;renderer.shadowMap.enabled=!mobileQuality;renderer.shadowMap.type=T.PCFSoftShadowMap;root.dataset.renderQuality=mobileQuality?'mobile':'desktop';root.append(renderer.domElement);
   const scene=new T.Scene(),camera=new T.PerspectiveCamera(35,1,.1,50);camera.position.set(0,3.2,8.0);camera.lookAt(0,1.68,0);
   const pmrem=new T.PMREMGenerator(renderer),roomEnv=new RoomEnvironment(),env=pmrem.fromScene(roomEnv,.06);scene.environment=env.texture;pmrem.dispose();roomEnv.dispose();scene.add(new T.HemisphereLight(0xd5f3ff,0x4c351c,1.25));
@@ -33,5 +34,5 @@ export default function RunPodium({players=[],meId, className=''}){
   const resize=()=>{const b=root.getBoundingClientRect();renderer.setSize(Math.max(1,b.width),Math.max(1,b.height),false);camera.aspect=b.width/Math.max(1,b.height);camera.updateProjectionMatrix();};observer=new ResizeObserver(resize);observer.observe(root);resize();raf=requestAnimationFrame(render);
   return()=>{dead=true;cancelAnimationFrame(raf);observer.disconnect();models.forEach(m=>m.actor.dispose());disposables.forEach(d=>d.dispose());env.dispose();renderer.dispose();renderer.domElement.remove();};
  },[signature,meId]);
- return <div className={`run-podium ${className}`} data-testid="run-podium" ref={mount} style={{position:'relative',width:'100%',height:'100%',minHeight:270}} aria-label="实际比赛名次的动物领奖台">{error&&<small role="status" style={{position:'absolute',bottom:8,left:12,color:'#ffe5ac',fontSize:10}}>{error}</small>}</div>;
+ return <div className={`run-podium ${className}`} data-testid="run-podium" ref={mount} style={{position:'relative',width:'100%',height:'100%',minHeight:270}} aria-label={$t("实际比赛名次的动物领奖台")}>{error&&<small role="status" style={{position:'absolute',bottom:8,left:12,color:'#ffe5ac',fontSize:10}}>{error}</small>}</div>;
 }

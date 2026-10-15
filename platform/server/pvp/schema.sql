@@ -11,6 +11,9 @@ CREATE TABLE IF NOT EXISTS pvp_rooms (
 ALTER TABLE pvp_rooms ADD COLUMN IF NOT EXISTS game_options jsonb NOT NULL DEFAULT '{}';
 -- Private rollback history, only for explicitly opted-in free Run BOT rooms.
 ALTER TABLE pvp_rooms ADD COLUMN IF NOT EXISTS run_input_state jsonb;
+-- Public quick-match rooms: strangers in the same App, game, size and entry.
+ALTER TABLE pvp_rooms ADD COLUMN IF NOT EXISTS matchmaking boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS pvp_rooms_matchmaking ON pvp_rooms(app_id,game_id,capacity,entry_minor,created_at) WHERE matchmaking AND status='waiting';
 CREATE INDEX IF NOT EXISTS pvp_rooms_running ON pvp_rooms(status,updated_at);
 CREATE TABLE IF NOT EXISTS pvp_active_users (app_id text NOT NULL REFERENCES gp_apps,external_user_id text NOT NULL,room_id text NOT NULL REFERENCES pvp_rooms,PRIMARY KEY(app_id,external_user_id));
 -- Presence is deliberately separate from game state. Polling must not take a

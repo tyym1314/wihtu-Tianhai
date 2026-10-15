@@ -87,7 +87,7 @@ function personal(r,s,now=Date.now()){
  const rankings=r.result?.rankings||(r.game_state&&supportsRules(engines[r.game_id],r.rule_version)?engines[r.game_id].rank(r.game_state):[]),byKey=new Map(rankings.map(p=>[p.playerKey,p]));
  const mine=r.players.find(p=>p.external_user_id===s.external_user_id);
  const total=BigInt(r.entry_minor)*BigInt(r.capacity),fee=total*BigInt(r.fee_bps)/10000n;
- const view={id:r.id,code:r.code,game_id:r.game_id,status:r.status,capacity:r.capacity,practice:r.practice,team_size:r.terms.team_size,seed_commitment:hash(unseal(r.seed_enc)),me:s.external_user_id,me_last_seq:mine?.last_seq||0,entry_minor:r.entry_minor,fee_bps:r.fee_bps,pool_minor:total.toString(),prize_minor:(total-fee).toString(),server_now:now,starts_at:r.starts_at,end_at:r.end_at,ready_deadline_at:r.ready_deadline_at,result:r.result,error:r.error,version:r.version,
+ const view={id:r.id,code:r.code,game_id:r.game_id,status:r.status,capacity:r.capacity,practice:r.practice,matchmaking:r.matchmaking===true,...(r.matchmaking?{matchmaking_expires_at:Number(r.expires_at)}:{}),team_size:r.terms.team_size,seed_commitment:hash(unseal(r.seed_enc)),me:s.external_user_id,me_last_seq:mine?.last_seq||0,entry_minor:r.entry_minor,fee_bps:r.fee_bps,pool_minor:total.toString(),prize_minor:(total-fee).toString(),server_now:now,starts_at:r.starts_at,end_at:r.end_at,ready_deadline_at:r.ready_deadline_at,result:r.result,error:r.error,version:r.version,
  players:r.players.map(p=>{const rank=byKey.get(p.external_user_id),result=r.result?.payouts.find(v=>v.external_user_id===p.external_user_id);return{external_user_id:p.external_user_id,name:p.name,seat_index:p.seat_index,team_id:p.team_id||null,ready:p.ready,...(r.game_id==='run'&&runRequiresSceneReady(r.rule_version)?{scene_ready:r.game_state?.phase==='arming'?runSceneReadyFresh(p,now):!!p.scene_ready_at}:{}),connected:p.bot||now-p.last_seen_at<=30000,bot:p.bot,forfeited:rank?.forfeited||p.forfeited||false,score:rank?.score||0,rank:rank?.forfeited?null:rank?.rank??null,payout_minor:result?.payout_minor||'0'};}),
  game:mine&&r.game_state&&supportsRules(engines[r.game_id],r.rule_version)?engines[r.game_id].view(r.game_state,s.external_user_id,{roomId:r.id}):null};
  if(r.game_id==='run'){const course=storedRunPracticeCourse(r);if(course)view.run_course=course;}
@@ -232,12 +232,31 @@ function requestDigest(method,path,body){return hash(JSON.stringify([method,path
 async function replay(c,s,body,digest){const old=(await c.query('SELECT * FROM pvp_requests WHERE app_id=$1 AND external_user_id=$2 AND request_id=$3',[s.app_id,s.external_user_id,body.request_id])).rows[0];if(old&&old.digest!==digest)fail(409,'IDEMPOTENCY_CONFLICT');return old?{status:old.response_status,body:old.response}:null;}
 async function remember(c,s,body,digest,r,response){await c.query('INSERT INTO pvp_requests(app_id,external_user_id,request_id,digest,room_id,response,response_status) VALUES($1,$2,$3,$4,$5,$6,$7)',[s.app_id,s.external_user_id,body.request_id,digest,r.id,response.body,response.status]);return response;}
 function player(s,index,now,bot=false){return{external_user_id:s.external_user_id,name:bot?`BOT ${index}`:s.external_user_id,seat_index:index,ready:bot,bot,last_seq:0,last_seen_at:now,forfeited:false};}
+const MATCHMAKING_WAIT_MS=120000;
+/** Quick match: join the oldest open public room with identical terms in this App, else open one. */
+async function quickMatch(s,body,options){
+ if(!/^[A-Za-z0-9_-]{8,128}$/.test(body.request_id||''))fail(400,'REQUEST_ID_REQUIRED');
+ if(body.game_id!==s.game_id||!allowedCapacity(s.game_id,body.capacity)||typeof body.entry_minor!=='string')fail(400,'INVALID_ROOM');
+ const prior=(await pool.query('SELECT response,response_status FROM pvp_requests WHERE app_id=$1 AND external_user_id=$2 AND request_id=$3',[s.app_id,s.external_user_id,body.request_id])).rows[0];
+ if(prior)return{status:prior.response_status,body:prior.response};
+ // One bucket at a time: two searchers can never both open rooms that should have matched.
+ return transaction(async c=>{
+  await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`pvpmatch:${s.app_id}:${s.game_id}:${body.capacity}:${body.entry_minor}`]);
+  const now=roomNow(null,options.now);
+  const open=(await c.query(`SELECT id FROM pvp_rooms WHERE app_id=$1 AND game_id=$2 AND capacity=$3 AND entry_minor=$4 AND matchmaking AND NOT practice AND status='waiting'
+    AND ready_deadline_at IS NULL AND expires_at>$5 AND jsonb_array_length(players)<capacity AND NOT players @> $6::jsonb ORDER BY created_at LIMIT 1`,
+   [s.app_id,s.game_id,body.capacity,body.entry_minor,now+15000,JSON.stringify([{external_user_id:s.external_user_id}])])).rows[0];
+  if(open)return routePvp(s,'POST',`/api/pvp/rooms/${open.id}/join`,{request_id:body.request_id},options);
+  return routePvp(s,'POST','/api/pvp/rooms',{request_id:body.request_id,game_id:s.game_id,capacity:body.capacity,entry_minor:body.entry_minor,practice:false,matchmaking:true},options);
+ });
+}
 export async function routePvp(session,method,path,body={},options={}){
+ if(method==='POST'&&path==='/api/pvp/matchmaking'){checkSession(session);return quickMatch(session,body,options);}
  if(!path.startsWith('/api/pvp/rooms'))return null;checkSession(session);const s=session,actionRequest=method==='POST'&&/^\/api\/pvp\/rooms\/[A-Za-z0-9_-]+\/action$/.test(path);let app=method==='POST'&&!actionRequest?await appById(s.app_id):undefined;
  if(method==='POST'&&!/^[A-Za-z0-9_-]{8,128}$/.test(body.request_id||''))fail(400,'REQUEST_ID_REQUIRED');
  const digest=requestDigest(method,path,body);
  if(method==='POST'&&path==='/api/pvp/rooms'){
-  if(body.game_id!==s.game_id||!allowedCapacity(s.game_id,body.capacity)||typeof body.practice!=='undefined'&&typeof body.practice!=='boolean')fail(400,'INVALID_ROOM');
+  if(body.game_id!==s.game_id||!allowedCapacity(s.game_id,body.capacity)||typeof body.practice!=='undefined'&&typeof body.practice!=='boolean'||body.matchmaking!==undefined&&(body.matchmaking!==true||body.practice===true))fail(400,'INVALID_ROOM');
   const practice=body.practice===true,entry=practice?'0':body.entry_minor,social=s.game_id==='towerlink'&&!practice&&entry==='0';if(!practice&&!social&&!['1000','5000','10000','20000','50000'].includes(entry))fail(400,'INVALID_ENTRY');
   const inputProtocol=body.run_input_protocol,profileId=body.run_input_profile;
   const inputProfile=inputProtocol===undefined?null:resolveRunPracticeProfile({ruleVersion:inputProtocol===RUN_PRACTICE_PROFILES.v2.protocol?RUN_PRACTICE_PROFILES.v2.ruleVersion:RUN_INPUT_RULE_VERSION,protocol:inputProtocol,profileId});
@@ -264,6 +283,7 @@ export async function routePvp(session,method,path,body={},options={}){
    // Existing waiting/funding rooms retain their stored options and default 3s.
    Object.assign(gameOptions,newTowerPracticeStartOptions({game_id:s.game_id,practice,entry_minor:entry,fee_bps:fee,capacity:body.capacity,players,terms,rule_version:ruleVersion}));
    const r=hydrate((await c.query('INSERT INTO pvp_rooms(id,code,app_id,game_id,capacity,practice,entry_minor,fee_bps,terms,scope,players,rule_version,seed_enc,last_tick_at,expires_at,ready_deadline_at,game_options) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *',[roomId,randomBytes(5).toString('hex').toUpperCase(),s.app_id,s.game_id,body.capacity,practice,entry,fee,terms,scopeOf(app),JSON.stringify(players),ruleVersion,seal(randomBytes(32).toString('hex')),now,now+300000,players.length===body.capacity?now+30000:null,gameOptions])).rows[0]);
+   if(body.matchmaking===true){await c.query('UPDATE pvp_rooms SET matchmaking=true,expires_at=$2 WHERE id=$1',[roomId,now+MATCHMAKING_WAIT_MS]);r.matchmaking=true;r.expires_at=now+MATCHMAKING_WAIT_MS;}
    await c.query('INSERT INTO pvp_active_users(app_id,external_user_id,room_id) VALUES($1,$2,$3)',[s.app_id,s.external_user_id,roomId]);return remember(c,s,body,digest,r,{status:201,body:personal(r,s,now)});
   });
  }
@@ -344,6 +364,13 @@ export async function routePvp(session,method,path,body={},options={}){
       if(r.game_id==='run'&&r.practice&&runRequiresSceneReady(r.rule_version)&&supportsRules(engines.run,r.rule_version))startGame(r,now);
      }
     }else if(verb==='leave'){
+     // A stranger leaving an unfilled quick-match room only frees their seat; nothing is reserved yet.
+     if(r.matchmaking&&r.status==='waiting'&&r.players.length>1){
+      r.players=r.players.filter(p=>p.external_user_id!==s.external_user_id).map((p,i)=>({...p,seat_index:i,...(r.terms.team_size===2?{team_id:i%2?'team_b':'team_a'}:{})}));
+      r.ready_deadline_at=null;
+      await c.query('DELETE FROM pvp_active_users WHERE app_id=$1 AND external_user_id=$2 AND room_id=$3',[s.app_id,s.external_user_id,r.id]);
+      await save(r,c);return remember(c,s,body,digest,r,{status:200,body:{...personal(r,s,now),status:'cancelled'}});
+     }
      if(r.practice&&!terminal.has(r.status)){r.status='cancelled';r.end_at=now;r.last_tick_at=now;r.error=null;}
      else if(r.status==='waiting'||r.status==='funding')r.status='cancelling';
      // Active paid forfeits were computed before entering this transaction.

@@ -100,6 +100,24 @@ test('a paid two-player room reserves, captures and settles through the partner 
  assert.equal(await balance('alice'),100900n);assert.equal(await balance('bob'),99000n);
 });
 
+test('quick match pairs strangers with identical terms and a leaver only frees their seat',async()=>{
+ const users=['alice','bob'];const sessions=await Promise.all(users.map(u=>sessionFor(u,'match')));
+ const quick=s=>post(s,'/api/pvp/matchmaking',{game_id:'match',capacity:2,entry_minor:'1000'});
+ const first=(await quick(sessions[0])).body;assert.equal(first.matchmaking,true);assert.equal(first.status,'waiting');assert.equal(first.practice,false);
+ const other=(await post(sessions[1],'/api/pvp/matchmaking',{game_id:'match',capacity:2,entry_minor:'5000'})).body;assert.notEqual(other.id,first.id,'different entry never matches');
+ await post(sessions[1],`/api/pvp/rooms/${other.id}/leave`);await pvp.tickPvp({roomIds:[other.id]});
+ assert.equal((await pool.query('SELECT status FROM pvp_rooms WHERE id=$1',[other.id])).rows[0].status,'cancelled');
+ const second=(await quick(sessions[1])).body;assert.equal(second.id,first.id);assert.equal(second.players.length,2);
+ const left=(await post(sessions[1],`/api/pvp/rooms/${first.id}/leave`)).body;assert.equal(left.status,'cancelled');
+ const room=(await pool.query('SELECT status,players FROM pvp_rooms WHERE id=$1',[first.id])).rows[0];assert.equal(room.status,'waiting');assert.deepEqual(room.players.map(p=>p.external_user_id),['alice']);
+ const again=(await quick(sessions[1])).body;assert.equal(again.id,first.id);
+ for(const s of sessions)await post(s,`/api/pvp/rooms/${first.id}/ready`);
+ for(let i=0;i<20;i++){await pvp.tickPvp({roomIds:[first.id]});if((await pool.query('SELECT status FROM pvp_rooms WHERE id=$1',[first.id])).rows[0].status==='active')break;await new Promise(r=>setTimeout(r,50));}
+ assert.equal((await pool.query('SELECT status FROM pvp_rooms WHERE id=$1',[first.id])).rows[0].status,'active');
+ for(const s of sessions)await post(s,`/api/pvp/rooms/${first.id}/leave`);
+ for(let i=0;i<40;i++){await pvp.tickPvp({roomIds:[first.id]});if(['settled','voided'].includes((await pool.query('SELECT status FROM pvp_rooms WHERE id=$1',[first.id])).rows[0].status))break;await new Promise(r=>setTimeout(r,50));}
+});
+
 test('probability games authorize, accept and settle a complete cycle through the partner wallet',async()=>{
  const s=await sessionFor('alice','thunder'),before=await balance('alice');
  const view=await cycles.publicSession(s);assert.equal(view.mode,'production');assert.equal(view.financial_admission_enabled,true);assert.equal(view.internal_game_coins,false);

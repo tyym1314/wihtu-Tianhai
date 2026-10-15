@@ -17,6 +17,14 @@ function hostBack(){
  dialog.innerHTML='<h2>返回应用？</h2><p>已提交的游戏结果会保留。返回不会撤销投入或表示已退款；重新进入可继续查询与恢复。</p><div><button data-return="cancel">继续游戏</button><button data-return="confirm">返回应用</button></div>';
  dialog.querySelector('[data-return="cancel"]')!.addEventListener('click',()=>dialog.remove());dialog.querySelector('[data-return="confirm"]')!.addEventListener('click',()=>{gameBridge?.completeReturn({reason:'user',status:detail.pending?'pending':'idle'});dialog.remove();});document.body.append(dialog);dialog.showModal();
 }
+// Session language (from the App's launch request) seeds each game's own language preference.
+function applyLocale(game:string,sessionLocale:unknown){
+ const pick=(v:unknown)=>{const l=String(v||'').toLowerCase();return l.startsWith('zh')?'zh':l.startsWith('ar')?'ar':l.startsWith('en')?'en':null;};
+ let locale=pick(sessionLocale);
+ try{locale??=pick(localStorage.getItem('oasis-locale'));}catch{}
+ locale??=pick(navigator.language);if(!locale)return;
+ try{localStorage.setItem(game==='thunder'?'tt-language':'golden-tiger:locale',locale);}catch{}
+}
 async function refreshProfile(game:string){
   const response=await nativeFetch(`/api/play/${game}/config`,{headers:{Authorization:`Bearer ${token}`},credentials:'same-origin'});
   if(!response.ok)throw new Error('无法读取平台游戏配置');
@@ -60,7 +68,7 @@ export async function boot(game:'thunder'|'tiger',load:()=>Promise<unknown>){
     const response=await nativeFetch('/v1/launch/exchange',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),credentials:'same-origin'});
     const result=await response.json();if(!response.ok||typeof result.access_token!=='string')throw Object.assign(new Error(result.error?.message||result.message||'启动授权未成功'),{code:result.error?.code||result.code});
     if(result.host_origin&&result.host_origin!==body.host_origin||result.game_id&&result.game_id!==game)throw new Error('启动授权与宿主或游戏不匹配');
-    token=result.access_token;await refreshProfile(game);
+    token=result.access_token;applyLocale(game,result.locale);await refreshProfile(game);
     if(!loaded){await load();loaded=true;for(const item of document.querySelectorAll('.demo-badge,.desktop-demo'))if(item.textContent?.includes('DEMO'))item.textContent='PLATFORM · APP WALLET';}
     return{host_origin:result.host_origin||body.host_origin,game_id:game,session_id:result.session_id};
   },onState:(state:any)=>{hostState=state;stateListeners.forEach(listener=>listener(state));},onBack:hostBack,onError:(error:Error)=>{if(!loaded)screen('暂时无法启动',error.message||'请重新获取启动授权',true);}});

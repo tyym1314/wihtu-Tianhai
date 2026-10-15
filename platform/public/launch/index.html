@@ -33,6 +33,15 @@ const GAMES=['match','golf','carrom','darts','ludo','jackaroo','domino','pool','
 const $=id=>document.getElementById(id);
 const params=new URLSearchParams(location.search),fragment=new URLSearchParams(location.hash.slice(1));
 const gameId=params.get('game'),code=fragment.get('code'),sessionId=fragment.get('session');
+// Language: ?lang=zh|en|ar from the App, else the device language. Stored for the same-origin game page.
+const pickLang=v=>{v=String(v||'').toLowerCase();return v.startsWith('zh')?'zh':v.startsWith('ar')?'ar':v.startsWith('en')?'en':null;};
+const lang=pickLang(params.get('lang')||params.get('locale'))||(()=>{try{return pickLang(localStorage.getItem('oasis-locale'));}catch{return null;}})()||pickLang(navigator.language)||'zh';
+try{localStorage.setItem('oasis-locale',lang);}catch{}
+document.documentElement.lang=lang==='zh'?'zh-CN':lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';
+const T={zh:{entering:'正在进入游戏',wait:'请稍候…',back:'返回',badTitle:'无法进入游戏',badMsg:'启动参数无效，请返回 App 重新进入。',errTitle:'游戏暂时无法连接',expired:'会话已过期，请返回 App 重新进入。',retry:'请返回 App 后重新进入。'},
+ en:{entering:'Entering the game',wait:'Please wait…',back:'Back',badTitle:"Can't open the game",badMsg:'Invalid launch link. Go back to the app and try again.',errTitle:"Can't connect to the game",expired:'Session expired. Go back to the app and reopen the game.',retry:'Go back to the app and try again.'},
+ ar:{entering:'جارٍ الدخول إلى اللعبة',wait:'يرجى الانتظار…',back:'رجوع',badTitle:'تعذّر فتح اللعبة',badMsg:'رابط التشغيل غير صالح. ارجع إلى التطبيق وحاول مجدداً.',errTitle:'تعذّر الاتصال باللعبة',expired:'انتهت الجلسة. ارجع إلى التطبيق وافتح اللعبة مجدداً.',retry:'ارجع إلى التطبيق وحاول مجدداً.'}}[lang];
+$('title').textContent=T.entering;$('message').textContent=T.wait;$('back').textContent=T.back;
 // The one-time code never stays in the address bar, history or a later referrer.
 history.replaceState(null,'',location.pathname+location.search);
 let sdk=null,closed=false,launchUsed=false;
@@ -49,19 +58,19 @@ function close(detail={}){if(closed)return;closed=true;sdk?.destroy();if(!notify
 function requestBack(){if(closed)return true;if(sdk?.loaded&&!sdk.closed){$('status').hidden=true;sdk.requestBack();}else close({reason:'user'});return true;}
 Object.defineProperty(window,'OasisLauncher',{value:Object.freeze({requestBack,setHostState:state=>sdk?.setHostState(state)}),configurable:false});
 $('back').addEventListener('click',()=>close({reason:'error'}));
-if(!GAMES.includes(gameId)||!code||code.length<8||!sessionId){show('error','无法进入游戏','启动参数无效，请返回 App 重新进入。');}
+if(!GAMES.includes(gameId)||!code||code.length<8||!sessionId){show('error',T.badTitle,T.badMsg);}
 else{
  sdk=new OasisHost({platformOrigin:location.origin,gameId,timeoutMs:45000,
   requestLaunch:async({resumeSessionId})=>{
    if(!launchUsed&&!resumeSessionId){launchUsed=true;return{entry_url:location.origin+'/play/'+gameId,launch_code:code,session_id:sessionId};}
    // A fresh launch code must come from the App backend; ask the App to reopen this session.
    notifyApp('reauth_required',{session_id:resumeSessionId||sessionId});
-   throw Object.assign(new Error('会话已过期，请返回 App 重新进入'),{code:'REAUTH_REQUIRED'});
+   throw Object.assign(new Error(T.expired),{code:'REAUTH_REQUIRED'});
   },
   onEvent:event=>{
    if(event.type==='loaded'){$('status').hidden=true;notifyApp('loaded',{session_id:event.session_id});}
    else if(event.type==='return_requested')close({reason:event.reason,room_id:event.room_id,status:event.status});
-   else if(event.type==='error'){show('error','游戏暂时无法连接',event.code==='REAUTH_REQUIRED'||event.code==='REAUTH_FAILED'?'会话已过期，请返回 App 重新进入。':'请返回 App 后重新进入。');notifyApp('error',{code:event.code});}
+   else if(event.type==='error'){show('error',T.errTitle,event.code==='REAUTH_REQUIRED'||event.code==='REAUTH_FAILED'?T.expired:T.retry);notifyApp('error',{code:event.code});}
   }});
  sdk.mount($('game')).catch(()=>{});
  // The game page has its own branded loader; reveal it as soon as it paints.

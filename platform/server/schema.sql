@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS gp_player_app_ids (
 ALTER TABLE gp_sessions ADD COLUMN IF NOT EXISTS player_id text REFERENCES gp_players(id);
 ALTER TABLE gp_sessions ADD COLUMN IF NOT EXISTS admission_profile text;
 ALTER TABLE gp_sessions ADD COLUMN IF NOT EXISTS admission_revision bigint CHECK(admission_revision IS NULL OR admission_revision>0);
+ALTER TABLE gp_sessions ADD COLUMN IF NOT EXISTS locale text CHECK(locale IS NULL OR locale IN ('zh','en','ar'));
 
 -- An environment flag is not approval. This table starts empty; only the
 -- independently reviewed production operation records the exact source/scope.

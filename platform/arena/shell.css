@@ -26,3 +26,5 @@
 .theme-towerlink .tower-training-list button>span{display:flex;justify-content:space-between;color:#e5c888;font-size:11px}
 .theme-towerlink .tower-training-list strong{display:block;font-size:13px;line-height:1.5;margin:5px 0}
 .theme-towerlink .tower-training-list small{color:#c2d4ce;font-size:10px}
+.room-emblem.searching{animation:searchPulse 1.6s ease-in-out infinite}@keyframes searchPulse{50%{box-shadow:0 0 0 18px #e5b76700,0 0 38px #dcac78aa;transform:scale(1.04)}}
+[dir=rtl] .arena-gold svg,[dir=rtl] .lobby-intro button svg{transform:scaleX(-1)}

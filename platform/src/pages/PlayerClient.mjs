@@ -1,3 +1,4 @@
+const deviceLocale=()=>{try{const stored=localStorage.getItem('oasis-locale');if(['zh','en','ar'].includes(stored))return stored==='zh'?'zh-CN':stored;}catch{}const l=String(globalThis.navigator?.language||'').toLowerCase();return l.startsWith('ar')?'ar':l.startsWith('en')?'en':'zh-CN';};
 export const playerMessage=error=>({
  LOGIN_REQUIRED:'登录已过期，请重新登录后恢复游戏。',
  INVALID_CREDENTIALS:'账号或密码不正确。',
@@ -82,7 +83,7 @@ export function createPlayerClient({appId,origin,fetch=globalThis.fetch.bind(glo
    return async({gameId:requested,resumeSessionId,signal}={})=>{
     if(requested!==gameId)throw new Error('GAME_SELECTION_CHANGED');
     const resume=resumeSessionId||null;
-    if(!pending||pending.resume!==resume)pending={resume,body:{app_id:appId,game_id:gameId,request_id:requestId(),locale:'zh-CN',host_platform:'web',host_origin:origin,...(resume?{resume_session_id:resume}:{})}};
+    if(!pending||pending.resume!==resume)pending={resume,body:{app_id:appId,game_id:gameId,request_id:requestId(),locale:deviceLocale(),host_platform:'web',host_origin:origin,...(resume?{resume_session_id:resume}:{})}};
     const intent=pending;
     for(let attempt=0;attempt<2;attempt++)try{
      const result=await api('launch',{body:intent.body,signal});pending=null;return result;
