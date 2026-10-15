@@ -236,6 +236,17 @@ export default function Developer({ environment = 'sandbox', notify = () => {}, 
   const reset = () => { setRunning(false); setCompleted(0); setFeedback('演示已重置，未改变任何真实账户。'); };
   const changeScenario = (id) => { setRunning(false); setCompleted(0); setFeedback(''); setScenarioId(id); };
 
+  // Production has one partner integration path: signed sessions, /launch, and the 3-endpoint wallet.
+  if (environment === 'production') return <div className="portal-page">
+    <div className="portal-heading-row"><div><div className="eyebrow">DEVELOPER EXPERIENCE</div><h1 className="page-heading">开发者中心</h1><p className="subtitle">后端签名开会话，客户端打开启动页，钱包只需 3 个接口。</p></div><a className="button" href="/specs/partner-integration-production.md" target="_blank" rel="noreferrer"><BookOpen size={17} />正式接入指南<ArrowRight size={15} /></a></div>
+    <section className="panel" style={{marginBottom:18}}><div className="ip-grid">
+      <div className="ip-card"><div className="ip-step"><span>01</span><KeyRound size={19}/></div><h3>后端创建会话</h3><p>用 App 密钥签名调用 <code>POST /v1/sessions</code>，传入你的用户 ID、游戏和语言（zh-CN / en / ar），得到一次性启动码。</p></div>
+      <div className="ip-card"><div className="ip-step"><span>02</span><Rocket size={19}/></div><h3>客户端打开游戏</h3><p>WebView 打开 <code>/launch/?game=…&amp;lang=…#code=…&amp;session=…</code>；H5 页面可用 <a href="/sdk/oasis-h5.mjs" download>H5 SDK</a> 嵌入。</p></div>
+      <div className="ip-card"><div className="ip-step"><span>03</span><ShieldCheck size={19}/></div><h3>实现钱包 3 个接口</h3><p>查余额、扣款、加款，按 request_id 幂等。冻结、退款、派奖与概率责任由平台处理。</p></div>
+    </div><div className="ip-resource-strip"><Terminal size={21}/><div><strong>参考资料</strong><span>签名示例、固定签名向量与机器契约。</span></div><a className="button button-ghost" href="/specs/examples/sdk-node.mjs" download><ArrowDownToLine size={14}/>Node 签名示例</a><a className="button button-ghost" href="/specs/examples/signature-vector.json" download><ArrowDownToLine size={14}/>签名向量</a></div></section>
+    <IntegrationPanel apps={apps} notify={notify}/>
+  </div>;
+
   return <div className="portal-page">
     <div className="portal-heading-row"><div><div className="eyebrow">DEVELOPER EXPERIENCE</div><h1 className="page-heading">开发者中心</h1><p className="subtitle">从一次安全连接，到每一局可靠结算。</p></div><a className="button button-ghost" href="/specs/openapi.json" target="_blank" rel="noreferrer"><FileJson size={17} />OpenAPI 草案<ArrowRight size={15} /></a></div>
     <div className={`portal-preview-note ${live ? 'portal-preview-note-live' : ''}`}><FlaskConical size={18} /><span>{live ? '生产环境 · 设计预览' : '阶段 F · 合作方自助接入'}<small>{live ? '本地演示已禁用；生产 API、SDK 与接入验收尚未开放。' : '接入检查连接真实后台并保存报告；附 H5 SDK 与独立宿主示例。下方五场景流程为浏览器演示。'}</small></span><span className="portal-micro-label">SANDBOX v0.6</span></div>

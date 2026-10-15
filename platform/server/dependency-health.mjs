@@ -25,7 +25,7 @@ export function evaluateWalletDependencies(rows,{environment,referenceOrigin,all
   if(a.provider==='platform'){
    providers.platform++;
    if(environment!=='production'||a.wallet_url!==''||a.binding_url!==null||a.wallet_key_id!==null||a.ledger_scope_ready!==true)codes.add('PLATFORM_LEDGER_NOT_READY');
-  }else if(a.provider==='external'){
+  }else if(a.provider==='external'||a.provider==='simple'){
    providers.external++;if(required)externalRequired++;
    const value=origin(a.wallet_url),protocol=value&&new URL(value).protocol;
    if(!value||value!==a.binding_url||(!allow.has(value)&&!(partnerAdmission&&protocol==='https:'))||value===reference||a.wallet_key_ready!==true||

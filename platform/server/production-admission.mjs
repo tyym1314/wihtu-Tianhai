@@ -50,7 +50,7 @@ export function validatePartnerAdmission({config,app,binding,intent='session',ga
  if(intent==='metadata'||intent==='recovery')return info;
  // Partner players are the partner's own users; the hosted platform account flow is first-party only.
  if(intent==='register')reject('PLAYER_BFF_NOT_AVAILABLE');
- require(binding?.provider==='external'&&typeof binding.wallet_url==='string'&&binding.wallet_url.startsWith('https://')&&binding.wallet_key_id&&app.wallet_url===binding.wallet_url&&fields.every(field=>binding.scope?.[field]===scopeOf(app)[field]),'PRODUCTION_EXTERNAL_WALLET_REQUIRED');
+ require(binding?.provider==='simple'&&typeof binding.wallet_url==='string'&&binding.wallet_url.startsWith('https://')&&binding.wallet_key_id&&app.wallet_url===binding.wallet_url&&fields.every(field=>binding.scope?.[field]===scopeOf(app)[field]),'PRODUCTION_EXTERNAL_WALLET_REQUIRED');
  if(intent==='existing-ready'){
   require(fields.every(field=>room?.scope?.[field]===scopeOf(app)[field])&&info.game_ids.includes(room.game_id),'PARTNER_ROOM_NOT_ACCEPTED');
   return info;

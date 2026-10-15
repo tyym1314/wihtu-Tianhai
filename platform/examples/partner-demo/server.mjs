@@ -1,6 +1,6 @@
 /**
  * Demo third-party partner, deployable on its own HTTPS host. It plays both partner roles:
- *  - Partner wallet: the reference wallet protocol on /wallet/v1/* (own process, own database).
+ *  - Partner wallet: the simple-v1 protocol (balance / debit / credit) on /wallet/simple/v1/*, own database.
  *  - Partner backend: signs POST /v1/sessions with the App key and opens /launch/ on the platform.
  * The page only offers fixed demo users with demo coins. Real partners authenticate their own users.
  */
@@ -9,8 +9,8 @@ import {readFile,stat} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
 import {resolve} from 'node:path';
 import pg from 'pg';
-import {migrateWallet,provisionWallet,createWalletServer} from '../../server/wallet/index.mjs';
 import {OasisClient} from '../../specs/examples/sdk-node.mjs';
+import {migrateSimpleDemoWallet,seedSimpleDemoUsers,handleSimpleWallet} from './simple-wallet.mjs';
 
 const GAMES=[['match','三消对战'],['golf','绿洲高尔夫'],['bowling','保龄球'],['carrom','Carrom 弹盘'],['darts','飞镖'],['ludo','Ludo'],['jackaroo','Jackaroo'],['domino','多米诺'],['pool','八球'],['run','沙丘竞速'],['towerlink','连线占塔'],['thunder','雷霆'],['tiger','虎虎生财']];
 
@@ -44,19 +44,17 @@ export async function startPartnerDemo({configPath=process.env.OASIS_DEMO_CONFIG
  if(!configPath||!databaseUrl)throw Error('Set OASIS_DEMO_CONFIG and OASIS_DEMO_WALLET_DATABASE_URL');
  const config=await loadConfig(resolve(configPath));
  const pool=new pg.Pool({connectionString:databaseUrl,max:10});
- await migrateWallet(pool);
- await provisionWallet(pool,{scope:config.scope,key_id:config.wallet.key_id,secret_base64:config.wallet.secret_base64,users:config.wallet.users,treasury_minor:config.wallet.treasury_minor,math_profiles:config.wallet.math_profiles||[],partnerOwnedScope:true});
- const walletHandler=createWalletServer(pool).listeners('request')[0];
+ await migrateSimpleDemoWallet(pool);await seedSimpleDemoUsers(pool,config.wallet.users);
  const client=new OasisClient({baseUrl:config.platform_base_url,keyId:config.key_id,secretBase64:config.secret_base64,scope:config.scope});
- const users=config.wallet.users.map(u=>u.external_user_id),scopeId=Object.values(config.scope).join(':');
+ const users=config.wallet.users.map(u=>u.external_user_id);
  const page=html(users,config.platform_base_url);
  const send=(res,status,body,type='application/json')=>{res.writeHead(status,{'content-type':type,'cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'});res.end(type==='application/json'?JSON.stringify(body):body);};
  const server=createServer(async(req,res)=>{
   try{
    const path=(req.url||'/').split('?')[0];
-   if(path.startsWith('/wallet/'))return walletHandler(req,res);
+   if(path.startsWith('/wallet/simple/')){let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>65536)return send(res,413,{error:'too large'});}await handleSimpleWallet(pool,{keyId:config.wallet.key_id,secretBase64:config.wallet.secret_base64},req,res,raw);return;}
    if(path==='/'&&req.method==='GET')return send(res,200,page,'text/html; charset=utf-8');
-   if(path==='/demo/balances'&&req.method==='GET'){const rows=(await pool.query('SELECT external_user_id,available FROM wallet_users WHERE scope_id=$1',[scopeId])).rows;return send(res,200,Object.fromEntries(rows.filter(r=>users.includes(r.external_user_id)).map(r=>[r.external_user_id,r.available])));}
+   if(path==='/demo/balances'&&req.method==='GET'){const rows=(await pool.query('SELECT external_user_id,balance_minor AS available FROM demo_simple_accounts')).rows;return send(res,200,Object.fromEntries(rows.filter(r=>users.includes(r.external_user_id)).map(r=>[r.external_user_id,r.available])));}
    if(path==='/demo/launch'&&req.method==='POST'){
     let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>1024)return send(res,413,{error:'too large'});}
     const {user,game,lang='zh'}=JSON.parse(raw||'{}');

@@ -8,6 +8,7 @@ import addFormats from 'ajv-formats';
 import {pool as defaultPool,walletPool} from './db.mjs';
 import {id,seal,unseal,sign,fail,ApiError} from './security.mjs';
 import {createPlatformWallet,platformWalletRequest} from './platform-wallet.mjs';
+import {SIMPLE_PROTOCOL,createSimpleWalletScope,simpleWalletRequest} from './simple-wallet.mjs';
 
 let pool=defaultPool;
 const scopeFields=['partner_id','app_id','environment','wallet_scope_id','currency_id'];
@@ -33,7 +34,7 @@ export async function migrateWalletBindings(db=defaultPool){
     ALTER TABLE gp_wallet_bindings ALTER COLUMN wallet_key_id DROP NOT NULL;
     ALTER TABLE gp_wallet_bindings DROP CONSTRAINT IF EXISTS gp_wallet_bindings_provider_check;
     ALTER TABLE gp_wallet_bindings ADD CONSTRAINT gp_wallet_bindings_provider_check CHECK(
-      (provider='external' AND wallet_url IS NOT NULL AND wallet_key_id IS NOT NULL) OR
+      (provider IN ('external','simple') AND wallet_url IS NOT NULL AND wallet_key_id IS NOT NULL) OR
       (provider='platform' AND wallet_url IS NULL AND wallet_key_id IS NULL))`);
 }
 
@@ -104,14 +105,17 @@ export async function configureWallet(appId,input,actor){
     const app=(await db.query('SELECT * FROM gp_apps WHERE id=$1 FOR UPDATE',[appId])).rows[0];if(!app)fail(404,'NOT_FOUND');
     if(!['sandbox','production'].includes(app.environment)||app.status!=='paused')fail(409,'WALLET_BINDING_REQUIRES_PAUSED_SANDBOX');
     if(app.environment==='production'&&!wallet_url.startsWith('https://'))fail(400,'WALLET_HTTPS_REQUIRED');
+    // Production partners implement only the simple-v1 wallet; the local sandbox keeps its reference wallet.
+    const provider=app.environment==='production'?'simple':'external';
     if((await db.query('SELECT 1 FROM gp_wallet_bindings WHERE app_id=$1',[appId])).rowCount)fail(409,'WALLET_ALREADY_BOUND');
     if(await hasActivity(db,appId))fail(409,'WALLET_BINDING_HAS_ACTIVITY','Existing sessions or money operations prevent wallet replacement; create a separate sandbox App');
     if((await db.query('SELECT 1 FROM gp_keys WHERE id=$1',[wallet_key_id])).rowCount)fail(409,'WALLET_KEY_ALREADY_USED');
     await db.query("UPDATE gp_keys SET active=false WHERE app_id=$1 AND direction='platform-to-wallet'",[appId]);
     await db.query("INSERT INTO gp_keys(id,app_id,direction,secret_enc) VALUES($1,$2,'platform-to-wallet',$3)",[wallet_key_id,appId,seal(secret)]);
-    const binding=(await db.query('INSERT INTO gp_wallet_bindings(app_id,wallet_url,wallet_key_id,scope,configured_by) VALUES($1,$2,$3,$4,$5) RETURNING *',[appId,wallet_url,wallet_key_id,JSON.stringify(scopeOf(app)),actor])).rows[0];
+    const binding=(await db.query('INSERT INTO gp_wallet_bindings(app_id,provider,wallet_url,wallet_key_id,scope,configured_by) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',[appId,provider,wallet_url,wallet_key_id,JSON.stringify(scopeOf(app)),actor])).rows[0];
+    if(provider==='simple')await createSimpleWalletScope(db,app);
     await db.query('UPDATE gp_apps SET wallet_url=$2 WHERE id=$1',[appId,wallet_url]);
-    await db.query("INSERT INTO gp_audit(actor,action,app_id,detail) VALUES($1,'wallet.bound',$2,$3)",[actor,appId,JSON.stringify({wallet_url,wallet_key_id,balance_migration:false})]);
+    await db.query("INSERT INTO gp_audit(actor,action,app_id,detail) VALUES($1,'wallet.bound',$2,$3)",[actor,appId,JSON.stringify({wallet_url,wallet_key_id,protocol:provider==='simple'?SIMPLE_PROTOCOL:'sandbox-reference',balance_migration:false})]);
     await db.query('COMMIT');return publicBinding({...app,wallet_url},binding,false,wallet_key_id);
   }catch(e){await db.query('ROLLBACK');if(e.code==='23505')fail(409,'WALLET_KEY_ALREADY_USED');throw e;}finally{db.release();}
 }
@@ -154,11 +158,23 @@ async function requestJson(origin,method,path,headers,raw){
 let transport=requestJson;
 /** Test-only: route an HTTPS partner wallet to a loopback reference wallet. */
 export function setWalletTransportForTests(fn){if(process.env.NODE_ENV==='production')throw Error('TEST_SEAM_FORBIDDEN');transport=fn||requestJson;}
+/** Signed simple-v1 call to the partner wallet. Returns the HTTP status and JSON body; never retries. */
+export async function signedPartnerRequest(app,binding,method,path,raw,requestId){
+  if(!/^\/wallet\/simple\/v1(?:\/[A-Za-z0-9_-]+)+$/.test(path)||!safeId(requestId))fail(400,'INVALID_WALLET_REQUEST');
+  const origin=validateWalletOrigin(binding.wallet_url,{external:true});
+  const key=(await pool.query("SELECT * FROM gp_keys WHERE app_id=$1 AND direction='platform-to-wallet' AND active AND id=$2",[app.id,binding.wallet_key_id])).rows[0];
+  if(!key)fail(503,'WALLET_NOT_CONFIGURED');
+  const headers=sign({key_id:key.id,secret_base64:unseal(key.secret_enc),direction:'platform-to-wallet',method,path,raw,request_id:requestId});
+  const {status,body}=await transport(origin,method,path,headers,raw);
+  if(!body||typeof body!=='object'||Array.isArray(body))fail(503,'WALLET_INVALID_RESPONSE');
+  return{status,body};
+}
 /** Shared transport for probability, PvP and balance probes. No money retry is performed here. */
 export async function walletRequest(app,method,path,raw='',requestId=id('walletquery')){
   if(!app||!safeId(app.id)||!['GET','POST'].includes(method)||typeof raw!=='string'||!/^\/wallet\/v1(?:\/[A-Za-z0-9_-]+)+$/.test(path)||!safeId(requestId)||(method==='GET'&&raw))fail(400,'INVALID_WALLET_REQUEST');
   const binding=(await pool.query('SELECT * FROM gp_wallet_bindings WHERE app_id=$1',[app.id])).rows[0];
   if(binding?.provider==='platform')return platformWalletRequest(pool===defaultPool?walletPool:pool,app,binding,method,path,raw,requestId);
+  if(binding?.provider==='simple'){if(app.wallet_url!==binding.wallet_url||scopeFields.some(k=>scopeOf(app)[k]!==binding.scope[k]))fail(503,'WALLET_BINDING_CHANGED');return simpleWalletRequest(pool===defaultPool?walletPool:pool,app,binding,method,path,raw,requestId);}
   if(binding&&(app.wallet_url!==binding.wallet_url||scopeFields.some(k=>scopeOf(app)[k]!==binding.scope[k])))fail(503,'WALLET_BINDING_CHANGED');
   if(app.environment==='production'&&(!binding||!binding.wallet_url.startsWith('https://')))fail(503,'PRODUCTION_EXTERNAL_WALLET_REQUIRED');
   const origin=validateWalletOrigin(binding?.wallet_url||app.wallet_url,{external:!!binding});

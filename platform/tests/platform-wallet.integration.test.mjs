@@ -138,12 +138,12 @@ test('App isolation, scope pinning and insufficient funds fail without automatic
  await assert.rejects(platform.createSession(app,probability,JSON.stringify(probability),{playerId:registered.id}),{code:'GAME_DISABLED'});
 });
 
-test('external provider remains an explicit option; pristine unconfigured production App can bind platform once',async()=>{
+test('a production external wallet binds the simple-v1 protocol; pristine unconfigured production App can bind platform once',async()=>{
  const external=(await platform.createApp('External wallet option',{partnerId:uid('partner'),walletProvider:'external'})).app;
  assert.equal((await binding.getWalletStatus(external.id)).mode,'unconfigured');
  const input={wallet_url:'https://external-wallet.example.invalid',wallet_key_id:uid('key'),wallet_secret_base64:randomBytes(32).toString('base64')};
- assert.equal((await binding.configureWallet(external.id,input,'fixture_operator')).mode,'external');
- await binding.migrateWalletBindings(pool);assert.equal((await binding.getWalletStatus(external.id)).mode,'external');
+ assert.equal((await binding.configureWallet(external.id,input,'fixture_operator')).mode,'simple');
+ await binding.migrateWalletBindings(pool);assert.equal((await binding.getWalletStatus(external.id)).mode,'simple');
  await assert.rejects(binding.configureWallet(external.id,{provider:'platform'},'fixture_operator'),{code:'WALLET_ALREADY_BOUND'});
  const legacy=(await platform.createApp('Pristine production option',{partnerId:uid('partner'),walletProvider:'external'})).app;
  assert.equal((await binding.configureWallet(legacy.id,{provider:'platform'},'fixture_operator')).mode,'platform');
@@ -155,7 +155,7 @@ test('legacy binding schema migrates existing external URL, key and scope withou
   CREATE TABLE legacy_wallet_fixture.gp_wallet_bindings (
    app_id text PRIMARY KEY REFERENCES gp_apps(id),wallet_url text NOT NULL,wallet_key_id text NOT NULL REFERENCES gp_keys(id),
    scope jsonb NOT NULL,configured_by text NOT NULL,configured_at timestamptz NOT NULL DEFAULT now());
-  INSERT INTO legacy_wallet_fixture.gp_wallet_bindings SELECT app_id,wallet_url,wallet_key_id,scope,configured_by,configured_at FROM public.gp_wallet_bindings WHERE provider='external'`);
+  INSERT INTO legacy_wallet_fixture.gp_wallet_bindings SELECT app_id,wallet_url,wallet_key_id,scope,configured_by,configured_at FROM public.gp_wallet_bindings WHERE provider IN ('external','simple')`);
  const legacy=new pg.Pool({connectionString:databaseUrl.href,max:1,options:'-c search_path=legacy_wallet_fixture,public'});
  try{
   const before=(await legacy.query('SELECT * FROM gp_wallet_bindings')).rows;assert.equal(before.length,1);

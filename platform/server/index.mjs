@@ -14,6 +14,7 @@ import {getProfile} from './math/index.ts';
 import {ARENA_IDS,RELEASED_IDS} from '../shared/games.mjs';
 import {migratePortal,routePortal} from './portal.mjs';
 import {migrateWalletBindings} from './wallet-binding.mjs';
+import {migrateSimpleWallet,recoverSimpleWallets} from './simple-wallet.mjs';
 import {routeIntegration} from './integration-routes.mjs';
 import {migrateIntegrationChecks,recoverIntegrationChecks} from './integration-checks.mjs';
 import {operationsStatus} from './operations-status.mjs';
@@ -150,7 +151,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
   }
   fail(404,'NOT_FOUND');
 }catch(e){if(res.headersSent||res.destroyed)return;const status=e.status||500;if(status===429)res.setHeader('retry-after',String(e.retryAfterSeconds||60));if(status>=500&&!(e instanceof ApiError))console.error('[platform]',e.code||e.message);const message=(e.status?e.message:'服务暂时不可用，请保留原请求重试').slice(0,512);if((req.url||'').startsWith('/v1/')){const allowed=['INVALID_REQUEST','AMOUNT_MISMATCH','SIGNATURE_INVALID','TIMESTAMP_EXPIRED','NONCE_REPLAY','LAUNCH_CODE_INVALID','SCOPE_FORBIDDEN','GAME_DISABLED','NOT_FOUND','IDEMPOTENCY_CONFLICT','INVALID_STATE','RATE_LIMITED','INTERNAL_ERROR'];const code=(allowed.includes(e.code)||TRANSFER_PUBLIC_CODES.includes(e.code))?e.code:status>=500?'INTERNAL_ERROR':status===403?'SCOPE_FORBIDDEN':status===409?'INVALID_STATE':'INVALID_REQUEST';send(res,status,{code,message,trace_id:id('trace'),retryable:status>=500||status===429});}else send(res,status,{error:{code:e.code||'INTERNAL_ERROR',message}});}});}
-await preflightRuntime(pool);await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateIntegrationChecks();await upgradeArenaSandbox();await migrateTransfers(pool);
+await preflightRuntime(pool);await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateSimpleWallet(pool);await migrateIntegrationChecks();await upgradeArenaSandbox();await migrateTransfers(pool);
 // Fail before listening if persisted credentials cannot be decrypted with this instance key.
 for(const key of (await pool.query('SELECT secret_enc FROM gp_keys')).rows)unseal(key.secret_enc);
 const wallet=process.env.OASIS_START_WALLET==='0'?null:createWalletServer(walletPool);if(wallet)await new Promise(r=>wallet.listen(WALLET_PORT,'127.0.0.1',r));
@@ -162,6 +163,8 @@ const server=createPlatformServer();await new Promise(r=>server.listen(PORT,'127
 const timer=setInterval(()=>recoverPending().catch(e=>console.error('[recovery]',e.code||e.message)),3000);timer.unref();
 const pvpTimer=setInterval(()=>tickPvp().catch(e=>console.error('[arena recovery]',e.code||e.message)),250);pvpTimer.unref();
 const integrationTimer=setInterval(()=>recoverIntegrationChecks().catch(e=>console.error('[integration recovery]',e.code||e.message)),3000);integrationTimer.unref();
+const simpleBinding=async appId=>{const app=(await pool.query('SELECT * FROM gp_apps WHERE id=$1',[appId])).rows[0];const binding=(await pool.query("SELECT * FROM gp_wallet_bindings WHERE app_id=$1 AND provider='simple'",[appId])).rows[0];return app&&binding?{app,binding}:null;};
+let simpleRecovering=false;const simpleTimer=setInterval(()=>{if(simpleRecovering)return;simpleRecovering=true;recoverSimpleWallets(walletPool,simpleBinding).catch(e=>console.error('[simple wallet recovery]',e.code||e.message)).finally(()=>{simpleRecovering=false;});},3000);simpleTimer.unref();
 const transferTimer=setInterval(()=>transfers.recoverPending().catch(e=>console.error('[transfer recovery]',e.code||e.name)),3000);transferTimer.unref();
 console.log(`OASIS ${runtime.environment} API http://127.0.0.1:${PORT}; reference wallet http://127.0.0.1:${WALLET_PORT}`);
 console.log('Local admin credentials: platform/.local/development-credentials.json');

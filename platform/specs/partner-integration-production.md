@@ -37,7 +37,7 @@
 1. **平台开账号**：平台管理员在管理台“合作方与应用”为你创建合作方账号，通过安全渠道发送初始密码。
 2. **登录工作台**：打开 `https://game.tianyahuyu.com`，选择“合作方”登录，首次登录后在“账户安全”修改密码。
 3. **创建 App**：新 App 默认**暂停**，并要求绑定你自己的钱包。创建结果中的 `key_id` 与 `secret_base64`（合作方→平台签名密钥）**只显示一次**，请立即存入你的后端密钥管理。丢失时可在“接入”页创建备用密钥再撤销旧密钥。
-4. **实现钱包接口**（第 5 节），部署到一个**公网 HTTPS** 域名（只解析到公网地址、证书有效、不跳转）。
+4. **实现钱包接口**（第 5 节，3 个接口），部署到一个**公网 HTTPS** 域名（只解析到公网地址、证书有效、不跳转，3 秒内响应）。
 5. **绑定钱包**：在“接入”页填写钱包 Origin（如 `https://wallet.example.com`）以及你生成的**平台→钱包**签名密钥（Key ID + 32 字节以上随机数的 Base64）。绑定只能在 App 暂停且尚无任何会话/账务时进行，绑定后永久锁定。
 6. **余额探测**：输入一个已存在的用户 ID，点击“查询玩家余额”，确认签名、scope、币种精度都正确。
 7. **启用 App**：在应用设置中把状态改为“启用”，选择开放的游戏。
@@ -128,29 +128,56 @@ await game.mount(document.querySelector('#game'));
 
 ## 5. 钱包接口（由你实现）
 
-平台以 `platform-to-wallet` 方向签名调用你的钱包，签名格式与第 3 节相同（方向字段不同）。所有资金命令以 `request_id` 作为持久幂等业务号：重复请求必须返回原结果；同业务号不同正文返回 `409 IDEMPOTENCY_CONFLICT`。
+你只需实现 3 个接口（协议 `simple-v1`）。冻结、全员扣款、未开局退款、派奖、概率周期责任等状态全部由平台处理。
+
+平台以 `platform-to-wallet` 方向签名调用（签名格式同第 3 节，`X-GP-Direction: platform-to-wallet`，使用绑定时登记的钱包密钥）。
 
 | 方法 | 路径 | 作用 |
 |---|---|---|
-| GET | `/wallet/v1/scopes/{wallet_scope_id}/currencies/{currency_id}/users/{external_user_id}/balance` | 查询可用/冻结余额 |
-| POST | `/wallet/v1/reservations` | 冻结单个玩家入场费 |
-| POST | `/wallet/v1/matches/capture` | 原子扣除本局全部冻结 |
-| POST | `/wallet/v1/matches/release` | 未成局整局释放并写取消墓碑 |
-| POST | `/wallet/v1/matches/settle` | 原子派奖 + 服务费，或作废退款 |
-| POST | `/wallet/v1/probability/authorize` | 冻结投注 + 最高派彩责任 |
-| POST | `/wallet/v1/probability/accept` | 受理（之后平台才开奖） |
-| POST | `/wallet/v1/probability/cancel` | 受理前取消 |
-| POST | `/wallet/v1/probability/settle` | 按固定结果结算 |
-| GET | `/wallet/v1/operations/{operation_id}` | 按原业务号查单 |
-| GET | `/wallet/v1/matches/{match_id}` | 查比赛资金状态 |
-| GET | `/wallet/v1/probability/authorizations/{authorization_id}` | 查概率周期状态 |
+| GET | `/wallet/simple/v1/users/{external_user_id}/balance` | 查询可用余额 |
+| POST | `/wallet/simple/v1/debit` | 扣款（入场费、投注） |
+| POST | `/wallet/simple/v1/credit` | 加款（派奖、退款、中奖） |
 
-金额、状态机与错误码详见[钱包协议](wallet-protocol.md)与 openapi 中 `PartnerWallet` 标签。要点：
+**余额**响应：
 
-- 金额为最小单位整数字符串（默认精度 2，即 `"10000"` = 100 币）。
-- 响应需在 3 秒内返回、`Content-Type: application/json`、不超过 128 KiB、不跳转。超时视为“结果未知”，平台会**用原业务号查单**，不会另起一笔扣款。
-- 钱包余额约束应与你 App 内其他消费（送礼、转赠等）共用同一原子账本，避免透支。
-- [参考实现](../server/wallet/index.mjs) 基于 PostgreSQL，演示合作方即直接运行它。
+```json
+{ "external_user_id": "u_10086", "available_minor": "125000", "currency_scale": 2 }
+```
+
+**扣款 / 加款**请求体：
+
+```json
+{
+  "request_id": "in_reserve_pvp_8f2c..._0",
+  "external_user_id": "u_10086",
+  "amount_minor": "10000",
+  "currency_id": "COIN",
+  "reason": "match_entry",
+  "reference_id": "pvp_8f2c...",
+  "game_id": "bowling"
+}
+```
+
+`reason`：扣款为 `match_entry` / `spin_bet`；加款为 `match_payout` / `match_refund` / `spin_win` / `spin_refund` / `payout` / `refund`。`reference_id` 是对局号或概率周期号，便于对账展示。
+
+响应（HTTP 200）：
+
+```json
+{ "request_id": "in_reserve_pvp_8f2c..._0", "status": "SUCCEEDED" }
+{ "request_id": "...", "status": "REJECTED", "code": "INSUFFICIENT_FUNDS" }
+```
+
+你必须保证：
+
+1. **验签**：校验签名、时间戳（±300 秒）和 nonce 不重复。
+2. **幂等**：同一个 `request_id` 最多生效一次；重复请求原样返回第一次的结果（包括 REJECTED）。平台在超时或网络异常时会**用同一个 `request_id` 重试**，不会另起一笔。
+3. **扣款不透支**：余额不足返回 `REJECTED` + `INSUFFICIENT_FUNDS`，不要部分扣款。
+4. **加款不拒绝**：加款是平台欠用户的钱，只应返回 `SUCCEEDED`；暂时失败时返回 5xx，平台会持续重试直到成功。
+5. 与你 App 内其他消费（送礼、转赠等）共用同一个原子余额。
+
+资金时序：对局满员就绪后，平台对每位玩家扣入场费；有人扣款失败则整局取消并把已扣的加回；结束后给胜者加奖池（总入场 − 服务费），服务费即你扣入与加回的差额。概率游戏每转扣投注、开奖后加中奖额（未中奖不加款）。
+
+参考实现（PostgreSQL，含验签与幂等）：`platform/examples/partner-demo/simple-wallet.mjs`。
 
 ## 6. 查单与对账
 
@@ -165,7 +192,7 @@ await game.mount(document.querySelector('#game'));
 ## 8. 上线前检查
 
 - [ ] 签名向量自测通过；密钥只在后端，App 包与网页中没有任何 secret。
-- [ ] 钱包：并发重复请求只记一次账；超时后查单可恢复；取消墓碑阻止迟到扣款。
+- [ ] 钱包：同一 request_id 并发重复只记一次账；扣款不透支；加款始终成功。
 - [ ] 测试 App 上完成：免费练习、2 人付费房（一方中途退出）、概率游戏至少一次中奖，并核对双方账务。
 - [ ] Android/iOS：系统返回、切后台、断网重连、进程被杀后重新进入。
 - [ ] 正式 App 绑定正式钱包并启用；测试用户与测试币不迁入正式环境。
