@@ -39,3 +39,36 @@
 .ol-pay div{display:flex;align-items:center;gap:10px;font-size:12px;color:#f3e2c2}
 .ol-pay img{width:34px;height:34px;object-fit:contain}
 .ol-ib{background:radial-gradient(#2c5fb8,#0c2560);border-color:#f6d27a;color:#fff3d0}
+.ol-cell.leave{animation:ol-leave .3s ease-in forwards!important}
+@keyframes ol-leave{to{transform:translateY(140%);opacity:0}}
+.ol-cell.scatter{animation:ol-scat .45s ease-in-out infinite alternate;z-index:3}
+.ol-cell.scatter img{filter:drop-shadow(0 0 18px #fff3a0) drop-shadow(0 0 34px #ffcf3f)}
+@keyframes ol-scat{to{transform:scale(1.22) rotate(4deg)}}
+.ol-cell.orbcell img{animation:ol-orb 1.4s ease-in-out infinite}
+@keyframes ol-orb{50%{filter:drop-shadow(0 0 16px #c77dff) brightness(1.25)}}
+.ol-pop{position:absolute;transform:translate(-50%,-50%);font:900 46px Georgia,serif;color:#fff6d8;text-shadow:0 0 14px #ffb300,0 4px 0 #8a5a06;pointer-events:none;z-index:8;animation:ol-popup 1s cubic-bezier(.2,1.4,.4,1) both;white-space:nowrap}
+@keyframes ol-popup{0%{transform:translate(-50%,-30%) scale(.3);opacity:0}30%{transform:translate(-50%,-50%) scale(1.15);opacity:1}100%{transform:translate(-50%,-110%) scale(1);opacity:.9}}
+.ol-eye{position:absolute;width:26px;height:18px;border-radius:50%;background:radial-gradient(#fff,#8fd8ff 40%,transparent 70%);animation:ol-eye 3.2s ease-in-out infinite;pointer-events:none;mix-blend-mode:screen}
+@keyframes ol-eye{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:1;transform:scale(1.8)}}
+.ol-staff{position:absolute;width:60px;height:60px;border-radius:50%;background:radial-gradient(#fff,#bfe9ff 30%,#6fb8ff55 60%,transparent 72%);animation:ol-eye 2.2s ease-in-out infinite;pointer-events:none;mix-blend-mode:screen}
+.ol-bolt{position:absolute;pointer-events:none;mix-blend-mode:screen}
+.ol-bolt path{fill:#e8f6ff;filter:drop-shadow(0 0 10px #8fd8ff) drop-shadow(0 0 22px #4aa8ff)}
+.ol-bolt.idle{opacity:0;animation:ol-idlebolt 5.5s linear infinite}
+@keyframes ol-idlebolt{0%,86%,100%{opacity:0}87%,89%,92%{opacity:1}88%,90%{opacity:.2}}
+.ol-bolt.strike{z-index:9;animation:ol-strike .6s ease-out forwards}
+@keyframes ol-strike{0%,30%,60%{opacity:1}15%,45%{opacity:.3}100%{opacity:0}}
+.ol-flash{position:absolute;inset:0;z-index:9;background:#eaf6ff;mix-blend-mode:screen;pointer-events:none;animation:ol-flash .45s ease-out forwards}
+@keyframes ol-flash{0%{opacity:.85}100%{opacity:0}}
+.ol-spindisc{position:absolute;width:190px;height:190px;clip-path:circle(40% at 50% 50%);pointer-events:none;transition:filter .2s}
+.ol-spindisc.busy{animation:cs-spin .8s linear infinite;filter:brightness(1.15) drop-shadow(0 0 20px #ffd56b)}
+.ol-spin.busy:not(.auto){box-shadow:none;animation:none}
+.ol-fountain{position:absolute;inset:0;z-index:21;pointer-events:none;overflow:hidden}
+.ol-coinf{position:absolute;top:1100px;width:54px;height:54px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff7c2,#ffd34d 45%,#c98a12 75%);box-shadow:0 0 14px #ffd34d;animation:ol-fount 1.8s cubic-bezier(.25,.6,.5,1) both}
+@keyframes ol-fount{0%{transform:translate(0,0) scale(.3) rotateY(0);opacity:0}10%{opacity:1}50%{transform:translate(calc(var(--dx)*.6),var(--h)) scale(1) rotateY(540deg)}100%{transform:translate(var(--dx),400px) scale(.9) rotateY(1080deg);opacity:0}}
+.ol-rays{position:absolute;left:50%;top:50%;width:1600px;height:1600px;margin:-800px 0 0 -800px;background:repeating-conic-gradient(#ffd56b33 0 8deg,transparent 8deg 20deg);animation:cs-spin 8s linear infinite;pointer-events:none}
+.ol-big{overflow:hidden}
+.ol-big>div{position:relative}
+.ol-big img{width:220px;filter:drop-shadow(0 0 30px #ffd56b);animation:ol-pulse .5s ease-in-out infinite alternate}
+.ol-big b{background:linear-gradient(#fffbe6,#ffd56b 45%,#c98a12 60%,#fff3c4);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 6px 0 #6a4206) drop-shadow(0 0 30px #ffb300)}
+.ol-big.megaWin b{font-size:126px}.ol-big.epicWin b{font-size:140px;filter:drop-shadow(0 6px 0 #4a0a6a) drop-shadow(0 0 40px #c77dff)}
+.ol-big.epicWin{background:radial-gradient(#c77dff55,#000d 70%)}

@@ -56,6 +56,7 @@ const DICT={
   '1. شبكة 6×5: 8 رموز متطابقة أو أكثر في أي مكان تربح.\n2. تختفي الرموز الرابحة وتسقط رموز جديدة وقد تربح مجدداً.\n3. كرات المضاعف (×2–×500) تُجمع وتضرب ربح الدورة.\n4. 4 بوابات أو أكثر تمنح 5 دورات مجانية، و3 أثناءها تضيف 3.\n5. في الدورات المجانية تتراكم المضاعفات وتُطبق على كل ربح لاحق.\n6. الحد الأقصى 5000 ضعف الرهان.'],
  autoSpin:['自动旋转','Auto spin','دوران تلقائي'],stop:['停止','STOP','إيقاف'],untilStop:['直到停止','Until stop','حتى الإيقاف'],
  buyFree:['购买免费旋转','Buy free spins','شراء دورات مجانية'],buyFor:['花费 {0} 购买 {1} 次免费旋转？','Buy {1} free spins for {0}?','شراء {1} دورات مجانية مقابل {0}؟'],buy:['购买','Buy','شراء'],cancel:['取消','Cancel','إلغاء'],
+ totalWin:['免费旋转总赢得','TOTAL WIN','إجمالي الربح'],
  double:['加倍','Double','مضاعفة'],winner:['胜','WINNER','الفائز'],players:['{0} 人','{0} player(s)','{0} لاعبين'],
  lionRules:['1. 选择筹码，点击食物下注，每局最多押 6 种。\n2. 每局下注 20 秒，倒计时结束后开奖。\n3. 开出的食物与您押注的相同即中奖，按该食物倍数派奖（含本金）：蔬菜 ×5，虾 ×10，鱼 ×15，牛排 ×25，烤鸡 ×45。\n4. 偶尔开出“沙拉”时所有蔬菜同时中奖，开出“披萨”时所有肉类同时中奖。',
   '1. Pick a chip and tap a dish to bet, up to 6 dishes per round.\n2. Betting lasts 20 seconds, then the wheel draws.\n3. If the drawn dish matches your bet you win its multiplier (stake included): vegetables ×5, shrimp ×10, fish ×15, steak ×25, roast chicken ×45.\n4. A rare SALAD pays every vegetable; a rare PIZZA pays every meat.',
