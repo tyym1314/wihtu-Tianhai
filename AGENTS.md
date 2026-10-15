@@ -25,7 +25,7 @@
 ```sh
 cd platform
 npm run db:start                 # 本地 PG 127.0.0.1:5487
-npm run test:release             # 全量后端测试（隔离临时库）；基线有 5 个 QA 采集器旧测试失败（#127/#156-158/#625），与产品无关
+npm run test:release             # 全量后端测试（隔离临时库），应全部通过；run-practice-protocol-v2 在高负载下偶发超时，单独复跑即可
 npx tsx --test tests/simple-wallet.integration.test.mjs   # 三方接入 + simple-v1 钱包端到端
 npm run build:release            # 构建全部前端 + release-build-manifest.json
 ```

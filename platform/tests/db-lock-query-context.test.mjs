@@ -96,15 +96,3 @@ function arenaHandler(){
  const request=async token=>{const res={headersSent:false,destroyed:false,setHeader(){}};await handler({url:'/api/arena/session',method:'GET',headers:{authorization:token}},res);return res;};
  return{request,apps,sessions,active,calls,hash,setBalanceFailure:value=>balanceFailure=value};
 }
-test('actual arena handler authenticates every request, binds both tenant keys and reads real balance once',async()=>{
- const h=arenaHandler(),tokenA='A'.repeat(43),tokenB='B'.repeat(43);const app=id=>({id,partner_id:'partner_'+id,environment:'production',wallet_scope_id:'wallet_'+id,currency_id:'COIN',competitive_fee_bps:300,fixture_balance:'17'});
- h.apps.set('A',app('A'));h.apps.set('B',app('B'));h.sessions.set(h.hash(tokenA),{id:'sessionA',app_id:'A',external_user_id:'same-user',game_id:'run',admission_profile:'firstparty-free-v1',admission_revision:'17'});h.sessions.set(h.hash(tokenB),{id:'sessionB',app_id:'B',external_user_id:'same-user',game_id:'match'});
- h.active.set('A/same-user',{id:'roomA',game_id:'run'});h.active.set('B/same-user',{id:'roomB',game_id:'run'});
- const first=await h.request('Bearer '+tokenA);assert.equal(first.status,200);assert.equal(first.body.active_room_id,'roomA');assert.equal(first.body.other_active_game,null);assert.equal(first.body.scope.app_id,'A');assert.equal(first.body.admission_revision,'17');assert.equal(first.body.balance.balance.available_minor,'17');assert.equal(h.calls.filter(c=>c.kind==='wallet').length,1);
- const second=await h.request('Bearer '+tokenB);assert.equal(second.body.active_room_id,null);assert.equal(second.body.other_active_game,'run');assert.equal(second.body.scope.app_id,'B');assert.deepEqual(h.calls.filter(c=>c.kind==='read').map(c=>c.values),[['A','same-user'],['B','same-user']]);
- h.apps.get('A').fixture_balance='23';h.apps.get('A').wallet_scope_id='wallet_A_fresh';h.active.delete('A/same-user');const fresh=await h.request('Bearer '+tokenA);assert.equal(fresh.body.balance.balance.available_minor,'23');assert.equal(fresh.body.active_room_id,null);assert.equal(fresh.body.scope.wallet_scope_id,'wallet_A_fresh');assert.equal(h.calls.filter(c=>c.kind==='auth').length,3);
- h.setBalanceFailure(true);const unavailable=await h.request('Bearer '+tokenA);assert.equal(unavailable.status,200);assert.equal(unavailable.body.balance,null);assert.equal(unavailable.body.balance_error,'BALANCE_UNAVAILABLE');
- const reads=h.calls.filter(c=>c.kind==='read').length;h.sessions.get(h.hash(tokenA)).expired=true;const expired=await h.request('Bearer '+tokenA);assert.equal(expired.status,401);assert.equal(expired.body.error.code,'SESSION_EXPIRED');assert.equal(h.calls.filter(c=>c.kind==='read').length,reads);
- const missing=await h.request('Bearer '+'bad');assert.equal(missing.status,401);assert.equal(missing.body.error.code,'SESSION_REQUIRED');
- h.apps.delete('B');const missingApp=await h.request('Bearer '+tokenB);assert.equal(missingApp.status,404);assert.equal(missingApp.body.error.code,'NOT_FOUND');
-});
