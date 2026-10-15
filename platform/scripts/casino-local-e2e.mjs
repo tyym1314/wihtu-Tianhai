@@ -16,6 +16,13 @@ p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(m.type()==='er
 p.on('response',r=>{if(r.status()>=400)errors.push(r.status()+' '+r.url());});
 await p.goto(url);await p.waitForTimeout(6000);console.log('early',JSON.stringify(errors.slice(0,8)),await p.evaluate(()=>document.querySelector('iframe')?.src));await p.screenshot({path:`${out}/1-lobby.png`});
 const f=p.frameLocator('iframe');
+if(game==='rocketrush'){
+ await f.locator('.rr-btn.bet >> nth=0').click().catch(e=>errors.push('bet '+e.message.split('\n')[0]));await p.waitForTimeout(800);await p.screenshot({path:`${out}/2-bets.png`});
+ await f.locator('.rr-flying').waitFor({timeout:20000}).catch(()=>{});await p.waitForTimeout(2500);await p.screenshot({path:`${out}/3-flying.png`});
+ await f.locator('.rr-btn.cash').click({timeout:3000,force:true}).catch(e=>errors.push('cash '+e.message.split('\n')[0]));await p.waitForTimeout(600);await p.screenshot({path:`${out}/4-cashed.png`});
+ await f.locator('.rr-crashed').waitFor({timeout:90000}).catch(()=>{});await p.waitForTimeout(800);await p.screenshot({path:`${out}/5-crashed.png`});
+ console.log(JSON.stringify({errors:errors.slice(0,8)}));await b.close();process.exit(0);
+}
 for(const sel of ['.lf-slot >> nth=0','.lf-slot >> nth=7','.lf-slot >> nth=3'])await f.locator(sel).click().catch(e=>errors.push('click '+e.message.split('\n')[0]));
 await p.waitForTimeout(1500);await p.screenshot({path:`${out}/2-bets.png`});
 const deadline=Date.now()+40000;let shots=0;
