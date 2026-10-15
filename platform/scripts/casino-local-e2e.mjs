@@ -18,10 +18,10 @@ p.on('response',r=>{if(r.status()>=400)errors.push(r.status()+' '+r.url());});
 await p.goto(url);await p.waitForTimeout(6000);console.log('early',JSON.stringify(errors.slice(0,8)),await p.evaluate(()=>document.querySelector('iframe')?.src));await p.screenshot({path:`${out}/1-lobby.png`});
 const f=p.frameLocator('iframe');
 if(game==='rocketstar2'){
- await f.locator('.rr-btn.bet >> nth=0').click().catch(e=>errors.push('bet '+e.message.split('\n')[0]));await p.waitForTimeout(800);await p.screenshot({path:`${out}/2-bets.png`});
- await f.locator('.rr-flying').waitFor({timeout:20000}).catch(()=>{});await p.waitForTimeout(2500);await p.screenshot({path:`${out}/3-flying.png`});
- await f.locator('.rr-btn.cash').click({timeout:3000,force:true}).catch(e=>errors.push('cash '+e.message.split('\n')[0]));await p.waitForTimeout(600);await p.screenshot({path:`${out}/4-cashed.png`});
- await f.locator('.rr-crashed').waitFor({timeout:90000}).catch(()=>{});await p.waitForTimeout(800);await p.screenshot({path:`${out}/5-crashed.png`});
+ await f.locator('.rs-main.bet >> nth=0').click().catch(e=>errors.push('bet '+e.message.split('\n')[0]));await p.waitForTimeout(800);await p.screenshot({path:`${out}/2-bets.png`});
+ await f.locator('.rs-flying').waitFor({timeout:20000}).catch(()=>{});await p.waitForTimeout(2500);await p.screenshot({path:`${out}/3-flying.png`});
+ await f.locator('.rs-main.cash').click({timeout:3000,force:true}).catch(e=>errors.push('cash '+e.message.split('\n')[0]));await p.waitForTimeout(600);await p.screenshot({path:`${out}/4-cashed.png`});
+ await f.locator('.rs-crashed').waitFor({timeout:90000}).catch(()=>{});await p.waitForTimeout(800);await p.screenshot({path:`${out}/5-crashed.png`});
  console.log(JSON.stringify({errors:errors.slice(0,8)}));await b.close();process.exit(0);
 }
 if(game==='olympus'){
@@ -29,22 +29,22 @@ if(game==='olympus'){
  for(let i=0;i<4;i++){await f.locator('.ol-spin').click().catch(e=>errors.push('spin '+e.message.split('\n')[0]));await p.waitForTimeout(1500);await p.screenshot({path:`${out}/3-spin${i}.png`});
   await f.locator('.ol-spin:not(.busy)').waitFor({timeout:60000}).catch(()=>{});await p.waitForTimeout(300);}
  await p.screenshot({path:`${out}/4-after.png`});
- await f.locator('.ol-round >> nth=0').click();await f.locator('.ol-autos button >> nth=0').click();await p.waitForTimeout(4000);await p.screenshot({path:`${out}/5-auto.png`});
+ await f.locator('.ol-round >> nth=1').click();await f.locator('.ol-autos button >> nth=0').click();await p.waitForTimeout(4000);await p.screenshot({path:`${out}/5-auto.png`});
  await f.locator('.ol-spin').click();await f.locator('.ol-spin:not(.busy)').waitFor({timeout:90000}).catch(()=>{});
  await f.locator('.ol-buy').click();await f.locator('.ol-autos button >> nth=0').click();await p.waitForTimeout(5000);await p.screenshot({path:`${out}/6-buy.png`});
  await f.locator('.ol-spin:not(.busy)').waitFor({timeout:120000}).catch(()=>{});await p.screenshot({path:`${out}/7-after-buy.png`});
  console.log(JSON.stringify({errors:errors.slice(0,8)}));await b.close();process.exit(0);
 }
 if(game==='teenpatti'){
- for(const i of [0,2])await f.locator(`.rp-zone >> nth=${i}`).click().catch(e=>errors.push('zone '+e.message.split('\n')[0]));
+ for(const i of [0,2])await f.locator(`.tp-zone >> nth=${i}`).click().catch(e=>errors.push('zone '+e.message.split('\n')[0]));
  await p.waitForTimeout(1200);await p.screenshot({path:`${out}/2-bets.png`});
- await f.locator('.rp-drawing').waitFor({timeout:30000}).catch(()=>{});await p.waitForTimeout(3200);await p.screenshot({path:`${out}/3-drawing.png`});
- await f.locator('.rp-result').waitFor({timeout:20000}).catch(()=>{});await p.waitForTimeout(1000);await p.screenshot({path:`${out}/4-result.png`});
+ await f.locator('.tp-drawing').waitFor({timeout:30000}).catch(()=>{});await p.waitForTimeout(3200);await p.screenshot({path:`${out}/3-drawing.png`});
+ await f.locator('.tp-result').waitFor({timeout:20000}).catch(()=>{});await p.waitForTimeout(1000);await p.screenshot({path:`${out}/4-result.png`});
  console.log(JSON.stringify({errors:errors.slice(0,8)}));await b.close();process.exit(0);
 }
-for(const sel of ['.lf-slot >> nth=0','.lf-slot >> nth=7','.lf-slot >> nth=3'])await f.locator(sel).click().catch(e=>errors.push('click '+e.message.split('\n')[0]));
+for(const sel of ['.gl-plate >> nth=0','.gl-plate >> nth=7','.gl-plate >> nth=3'])await f.locator(sel).click().catch(e=>errors.push('click '+e.message.split('\n')[0]));
 await p.waitForTimeout(1500);await p.screenshot({path:`${out}/2-bets.png`});
 const deadline=Date.now()+40000;let shots=0;
-while(Date.now()<deadline&&shots<3){const cls=await f.locator('.lf-root').getAttribute('class');if(cls.includes('lf-drawing')&&shots===0){await p.waitForTimeout(2500);await p.screenshot({path:`${out}/3-drawing.png`});shots=1;}
- if(cls.includes('lf-result')&&shots<2){await p.waitForTimeout(1200);await p.screenshot({path:`${out}/4-result.png`});shots=2;break;}await p.waitForTimeout(300);}
+while(Date.now()<deadline&&shots<3){const cls=await f.locator('.cs-stage').getAttribute('class');if(cls.includes('gl-drawing')&&shots===0){await p.waitForTimeout(2500);await p.screenshot({path:`${out}/3-drawing.png`});shots=1;}
+ if(cls.includes('gl-result')&&shots<2){await p.waitForTimeout(1200);await p.screenshot({path:`${out}/4-result.png`});shots=2;break;}await p.waitForTimeout(300);}
 console.log(JSON.stringify({errors:errors.slice(0,8),shots}));await b.close();

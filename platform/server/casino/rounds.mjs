@@ -96,19 +96,24 @@ export async function casinoState(session,{balance=false}={}){
  if(!isCasinoGame(session.game_id))fail(403,'GAME_SESSION_REQUIRED');
  if(isInstantGame(session.game_id))return instantState(session,{balance});
  const app=await appById(session.app_id),now=Date.now(),round=await currentRound(app,session.game_id,now);
- const [totals,mine,history,winners]=await Promise.all([
+ const [totals,mine,history,winners,today]=await Promise.all([
   pool.query("SELECT option_id,sum(stake_minor)::text total,count(DISTINCT external_user_id)::int players FROM casino_bets WHERE round_id=$1 AND status IN ('ACCEPTED','SETTLING','SETTLED') GROUP BY option_id",[round.id]),
   pool.query('SELECT * FROM casino_bets WHERE round_id=$1 AND app_id=$2 AND external_user_id=$3 ORDER BY created_at',[round.id,app.id,session.external_user_id]),
   pool.query("SELECT seq,result->>'outcome' outcome FROM casino_rounds WHERE app_id=$1 AND game_id=$2 AND result IS NOT NULL AND reveal_at<=$3 AND status<>'betting' ORDER BY seq DESC LIMIT $4",[app.id,session.game_id,now,HISTORY]),
   pool.query(`SELECT b.external_user_id,sum(b.payout_minor)::text payout FROM casino_bets b JOIN casino_rounds r ON r.id=b.round_id
    WHERE r.app_id=$1 AND r.game_id=$2 AND r.seq=$3 AND b.status='SETTLED' AND b.payout_minor>0 GROUP BY 1 ORDER BY sum(b.payout_minor) DESC LIMIT 3`,[app.id,session.game_id,round.status==='betting'?round.seq-1:round.seq]),
+  // Today's (UTC) biggest winners in this App and game, by total payout of revealed rounds.
+  pool.query(`SELECT b.external_user_id,sum(b.payout_minor)::text payout FROM casino_bets b JOIN casino_rounds r ON r.id=b.round_id
+   WHERE r.app_id=$1 AND r.game_id=$2 AND b.status='SETTLED' AND b.payout_minor>0 AND r.reveal_at<=$3 AND b.created_at>=date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+   GROUP BY 1 ORDER BY sum(b.payout_minor) DESC LIMIT 3`,[app.id,session.game_id,now]),
  ]);
  const out={game_id:session.game_id,server_now:now,me:session.external_user_id,round:view(round,now),
   totals:Object.fromEntries(totals.rows.map(t=>[t.option_id,{stake_minor:t.total,players:t.players}])),
   my_bets:mine.rows.map(betView),history:history.rows.map(h=>({seq:Number(h.seq),outcome:h.outcome})),
   cashouts:CASINO_GAMES[session.game_id].family==='crash'?(await pool.query('SELECT external_user_id,stake_minor::text stake_minor,cashout_x100 FROM casino_bets WHERE round_id=$1 AND cashout_x100 IS NOT NULL ORDER BY cashout_x100 LIMIT 30',[round.id])).rows:undefined,
   // Last finished round's top winners are only shown once its reveal has played.
-  top_winners:round.status==='betting'||now>=round.reveal_at?winners.rows.map(w=>({external_user_id:w.external_user_id,payout_minor:w.payout})):[]};
+  top_winners:round.status==='betting'||now>=round.reveal_at?winners.rows.map(w=>({external_user_id:w.external_user_id,payout_minor:w.payout})):[],
+  today_winners:today.rows.map(w=>({external_user_id:w.external_user_id,payout_minor:w.payout}))};
  if(balance){try{out.balance=(await walletBalance(app,session.external_user_id)).balance;}catch{out.balance=null;}}
  return out;
 }

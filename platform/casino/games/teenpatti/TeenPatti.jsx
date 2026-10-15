@@ -1,67 +1,70 @@
-import React,{useState} from 'react';
+import React,{useEffect,useRef,useState} from 'react';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {useRound,full,short} from '../../shared/useRound.js';
+import {useAudio} from '../../shared/audio.mjs';
+import {Stage,Box,CountUp} from '../../shared/Stage.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import './teenpatti.css';
 
-const GAME=CASINO_GAMES.teenpatti,HANDS=GAME.options.map(o=>o.id),MULT=(GAME.payout_x100/100).toFixed(2);
+const GAME=CASINO_GAMES.teenpatti,HANDS=GAME.options.map(o=>o.id),LABEL={ruby:'A',jade:'B',sapphire:'C'},MULT=(GAME.payout_x100/100).toFixed(2);
 const img=n=>`/casino/teenpatti/${n}.webp`;
 const SUIT={s:'♠',h:'♥',c:'♣',d:'♦'},RANK=r=>r==='T'?'10':r;
-// Reveal choreography inside the 7 s draw window: one hand every 1.5 s, winner at 5.5 s.
-const FLIP_AT=[1200,2700,4200],WIN_AT=5600;
+// Design pixels on the 941x1672 plate.
+const CARD_X={ruby:167,jade:470,sapphire:772},CARD_Y=493,ZONE_X={ruby:37,jade:328,sapphire:630},ZONE_W=274;
+const CHIP_X=[142,360,578,795],CHIP_Y=1170,BALANCE=[767,55];
+const FLIP_AT=[1200,2700,4200],WIN_AT=5600,DEAL_FROM=[470,300];
 
-function Card({code,open,delay}){
- const red=code&&'hd'.includes(code[1]);
- return <div className={`rp-card ${open?'open':''}`} style={{animationDelay:`${delay}ms`}}>
-  <div className="rp-back" style={{backgroundImage:`url(${img('cardback')})`}}/>
-  <div className={`rp-face ${red?'red':''}`}>{code&&<><b>{RANK(code[0])}</b><i>{SUIT[code[1]]}</i><em>{SUIT[code[1]]}</em></>}</div>
+function Card({code,open,i,dealt}){
+ const red=code&&'hd'.includes(code[1]),dx=(i-1)*58,rot=(i-1)*9;
+ return <div className={`tp-card ${open?'open':''} ${dealt?'dealt':''}`} style={{'--dx':`${dx}px`,'--rot':`${rot}deg`,transitionDelay:`${i*90}ms`}}>
+  <div className="tp-back" style={{backgroundImage:`url(${img('cardback')})`}}/>
+  <div className={`tp-face ${red?'red':''}`}>{code&&<><b>{RANK(code[0])}</b><i>{SUIT[code[1]]}</i><em>{SUIT[code[1]]}</em></>}</div>
  </div>;
 }
 
-export default function RoyalPatti({initial}){
- const g=useRound(initial,GAME),{state,round,phase,now}=g;
- const [chip,setChip]=useState(GAME.chips[1]),[modal,setModal]=useState(false);
- const since=now-round.bet_until,result=round.result;
+export default function TeenPatti({initial}){
+ const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('teenpatti',['chip','deal','flip','win','lose','click','tick','chips','coin']);
+ const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[rules,setRules]=useState(false),[coins,setCoins]=useState([]);
+ const since=now-round.bet_until,result=round.result,seen=useRef({});
  const shown=i=>phase==='result'||(phase==='drawing'&&since>=FLIP_AT[i]);
  const winner=result&&(phase==='result'||since>=WIN_AT)?result.outcome:null;
  const secs=Math.max(0,Math.ceil((round.bet_until-now)/1000));
+ const once=(k,f)=>{if(!seen.current[round.id+k]){seen.current[round.id+k]=1;f();}};
+ useEffect(()=>{if(phase==='drawing')once('deal',()=>audio.play('deal'));HANDS.forEach((_,i)=>{if(phase==='drawing'&&shown(i))once('f'+i,()=>audio.play('flip'));});
+  if(winner)once('w',()=>{const won=g.myWin>0n||state.my_bets.some(b=>b.option_id===winner);audio.play(won?'win':g.myStake>0n?'lose':'select');
+   if(g.mine[winner]){const x=ZONE_X[winner]+ZONE_W/2,y=950;setCoins(Array.from({length:12},(_,k)=>({id:round.id+k,x,y,dx:BALANCE[0]-x+(k-6)*10,dy:BALANCE[1]-y,delay:k*55})));setTimeout(()=>audio.play('coin'),700);setTimeout(()=>setCoins([]),2200);}});},[now]);
+ useEffect(()=>{if(phase==='betting'&&secs<=3&&secs>0)once('t'+secs,()=>audio.play('tick'));},[secs]);
  const totals=state.totals||{};
- return <div className={`rp-root rp-${phase}`} dir={isRtl()?'rtl':'ltr'} style={{backgroundImage:`url(${img('background')})`}}>
-  <header className="rp-top">
-   <button className="rp-icon" aria-label="Back" onClick={g.exit}>‹</button>
-   <div className="rp-balance"><i/>{g.balance===null?'—':full(g.balance)}</div>
-   <button className="rp-icon" aria-label={t('rules')} onClick={()=>setModal(true)}>?</button>
-  </header>
-  <div className="rp-status">
-   {phase==='betting'?<><img src={img('logo')} alt=""/><div><small>{t('betting')}</small><b className={secs<=5?'urgent':''}>{secs}</b></div></>
-    :winner?<div className="rp-winner"><img src={img(winner)} alt=""/><b>{t('wins',[t(winner)])}</b></div>
-    :<div><small>{t('drawing')}</small><b className="dots">• • •</b></div>}
+ const doubleBets=async()=>{audio.play('chips');for(const [o,v] of Object.entries(g.mine))if(GAME.chips.includes(String(v)))await g.bet(o,String(v));else for(const c of [...GAME.chips].reverse()){let left=v;while(left>=BigInt(c)){await g.bet(o,c);left-=BigInt(c);}}};
+ return <Stage plate={img('plate')} className={`tp-${phase}`} dir={isRtl()?'rtl':'ltr'}>
+  <Box x={129} y={214} w={179} h={54} className={`tp-timer ${phase==='betting'&&secs<=5?'urgent':''}`}>{phase==='betting'?`${t('bet').toUpperCase()} ${secs}s`:phase==='drawing'?t('drawing'):t('result')}</Box>
+  <Box x={688} y={32} w={170} h={46} className="tp-balance">{g.balance===null?'—':<CountUp value={Number(g.balance)} format={v=>full(Math.round(v))}/>}</Box>
+  {HANDS.map((id,i)=><div key={id} className={`tp-hand ${winner===id?'win':''} ${winner&&winner!==id?'lose':''}`} style={{left:CARD_X[id],top:CARD_Y}}>
+   {[0,1,2].map(k=><Card key={k} i={k} code={result&&shown(i)?result.hands[id][k]:null} open={!!result&&shown(i)} dealt={phase!=='betting'}/>)}
+   {result&&shown(i)&&<span className="tp-cat">{t(result.categories[id])}</span>}
+   {winner===id&&<span className="tp-ribbon">{t('winner')} ×{MULT}</span>}
+  </div>)}
+  {HANDS.map(id=><button key={id} className={`tp-zone ${winner===id?'win':''}`} style={{left:ZONE_X[id],top:689,width:ZONE_W,height:381}} onClick={()=>{if(phase==='betting'){audio.play('chip');g.bet(id,chip);}}} aria-label={LABEL[id]}>
+   <span className="tp-total">{full(totals[id]?.stake_minor||0)}</span>
+   <span className="tp-players">{t('players',[totals[id]?.players||0])}</span>
+   {g.mine[id]?<span className="tp-mine"><i/>{short(g.mine[id])}</span>:null}
+  </button>)}
+  {GAME.chips.map((c,i)=><button key={c} className={`tp-chip ${chip===c?'on':''}`} style={{left:CHIP_X[i]-84,top:CHIP_Y-84}} onClick={()=>{setChip(c);audio.play('click');}} aria-label={short(c)}/>)}
+  <button className="tp-btn" style={{left:37,top:1267,width:418,height:117}} disabled={phase!=='betting'||!g.canRepeat} onClick={()=>{audio.play('chips');g.repeat();}} aria-label={t('repeat')}/>
+  <button className="tp-btn" style={{left:486,top:1267,width:418,height:117}} disabled={phase!=='betting'||!g.myStake} onClick={doubleBets} aria-label={t('double')}/>
+  <Box x={50} y={1466} w={724} h={120} className="tp-road">{state.history.slice(0,24).reverse().map(h=><i key={h.seq} className={`d-${h.outcome}`}>{LABEL[h.outcome]}</i>)}</Box>
+  {coins.map(c=><span key={c.id} className="cs-coin" style={{left:c.x-22,top:c.y-22,'--dx':`${c.dx}px`,'--dy':`${c.dy}px`,animationDelay:`${c.delay}ms`}}/>)}
+  <div className="cs-menu" style={{right:24,top:104}}>
+   <button className="cs-icon-btn tp-ib" onClick={()=>setMenu(m=>!m)} aria-label="menu">≡</button>
+   {menu&&<><button className="cs-icon-btn tp-ib" onClick={()=>{setRules(true);setMenu(false);}}>?</button>
+    <button className="cs-icon-btn tp-ib" onClick={audio.toggle}>{audio.muted?'🔇':'🔊'}</button>
+    <button className="cs-icon-btn tp-ib" onClick={g.exit}>⏻</button></>}
   </div>
-  <div className="rp-hands">
-   {HANDS.map((id,i)=><div key={id} className={`rp-hand ${winner===id?'win':''} ${winner&&winner!==id?'lose':''}`}>
-    <img className="rp-emblem" src={img(id)} alt=""/>
-    <div className="rp-cards">{[0,1,2].map(k=><Card key={k} code={result&&shown(i)?result.hands[id][k]:null} open={!!result&&shown(i)} delay={k*90}/>)}</div>
-    <span className="rp-cat">{result&&shown(i)?t(result.categories[id]):t(id)}</span>
-   </div>)}
-  </div>
-  <div className="rp-zones">
-   {HANDS.map(id=><button key={id} className={`rp-zone z-${id} ${winner===id?'win':''}`} onClick={()=>g.bet(id,chip)}>
-    <span className="rp-zone-name">{t(id)}</span><span className="rp-zone-mult">×{MULT}</span>
-    <span className="rp-zone-total">{t('total')} {short(totals[id]?.stake_minor||0)}</span>
-    {g.mine[id]?<span className="rp-zone-mine">{short(g.mine[id])}</span>:<span className="rp-zone-mine empty">+</span>}
-   </button>)}
-  </div>
-  <div className="rp-road" aria-label={t('history')}>{state.history.slice(0,16).map(h=><i key={h.seq} className={`d-${h.outcome}`}/>)}</div>
-  {phase==='result'&&(g.myWin>0n||g.myStake>0n)&&<div className="rp-banner">{g.myWin>0n?<p>{t('youWon')} <b>{full(g.myWin)}</b></p>:<p>{t('noWin')}</p>}</div>}
-  <footer className="rp-controls">
-   <div className="rp-chips">{GAME.chips.map((c,i)=><button key={c} className={`rp-chip c${i} ${chip===c?'on':''}`} onClick={()=>setChip(c)}>{short(c)}</button>)}</div>
-   <button className="rp-repeat" disabled={phase!=='betting'||!g.canRepeat} onClick={g.repeat}>{t('repeat')}</button>
-  </footer>
-  <div className="rp-round">{t('round',[round.seq])}{g.myStake>0n?` · ${t('myBet')} ${short(g.myStake)}`:''}</div>
+  {phase==='result'&&(g.myWin>0n||g.myStake>0n)&&<Box x={220} y={880} w={500} h={110} className="tp-banner">{g.myWin>0n?<p>{t('youWon')} <b><CountUp value={Number(g.myWin)} format={v=>full(Math.round(v))}/></b></p>:<p>{t('noWin')}</p>}</Box>}
   {g.offline&&<div className="cs-toast">{t('offline')}</div>}
   {g.toast&&<div className="cs-toast" key={g.toast.id}>{t(g.toast.key,[GAME.maxOptionsPerRound])}</div>}
-  {modal&&<div className="cs-modal-back" onClick={()=>setModal(false)}><div className="cs-modal" onClick={e=>e.stopPropagation()}>
-   <h2>{t('rules')}</h2><p>{t('pattiRules')}</p><h2>{t('fair')}</h2><p>{t('fairText')}</p><small>commitment: {round.commitment}</small>{round.seed&&<small>seed: {round.seed}</small>}
-   <button className="cs-gold-btn" onClick={()=>setModal(false)}>{t('close')}</button></div></div>}
- </div>;
+  {rules&&<div className="cs-modal-back" onClick={()=>setRules(false)}><div className="cs-modal" onClick={e=>e.stopPropagation()}>
+   <h2>{t('rules')}</h2><p>{t('pattiRules').replace(/红宝石、翡翠、蓝宝石|Ruby, Emerald and Sapphire|الياقوت والزمرد والياقوت الأزرق/,'A / B / C')}</p><h2>{t('fair')}</h2><p>{t('fairText')}</p><small>commitment: {round.commitment}</small>{round.seed&&<small>seed: {round.seed}</small>}
+   <button className="cs-gold-btn" onClick={()=>setRules(false)}>{t('close')}</button></div></div>}
+ </Stage>;
 }

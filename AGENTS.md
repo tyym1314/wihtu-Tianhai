@@ -26,6 +26,8 @@
 - 服务端：`server/casino/`。`rounds.mjs` 共享回合（每个 App 每款游戏一条连续回合，承诺/揭示种子；每注一个钱包概率周期：下注时 authorize+accept，开奖后 settle）；`instant.mjs` 单人旋转（一次付费旋转含全部免费旋转 = 一个周期）。数学：`wheel.mjs`、`crash.mjs`、`cards3.mjs`、`slots.mjs`。接口：`GET /api/casino/state`、`POST /api/casino/bets|cashout|spin`。
 - 只对三方 App 与沙箱开放（`ALL_GAME_IDS`）；第一方 13 款（`RELEASED_IDS`）不变；生产启动时自动给三方 App 补上新游戏。
 - 命名：游戏名与 ID 沿用参考游戏（如 `greedylion` GreedyLion、`rocketstar2` RocketStar2、`teenpatti` TeenPatti、`olympus` Olympus）；改名后服务启动会自动从各 App 的 `game_ids` 去掉已不存在的 ID。
+- 界面标准（用户要求）：**原样还原效果图**。做法：效果图放 `.local/concepts/`，用 `codex exec "<编辑说明>" -i concept.png` 生成去掉动态内容（数字、头像、卡牌、符号等）的干净底图 `.local/art/<game>-plate/plate.png`（尺寸 941x1672），前端用 `casino/shared/Stage.jsx` 按设计像素把实时数据/热区/动效叠加在底图空位上；需要单独动的元素（火箭等）同样用编辑从效果图里抠出。
+- 音频：`node scripts/casino-audio.mjs`（CC0 来源见 `casino/public/audio/LICENSES.md`，原始文件在 `.local/audio/`）；前端 `casino/shared/audio.mjs` 的 `useAudio(game)`。每款都要有背景音乐和音效。
 - 前端：`platform/casino/`（React，`/play/<id>` → `casino/dist`），`npm run build:casino`。界面按 `.local/concepts/` 效果图还原，按钮/Logo/柱子等界面素材也用生图生成（如 `.local/art/olympus-ui/`，手动 `cwebp` 到 `casino/public/olympus/`）。
 - 美术：`scripts/casino-art.sh <输出目录> <名称> <提示词>` 调本机 Codex CLI 生图（ChatGPT 账号），原图放 `.local/art/<game>/`；`node scripts/casino-assets.mjs <game> [名称:宽度]` 转 WebP 到 `casino/public/<game>/`。
 - 老虎机返还率：`node scripts/casino-slot-sim.mjs <game> 1000000`（高波动，需多次百万局取均值）。

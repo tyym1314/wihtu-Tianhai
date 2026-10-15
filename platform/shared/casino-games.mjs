@@ -28,7 +28,7 @@ export const CASINO_GAMES=Object.freeze({
  teenpatti:Object.freeze({
   id:'teenpatti',family:'cards3',reference:'TeenPatti',name:'TeenPatti',zh:'TeenPatti',ar:'TeenPatti',
   round:Object.freeze({betMs:15000,drawMs:7000,showMs:4000}),
-  chips:CHIPS,maxOptionsPerRound:3,maxStakePerRound:coins(1000000),
+  chips:Object.freeze([coins(100),coins(1000),coins(10000),coins(100000)]),maxOptionsPerRound:3,maxStakePerRound:coins(1000000),
   options:Object.freeze([{id:'ruby'},{id:'jade'},{id:'sapphire'}].map(Object.freeze)),
   // Winning hand pays x2.91 (stake included): 97% RTP with three equally likely hands.
   payout_x100:291,

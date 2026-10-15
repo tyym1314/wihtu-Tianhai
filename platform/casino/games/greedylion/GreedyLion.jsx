@@ -1,130 +1,92 @@
-import React,{useCallback,useEffect,useRef,useState} from 'react';
-import {api,requestId,registerHostControls,requestExit} from '../../shared/client.mjs';
+import React,{useEffect,useRef,useState} from 'react';
 import {t,isRtl} from '../../shared/i18n.mjs';
+import {useRound,full,short} from '../../shared/useRound.js';
+import {useAudio} from '../../shared/audio.mjs';
+import {Stage,Box,CountUp} from '../../shared/Stage.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import './greedylion.css';
 
 const GAME=CASINO_GAMES.greedylion;
-// Clockwise from the top socket; vegetables and dishes alternate around the ring.
-const ORDER=['tomato','shrimp','corn','fish','carrot','steak','lettuce','chicken'];
-const MULT=Object.fromEntries(GAME.options.map(o=>[o.id,o.multiplier]));
 const img=n=>`/casino/greedylion/${n}.webp`;
-const short=minor=>{const v=Number(minor||0)/100;const f=(n,s)=>`${Number.isInteger(n)?n:n.toFixed(1)}${s}`;return v>=1e6?f(v/1e6,'M'):v>=1e3?f(v/1e3,'K'):String(Math.floor(v));};
-const full=minor=>new Intl.NumberFormat('en-US').format(Math.floor(Number(minor||0)/100));
-const ERRORS={INSUFFICIENT_FUNDS:'insufficient',BETTING_CLOSED:'closed',ROUND_STAKE_LIMIT:'limit'};
+// Design-pixel positions measured on the 941x1672 concept plate (clockwise from the top plate).
+const ORDER=['tomato','corn','carrot','lettuce','shrimp','fish','steak','chicken'];
+const PLATE={tomato:[472,652],corn:[670,736],carrot:[740,933],lettuce:[673,1109],shrimp:[472,1179],fish:[271,1107],steak:[201,930],chicken:[268,736]};
+const CHIP_X=[75,212,348,484,620],CHIP_Y=1425,CENTER=[472,923],BALANCE=[808,45];
+const MULT=Object.fromEntries(GAME.options.map(o=>[o.id,o.multiplier]));
+const SPARKS=[[40,300],[118,420],[60,980],[905,640],[860,1010],[150,1270],[800,1300],[420,520]];
+const icon=id=>ORDER.includes(id)?img(`icon-${id}`):img(id);
 
-function phaseOf(round,now){if(!round)return'betting';if(now<round.bet_until)return'betting';if(now<round.reveal_at)return'drawing';return'result';}
+export default function GreedyLion({initial}){
+ const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('greedylion',['chip','tick','win','lose','coin','click','select']);
+ const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[rules,setRules]=useState(false);
+ const [light,setLight]=useState(-1),[flies,setFlies]=useState([]),[coins,setCoins]=useState([]);
+ const lastStep=useRef(-1),lastSec=useRef(-1),played=useRef(null);
 
-export default function LionFeast({initial}){
- const [state,setState]=useState(initial),[balance,setBalance]=useState(initial.balance?.available_minor??null);
- const [chip,setChip]=useState(GAME.chips[1]),[toast,setToast]=useState(null),[modal,setModal]=useState(false),[offline,setOffline]=useState(false);
- const [now,setNow]=useState(Date.now()),[light,setLight]=useState(-1),[pending,setPending]=useState({});
- const offset=useRef(initial.server_now-Date.now()),lastBets=useRef([]),roundRef=useRef(initial.round.id),balanceRound=useRef(null);
- const serverNow=()=>Date.now()+offset.current;
- const round=state.round,phase=phaseOf(round,now);
-
- const say=useCallback(key=>{setToast({key,id:Math.random()});},[]);
- const refresh=useCallback(async(withBalance=false)=>{
-  try{
-   const s=await api(`/api/casino/state${withBalance?'?balance=1':''}`);offset.current=s.server_now-Date.now();setOffline(false);
-   if(s.round.id!==roundRef.current){
-    // New round: remember what I bet last round for "Repeat".
-    setState(prev=>{if(prev.my_bets.length)lastBets.current=prev.my_bets.filter(b=>['ACCEPTED','SETTLING','SETTLED'].includes(b.status)).map(b=>({option_id:b.option_id,stake_minor:b.stake_minor}));return s;});
-    roundRef.current=s.round.id;setPending({});
-   }else setState(s);
-   if(s.balance)setBalance(s.balance.available_minor);
-  }catch{setOffline(true);}
- },[]);
-
- // Poll faster around phase changes; fetch the settled balance once per round after the reveal.
- useEffect(()=>{let stop=false,timer;
-  const loop=async()=>{const n=serverNow(),r=roundRef.current&&state.round;
-   const reveal=r&&n>=r.reveal_at&&balanceRound.current!==r.id;if(reveal)balanceRound.current=r.id;
-   await refresh(reveal);if(stop)return;
-   const s=state.round,next=[s.bet_until,s.reveal_at,s.ends_at].map(x=>x-serverNow()).filter(x=>x>0);
-   timer=setTimeout(loop,Math.max(250,Math.min(1000,...next.map(x=>x+60))));};
-  timer=setTimeout(loop,800);return()=>{stop=true;clearTimeout(timer);};
- },[refresh,state.round]);
-
- // Frame clock for countdowns and the travelling light.
- useEffect(()=>{let raf;const tick=()=>{const n=serverNow();setNow(n);
-   const r=state.round;
-   if(r.result&&n>=r.bet_until){
-    const target=ORDER.indexOf(r.result.outcome),special=target<0,end=r.reveal_at-450;
-    const steps=special?4*ORDER.length:3*ORDER.length+target,p=Math.min(1,Math.max(0,(n-r.bet_until)/(end-r.bet_until)));
-    const step=Math.floor((1-(1-p)**3)*steps);setLight(n>=end?(special?-2:target):step%ORDER.length);
-   }else if(n<r.bet_until)setLight(-1);
-   raf=requestAnimationFrame(tick);};
-  raf=requestAnimationFrame(tick);return()=>cancelAnimationFrame(raf);
- },[state.round]);
-
- useEffect(()=>registerHostControls({onBack:()=>requestExit()}),[]);
-
- const mine={},totals=state.totals||{};
- for(const b of state.my_bets)if(!['REJECTED','VOIDED','VOIDING'].includes(b.status))mine[b.option_id]=(mine[b.option_id]||0n)+BigInt(b.stake_minor);
- for(const [o,v] of Object.entries(pending))mine[o]=(mine[o]||0n)+v;
-
- async function bet(option,stake=chip){
-  if(phaseOf(round,serverNow())!=='betting'){say('closed');return;}
-  const used=new Set([...Object.keys(mine)]);if(!used.has(option)&&used.size>=GAME.maxOptionsPerRound){say('tooMany');return;}
-  if(balance!==null&&BigInt(balance)<BigInt(stake)){say('insufficient');return;}
-  setPending(p=>({...p,[option]:(p[option]||0n)+BigInt(stake)}));
-  if(balance!==null)setBalance(b=>String(BigInt(b)-BigInt(stake)));
-  try{
-   const placed=await api('/api/casino/bets',{request_id:requestId(),round_id:round.id,option_id:option,stake_minor:stake});
-   setState(s=>s.round.id===round.id?{...s,my_bets:[...s.my_bets,placed]}:s);
-  }catch(e){
-   if(balance!==null)setBalance(b=>String(BigInt(b)+BigInt(stake)));
-   say(e.code==='TOO_MANY_OPTIONS'?'tooMany':ERRORS[e.code]||'failed');
-  }finally{setPending(p=>{const v=(p[option]||0n)-BigInt(stake);const n={...p};if(v>0n)n[option]=v;else delete n[option];return n;});}
- }
- async function repeat(){for(const b of lastBets.current)await bet(b.option_id,b.stake_minor);}
-
+ // Travelling light during the draw: ease-out over the draw window, landing on the outcome.
+ useEffect(()=>{
+  if(phase==='betting'){setLight(-1);lastStep.current=-1;return;}
+  const r=round.result;if(!r)return;
+  const target=ORDER.indexOf(r.outcome),special=target<0,end=round.reveal_at-450;
+  const steps=special?4*ORDER.length:3*ORDER.length+target,p=Math.min(1,Math.max(0,(now-round.bet_until)/(end-round.bet_until)));
+  const step=Math.floor((1-(1-p)**3)*steps);
+  if(now>=end)setLight(special?-2:target);else{setLight(step%ORDER.length);if(step!==lastStep.current){lastStep.current=step;audio.play('tick',{volume:.5,rate:1+p*.3});}}
+ },[now,phase,round]);
+ // Countdown ticks in the last five seconds.
  const secs=Math.max(0,Math.ceil((round.bet_until-now)/1000));
- const winners=phase==='result'&&round.result?round.result.winners:[];
- const myWin=phase==='result'?state.my_bets.reduce((a,b)=>a+BigInt(b.payout_minor||0),0n):0n;
- const myStake=state.my_bets.filter(b=>!['REJECTED','VOIDED'].includes(b.status)).reduce((a,b)=>a+BigInt(b.stake_minor),0n);
+ useEffect(()=>{if(phase==='betting'&&secs<=5&&secs>0&&secs!==lastSec.current){lastSec.current=secs;audio.play('tick');}},[secs,phase]);
+ // Reveal: win/lose jingle and coins flying from the winning plates to the balance.
+ useEffect(()=>{
+  if(phase!=='result'||played.current===round.id||!round.result)return;played.current=round.id;
+  const won=g.myWin>0n;audio.play(won?'win':g.myStake>0n?'lose':'select');
+  if(won){const from=round.result.winners.filter(w=>PLATE[w]&&g.mine[w]).map(w=>PLATE[w]);
+   setCoins(from.flatMap(([x,y],k)=>Array.from({length:10},(_,i)=>({id:`${round.id}-${k}-${i}`,x,y,dx:BALANCE[0]-x+(i-5)*8,dy:BALANCE[1]-y,delay:i*60}))));
+   setTimeout(()=>audio.play('coin'),700);setTimeout(()=>setCoins([]),2200);}
+ },[phase,round,g.myWin]);
 
- return <div className={`lf-root lf-${phase}`} dir={isRtl()?'rtl':'ltr'} style={{backgroundImage:`url(${img('background')})`}}>
-  <header className="lf-top">
-   <button className="lf-icon" aria-label="Back" onClick={()=>requestExit()}>‹</button>
-   <div className="lf-balance"><i/>{balance===null?'—':full(balance)}</div>
-   <button className="lf-icon" aria-label={t('rules')} onClick={()=>setModal(true)}>?</button>
-  </header>
-  <div className="lf-stage">
-   <img className="lf-lion" src={img('lion')} alt="" draggable="false"/>
-   <div className="lf-wheel">
-    <img className="lf-ring" src={img('ring')} alt="" draggable="false"/>
-    {ORDER.map((id,i)=>{const a=(-90+i*45)*Math.PI/180,x=50+35.6*Math.cos(a),y=50+35.6*Math.sin(a);
-     const cls=['lf-slot',light===i&&'lit',winners.includes(id)&&'win',phase==='result'&&winners.length&&!winners.includes(id)&&'dim',light===-2&&winners.includes(id)&&'lit'].filter(Boolean).join(' ');
-     return <button key={id} className={cls} style={{left:`${x}%`,top:`${y}%`}} onClick={()=>bet(id)} aria-label={`${id} x${MULT[id]}`}>
-      <img src={img(id)} alt="" draggable="false"/>
-      <span className="lf-mult">×{MULT[id]}</span>
-      {mine[id]?<span className="lf-mine">{short(mine[id])}</span>:null}
-      {totals[id]?<span className="lf-total">{short(totals[id].stake_minor)}</span>:null}
-     </button>;})}
-    <div className="lf-center">
-     {phase==='betting'?<><small>{t('betting')}</small><b className={secs<=5?'urgent':''}>{secs}</b></>
-      :phase==='drawing'?<><small>{t('drawing')}</small><b className="spin">★</b></>
-      :round.result&&ORDER.includes(round.result.outcome)?<img src={img(round.result.outcome)} alt=""/>:round.result?<img src={img(round.result.outcome)} alt="" className="special"/>:null}
-    </div>
-   </div>
-   {phase==='result'&&round.result&&<div className="lf-banner">
-    {!ORDER.includes(round.result.outcome)&&<p className="lf-special">{t(round.result.outcome)}</p>}
-    {myWin>0n?<p className="lf-win">{t('youWon')} <b>{full(myWin)}</b></p>:myStake>0n?<p>{t('noWin')}</p>:<p>{t('next')}</p>}
-    {state.top_winners.length>0&&<div className="lf-top3"><small>{t('topWinners')}</small>{state.top_winners.map((w,i)=><span key={w.external_user_id}><em>{i+1}</em>{w.external_user_id===state.me?'★':w.external_user_id.slice(0,8)} <b>{short(w.payout_minor)}</b></span>)}</div>}
-   </div>}
+ function bet(id){
+  if(phase!=='betting')return;audio.play('chip');
+  const i=GAME.chips.indexOf(chip),[tx,ty]=PLATE[id],f={id:Math.random(),x:CHIP_X[i],y:CHIP_Y,tx,ty,label:short(chip)};
+  setFlies(v=>[...v,f]);requestAnimationFrame(()=>requestAnimationFrame(()=>setFlies(v=>v.map(x=>x.id===f.id?{...x,go:true}:x))));
+  setTimeout(()=>setFlies(v=>v.filter(x=>x.id!==f.id)),500);g.bet(id,chip);
+ }
+ const winners=phase==='result'&&round.result?round.result.winners:[];
+ const totals=state.totals||{};
+ return <Stage plate={img('plate')} className={`gl-${phase}`} dir={isRtl()?'rtl':'ltr'}>
+  {SPARKS.map(([x,y],i)=><span key={i} className="cs-sparkle" style={{left:x,top:y,animationDelay:`${i*.37}s`}}/>)}
+  <Box x={517} y={30} w={116} h={116} className={`gl-timer ${phase==='betting'&&secs<=5?'urgent':''}`}>
+   {phase==='betting'?<><small>{t('bet')}</small><b>{secs}s</b></>:phase==='drawing'?<b className="gl-spin">★</b>:<small>{t('result')}</small>}
+  </Box>
+  <Box x={742} y={20} w={132} h={50} className="gl-balance">{g.balance===null?'—':<CountUp value={Number(g.balance)} format={v=>full(Math.round(v))}/>}</Box>
+  <Box x={672} y={150} w={248} h={112} className="gl-winners">
+   {(state.today_winners||[]).length?state.today_winners.map((w,i)=><div key={w.external_user_id}><em className={`r${i}`}>{w.external_user_id===state.me?'★':(w.external_user_id[0]||'?').toUpperCase()}</em><span>{w.external_user_id===state.me?t('myBet'):w.external_user_id.slice(0,9)}</span><b>{short(w.payout_minor)}</b></div>)
+    :<p>—</p>}
+  </Box>
+  {ORDER.map((id,i)=>{const [x,y]=PLATE[id];return <React.Fragment key={id}>
+   <button className={`gl-plate ${light===i||light===-2&&winners.includes(id)?'lit':''} ${winners.includes(id)?'win':''} ${phase==='result'&&winners.length&&!winners.includes(id)?'dim':''}`} style={{left:x-86,top:y-98}} onClick={()=>bet(id)} aria-label={`${id} x${MULT[id]}`}/>
+   <Box x={x-46} y={y+44} w={92} h={34} className="gl-mult">x{MULT[id]}</Box>
+   {totals[id]&&<Box x={x-60} y={y-118} w={120} h={30} className="gl-total">{short(totals[id].stake_minor)}</Box>}
+   {g.mine[id]&&<Box x={x+30} y={y-70} w={84} h={40} className="gl-mine">{short(g.mine[id])}</Box>}
+  </React.Fragment>;})}
+  {phase==='result'&&round.result&&<Box x={CENTER[0]-95} y={CENTER[1]-95} w={190} h={190} className="gl-center"><img src={icon(round.result.outcome)} alt=""/></Box>}
+  {phase==='result'&&round.result&&<Box x={170} y={1250} w={600} h={110} className="gl-banner">
+   {!ORDER.includes(round.result.outcome)&&<p className="special">{t(round.result.outcome)}</p>}
+   {g.myWin>0n?<p className="won">{t('youWon')} <b><CountUp value={Number(g.myWin)} format={v=>full(Math.round(v))}/></b></p>:<p>{g.myStake>0n?t('noWin'):t('next')}</p>}
+  </Box>}
+  {GAME.chips.map((c,i)=><button key={c} className={`gl-chip ${chip===c?'on':''}`} style={{left:CHIP_X[i]-62,top:CHIP_Y-62}} onClick={()=>{setChip(c);audio.play('click');}} aria-label={short(c)}/>)}
+  <button className="gl-repeat" style={{left:720,top:1384,width:204,height:84}} disabled={phase!=='betting'||!g.canRepeat} onClick={()=>{audio.play('chips');g.repeat();}} aria-label={t('repeat')}><span>{t('repeat')}</span></button>
+  <Box x={36} y={1566} w={644} h={66} className="gl-results">{state.history.slice(0,10).map(h=><img key={h.seq} src={icon(h.outcome)} alt={h.outcome}/>)}</Box>
+  {flies.map(f=><span key={f.id} className="cs-fly gl-flychip" style={{left:f.x-34,top:f.y-34,transform:f.go?`translate(${f.tx-f.x}px,${f.ty-f.y}px) scale(.7)`:'none',opacity:f.go?.2:1}}>{f.label}</span>)}
+  {coins.map(c=><span key={c.id} className="cs-coin" style={{left:c.x-22,top:c.y-22,'--dx':`${c.dx}px`,'--dy':`${c.dy}px`,animationDelay:`${c.delay}ms`}}/>)}
+  <div className="cs-menu" style={{right:22,top:290}}>
+   <button className="cs-icon-btn" onClick={()=>setMenu(m=>!m)} aria-label="menu">≡</button>
+   {menu&&<><button className="cs-icon-btn" onClick={()=>{setRules(true);setMenu(false);}} aria-label={t('rules')}>?</button>
+    <button className="cs-icon-btn" onClick={audio.toggle} aria-label={t('sound')}>{audio.muted?'🔇':'🔊'}</button>
+    <button className="cs-icon-btn" onClick={g.exit} aria-label="exit">⏻</button></>}
   </div>
-  <div className="lf-history" aria-label={t('history')}>{state.history.slice(0,10).map(h=><img key={h.seq} src={img(h.outcome)} alt={h.outcome}/>)}</div>
-  <footer className="lf-controls">
-   <div className="lf-chips">{GAME.chips.map((c,i)=><button key={c} className={`lf-chip c${i} ${chip===c?'on':''}`} onClick={()=>setChip(c)}>{short(c)}</button>)}</div>
-   <button className="lf-repeat" disabled={phase!=='betting'||!lastBets.current.length} onClick={repeat}>{t('repeat')}</button>
-  </footer>
-  <div className="lf-round">{t('round',[round.seq])}{myStake>0n?<span> · {t('myBet')} {short(myStake)}</span>:null}</div>
-  {offline&&<div className="cs-toast" key="off">{t('offline')}</div>}
-  {toast&&<div className="cs-toast" key={toast.id}>{t(toast.key,[GAME.maxOptionsPerRound])}</div>}
-  {modal&&<div className="cs-modal-back" onClick={()=>setModal(false)}><div className="cs-modal" onClick={e=>e.stopPropagation()}>
+  {g.offline&&<div className="cs-toast">{t('offline')}</div>}
+  {g.toast&&<div className="cs-toast" key={g.toast.id}>{t(g.toast.key,[GAME.maxOptionsPerRound])}</div>}
+  {rules&&<div className="cs-modal-back gl-modal" onClick={()=>setRules(false)}><div className="cs-modal" onClick={e=>e.stopPropagation()}>
    <h2>{t('rules')}</h2><p>{t('lionRules')}</p><h2>{t('fair')}</h2><p>{t('fairText')}</p><small>commitment: {round.commitment}</small>{round.seed&&<small>seed: {round.seed}</small>}
-   <button className="cs-gold-btn" onClick={()=>setModal(false)}>{t('close')}</button></div></div>}
- </div>;
+   <button className="cs-gold-btn" onClick={()=>setRules(false)}>{t('close')}</button></div></div>}
+ </Stage>;
 }
