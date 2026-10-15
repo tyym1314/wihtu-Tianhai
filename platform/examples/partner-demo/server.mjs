@@ -12,7 +12,7 @@ import pg from 'pg';
 import {OasisClient} from '../../specs/examples/sdk-node.mjs';
 import {migrateSimpleDemoWallet,seedSimpleDemoUsers,handleSimpleWallet} from './simple-wallet.mjs';
 
-const GAMES=[['match','三消对战'],['golf','绿洲高尔夫'],['bowling','保龄球'],['carrom','Carrom 弹盘'],['darts','飞镖'],['ludo','Ludo'],['jackaroo','Jackaroo'],['domino','多米诺'],['pool','八球'],['run','沙丘竞速'],['towerlink','连线占塔'],['thunder','雷霆'],['tiger','虎虎生财']];
+const GAMES=[['match','三消对战'],['golf','绿洲高尔夫'],['bowling','保龄球'],['carrom','Carrom 弹盘'],['darts','飞镖'],['ludo','Ludo'],['jackaroo','Jackaroo'],['domino','多米诺'],['pool','八球'],['run','沙丘竞速'],['towerlink','连线占塔'],['thunder','雷霆'],['tiger','虎虎生财'],['lionfeast','雄狮盛宴'],['rocketrush','火箭冲天'],['royalpatti','皇家三张'],['skypalace','天空神殿']];
 
 async function loadConfig(path){
  const info=await stat(path);if(!info.isFile()||(info.mode&0o077)!==0)throw Error('Config must be a regular file with mode 0600');

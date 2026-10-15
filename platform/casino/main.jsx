@@ -5,7 +5,7 @@ import {t,setLocale,isRtl} from './shared/i18n.mjs';
 import './shared/shell.css';
 
 const GAME=location.pathname.split('/').pop();
-const SCENES={lionfeast:lazy(()=>import('./games/lionfeast/LionFeast.jsx')),rocketrush:lazy(()=>import('./games/rocketrush/RocketRush.jsx'))};
+const SCENES={lionfeast:lazy(()=>import('./games/lionfeast/LionFeast.jsx')),rocketrush:lazy(()=>import('./games/rocketrush/RocketRush.jsx')),royalpatti:lazy(()=>import('./games/royalpatti/RoyalPatti.jsx')),skypalace:lazy(()=>import('./games/skypalace/SkyPalace.jsx'))};
 
 function App(){
  const [launch,setLaunch]=useState(null),[status,setStatus]=useState('connecting');

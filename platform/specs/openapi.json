@@ -1705,7 +1705,9 @@
           "tiger",
           "towerlink",
           "lionfeast",
-          "rocketrush"
+          "rocketrush",
+          "royalpatti",
+          "skypalace"
         ]
       },
       "CompetitiveGameId": {
@@ -1730,7 +1732,9 @@
           "thunder",
           "tiger",
           "lionfeast",
-          "rocketrush"
+          "rocketrush",
+          "royalpatti",
+          "skypalace"
         ]
       },
       "Scope": {

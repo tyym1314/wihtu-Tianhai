@@ -23,6 +23,19 @@ if(game==='rocketrush'){
  await f.locator('.rr-crashed').waitFor({timeout:90000}).catch(()=>{});await p.waitForTimeout(800);await p.screenshot({path:`${out}/5-crashed.png`});
  console.log(JSON.stringify({errors:errors.slice(0,8)}));await b.close();process.exit(0);
 }
+if(game==='skypalace'){
+ await f.locator('.sp-spin').waitFor({timeout:15000});await p.screenshot({path:`${out}/2-idle.png`});
+ for(let i=0;i<4;i++){await f.locator('.sp-spin').click().catch(e=>errors.push('spin '+e.message.split('\n')[0]));await p.waitForTimeout(1500);await p.screenshot({path:`${out}/3-spin${i}.png`});
+  await f.locator('.sp-spin:not(.busy)').waitFor({timeout:60000}).catch(()=>{});await p.waitForTimeout(300);}
+ await p.screenshot({path:`${out}/4-after.png`});console.log(JSON.stringify({errors:errors.slice(0,8)}));await b.close();process.exit(0);
+}
+if(game==='royalpatti'){
+ for(const i of [0,2])await f.locator(`.rp-zone >> nth=${i}`).click().catch(e=>errors.push('zone '+e.message.split('\n')[0]));
+ await p.waitForTimeout(1200);await p.screenshot({path:`${out}/2-bets.png`});
+ await f.locator('.rp-drawing').waitFor({timeout:30000}).catch(()=>{});await p.waitForTimeout(3200);await p.screenshot({path:`${out}/3-drawing.png`});
+ await f.locator('.rp-result').waitFor({timeout:20000}).catch(()=>{});await p.waitForTimeout(1000);await p.screenshot({path:`${out}/4-result.png`});
+ console.log(JSON.stringify({errors:errors.slice(0,8)}));await b.close();process.exit(0);
+}
 for(const sel of ['.lf-slot >> nth=0','.lf-slot >> nth=7','.lf-slot >> nth=3'])await f.locator(sel).click().catch(e=>errors.push('click '+e.message.split('\n')[0]));
 await p.waitForTimeout(1500);await p.screenshot({path:`${out}/2-bets.png`});
 const deadline=Date.now()+40000;let shots=0;

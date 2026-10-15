@@ -40,7 +40,7 @@ before(async()=>{
  Object.assign(process.env,{OASIS_DATABASE_URL:databaseUrl.href,OASIS_ENVIRONMENT:'production',OASIS_LOCAL_DIR:dir,OASIS_START_WALLET:'0',OASIS_PUBLIC_ORIGIN:origin,OASIS_PRODUCTION_ADMISSION_ENABLED:'0',OASIS_PARTNER_ADMISSION:'1'});
  ({pool,tx,closePools}=await import('../server/db.mjs'));platform=await import('../server/platform.mjs');wallet=await import('../server/wallet/index.mjs');binding=await import('../server/wallet-binding.mjs');pvp=await import('../server/pvp/index.mjs');cycles=await import('../server/cycles.mjs');runtimeMode=await import('../server/runtime-mode.mjs');simple=await import('../server/simple-wallet.mjs');casino=await import('../server/casino/rounds.mjs');
  ({closeEnginePool}=await import('../server/pvp/engine-pool.mjs'));
- await wallet.migrateWallet(pool);await platform.migratePlatform();await pvp.migratePvp(pool);await binding.migrateWalletBindings(pool);await simple.migrateSimpleWallet(pool);await casino.migrateCasino(pool);await runtimeMode.migrateRuntime(pool);await(await import('../server/transfers/index.mjs')).migrateTransfers(pool);
+ await wallet.migrateWallet(pool);await platform.migratePlatform();await pvp.migratePvp(pool);await binding.migrateWalletBindings(pool);await simple.migrateSimpleWallet(pool);await casino.migrateCasino(pool);await(await import('../server/casino/instant.mjs')).migrateInstant(pool);await runtimeMode.migrateRuntime(pool);await(await import('../server/transfers/index.mjs')).migrateTransfers(pool);
  // The partner's own wallet tables live in a separate schema-free namespace of this test database.
  await migrateSimpleDemoWallet(pool);await seedSimpleDemoUsers(pool,[{external_user_id:'alice',balance_minor:'100000'},{external_user_id:'bob',balance_minor:'100000'},{external_user_id:'poor',balance_minor:'500'}]);
  partnerServer=createServer(async(req,res)=>{let raw='';for await(const c of req)raw+=c;if(!await handleSimpleWallet(pool,walletKey,req,res,raw)){res.writeHead(404);res.end('{}');}});
@@ -202,4 +202,26 @@ test('Rocket Rush hides the crash point in flight and pays manual and automatic 
  assert.equal(await partnerBalance('alice'),before.alice-10000n+15000n);assert.equal(await partnerBalance('bob'),before.bob-20000n+BigInt(100*out.cashout_x100));
  assert.equal(await transit(),'0');
  const done=await casino.casinoState(alice);assert.equal(done.round.result.crash_x100,500);
+});
+
+test('Royal Teen Patti deals three hands and pays the winning hand x2.91',async()=>{
+ const alice=await sessionFor('alice','royalpatti'),s0=await casino.casinoState(alice),before=await partnerBalance('alice');
+ for(const o of ['ruby','jade','sapphire'])await casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:o,stake_minor:'10000'});
+ assert.equal(await partnerBalance('alice'),before-30000n);
+ await pool.query('UPDATE casino_rounds SET bet_until=$2 WHERE id=$1',[s0.round.id,Date.now()-1]);
+ await casino.tickCasino();await casino.tickCasino();await recover();
+ const r=(await pool.query('SELECT result,status FROM casino_rounds WHERE id=$1',[s0.round.id])).rows[0];
+ assert.equal(r.status,'settled');assert.equal(new Set(Object.values(r.result.hands).flat()).size,9,'nine distinct cards');
+ assert.equal(await partnerBalance('alice'),before-30000n+29100n);assert.equal(await transit(),'0');
+});
+
+test('a Sky Palace spin is one wallet cycle: stake debited, the complete win credited once',async()=>{
+ const alice=await sessionFor('alice','skypalace'),before=await partnerBalance('alice');
+ const st=await casino.casinoState(alice,{balance:true});assert.equal(st.kind,'instant');
+ const instant=await import('../server/casino/instant.mjs');
+ const request_id=uid('spin'),r=await instant.spin(alice,{request_id,stake_minor:'1000'});
+ assert.equal(r.status,'SETTLED');assert.ok(r.result.spins.length>=1);
+ assert.deepEqual(await instant.spin(alice,{request_id,stake_minor:'1000'}),r,'same request_id replays the same spin');
+ await recover();
+ assert.equal(await partnerBalance('alice'),before-1000n+BigInt(r.payout_minor));assert.equal(await transit(),'0');
 });
