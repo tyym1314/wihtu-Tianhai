@@ -20,6 +20,17 @@
 - 快速匹配：`POST /api/pvp/matchmaking`（同 App/游戏/人数/入场费撮合，`pvp_rooms.matchmaking`，等待 120 秒）；匹配房客户端自动就绪，未满员离开只释放座位。
 - 线上冒烟：`node platform/scripts/i18n-smoke.mjs all zh,en,ar`（经演示合作方开每款免费练习，检查报错与残留中文）。
 
+## 娱乐场游戏（复刻百顺/小游的概率游戏）
+
+- 定义：`platform/shared/casino-games.mjs`（`family`：wheel 转盘 / crash 爆点 / cards3 三家比牌 / slot 老虎机；`kind:'instant'` 为单人即时游戏）。新增游戏还要加到 `specs/openapi.json` 的 `GameId`/`ProbabilityGameId` 与 `public/launch/index.html` 的 `GAMES`（`tests/casino-games.test.mjs` 会检查）。
+- 服务端：`server/casino/`。`rounds.mjs` 共享回合（每个 App 每款游戏一条连续回合，承诺/揭示种子；每注一个钱包概率周期：下注时 authorize+accept，开奖后 settle）；`instant.mjs` 单人旋转（一次付费旋转含全部免费旋转 = 一个周期）。数学：`wheel.mjs`、`crash.mjs`、`cards3.mjs`、`slots.mjs`。接口：`GET /api/casino/state`、`POST /api/casino/bets|cashout|spin`。
+- 只对三方 App 与沙箱开放（`ALL_GAME_IDS`）；第一方 13 款（`RELEASED_IDS`）不变；生产启动时自动给三方 App 补上新游戏。
+- 前端：`platform/casino/`（React，`/play/<id>` → `casino/dist`），`npm run build:casino`。
+- 美术：`scripts/casino-art.sh <输出目录> <名称> <提示词>` 调本机 Codex CLI 生图（ChatGPT 账号），原图放 `.local/art/<game>/`；`node scripts/casino-assets.mjs <game> [名称:宽度]` 转 WebP 到 `casino/public/<game>/`。
+- 老虎机返还率：`node scripts/casino-slot-sim.mjs <game> 1000000`（高波动，需多次百万局取均值）。
+- 参考资料（本地、不入库）：`.local/reference/`（`urls.json` 来自 withu 日志；`extract_all.py` 从公开资源提取规则文本/规则图集到 `rules/<游戏>/`；`shots/` 主界面截图）。
+- 本地走查：`npm run db:start && npm run server && npm run dev`，然后 `node scripts/casino-local-e2e.mjs <game> zh`。
+
 ## 本地开发与验证
 
 ```sh

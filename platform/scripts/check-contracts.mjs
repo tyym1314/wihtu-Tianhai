@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash, createHmac } from 'node:crypto';
 import { games as displayGames } from '../src/data.js';
-import { RELEASED_IDS, ARENA_IDS, LEGACY_IDS } from '../shared/games.mjs';
+import { RELEASED_IDS, ARENA_IDS, LEGACY_IDS, ALL_GAME_IDS, PROBABILITY_IDS } from '../shared/games.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = name => JSON.parse(fs.readFileSync(path.join(root, 'specs', name), 'utf8'));
@@ -25,9 +25,9 @@ function walk(value) {
 }
 walk(spec);
 const sorted = values => [...values].sort();
-assert.deepEqual(sorted(spec.components.schemas.GameId.enum), sorted(RELEASED_IDS), 'OpenAPI GameId must cover the runtime catalogue');
+assert.deepEqual(sorted(spec.components.schemas.GameId.enum), sorted(ALL_GAME_IDS), 'OpenAPI GameId must cover the runtime catalogue');
 assert.deepEqual(sorted(spec.components.schemas.CompetitiveGameId.enum), sorted(ARENA_IDS));
-assert.deepEqual(sorted(spec.components.schemas.ProbabilityGameId.enum), sorted(LEGACY_IDS));
+assert.deepEqual(sorted(spec.components.schemas.ProbabilityGameId.enum), sorted(PROBABILITY_IDS));
 for (const name of ['ExchangeLaunchRequest', 'ExchangeLaunchResponse']) {
   assert.equal(spec.components.schemas[name].properties.game_id.$ref, '#/components/schemas/GameId', `${name} must share the game identity contract`);
 }
