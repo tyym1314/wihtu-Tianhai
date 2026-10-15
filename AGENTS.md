@@ -4,16 +4,17 @@
 
 - 正式入口：`https://game.tianyahuyu.com`（管理台/合作方工作台 `/`，游戏 `/play/<id>`，原生启动页 `/launch/`，H5 SDK `/sdk/oasis-h5.mjs`，文档 `/specs/*.md`）。
 - 旧域名 `oasis-player.43.98.202.236.sslip.io`、`oasis.43.98.202.236.sslip.io` 均 301 到正式入口。
-- 第三方 App 接入模式：**接入方账号 + 接入方自有钱包**。接入方后端 HMAC 调 `POST /v1/sessions`，客户端打开 `/launch/?game=<id>#code=..&session=..`；入场/派奖/概率周期都签名调用接入方钱包。指南：`platform/specs/partner-integration-production.md`。
+- 第三方 App 接入模式：**接入方账号 + 接入方自有钱包**。接入方后端 HMAC 调 `POST /v1/sessions`，客户端打开 `/launch/?game=<id>&lang=..#code=..&session=..`。钱包只有一种协议 **simple-v1**：接入方实现 查余额 / 扣款 / 加款 3 个接口（按 request_id 幂等）。指南：`platform/specs/partner-integration-production.md`。
 - 第一方 App（`app_e091fb5daf135660d39ce89fc23760ab`，平台账号+平台内部金币）仍保留，供 `platform/android-player` 的 APK 使用。
-- 演示合作方：`https://partner-demo.43.98.202.236.sslip.io`（`platform/examples/partner-demo/server.mjs`，独立数据库的参考钱包 + 签名后端）。合作方账号 `demo.partner`。
+- 演示合作方：`https://partner-demo.43.98.202.236.sslip.io`（`platform/examples/partner-demo/server.mjs` + `simple-wallet.mjs`：simple-v1 参考钱包 + 签名后端，独立数据库 `oasis_demo_partner_wallet`）。合作方账号 `demo.partner`，当前 App `app_5728f902c7950b3460706f9971141217`（旧的完整协议 App 已停用）；凭据在被忽略的 `platform/.local/demo-partner/`。
 - 管理员：`tyym`（另有原 `operator`）。
 
 ## 代码结构要点
 
 - `platform/server/production-admission.mjs`：生产准入。`OASIS_PARTNER_ADMISSION=1` 时，非第一方的生产 App（已绑定 HTTPS 外部钱包且启用）可用 HMAC 会话、付费房与概率游戏（`partner-external-v1`）。第一方 App 走 `firstparty-*` profile。
 - `platform/server/platform.mjs#createSession`：`hosted`（第一方 BFF 玩家）与合作方 HMAC 会话两条路径。
-- `platform/server/wallet-binding.mjs`：外部钱包调用（单次 DNS、只允许公网地址、3s 超时）。测试可用 `setWalletTransportForTests`。
+- `platform/server/wallet-binding.mjs`：外部钱包调用（单次 DNS、只允许公网地址、3s 超时）。测试可用 `setWalletTransportForTests`。生产绑定外部钱包即 `provider='simple'`。
+- `platform/server/simple-wallet.mjs`：simple-v1 适配层。平台内部账本承担冻结/扣款/释放/结算/概率责任；入场或投注先向接入方扣款（in 腿）再进内部账本，退款/派奖从内部账本经接入方加款（out 腿）返还；后台每 3 秒补查不确定的扣款、重试加款、回收滞留中转余额。表 `gp_simple_wallet_legs`。不变量：接入方 App 的内部 `wallet_users` 可用+冻结在对局结束后应归零。
 - 前端：`platform/arena`（11 款竞技，React + Three/Canvas），`src/` + `platform/legacy`（雷霆/虎虎）。管理台 `platform/src`。
 - 多语言（zh/en/ar）：竞技游戏界面文案以中文为源，用 `$t('中文')`（`arena/shared/i18n.mjs`）翻译，词典 `arena/shared/i18n-dict.mjs`（[英文, 阿语]）。新增中文文案后运行 `node scripts/i18n-codemod.mjs --write` 自动包裹、补词典，再跑 `node scripts/i18n-check.mjs`（防止局部变量遮蔽 `$t`）。语言来源：`/v1/sessions` 的 `locale` → 会话 → 游戏；`/launch/?lang=` 写入 `localStorage.oasis-locale`。阿语只对大厅/结果/弹窗设 RTL。雷霆/虎虎沿用各自词典，换码后按会话语言写入其偏好。
 - 快速匹配：`POST /api/pvp/matchmaking`（同 App/游戏/人数/入场费撮合，`pvp_rooms.matchmaking`，等待 120 秒）；匹配房客户端自动就绪，未满员离开只释放座位。
@@ -25,7 +26,7 @@
 cd platform
 npm run db:start                 # 本地 PG 127.0.0.1:5487
 npm run test:release             # 全量后端测试（隔离临时库）；基线有 5 个 QA 采集器旧测试失败（#127/#156-158/#625），与产品无关
-npx tsx --test tests/partner-external-admission.integration.test.mjs   # 三方接入端到端
+npx tsx --test tests/simple-wallet.integration.test.mjs   # 三方接入 + simple-v1 钱包端到端
 npm run build:release            # 构建全部前端 + release-build-manifest.json
 ```
 
@@ -42,7 +43,7 @@ npm run build:release            # 构建全部前端 + release-build-manifest.j
 - 私有配置：`/opt/oasis/production-instance-private/runtime.env`（含 `OASIS_PUBLIC_ORIGIN`、`OASIS_PARTNER_ADMISSION=1`）。数据库容器 `oasis-production-postgres`（127.0.0.1:18893）。
 - nginx/systemd 线上配置副本：`platform/deploy/production-game/`。改线上配置后同步回该目录。
 - 备份：`/opt/oasis/production-backup.sh`（每日 timer，输出 `/opt/oasis/production-backups/<UTC>`；恢复需同时用 `database.dump` 和私有归档中的 `master.key`）。
-- 证书：`oasis-certificate.timer` 运行 certbot renew（覆盖 `oasis-game`、`oasis-partner-demo` 等）。partner-demo 的 80 端口 ACME 规则在共享容器 `proxy-nginx` 内（`/etc/nginx/conf.d/oasis-partner-demo-acme.conf`），容器重建后需从 `platform/deploy/production-game/proxy-nginx-oasis-partner-demo-acme.conf` 恢复。
+- 证书：`oasis-certificate.timer` 运行 certbot renew（覆盖 `oasis-game`、`oasis-partner-demo`、`oasis-production-player` 等；原 `oasis-production-player-certificate.timer` 已停用）。partner-demo 的 80 端口 ACME 规则在共享容器 `proxy-nginx` 内（`/etc/nginx/conf.d/oasis-partner-demo-acme.conf`），容器重建后需从 `platform/deploy/production-game/proxy-nginx-oasis-partner-demo-acme.conf` 恢复。
 
 ## Android 真机测试
 

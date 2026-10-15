@@ -7,7 +7,19 @@
  * Rules: verify the platform signature; each request_id takes effect at most once and a
  * repeated request_id returns the original result; a debit never overdraws.
  */
-import {verifySignature} from '../../server/security.mjs';
+import {createHash,createHmac,timingSafeEqual} from 'node:crypto';
+
+/** GP-HMAC-SHA256-V1 verification for platform -> wallet calls (see the integration guide, section 3). */
+function verifySignature(req,raw,secretBase64){
+ const h=req.headers,fail=code=>{throw Object.assign(new Error(code),{status:401,code});};
+ const [kid,t,nonce,rid,sig]=['x-gp-key-id','x-gp-timestamp','x-gp-nonce','x-gp-request-id','x-gp-signature'].map(k=>h[k]);
+ if(h['x-gp-direction']!=='platform-to-wallet'||!/^\d{10}$/.test(t||'')||!/^[a-f0-9]{32}$/.test(nonce||'')||!/^[A-Za-z0-9_-]{1,128}$/.test(rid||'')||!/^v1=[a-f0-9]{64}$/.test(sig||''))fail('SIGNATURE_INVALID');
+ if(Math.abs(Date.now()/1000-Number(t))>300)fail('TIMESTAMP_EXPIRED');
+ const canonical=['GP-HMAC-SHA256-V1','platform-to-wallet',kid,t,nonce,rid,req.method,req.url,createHash('sha256').update(raw,'utf8').digest('hex')].join('\n');
+ const expected='v1='+createHmac('sha256',Buffer.from(secretBase64,'base64')).update(canonical,'utf8').digest('hex');
+ if(!timingSafeEqual(Buffer.from(expected),Buffer.from(sig)))fail('SIGNATURE_INVALID');
+ return{nonce};
+}
 
 export async function migrateSimpleDemoWallet(pool){
  await pool.query(`CREATE TABLE IF NOT EXISTS demo_simple_accounts (external_user_id text PRIMARY KEY, balance_minor bigint NOT NULL CHECK(balance_minor>=0));
@@ -26,7 +38,7 @@ export async function handleSimpleWallet(pool,{keyId,secretBase64},req,res,raw){
  const send=(status,body)=>{res.writeHead(status,{'content-type':'application/json'});res.end(JSON.stringify(body));};
  try{
   if(req.headers['x-gp-key-id']!==keyId)return send(401,{code:'SIGNATURE_INVALID'}),true;
-  const {nonce}=verifySignature(req,raw,{secret_base64:secretBase64},'platform-to-wallet');
+  const {nonce}=verifySignature(req,raw,secretBase64);
   const now=Date.now();for(const [k,t] of nonces)if(t<now-610000)nonces.delete(k);
   if(nonces.has(nonce))return send(401,{code:'NONCE_REPLAY'}),true;nonces.set(nonce,now);
   const balance=path.match(/^\/wallet\/simple\/v1\/users\/([A-Za-z0-9_-]{1,128})\/balance$/);
