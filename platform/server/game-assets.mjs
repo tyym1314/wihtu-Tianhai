@@ -17,7 +17,7 @@ function fresh(headers,etag,mtimeMs){
 }
 
 export async function serveGameAsset(req,res,path,{legacyRoot=defaultLegacyRoot,arenaRoot=defaultArenaRoot,casinoRoot=defaultCasinoRoot}={}){
-  const candidate=path.match(/^\/play\/([a-z]+)$/)?.[1],game=ALL_GAME_IDS.includes(candidate)?candidate:null;
+  const candidate=path.match(/^\/play\/([a-z0-9]+)$/)?.[1],game=ALL_GAME_IDS.includes(candidate)?candidate:null;
   const casino=path.startsWith('/casino/')||CASINO_IDS.includes(game),arena=casino||path.startsWith('/arena/')||ARENA_IDS.includes(game);
   const base=casino?casinoRoot:arena?arenaRoot:legacyRoot,prefix=casino?'/casino':'/arena';
   if(req.method!=='GET'&&req.method!=='HEAD')fail(405,'METHOD_NOT_ALLOWED');

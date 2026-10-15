@@ -2,10 +2,10 @@ import React,{useState} from 'react';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {useRound,full,short} from '../../shared/useRound.js';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
-import './royalpatti.css';
+import './teenpatti.css';
 
-const GAME=CASINO_GAMES.royalpatti,HANDS=GAME.options.map(o=>o.id),MULT=(GAME.payout_x100/100).toFixed(2);
-const img=n=>`/casino/royalpatti/${n}.webp`;
+const GAME=CASINO_GAMES.teenpatti,HANDS=GAME.options.map(o=>o.id),MULT=(GAME.payout_x100/100).toFixed(2);
+const img=n=>`/casino/teenpatti/${n}.webp`;
 const SUIT={s:'♠',h:'♥',c:'♣',d:'♦'},RANK=r=>r==='T'?'10':r;
 // Reveal choreography inside the 7 s draw window: one hand every 1.5 s, winner at 5.5 s.
 const FLIP_AT=[1200,2700,4200],WIN_AT=5600;

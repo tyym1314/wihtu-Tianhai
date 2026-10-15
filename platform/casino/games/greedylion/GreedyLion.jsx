@@ -2,13 +2,13 @@ import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {api,requestId,registerHostControls,requestExit} from '../../shared/client.mjs';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
-import './lionfeast.css';
+import './greedylion.css';
 
-const GAME=CASINO_GAMES.lionfeast;
+const GAME=CASINO_GAMES.greedylion;
 // Clockwise from the top socket; vegetables and dishes alternate around the ring.
 const ORDER=['tomato','shrimp','corn','fish','carrot','steak','lettuce','chicken'];
 const MULT=Object.fromEntries(GAME.options.map(o=>[o.id,o.multiplier]));
-const img=n=>`/casino/lionfeast/${n}.webp`;
+const img=n=>`/casino/greedylion/${n}.webp`;
 const short=minor=>{const v=Number(minor||0)/100;const f=(n,s)=>`${Number.isInteger(n)?n:n.toFixed(1)}${s}`;return v>=1e6?f(v/1e6,'M'):v>=1e3?f(v/1e3,'K'):String(Math.floor(v));};
 const full=minor=>new Intl.NumberFormat('en-US').format(Math.floor(Number(minor||0)/100));
 const ERRORS={INSUFFICIENT_FUNDS:'insufficient',BETTING_CLOSED:'closed',ROUND_STAKE_LIMIT:'limit'};

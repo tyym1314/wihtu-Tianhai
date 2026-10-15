@@ -16,13 +16,13 @@ test('every casino game is an allowed wallet probability game id',()=>{
 });
 test('the same seed always gives the same result',()=>{
  const sd=seed();
- assert.deepEqual(drawWheel(wheelModel(CASINO_GAMES.lionfeast),sd),drawWheel(wheelModel(CASINO_GAMES.lionfeast),sd));
- assert.deepEqual(drawCrash(crashModel(CASINO_GAMES.rocketrush),sd),drawCrash(crashModel(CASINO_GAMES.rocketrush),sd));
- assert.deepEqual(drawCards3(cards3Model(CASINO_GAMES.royalpatti),sd),drawCards3(cards3Model(CASINO_GAMES.royalpatti),sd));
- const m=slotModel(CASINO_GAMES.skypalace);assert.deepEqual(playSlotCycle(m,sd,'10000'),playSlotCycle(m,sd,'10000'));
+ assert.deepEqual(drawWheel(wheelModel(CASINO_GAMES.greedylion),sd),drawWheel(wheelModel(CASINO_GAMES.greedylion),sd));
+ assert.deepEqual(drawCrash(crashModel(CASINO_GAMES.rocketstar2),sd),drawCrash(crashModel(CASINO_GAMES.rocketstar2),sd));
+ assert.deepEqual(drawCards3(cards3Model(CASINO_GAMES.teenpatti),sd),drawCards3(cards3Model(CASINO_GAMES.teenpatti),sd));
+ const m=slotModel(CASINO_GAMES.olympus);assert.deepEqual(playSlotCycle(m,sd,'10000'),playSlotCycle(m,sd,'10000'));
 });
 test('crash points follow P(crash >= x) = rtp / x and the multiplier curve inverts exactly',()=>{
- const m=crashModel(CASINO_GAMES.rocketrush),N=200000;let ge2=0,ge10=0;
+ const m=crashModel(CASINO_GAMES.rocketstar2),N=200000;let ge2=0,ge10=0;
  for(let i=0;i<N;i++){const r=drawCrash(m,seed());if(r.crash_x100>=200)ge2++;if(r.crash_x100>=1000)ge10++;assert.ok(r.crash_x100>=100&&r.crash_x100<=100000);}
  assert.ok(Math.abs(ge2/N-0.485)<0.006,String(ge2/N));assert.ok(Math.abs(ge10/N-0.097)<0.004,String(ge10/N));
  for(const x of [101,150,200,1000,50000])assert.ok(multiplierAt(timeToReach(x))>=x&&multiplierAt(timeToReach(x)-1)<x,String(x));
@@ -33,6 +33,6 @@ test('three-hand ranking follows Teen Patti order',()=>{
  assert.ok(handKey(['Ah','2h','3h']).key<handKey(['2h','3h','4h']).key||handKey(['Ah','2h','3h']).key[1]<handKey(['2h','3h','4h']).key[1],'A-2-3 is the lowest sequence');
 });
 test('a slot cycle never pays more than the cap and its gross matches the win multiple',()=>{
- const m=slotModel(CASINO_GAMES.skypalace);
+ const m=slotModel(CASINO_GAMES.olympus);
  for(let i=0;i<3000;i++){const r=playSlotCycle(m,seed(),'10000');assert.ok(r.win_x100<=m.maxMultiplier*100);assert.equal(r.gross_payout_minor,String(100n*BigInt(r.win_x100)));}
 });

@@ -13,7 +13,7 @@ const MAX_TUMBLES=40;
 
 export function slotModel(game){
  const s=game.slot;
- const config={family:'slot',pay:s.pay,columns:s.columns,rows:s.rows,symbols:s.symbols,scatter:s.scatter,orbs:s.orbs,freeSpins:s.freeSpins,maxWin:s.maxWin,weights:s.weights,rng:'HMAC-SHA256 counter'};
+ const config={family:'slot',pay:s.pay,columns:s.columns,rows:s.rows,symbols:s.symbols,scatter:s.scatter,orbs:s.orbs,freeSpins:s.freeSpins,maxWin:s.maxWin,weights:s.weights,buy:s.buy||null,rng:'HMAC-SHA256 counter'};
  const hash=createHash('sha256').update(canonical(config)).digest('hex');
  return Object.freeze({gameId:game.id,version:`${game.id}-slot-v1`,hash,maxMultiplier:s.maxWin,targetRtp:s.targetRtp,config});
 }
@@ -21,7 +21,8 @@ export function slotModel(game){
 /** Pay in hundredths of stake for `count` copies of a symbol (0 when below the first band). */
 function bandPay(symbol,count){let pay=0;for(const [min,x100] of symbol.bands)if(count>=min)pay=x100;return pay;}
 
-export function playSlotCycle(model,seedHex,stakeMinor){
+/** `stakeMinor` is the base stake; with `buy` the cycle starts directly in the free spins feature. */
+export function playSlotCycle(model,seedHex,stakeMinor,{buy=false}={}){
  const c=model.config,rng=createRng(seedHex,`${model.version}:cycle`),size=c.columns*c.rows;
  const pool=[...c.symbols.map(s=>({id:s.id,w:c.weights.base[s.id]})),{id:'scatter',w:c.weights.base.scatter},{id:'orb',w:c.weights.base.orb}];
  const freePool=[...c.symbols.map(s=>({id:s.id,w:c.weights.free[s.id]??c.weights.base[s.id]})),{id:'scatter',w:c.weights.free.scatter},{id:'orb',w:c.weights.free.orb}];
@@ -54,12 +55,12 @@ export function playSlotCycle(model,seedHex,stakeMinor){
   totalX100+=spinX100;
   return {free,initial,tumbles,scatters,orb_sum:orbSum,multiplier:mult,total_multiplier:nextTotal,scatter_pay_x100:scatterPay,win_x100:spinX100};
  }
- const spins=[spin(false,0)];
- let freeLeft=!capped&&spins[0].scatters>=c.freeSpins.trigger?c.freeSpins.award:0,totalMult=0,played=0;
+ const spins=buy?[]:[spin(false,0)];
+ let freeLeft=buy?c.freeSpins.award:!capped&&spins[0].scatters>=c.freeSpins.trigger?c.freeSpins.award:0,totalMult=0,played=0;
  while(freeLeft>0&&!capped&&played<c.freeSpins.maxPlayed){
   const s=spin(true,totalMult);spins.push(s);played++;freeLeft--;totalMult=s.total_multiplier;
   if(s.scatters>=c.freeSpins.retrigger)freeLeft+=c.freeSpins.retriggerAward;
  }
  const gross=BigInt(stakeMinor)*BigInt(totalX100)/100n;
- return {outcome:`${(totalX100/100).toFixed(2)}x`,win_x100:totalX100,gross_payout_minor:String(gross),capped,free_spins:played,spins};
+ return {outcome:`${(totalX100/100).toFixed(2)}x`,mode:buy?'buy':'normal',base_stake_minor:String(stakeMinor),win_x100:totalX100,gross_payout_minor:String(gross),capped,free_spins:played,spins};
 }

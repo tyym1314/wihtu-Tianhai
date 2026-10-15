@@ -2,12 +2,12 @@ import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {api,requestId,registerHostControls,requestExit} from '../../shared/client.mjs';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
-import './rocketrush.css';
+import './rocketstar2.css';
 
-const GAME=CASINO_GAMES.rocketrush;
+const GAME=CASINO_GAMES.rocketstar2;
 const GROWTH=Math.log(2)/8000;
 const multAt=ms=>Math.floor(100*Math.exp(GROWTH*Math.max(0,ms))+1e-9);
-const img=n=>`/casino/rocketrush/${n}.webp`;
+const img=n=>`/casino/rocketstar2/${n}.webp`;
 const full=minor=>new Intl.NumberFormat('en-US').format(Math.floor(Number(minor||0)/100));
 const short=minor=>{const v=Number(minor||0)/100;const f=(n,s)=>`${Number.isInteger(n)?n:n.toFixed(1)}${s}`;return v>=1e6?f(v/1e6,'M'):v>=1e3?f(v/1e3,'K'):String(Math.floor(v));};
 const fx=x100=>(x100/100).toFixed(2);

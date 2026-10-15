@@ -147,9 +147,9 @@ test('pausing the App blocks new sessions and the hosted platform account flow i
  await assert.rejects(platform.createSession(app,body,JSON.stringify(body)),{code:'APP_PAUSED'});
 });
 
-test('a shared Lion Feast round debits each bet and credits winners at their multiplier',async()=>{
+test('a shared GreedyLion round debits each bet and credits winners at their multiplier',async()=>{
  await pool.query("UPDATE gp_apps SET status='active' WHERE id=$1",[app.id]);app=await platform.appById(app.id);
- const [alice,bob]=await Promise.all([sessionFor('alice','lionfeast'),sessionFor('bob','lionfeast')]);
+ const [alice,bob]=await Promise.all([sessionFor('alice','greedylion'),sessionFor('bob','greedylion')]);
  const state=await casino.casinoState(alice,{balance:true});assert.equal(state.round.status,'betting');assert.ok(state.round.commitment);assert.equal(state.round.result,undefined);
  assert.equal((await casino.casinoState(bob)).round.id,state.round.id,'one shared round per App and game');
  const before={alice:await partnerBalance('alice'),bob:await partnerBalance('bob')};
@@ -177,9 +177,9 @@ test('a shared Lion Feast round debits each bet and credits winners at their mul
 });
 
 
-test('Rocket Rush hides the crash point in flight and pays manual and automatic cash-outs below it',async()=>{
+test('RocketStar2 hides the crash point in flight and pays manual and automatic cash-outs below it',async()=>{
  const {timeToReach}=await import('../server/casino/crash.mjs');
- const [alice,bob]=await Promise.all([sessionFor('alice','rocketrush'),sessionFor('bob','rocketrush')]);
+ const [alice,bob]=await Promise.all([sessionFor('alice','rocketstar2'),sessionFor('bob','rocketstar2')]);
  const s0=await casino.casinoState(alice);assert.equal(s0.round.status,'betting');assert.equal(s0.round.reveal_at,null);
  const before={alice:await partnerBalance('alice'),bob:await partnerBalance('bob')};
  const auto=await casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:'a',stake_minor:'10000',auto_x100:150});
@@ -204,8 +204,8 @@ test('Rocket Rush hides the crash point in flight and pays manual and automatic 
  const done=await casino.casinoState(alice);assert.equal(done.round.result.crash_x100,500);
 });
 
-test('Royal Teen Patti deals three hands and pays the winning hand x2.91',async()=>{
- const alice=await sessionFor('alice','royalpatti'),s0=await casino.casinoState(alice),before=await partnerBalance('alice');
+test('TeenPatti deals three hands and pays the winning hand x2.91',async()=>{
+ const alice=await sessionFor('alice','teenpatti'),s0=await casino.casinoState(alice),before=await partnerBalance('alice');
  for(const o of ['ruby','jade','sapphire'])await casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:o,stake_minor:'10000'});
  assert.equal(await partnerBalance('alice'),before-30000n);
  await pool.query('UPDATE casino_rounds SET bet_until=$2 WHERE id=$1',[s0.round.id,Date.now()-1]);
@@ -215,8 +215,8 @@ test('Royal Teen Patti deals three hands and pays the winning hand x2.91',async(
  assert.equal(await partnerBalance('alice'),before-30000n+29100n);assert.equal(await transit(),'0');
 });
 
-test('a Sky Palace spin is one wallet cycle: stake debited, the complete win credited once',async()=>{
- const alice=await sessionFor('alice','skypalace'),before=await partnerBalance('alice');
+test('an Olympus spin is one wallet cycle: stake debited, the complete win credited once',async()=>{
+ const alice=await sessionFor('alice','olympus'),before=await partnerBalance('alice');
  const st=await casino.casinoState(alice,{balance:true});assert.equal(st.kind,'instant');
  const instant=await import('../server/casino/instant.mjs');
  const request_id=uid('spin'),r=await instant.spin(alice,{request_id,stake_minor:'1000'});
@@ -224,4 +224,11 @@ test('a Sky Palace spin is one wallet cycle: stake debited, the complete win cre
  assert.deepEqual(await instant.spin(alice,{request_id,stake_minor:'1000'}),r,'same request_id replays the same spin');
  await recover();
  assert.equal(await partnerBalance('alice'),before-1000n+BigInt(r.payout_minor));assert.equal(await transit(),'0');
+});
+
+test('buying the Olympus free spins debits base x 10.2 and plays the feature directly',async()=>{
+ const alice=await sessionFor('alice','olympus'),before=await partnerBalance('alice'),instant=await import('../server/casino/instant.mjs');
+ const r=await instant.spin(alice,{request_id:uid('buy'),stake_minor:'1000',buy:true});
+ assert.equal(r.mode,'buy');assert.equal(r.stake_minor,'10200');assert.equal(r.base_stake_minor,'1000');assert.ok(r.result.spins.every(s=>s.free));
+ await recover();assert.equal(await partnerBalance('alice'),before-10200n+BigInt(r.payout_minor));assert.equal(await transit(),'0');
 });

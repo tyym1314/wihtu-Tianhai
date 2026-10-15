@@ -23,12 +23,14 @@ export async function migrateInstant(db=pool){
   id text PRIMARY KEY, app_id text NOT NULL REFERENCES gp_apps(id), session_id text NOT NULL, external_user_id text NOT NULL, request_id text NOT NULL,
   game_id text NOT NULL, stake_minor bigint NOT NULL CHECK(stake_minor>0), math_version text NOT NULL, math_hash text NOT NULL,
   status text NOT NULL CHECK(status IN ('AUTHORIZING','ACCEPTED','RESULT_FIXED','SETTLED','REJECTED')),
-  seed_enc text, result jsonb, payout_minor bigint, error text, attempts integer NOT NULL DEFAULT 0,
+  seed_enc text, result jsonb, payout_minor bigint, error text, attempts integer NOT NULL DEFAULT 0, mode text NOT NULL DEFAULT 'normal', base_stake_minor bigint,
   created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), UNIQUE(app_id,external_user_id,request_id));
+ ALTER TABLE casino_spins ADD COLUMN IF NOT EXISTS mode text NOT NULL DEFAULT 'normal';
+ ALTER TABLE casino_spins ADD COLUMN IF NOT EXISTS base_stake_minor bigint;
  CREATE INDEX IF NOT EXISTS casino_spins_open ON casino_spins(status,updated_at) WHERE status NOT IN ('SETTLED','REJECTED');`);
 }
 
-const view=s=>({id:s.id,request_id:s.request_id,status:s.status,stake_minor:String(s.stake_minor),
+const view=s=>({id:s.id,request_id:s.request_id,status:s.status,mode:s.mode||'normal',stake_minor:String(s.stake_minor),base_stake_minor:String(s.base_stake_minor??s.stake_minor),
  ...(s.result&&['RESULT_FIXED','SETTLED'].includes(s.status)?{result:s.result,payout_minor:String(s.payout_minor)}:{}),error:s.error||null});
 
 export async function instantState(session,{balance=false}={}){
@@ -43,15 +45,18 @@ export async function spin(session,body){
  const game=CASINO_GAMES[session.game_id];if(game?.kind!=='instant')fail(403,'GAME_SESSION_REQUIRED');
  if(!/^[A-Za-z0-9_-]{8,128}$/.test(body.request_id||'')||typeof body.stake_minor!=='string')fail(400,'INVALID_REQUEST');
  if(!game.stakes.includes(body.stake_minor))fail(400,'INVALID_STAKE');
+ if(body.buy!==undefined&&(body.buy!==true||!game.slot?.buy))fail(400,'INVALID_REQUEST');
+ // stake_minor is the base stake; a feature buy debits base x price.
+ const mode=body.buy?'buy':'normal',walletStake=mode==='buy'?BigInt(body.stake_minor)*BigInt(game.slot.buy.price_x100)/100n:BigInt(body.stake_minor);
  const app=await appById(session.app_id),model=models[game.id];
  let s=(await pool.query('SELECT * FROM casino_spins WHERE app_id=$1 AND external_user_id=$2 AND request_id=$3',[app.id,session.external_user_id,body.request_id])).rows[0];
- if(s&&(s.game_id!==game.id||String(s.stake_minor)!==body.stake_minor))fail(409,'IDEMPOTENCY_CONFLICT');
+ if(s&&(s.game_id!==game.id||String(s.base_stake_minor??s.stake_minor)!==body.stake_minor||(s.mode||'normal')!==mode))fail(409,'IDEMPOTENCY_CONFLICT');
  if(!s){
   await assertNewFinancialAdmission(pool,app,{gameId:game.id});
   const busy=(await pool.query("SELECT 1 FROM casino_spins WHERE app_id=$1 AND external_user_id=$2 AND status NOT IN ('SETTLED','REJECTED') LIMIT 1",[app.id,session.external_user_id])).rowCount;
   if(busy)fail(409,'SPIN_PENDING');
-  s=(await pool.query("INSERT INTO casino_spins(id,app_id,session_id,external_user_id,request_id,game_id,stake_minor,math_version,math_hash,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,'AUTHORIZING') RETURNING *",
-   [id('spin'),app.id,session.id,session.external_user_id,body.request_id,game.id,body.stake_minor,model.version,model.hash])).rows[0];
+  s=(await pool.query("INSERT INTO casino_spins(id,app_id,session_id,external_user_id,request_id,game_id,stake_minor,math_version,math_hash,status,mode,base_stake_minor) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,'AUTHORIZING',$10,$11) RETURNING *",
+   [id('spin'),app.id,session.id,session.external_user_id,body.request_id,game.id,String(walletStake),model.version,model.hash,mode,body.stake_minor])).rows[0];
  }
  s=await advance(app,s);
  if(s.status==='REJECTED')fail(409,s.error||'WALLET_REJECTED');
@@ -71,7 +76,7 @@ async function advance(app,s){
   }
   if(s.status==='ACCEPTED'){
    // No RNG before acceptance is persisted; afterwards every caller reads this one result.
-   const seed=randomBytes(32).toString('hex'),result=engines[CASINO_GAMES[s.game_id].family].play(model,seed,String(s.stake_minor));
+   const seed=randomBytes(32).toString('hex'),result=engines[CASINO_GAMES[s.game_id].family].play(model,seed,String(s.base_stake_minor??s.stake_minor),{buy:s.mode==='buy'});
    if(BigInt(result.gross_payout_minor)>BigInt(s.stake_minor)*BigInt(model.maxMultiplier))throw new Error('casino liability invariant');
    s=(await pool.query("UPDATE casino_spins SET status='RESULT_FIXED',seed_enc=$2,result=$3,payout_minor=$4,updated_at=now() WHERE id=$1 AND status='ACCEPTED' RETURNING *",[s.id,seal(seed),result,result.gross_payout_minor])).rows[0]||(await pool.query('SELECT * FROM casino_spins WHERE id=$1',[s.id])).rows[0];
   }

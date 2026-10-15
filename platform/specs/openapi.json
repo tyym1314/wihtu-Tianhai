@@ -1704,10 +1704,10 @@
           "thunder",
           "tiger",
           "towerlink",
-          "lionfeast",
-          "rocketrush",
-          "royalpatti",
-          "skypalace"
+          "greedylion",
+          "rocketstar2",
+          "teenpatti",
+          "olympus"
         ]
       },
       "CompetitiveGameId": {
@@ -1731,10 +1731,10 @@
         "enum": [
           "thunder",
           "tiger",
-          "lionfeast",
-          "rocketrush",
-          "royalpatti",
-          "skypalace"
+          "greedylion",
+          "rocketstar2",
+          "teenpatti",
+          "olympus"
         ]
       },
       "Scope": {
