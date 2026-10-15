@@ -10,7 +10,7 @@ after(async()=>{await fixture?.close();});
 test('public player metadata is read-only, narrowly projected and validates App queries',async()=>{
  const {request,app,pool}=fixture;
  const result=await request('/api/player/app?app_id='+app.id);
- assert.equal(result.status,200);assert.deepEqual(result.body,{name:app.name,game_ids:ARENA_IDS,admission_profile:'firstparty-free-v1',admission_open:true,free_training_only:true,financial_admission_enabled:false,allowed_room_modes:['bot-practice']});
+ assert.equal(result.status,200);assert.deepEqual(result.body,{name:app.name,game_ids:ARENA_IDS,admission_profile:'firstparty-free-v1',admission_open:true,free_training_only:true,financial_admission_enabled:false,probability_admission_enabled:false,internal_game_coins:false,coin_scope:'internal-nonredeemable',initial_player_coins:'10000',initial_treasury_coins:'1000000000',external_financial_admission_enabled:false,deposit_enabled:false,withdrawal_enabled:false,thirdparty_financial_admission_enabled:false,allowed_room_modes:['bot-practice']});
  assert.equal(fixture.admissionDeclaration.kind,'isolated-firstparty-free-fixture');assert.equal(fixture.admissionDeclaration.production_approval,false);
  assert.equal(result.headers.get('cache-control'),'no-store');
  for(const query of ['', '?app_id=unknown','?app_id='+app.id+'&app_id='+app.id,'?app_id='+app.id+'&return_url=https://evil.invalid','?app_id=bad%2Fapp']){

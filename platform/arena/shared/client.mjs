@@ -16,6 +16,9 @@ export async function api(path,body,{signal}={}){
  const send=async transfer=>{
   const requestSignal=signal||AbortSignal.timeout(12000);
   const options={method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(accessToken?{Authorization:`Bearer ${accessToken}`} :{}),...(transfer.entry?{'X-Oasis-Known-Actions':transfer.entry.key}:{}),...(transfer.runEnabled?{'X-Oasis-Known-Run-Game':transfer.runEntry?.key||'full'}:{})},body:body===undefined?undefined:JSON.stringify(body),credentials:'same-origin',signal:requestSignal};
+  // Hint that launch verification should outrank lower-urgency asset fetches.
+  // This hint retains fetch's existing high priority; it does not skip work.
+  if(path==='/v1/launch/exchange'||path==='/api/arena/session')options.priority='high';
   // Live room reads must bypass the HTTP cache before response headers arrive.
   // A response's no-store header arrives too late to prevent Chromium from
   // queueing a same-URL hedge behind the first read's cache transaction.

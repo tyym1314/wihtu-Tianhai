@@ -147,33 +147,64 @@ def source_parent_delta(append_after, final, old_pin, new_pin):
     return {'path':name,'before':old,'after':new,'old_production_pin':old_pin,'new_production_pin':new_pin}
 
 
-def refresh_policy(before, approval, target, manifest, proof):
+def refresh_policy(before, approval, target, manifest, proof, *, target_profile=None):
     require(before.get('state')=='closed' and set(before)==set(POLICY_KEYS)
             and before.get('release')==str(SOURCE) and before.get('manifest_sha256')==SOURCE_MANIFEST,
             'REFRESH_CLOSED_SOURCE_POLICY_REQUIRED')
     require(int(before['revision'])<9223372036854775807 and sha(proof), 'REFRESH_POLICY_REVISION_OR_PROOF_INVALID')
-    value=copy.deepcopy(before);value.update(release=str(target),manifest_sha256=manifest,proof_sha256=proof,
+    selected=target_profile or approval.get('profile',before['profile'])
+    require(selected in ('firstparty-free-v1','firstparty-internal-games-v1')
+            and (target_profile is None or approval.get('profile')==target_profile), 'REFRESH_TARGET_PROFILE_UNAPPROVED')
+    value=copy.deepcopy(before)
+    if selected!=before['profile']:
+        from importlib.util import spec_from_file_location,module_from_spec
+        spec=spec_from_file_location('refresh_internal_contract',Path(__file__).with_name('admission-runtime.py'))
+        admission=module_from_spec(spec);spec.loader.exec_module(admission)
+        require(before['profile']==admission.FREE_PROFILE and selected==admission.INTERNAL_PROFILE
+                and set(before['game_ids'])==admission.ARENA_GAMES and len(before['game_ids'])==11
+                and len(approval.get('game_ids',[]))==13 and set(approval['game_ids'])==admission.RELEASED_GAMES
+                and all(approval.get(name)==before[name] for name in ('app_id','scope','currency_scale','allowed_origins')),
+                'REFRESH_INTERNAL_SCOPE_APPROVAL_CHANGED')
+        value.update(profile=selected,game_ids=sorted(approval['game_ids']))
+    value.update(release=str(target),manifest_sha256=manifest,proof_sha256=proof,
         approved_by=approval['approved_by'],approved_at=approval['approved_at'],revision=str(int(before['revision'])+1))
     return value
 
 
 def policy_sql(core, data, expected):
-    """Reuse original locked full App/binding/wallet/old-policy predicates, replace only UPDATE."""
+    """Keep the original full locked CAS; only then extend the declared profile/schema."""
     original,_=core.policy_transaction_sql('open',data,{'unused':True},expected['proof_sha256'])
     q=core.literal(data['app']['id']); assignment=','.join(name+'='+core.literal(str(expected[name]))
         for name in ('state','revision','release','manifest_sha256','proof_sha256','approved_by','approved_at'))
+    app_change="status='paused'";ddl=''
+    if expected['profile']!=data['policy']['profile']:
+        require(data['policy']['profile']=='firstparty-free-v1' and expected['profile']=='firstparty-internal-games-v1'
+                and set(data['app']['game_ids'])==set(data['policy']['game_ids'])
+                and len(data['app']['game_ids'])==len(data['policy']['game_ids'])==11 and len(set(data['app']['game_ids']))==11
+                and set(expected['game_ids'])==set(data['app']['game_ids'])|{'thunder','tiger'}
+                and len(expected['game_ids'])==13, 'REFRESH_INTERNAL_GAME_DELTA_CHANGED')
+        games=core.literal(json.dumps(expected['game_ids'],separators=(',',':')))+'::jsonb'
+        app_change+=',game_ids='+games
+        assignment+=',profile='+core.literal(expected['profile'])+',game_ids='+games
+        ddl="""ALTER TABLE wallet_scopes ADD COLUMN IF NOT EXISTS internal_coin_issued bigint NOT NULL DEFAULT 0 CHECK(internal_coin_issued>=0);
+ALTER TABLE gp_production_admission DROP CONSTRAINT gp_production_admission_profile_check;
+ALTER TABLE gp_production_admission ADD CONSTRAINT gp_production_admission_profile_check CHECK(profile IN ('firstparty-free-v1','firstparty-internal-games-v1'));
+"""
     start=original.index('UPDATE gp_apps SET status=')
     end=original.index('\nSELECT ',start)
-    return original[:start]+f"UPDATE gp_apps SET status='paused' WHERE id={q}; UPDATE gp_production_admission SET {assignment},updated_at=now() WHERE app_id={q};"+original[end:]
+    return original[:start]+ddl+f"UPDATE gp_apps SET {app_change} WHERE id={q}; UPDATE gp_production_admission SET {assignment},updated_at=now() WHERE app_id={q};"+original[end:]
 
 
-def refresh_runtime(admission, original, target, manifest):
-    """Replace only the two declared source lines; preserve every other byte."""
+def refresh_runtime(admission, original, target, manifest, *, target_profile=None):
+    """Replace declared source lines and an explicitly selected first-party profile."""
     require(isinstance(original,bytes) and original.endswith(b'\n') and sha(manifest),'REFRESH_RUNTIME_EDIT_INVALID')
     env=admission.parse_env_text(original.decode())
     previous=admission.runtime_profile(env,expected_release=str(SOURCE),expected_manifest=SOURCE_MANIFEST)
-    require(previous['profile']=='firstparty-free-v1','REFRESH_RUNTIME_FREE_PROFILE_REQUIRED')
+    selected=target_profile or previous['profile']
+    require(previous['profile']==admission.FREE_PROFILE and selected in (admission.FREE_PROFILE,admission.INTERNAL_PROFILE),
+            'REFRESH_RUNTIME_PROFILE_REQUIRED')
     values={'OASIS_ADMISSION_RELEASE':str(target),'OASIS_ADMISSION_MANIFEST_SHA256':manifest}
+    if selected!=previous['profile']:values['OASIS_ADMISSION_PROFILE']=selected
     lines=original.splitlines(keepends=True);seen=set();result=[]
     for line in lines:
         name=line.split(b'=',1)[0].decode('ascii',errors='ignore')
@@ -185,7 +216,8 @@ def refresh_runtime(admission, original, target, manifest):
     replacement=b''.join(result);changed=admission.parse_env_text(replacement.decode())
     require({key:value for key,value in changed.items() if key not in values}
             =={key:value for key,value in env.items() if key not in values},'REFRESH_RUNTIME_NON_SOURCE_CHANGED')
-    admission.runtime_profile(changed,expected_release=str(target),expected_manifest=manifest)
+    result_profile=admission.runtime_profile(changed,expected_release=str(target),expected_manifest=manifest)
+    require(result_profile['profile']==selected,'REFRESH_RUNTIME_TARGET_PROFILE_CHANGED')
     return replacement
 
 

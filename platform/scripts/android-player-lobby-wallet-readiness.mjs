@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {assertPlayerZeroWallet} from './android-player-acceptance-checks.mjs';
+import {assertPlayerWallet} from './android-player-acceptance-checks.mjs';
 import {formatPlayerMinor} from '../src/pages/PlayerClient.mjs';
 
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -55,11 +55,11 @@ export function readNativeLobbyWalletUi(){
 
 export function assertLobbyWalletBodyAndUi(bytes,ui,{artifact,baseline}){
  assert.ok(Buffer.isBuffer(bytes)&&bytes.length>0,'LOBBY_WALLET_BODY_MISSING');
- const body=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));assertPlayerZeroWallet(body,artifact.appId,baseline);
+ const body=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));assertPlayerWallet(body,artifact.appId,baseline);
  assert.equal(ui.url,artifact.entryUrl,'LOBBY_WALLET_UI_DOCUMENT_CHANGED');assert.equal(ui.iframeCount,0,'LOBBY_WALLET_GAME_ALREADY_MOUNTED');
  assert.equal(ui.regionCount,1,'LOBBY_WALLET_UI_AMBIGUOUS');assert.equal(ui.alertCount,0,'LOBBY_WALLET_UI_ERROR');
- const zero=formatPlayerMinor('0',body.balance.currency_scale)+' '+body.currency_id;
- return{ready:ui.lobbyVisible===true&&ui.visible===true&&ui.statusCount===1&&ui.statusTag==='DIV'&&ui.paragraphs.length===2&&ui.paragraphs[0]==='可用 '+zero&&ui.paragraphs[1]==='冻结 '+zero,bytes:bytes.length,sha256:hash(bytes)};
+ const available=formatPlayerMinor(body.balance.available_minor,body.balance.currency_scale)+' '+body.currency_id,reserved=formatPlayerMinor(body.balance.reserved_minor,body.balance.currency_scale)+' '+body.currency_id;
+ return{ready:ui.lobbyVisible===true&&ui.visible===true&&ui.statusCount===1&&ui.statusTag==='DIV'&&ui.paragraphs.length===2&&ui.paragraphs[0]==='可用 '+available&&ui.paragraphs[1]==='冻结 '+reserved,bytes:bytes.length,sha256:hash(bytes)};
 }
 
 /** Untimed basic prerequisite only. It neither launches nor sends another GET. */

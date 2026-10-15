@@ -27,7 +27,58 @@ export const NATIVE_HEALTH_SOURCE08=Object.freeze({
  bodyBytes:42,bodySha256:'497add72f0f622772613ee2efaee64243b3a2cfcddb80476b239d80ecc852ddb',
 });
 
-export function validateNativeHealthProducerContract(value,{origin,manifestSha256,sourcePins}={}){
+// Source15 is selected from actual new manifest/source/deployment originals.
+// This keeps the earlier literal Source08 selection historical and prevents a
+// newly labelled object from reaching the native probe without its file reads.
+const verifiedSource15HealthContracts=new WeakSet();
+const source15HealthSchema='root-source15-native-health-producer-contract-v1';
+const source15Release='/opt/oasis/releases/20261013-03';
+const source15Profile='firstparty-internal-games-v1';
+const source15GameIds=['bowling','carrom','darts','domino','golf','jackaroo','ludo','match','pool','run','thunder','tiger','towerlink'];
+const healthSourceKeys=Object.keys(NATIVE_HEALTH_SOURCE08.sourceSha256);
+const healthExact=(item,keys)=>item&&typeof item==='object'&&!Array.isArray(item)&&Object.keys(item).length===keys.length&&keys.every(key=>Object.hasOwn(item,key));
+const healthPath=value=>typeof value==='string'&&value.startsWith('/')&&!value.includes('\0')&&resolve(value)===value;
+const healthSha=value=>typeof value==='string'&&/^[a-f0-9]{64}$/.test(value);
+
+export function validateNativeHealthProducerSelection(value,{origin}={}){
+ if(value?.schema!==source15HealthSchema)return validateNativeHealthProducerContract(value,{origin});
+ assert.ok(healthExact(value,['schema','origin','method','path','environment','release_manifest','source_sha256','expected_body','deployment_evidence']),'HEALTH_PRODUCER_CONTRACT_SCHEMA_INVALID');
+ assert.equal(value.origin,NATIVE_HEALTH_SOURCE08.origin,'HEALTH_PRODUCER_ORIGIN_MISMATCH');
+ if(origin!==undefined)assert.equal(value.origin,origin,'HEALTH_PRODUCER_ARTIFACT_ORIGIN_MISMATCH');
+ assert.equal(value.method,'GET','HEALTH_PRODUCER_METHOD_MISMATCH');assert.equal(value.path,'/health','HEALTH_PRODUCER_PATH_MISMATCH');assert.equal(value.environment,'production','HEALTH_PRODUCER_ENVIRONMENT_MISMATCH');
+ for(const row of [value.release_manifest,value.deployment_evidence])assert.ok(healthExact(row,['path','sha256'])&&healthPath(row.path)&&healthSha(row.sha256),'HEALTH_PRODUCER_ACTUAL_ORIGINAL_DESCRIPTOR_REQUIRED');
+ assert.ok(healthExact(value.source_sha256,healthSourceKeys)&&Object.values(value.source_sha256).every(healthSha),'HEALTH_PRODUCER_SOURCE_MISMATCH');
+ assert.ok(healthExact(value.expected_body,['bytes','sha256']),'HEALTH_PRODUCER_BODY_INVALID');
+ assert.equal(value.expected_body.bytes,42,'HEALTH_PRODUCER_BODY_MISMATCH');assert.equal(value.expected_body.sha256,NATIVE_HEALTH_SOURCE08.bodySha256,'HEALTH_PRODUCER_BODY_MISMATCH');
+ return value;
+}
+
+export function validateSource15NativeDeploymentEvidence(value,{origin,manifestSha256}={}){
+ assert.ok(healthSha(manifestSha256)&&origin===NATIVE_HEALTH_SOURCE08.origin,'HEALTH_PRODUCER_ACTUAL_SOURCE15_BINDINGS_REQUIRED');
+ assert.equal(value?.schema,1,'HEALTH_PRODUCER_DEPLOYMENT_SCHEMA_INVALID');assert.equal(value.kind,'production-firstparty-source15-operation','HEALTH_PRODUCER_DEPLOYMENT_KIND_MISMATCH');
+ assert.equal(value.passed,true,'HEALTH_PRODUCER_DEPLOYMENT_NOT_CONFIRMED');assert.equal(value.action,'open','HEALTH_PRODUCER_DEPLOYMENT_NOT_CONFIRMED');assert.equal(value.phase,'complete_internal_games_open','HEALTH_PRODUCER_DEPLOYMENT_NOT_CONFIRMED');
+ assert.equal(value.target_release,source15Release,'HEALTH_PRODUCER_DEPLOYMENT_RELEASE_MISMATCH');assert.equal(value.target_manifest_sha256,manifestSha256,'HEALTH_PRODUCER_DEPLOYMENT_MANIFEST_MISMATCH');
+ const final=value.final,profile=final?.state?.runtime_profile,policy=final?.database?.policy;
+ assert.equal(profile?.profile,source15Profile,'HEALTH_PRODUCER_RUNTIME_PROFILE_MISMATCH');assert.equal(profile.release,source15Release,'HEALTH_PRODUCER_RUNTIME_RELEASE_MISMATCH');assert.equal(profile.manifest_sha256,manifestSha256,'HEALTH_PRODUCER_RUNTIME_MANIFEST_MISMATCH');assert.equal(profile.public_origin,origin,'HEALTH_PRODUCER_RUNTIME_ORIGIN_MISMATCH');
+ assert.equal(policy?.profile,source15Profile,'HEALTH_PRODUCER_POLICY_PROFILE_MISMATCH');assert.equal(policy.state,'open','HEALTH_PRODUCER_POLICY_NOT_OPEN');assert.deepEqual([...policy.game_ids].sort(),source15GameIds,'HEALTH_PRODUCER_REAL13_REQUIRED');assert.deepEqual([...final.database.app.game_ids].sort(),source15GameIds,'HEALTH_PRODUCER_REAL13_APP_REQUIRED');
+ assert.equal(final?.inspection?.environment,'production','HEALTH_PRODUCER_DEPLOYMENT_ENVIRONMENT_MISMATCH');assert.equal(final?.https?.passed,true,'HEALTH_PRODUCER_DEPLOYMENT_TLS_UNPROVEN');assert.equal(final.https.origin,origin,'HEALTH_PRODUCER_DEPLOYMENT_ORIGIN_MISMATCH');
+ for(const scope of [value,final]){
+  assert.equal(scope.financial_admission_enabled,true,'HEALTH_PRODUCER_INTERNAL_LEDGER_REQUIRED');assert.equal(scope.probability_admission_enabled,true,'HEALTH_PRODUCER_PROBABILITY_GAMEPLAY_REQUIRED');
+  for(const key of ['thirdparty_financial_admission_enabled','external_financial_admission_enabled','deposit_enabled','withdrawal_enabled'])assert.equal(scope[key],false,'HEALTH_PRODUCER_EXTERNAL_FINANCE_FORBIDDEN');
+  assert.equal(scope.coin_scope,'internal-nonredeemable','HEALTH_PRODUCER_INTERNAL_COIN_SCOPE_REQUIRED');
+ }
+ assert.equal(value.capacity_validation?.status,'NOT_RUN_USER_REQUEST','HEALTH_PRODUCER_ACTUAL_NOT_RUN_SCOPE_REQUIRED');assert.equal(value.capacity_validation.capacityAcceptance,false,'HEALTH_PRODUCER_CAPACITY_NOT_ACCEPTED');assert.equal(value.capacity_validation.capacityValidationPerformed,false,'HEALTH_PRODUCER_CAPACITY_NOT_RUN');
+ return value;
+}
+
+export function validateNativeHealthProducerContract(value,{origin,manifestSha256,sourcePins,deploymentEvidenceSha256}={}){
+ if(value?.schema===source15HealthSchema){
+  validateNativeHealthProducerSelection(value,{origin});
+  if(verifiedSource15HealthContracts.has(value)&&manifestSha256===undefined&&sourcePins===undefined&&deploymentEvidenceSha256===undefined)return value;
+  assert.ok(origin!==undefined&&healthSha(manifestSha256)&&sourcePins&&healthSha(deploymentEvidenceSha256),'HEALTH_PRODUCER_ACTUAL_SOURCE15_BINDINGS_REQUIRED');
+  assert.equal(value.release_manifest.sha256,manifestSha256,'HEALTH_PRODUCER_ACTUAL_MANIFEST_MISMATCH');assert.deepEqual(value.source_sha256,sourcePins,'HEALTH_PRODUCER_ACTUAL_SOURCE_MISMATCH');assert.equal(value.deployment_evidence.sha256,deploymentEvidenceSha256,'HEALTH_PRODUCER_ACTUAL_DEPLOYMENT_EVIDENCE_MISMATCH');
+  const result=Object.freeze({...value,release_manifest:Object.freeze({...value.release_manifest}),source_sha256:Object.freeze({...value.source_sha256}),expected_body:Object.freeze({...value.expected_body}),deployment_evidence:Object.freeze({...value.deployment_evidence})});verifiedSource15HealthContracts.add(result);return result;
+ }
  const exact=(item,keys)=>item&&typeof item==='object'&&!Array.isArray(item)&&Object.keys(item).length===keys.length&&keys.every(key=>Object.hasOwn(item,key));
  const path=value=>typeof value==='string'&&value.startsWith('/')&&!value.includes('\0')&&resolve(value)===value;
  assert.ok(exact(value,['schema','origin','method','path','environment','release_manifest','source_sha256','expected_body','deployment_evidence']),'HEALTH_PRODUCER_CONTRACT_SCHEMA_INVALID');

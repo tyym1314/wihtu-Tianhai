@@ -46,24 +46,24 @@ print(sys.executable)
  return{root,manifest,metadata,retainedPath,retainedFile:join(repository,retainedPath),retainedBytes,python:setup.stdout.trim(),buildArgs:['--import',networkGuard,join(root,'scripts/build-release.mjs')]};
 }
 
-test('release build keeps reviewed APK and metadata byte-for-byte without invoking an Android build',async t=>{
+test('release build completes without APK downloads and does not publish Android or partner-kit artifacts',async t=>{
  const {root,manifest,python,buildArgs,retainedPath,retainedFile,retainedBytes}=await fixture(t),bin=join(root,'bin'),log=join(root,'commands.log');
  await mkdir(bin);
  await writeFile(join(bin,'npm'),'#!/bin/sh\nprintf \'npm %s\\n\' "$*" >> "$OASIS_TEST_LOG"\n',{mode:0o755});
  await writeFile(join(bin,'python3'),'#!/bin/sh\nprintf \'python3 %s\\n\' "$*" >> "$OASIS_TEST_LOG"\nexec "$OASIS_TEST_PYTHON" "$@"\n',{mode:0o755});
- const before=await readFile(manifest);
+ await rm(join(root,'public/downloads'),{recursive:true});
  await assert.rejects(readFile(retainedFile),{code:'ENOENT'});
  const build=await run(process.execPath,buildArgs,{env:{...process.env,PATH:bin,OASIS_TEST_LOG:log,OASIS_TEST_PYTHON:python}});
- assert.deepEqual(await readFile(manifest),before);
- assert.deepEqual(await readFile(join(root,'public/downloads',historical.apk)),apkBytes);
+ await assert.rejects(readFile(manifest),{code:'ENOENT'});
+ await assert.rejects(readFile(join(root,'public/downloads',historical.apk)),{code:'ENOENT'});
  assert.deepEqual(await readFile(retainedFile),retainedBytes);assert.match(build.stdout,/"materialized":1/);
  const stamp=JSON.parse(await readFile(join(root,'release-build-manifest.json'),'utf8'));
  assert.equal(stamp.outputs[retainedPath],createHash('sha256').update(retainedBytes).digest('hex'));
  const commands=(await readFile(log,'utf8')).trim().split('\n');
- assert.deepEqual(commands.slice(0,5),['check:contracts','build:legacy','build:partner-kit','build:arena','build'].map(name=>'npm run '+name));
- assert.match(commands[5],/^python3 .*\/deploy\/release_build\.py retained-inspect --root /);
- assert.match(commands[6],/^python3 .*\/deploy\/release_build\.py retained-materialize --root .* --archive /);
- assert.equal(commands[7],'python3 deploy/release_build.py record');assert.equal(commands.length,8);assert.doesNotMatch(commands.join('\n'),/build:android/);
+ assert.deepEqual(commands.slice(0,4),['check:contracts','build:legacy','build:arena','build'].map(name=>'npm run '+name));
+ assert.match(commands[4],/^python3 .*\/deploy\/release_build\.py retained-inspect --root /);
+ assert.match(commands[5],/^python3 .*\/deploy\/release_build\.py retained-materialize --root .* --archive /);
+ assert.equal(commands[6],'python3 deploy/release_build.py record');assert.equal(commands.length,7);assert.doesNotMatch(commands.join('\n'),/build:android/);
 });
 
 test('changed, added, or removed Android inputs invalidate the reviewed artifact',async t=>{
@@ -80,15 +80,14 @@ test('changed, added, or removed Android inputs invalidate the reviewed artifact
  assert.deepEqual(JSON.parse(await readFile(manifest,'utf8')),metadata);
 });
 
-test('stale APK fails before release subprocesses or a freshness stamp can run',async t=>{
- const {root,manifest,buildArgs,retainedFile}=await fixture(t),bin=join(root,'bin'),log=join(root,'commands.log');await mkdir(bin);
- for(const command of ['npm','python3'])await writeFile(join(bin,command),'#!/bin/sh\nprintf touched > "$OASIS_TEST_LOG"\n',{mode:0o755});
- const before=await readFile(manifest);
+test('a failed browser rebuild removes the old freshness stamp',async t=>{
+ const {root,buildArgs,retainedFile}=await fixture(t),bin=join(root,'bin');await mkdir(bin);
+ await writeFile(join(bin,'npm'),'#!/bin/sh\nexit 9\n',{mode:0o755});
  await writeFile(join(root,'release-build-manifest.json'),'old stamp');
- await writeFile(join(root,'android-smoke/app/AndroidManifest.xml'),'new source');
- await assert.rejects(run(process.execPath,buildArgs,{env:{...process.env,PATH:bin,OASIS_TEST_LOG:log}}),/ANDROID_REVIEWED_APK_STALE/);
- await assert.rejects(readFile(log),{code:'ENOENT'});await assert.rejects(readFile(join(root,'release-build-manifest.json')),{code:'ENOENT'});
- await assert.rejects(readFile(retainedFile),{code:'ENOENT'});assert.deepEqual(await readFile(manifest),before);assert.deepEqual(await readFile(join(root,'public/downloads',historical.apk)),apkBytes);
+ await rm(join(root,'public/downloads'),{recursive:true});
+ await assert.rejects(run(process.execPath,buildArgs,{env:{...process.env,PATH:bin}}),{code:9});
+ await assert.rejects(readFile(join(root,'release-build-manifest.json')),{code:'ENOENT'});
+ await assert.rejects(readFile(retainedFile),{code:'ENOENT'});
 });
 
 test('APK hash mismatch and accidental mock publication fail closed',async t=>{

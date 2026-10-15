@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-12T00:46:50.832Z",
+  "generatedAt": "2026-10-15T04:27:18.513Z",
   "status": "PLATFORM_PRESENTATION_BUILD",
-  "sourceFilesVerifiedUnchanged": 24,
+  "sourceFilesVerifiedUnchanged": 26,
   "outputDirectory": "platform/legacy/dist",
   "htmlRoutes": [
     "/play/thunder",
@@ -28,7 +28,7 @@
     },
     {
       "path": "src/style.css",
-      "sha256": "f79db89cd0e74ff1010aecd5f6edccd5bc58fc4e5003d6d5f0950060b517f776"
+      "sha256": "335f7b97358a59d82e03a6a76dd99cc5eaa29fe2b9e573a5cdac29e2c2c09159"
     },
     {
       "path": "src/tiger/PERFORMANCE-20261007.md",
@@ -56,7 +56,7 @@
     },
     {
       "path": "src/tiger/effects.ts",
-      "sha256": "0675f0f7bb583f9bd5e3441ef3b0ce4423359077361a951ea0c47ab4669454de"
+      "sha256": "92aa59852a0418400cb3d2cd46d14ad1dce665f83032ee5e935171d743962fb0"
     },
     {
       "path": "src/tiger/main.ts",
@@ -65,6 +65,10 @@
     {
       "path": "src/tiger/math.ts",
       "sha256": "3debf31ccad0f3b3a66ecb7b11898cbf7bb1e6429d731783efd8f6f25154239d"
+    },
+    {
+      "path": "src/tiger/reel-viewport.ts",
+      "sha256": "502c6d253e94e9afa44509a708781cfed82b89ad295b2198a76105eddd2ec3f0"
     },
     {
       "path": "src/tiger/style.css",
@@ -88,11 +92,11 @@
     },
     {
       "path": "src/ui/character.css",
-      "sha256": "9e091c745ad09fc70842164a284e81149c5cb29c7cd6a48831b21aa82004008d"
+      "sha256": "cd511b84dc443759097c55db95897736e176478908dd9ac5c8add0ddf6e5924a"
     },
     {
       "path": "src/ui/character.ts",
-      "sha256": "224e16f4b7a6fd4c210bec96faa83f4735503fdb166b7be39dda32c1fd885543"
+      "sha256": "6282c092dd2d61011c8488b407bddaafd9973e1ce1a93fa0bc66210f1055e7b0"
     },
     {
       "path": "src/ui/i18n.ts",
@@ -100,11 +104,15 @@
     },
     {
       "path": "src/ui/motion.css",
-      "sha256": "e2452307579897e86a078f2dc8634be493bf20f6647bf09416532d7a6cb2a8eb"
+      "sha256": "a3120517b33abe2cfaf02c8e76385eada0507bfeb2617a39252c683e8e322067"
     },
     {
       "path": "src/ui/motion.ts",
-      "sha256": "b3a4f34b8d2173204d34f27f9fc17466a3744160e3f7691ac6a3fb68dec710e2"
+      "sha256": "9522028bf8972172226a77856cb17fb7d1451ba1f90bb342e0459e0b7c3d11c8"
+    },
+    {
+      "path": "src/ui/reel-viewport.ts",
+      "sha256": "5517492e6d2caf83416d9521d73e234d52e88988c8e34ed4e9bfb08258f5d729"
     }
   ]
 }

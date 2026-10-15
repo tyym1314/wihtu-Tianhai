@@ -40,8 +40,10 @@ function realmFixture({content=body,status=200,responseUrl=url,redirected=false,
 
 test('only the exact source08 producer selection and actual artifact/source hashes are accepted',async()=>{
  const contract=selection(),sourcePins={};for(const name of Object.keys(version.sourceSha256))sourcePins[name]=playerEvidenceHash(await readFile(join(ROOT,name.slice('platform/'.length))));
- assert.deepEqual(sourcePins,version.sourceSha256);assert.equal(Buffer.byteLength(body),42);assert.equal(playerEvidenceHash(body),version.bodySha256);
- assert.deepEqual(validateNativeHealthProducerContract(contract,{origin:version.origin,manifestSha256:version.manifestSha256,sourcePins}),contract);
+ // Source08 is historical authority; current source must not inherit its pins.
+ assert.notDeepEqual(sourcePins,version.sourceSha256);assert.equal(Buffer.byteLength(body),42);assert.equal(playerEvidenceHash(body),version.bodySha256);
+ assert.throws(()=>validateNativeHealthProducerContract(contract,{origin:version.origin,manifestSha256:version.manifestSha256,sourcePins}),/ACTUAL_SOURCE/);
+ assert.deepEqual(validateNativeHealthProducerContract(contract,{origin:version.origin,manifestSha256:version.manifestSha256,sourcePins:{...version.sourceSha256}}),contract);
  for(const mutate of [v=>v.extra=true,v=>v.origin='https://foreign.example',v=>v.path='/health?nonce=x',v=>v.method='POST',v=>v.environment='sandbox',v=>v.release_manifest.sha256='a'.repeat(64),v=>v.source_sha256['platform/server/index.mjs']='a'.repeat(64),v=>v.expected_body.bytes=16384,v=>v.expected_body.sha256='a'.repeat(64),v=>v.deployment_evidence.sha256='a'.repeat(64)]){
   const wrong=structuredClone(contract);mutate(wrong);assert.throws(()=>validateNativeHealthProducerContract(wrong),/HEALTH_PRODUCER/);
  }

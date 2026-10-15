@@ -1,0 +1,11 @@
+[Unit]
+Description=OASIS production identity backup
+Requires=oasis-production-db.service
+After=oasis-production-db.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/oasis/production-backup.sh
+TimeoutStartSec=300
+UMask=0077
+PrivateTmp=true

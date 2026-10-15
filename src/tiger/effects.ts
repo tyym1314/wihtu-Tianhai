@@ -1,4 +1,5 @@
 import type { TigerSymbol } from './types';
+import { TigerReelViewport } from './reel-viewport';
 
 export const SYMBOLS: TigerSymbol[] = ['tiger','ingot','coin','jade','envelope','firecracker','orange'];
 export const symbolMarkup=(symbol:TigerSymbol)=>`<span class="symbol-art symbol-${symbol}" aria-hidden="true">${symbol==='tiger'?'<b>WILD</b>':''}</span>`;
@@ -7,6 +8,9 @@ export class TigerReels {
   board:TigerSymbol[]=['ingot','tiger','coin','jade','envelope','jade','orange','firecracker','ingot'];
   private windows:HTMLElement[]=[];
   private animations:Animation[]=[];
+  private viewports=new Set<TigerReelViewport>();
+  private disposed=false;
+  private landingTimers=new Set<ReturnType<typeof setTimeout>>();
   private media=matchMedia('(prefers-reduced-motion: reduce)');
   constructor(private host:HTMLElement,private label:(symbol:TigerSymbol)=>string) {
     host.innerHTML=[0,1,2].map(col=>`<div class="reel-column" data-col="${col}"><div class="reel-window"></div><div class="reel-locks"></div><i class="reel-glint"></i></div>`).join('');
@@ -24,6 +28,7 @@ export class TigerReels {
     added.forEach(i=>this.host.querySelector(`[data-cell="${i}"]`)?.classList.add('new-lock'));
   }
   async spin(target:TigerSymbol[],held:number[],turbo:boolean,onLand:(col:number)=>void) {
+    if(this.disposed)return;
     this.clearWin(); const cellH=this.windows[0].clientHeight/3;
     const old=[...this.board];
     const jobs=this.windows.map(async(window,col)=>{
@@ -33,29 +38,32 @@ export class TigerReels {
       const count=turbo?12+col*3:24+col*6;
       const fillers=Array.from({length:count},()=>SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)]);
       const sequence=[...[0,1,2].map(row=>old[row*3+col]),...fillers,...[0,1,2].map(row=>target[row*3+col])];
-      window.innerHTML=`<div class="reel-strip moving">${sequence.map(s=>this.cell(s)).join('')}</div>`;
-      const strip=window.firstElementChild as HTMLElement;
-      strip.style.setProperty('--cell-h',`${cellH}px`);
+      const viewport=new TigerReelViewport(window,sequence,cellH,s=>this.cell(s as TigerSymbol));
+      this.viewports.add(viewport);
       column.classList.add('rolling');
       const travel=(count+3)*cellH;
       const duration=this.media.matches?100:turbo?520+col*95:1100+col*200;
-      const animation=strip.animate([
+      const animation=viewport.clock.animate([
         {transform:'translate3d(0,0,0)',filter:'blur(0px)',offset:0},
         {transform:`translate3d(0,${-travel*.05}px,0)`,filter:'blur(2px)',offset:.08},
         {transform:`translate3d(0,${-travel*.79}px,0)`,filter:'blur(3px)',offset:.68},
         {transform:`translate3d(0,${-travel-9}px,0)`,filter:'blur(0px)',offset:.93},
         {transform:`translate3d(0,${-travel}px,0)`,filter:'blur(0px)',offset:1},
       ],{duration,fill:'forwards',easing:'cubic-bezier(.18,.45,.28,1)'});
+      viewport.start(animation);
       this.animations.push(animation);
       try {await animation.finished;} catch{}
+      viewport.dispose();this.viewports.delete(viewport);
       animation.cancel(); this.animations=this.animations.filter(a=>a!==animation);
+      if(this.disposed)return;
       window.innerHTML=`<div class="reel-strip">${[0,1,2].map(row=>this.cell(target[row*3+col],row*3+col)).join('')}</div>`;
       column.classList.remove('rolling'); column.classList.add('landed'); lockLayer.innerHTML='';
-      setTimeout(()=>column.classList.remove('landed'),300);onLand(col);
+      const timer=setTimeout(()=>{this.landingTimers.delete(timer);if(!this.disposed)column.classList.remove('landed');},300);
+      this.landingTimers.add(timer);onLand(col);
     });
-    await Promise.all(jobs);this.board=[...target];
+    await Promise.all(jobs);if(!this.disposed)this.board=[...target];
   }
-  dispose(){this.animations.forEach(a=>a.cancel());this.animations=[];}
+  dispose(){this.disposed=true;this.landingTimers.forEach(clearTimeout);this.landingTimers.clear();this.viewports.forEach(v=>v.dispose());this.viewports.clear();this.animations.forEach(a=>a.cancel());this.animations=[];}
 }
 
 interface Particle{x:number;y:number;vx:number;vy:number;age:number;life:number;size:number;rotation:number;vr:number;type:'coin'|'spark'|'petal';color:string}

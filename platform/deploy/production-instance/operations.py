@@ -154,19 +154,19 @@ def inspect_database(marker,runtime,database,source,master):
     helper=Path(source['release'])/'platform/deploy/production-instance/inspect-backup.mjs'
     p.require(p.fingerprint(helper)['sha256']==source['helpers']['inspect-backup.mjs'],'PRODUCTION_INSPECTION_HELPER_CHANGED')
     expected=contract(a.inspection_expectation,source)
-    options={'input':json.dumps({'expected':expected})} if source['inspection_contract']=='production-free-v2' else {}
+    options={'input':json.dumps({'expected':expected})} if source['inspection_contract'] in ('production-free-v2','production-internal-games-v1') else {}
     query=runtime.command(['/usr/bin/node',str(helper),'sql'],**options)
     rows=[json.loads(row) for row in sql(runtime,marker,database,query).splitlines() if row.startswith('{')]
     p.require(len(rows)==2 and rows[1].get('database')==database,'PRODUCTION_RESTORE_RESPONSE_INVALID')
     payload={'data':rows[0],'identity':rows[1]}
-    if source['inspection_contract']=='production-free-v2':payload['expected']=expected
+    if source['inspection_contract'] in ('production-free-v2','production-internal-games-v1'):payload['expected']=expected
     verified=json.loads(runtime.command(['/usr/bin/node',str(helper),'verify',str(master)],input=json.dumps(payload)))
     p.require(verified['environment']=='production' and verified['master_key_sha256']==source['private_pins']['state/master.key']['sha256'],
               'PRODUCTION_RESTORE_VERIFY_IDENTITY_INVALID')
     p.require(isinstance(verified.get('audit'),dict) and verified['audit']
               and all(type(value) is int and value==0 for value in verified['audit'].values()),
               'PRODUCTION_RESTORE_PENDING_OBLIGATIONS')
-    if source['inspection_contract']=='production-free-v2':
+    if source['inspection_contract'] in ('production-free-v2','production-internal-games-v1'):
         p.require(verified.get('inspection_contract')==source['inspection_contract']
                   and verified.get('profile_snapshot',{}).get('runtime_profile')==source['runtime_profile']
                   and re.fullmatch('[a-f0-9]{64}',verified.get('profile_snapshot_sha256','')),

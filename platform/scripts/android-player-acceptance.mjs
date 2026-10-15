@@ -10,14 +10,14 @@ import {dirname,join,resolve} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {randomUUID} from 'node:crypto';
 import {chromium,request as httpRequest} from 'playwright';
-import {ARENA_IDS,ARENA_GAMES} from '../shared/games.mjs';
-import {playOneArenaAction} from './android-game-actions.mjs';
-import {parseAndroidForwards,ownedAndroidForward,assertAndroidForwardsRestored,androidForeground,assertAndroidSessionBaseline,assertAndroidOneAction,cleanupOwnedAndroidSession} from './android-webview-checks.mjs';
+import {ARENA_IDS,ARENA_GAMES,LEGACY_IDS} from '../shared/games.mjs';
+import {playOneArenaAction,playOneProbabilityCycle} from './android-game-actions.mjs';
+import {parseAndroidForwards,ownedAndroidForward,assertAndroidForwardsRestored,androidForeground,assertAndroidSessionBaseline,assertAndroidOneAction,assertAndroidPaidCycle,cleanupOwnedAndroidSession} from './android-webview-checks.mjs';
 import {installNativeFetchProbe,observeNativeBrowser,runNativeActionOnce,nativeErrorsEmpty,createNativeCleanupApi} from '../deploy/native-browser-checks.mjs';
 import {formatPlayerMinor} from '../src/pages/PlayerClient.mjs';
 import {installOwnedPlayerResourceEvidence,validateConsumedImageEvidence,deliveryProofForRow,generatedScriptProofForResponse} from './android-player-resource-evidence.mjs';
 import {waitForNativeLobbyWallet} from './android-player-lobby-wallet-readiness.mjs';
-import {playerAcceptanceArguments,readPlayerArtifact,createPlayerEvidenceRedactor,readPlayerCredentials,readNativeHealthProducerContract,assertPlayerLobbyBaseline,assertPlayerZeroWallet,assertOwnedPlayerArenaState,assertPlayerReturnReadback,playerResourceManifest,assertPlayerResourceBody,assertInstalledPlayerArtifact,playerEvidenceHash,playerShellSourcePins,playerRunResumeEvidence} from './android-player-acceptance-checks.mjs';
+import {playerAcceptanceArguments,readPlayerArtifact,createPlayerEvidenceRedactor,readPlayerCredentials,readNativeHealthProducerContract,assertPlayerLobbyBaseline,assertPlayerWallet,assertOwnedPlayerArenaState,assertOwnedPlayerProbabilityState,assertPlayerProbabilitySession,playerProbabilityResultEvidence,probabilityCoinsToMinor,installProbabilityPerformanceProbe,summarizeProbabilityPerformance,assertPlayerReturnReadback,playerCatalog,assertPlayerDeviceTransport,PLAYER_FREE_PROFILE,PLAYER_INTERNAL_PROFILE,playerResourceManifest,assertPlayerResourceBody,assertInstalledPlayerArtifact,playerEvidenceHash,playerShellSourcePins,playerRunResumeEvidence} from './android-player-acceptance-checks.mjs';
 
 const ROOT=fileURLToPath(new URL('../',import.meta.url)),execute=promisify(execFile);
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -38,9 +38,9 @@ export async function waitForPlayerForegroundRestoration(readActivity,expected,{
 export const playerAdbArgs=(options,args,{device=true}={})=>['-H','127.0.0.1','-P',String(options.adbPort),...(device?['-s',options.serial]:[]),...args];
 
 /** The build stamp uses repository keys; this collector's ROOT is platform/. */
-export async function verifyPlayerAcceptanceRuntime(root,inputs){
+export async function verifyPlayerAcceptanceRuntime(root,inputs,{profile=PLAYER_FREE_PROFILE}={}){
  const pins={};
- for(const name of ['arena/main.jsx','arena/run/practice-controller.mjs','arena/run/engine.mjs','shared/run-practice-profiles.mjs','server/player-routes.mjs','src/pages/Player.jsx','src/pages/PlayerClient.mjs','server/pvp/index.mjs','server/pvp/run-practice-inputs.mjs','server/pvp/run-practice-protocol.mjs','server/pvp/engine-worker.mjs']){
+ for(const name of ['arena/main.jsx','arena/run/practice-controller.mjs','arena/run/engine.mjs','shared/run-practice-profiles.mjs','server/player-routes.mjs','src/pages/Player.jsx','src/pages/PlayerClient.mjs','server/pvp/index.mjs','server/pvp/run-practice-inputs.mjs','server/pvp/run-practice-protocol.mjs','server/pvp/engine-worker.mjs',...(profile===PLAYER_INTERNAL_PROFILE?['server/cycles.mjs','server/production-admission.mjs','server/internal-game-coins.mjs','server/wallet/index.mjs','server/wallet/schema.sql','server/math/index.ts','legacy/bridge.ts','scripts/build-legacy.mjs']:[])]){
   const expected=inputs?.['platform/'+name];
   assert.match(expected??'',/^[a-f0-9]{64}$/,'RELEASE_RUNTIME_SOURCE_PIN_MISSING: '+name);
   assert.equal(playerEvidenceHash(await readFile(join(root,name))),expected,'RELEASE_RUNTIME_SOURCE_CHANGED: '+name);
@@ -69,7 +69,7 @@ export function playerTouchFrame(frame,{tap,touch}){
 /** Retains raw protocol and complete observed bodies, with original byte hashes
  * separate from redacted stored JSON. Never treats missing/failed bodies as pass.
  */
-export async function collectPlayerEvidence({context,page,origin,manifest,out,redactor,result,resourceDrainTimeoutMs=15000,resourceOutputRoot}){
+export async function collectPlayerEvidence({context,page,origin,manifest,out,redactor,result,resourceDrainTimeoutMs=15000,resourceOutputRoot,games=ARENA_IDS}){
  assert.ok(Number.isSafeInteger(resourceDrainTimeoutMs)&&resourceDrainTimeoutMs>0&&resourceDrainTimeoutMs<=15000,'RESOURCE_DRAIN_BOUND');
  const cdp=await context.newCDPSession(page),tasks=new Set(),responseWork=new WeakMap(),raw=[],responses=[],errors=[],requests=[],requestRows=new WeakMap(),cdpRequests=new Map(),contexts=new Map(),resourceDocuments=new Map(),rawBodyDiagnostics=[],resourceSnapshots=[],handlers=[],initHandles=[];
  const imagePath=path=>!/^\/(?:api|v1)(?:\/|$)/.test(path)&&/\.(?:webp|png|jpe?g|svg|avif|gif)$/.test(path),hasImages=[...manifest.expected.keys()].some(imagePath);
@@ -99,9 +99,9 @@ export async function collectPlayerEvidence({context,page,origin,manifest,out,re
     let game;try{const u=new URL(location.href);game=u.pathname.slice('/play/'.length);if(globalThis===parent||parent!==top||u.href!==origin+'/play/'+game||!games.includes(game)||parent.location.href!==entryUrl)return;}catch{return;}
     if(Object.prototype.hasOwnProperty.call(globalThis,'__oasisPhysicalPerf'))throw Error('RESOURCE_DOCUMENT_IDENTITY_ALREADY_INSTALLED');
     const id=new Uint8Array(16);crypto.getRandomValues(id);Object.defineProperty(globalThis,'__oasisPhysicalPerf',{value:Object.freeze({schema:'android-physical-performance-v1',nonce,documentId:Array.from(id,v=>v.toString(16).padStart(2,'0')).join(''),timeOrigin:performance.timeOrigin,url:location.href}),configurable:false,writable:false});
-   },{origin,entryUrl,games:ARENA_IDS,nonce});
+   },{origin,entryUrl,games,nonce});
    assert.ok(identityHandle&&typeof identityHandle.dispose==='function','RESOURCE_IDENTITY_INIT_DISPOSABLE_REQUIRED');initHandles.push(identityHandle);
-   initHandles.push(await installOwnedPlayerResourceEvidence(context,{origin,entryUrl,games:ARENA_IDS,manifest,nonce,root:resourceOutputRoot}));
+   initHandles.push(await installOwnedPlayerResourceEvidence(context,{origin,entryUrl,games,manifest,nonce,root:resourceOutputRoot}));
   }
   await cdp.send('Network.enable');await cdp.send('Page.enable');await cdp.send('Runtime.enable');await cdp.send('Security.enable');await cdp.send('Network.setCacheDisabled',{cacheDisabled:true});await mkdir(join(out,'bodies'),{recursive:true,mode:0o700});
  }catch(error){for(const {event,fn}of handlers)cdp.off(event,fn);await Promise.allSettled(initHandles.map(handle=>handle.dispose()));await cdp.detach().catch(()=>{});throw error;}
@@ -120,7 +120,7 @@ export async function collectPlayerEvidence({context,page,origin,manifest,out,re
    const {frameTree}=await cdp.send('Page.getFrameTree');assert.equal(frameTree?.frame.url,entryUrl,'RESOURCE_PARENT_DOCUMENT_CHANGED');
    const frames=(frameTree.childFrames||[]).filter(child=>child.frame.url===row.frame&&child.frame.parentId===frameTree.frame.id);
    assert.equal(frames.length,1,'RESOURCE_OWN_GAME_FRAME_AMBIGUOUS');const frame=frames[0].frame,game=frame.url.slice((origin+'/play/').length);
-   assert.ok(frame.url===origin+'/play/'+game&&ARENA_IDS.includes(game),'RESOURCE_OWN_GAME_FRAME_REQUIRED');
+   assert.ok(frame.url===origin+'/play/'+game&&games.includes(game),'RESOURCE_OWN_GAME_FRAME_REQUIRED');
    const realms=liveRealms.filter(realm=>realm.auxData.frameId===frame.id&&realm.origin===origin);assert.equal(realms.length,1,'RESOURCE_CDP_CONTEXT_REQUIRED');
    const owned=matches.filter(candidate=>candidate.frameId===frame.id&&candidate.contextId===realms[0].id);
    if(generatedScript){assert.ok(owned.length>0&&owned.every(candidate=>candidate.type==='Script'&&!candidate.redirected&&!candidate.failed),'GENERATED_SCRIPT_CDP_SCOPE_UNPROVEN');row.cdp_request_ids=owned.map(candidate=>candidate.id);}
@@ -173,7 +173,7 @@ export async function collectPlayerEvidence({context,page,origin,manifest,out,re
    if(!response.ok())row.body_error='NON_SUCCESS_STATUS';let bytes,bodyError;
    try{bytes=await response.body();row.original_sha256=playerEvidenceHash(bytes);row.original_bytes=bytes.length;totalBytes+=bytes.length;assert.ok(totalBytes<=256*1024*1024,'EVIDENCE_BODY_BOUND_EXCEEDED');}catch(error){bodyError=error;}
    const api=u.origin===origin&&(/^\/(api|v1)\//.test(u.pathname)||['/health','/health/ready'].includes(u.pathname));
-   const ownGame=ARENA_IDS.some(game=>row.frame===origin+'/play/'+game),image=row.resourceType==='image'||imagePath(u.pathname),ownImage=hasImages&&!api&&ownGame&&image&&u.origin===origin&&row.method==='GET'&&status===200;
+   const ownGame=games.some(game=>row.frame===origin+'/play/'+game),image=row.resourceType==='image'||imagePath(u.pathname),ownImage=hasImages&&!api&&ownGame&&image&&u.origin===origin&&row.method==='GET'&&status===200;
    const ownGeneratedScript=hasImages&&ownGame&&u.protocol==='blob:'&&u.origin===origin&&row.resourceType==='script'&&row.method==='GET'&&status===200&&bytes?.length>0&&!bodyError;
    if(bodyError&&!ownImage)throw bodyError;if(bodyError?.message==='EVIDENCE_BODY_BOUND_EXCEEDED')throw bodyError;
    if(api){try{const value=JSON.parse(bytes);redactor.remember(value);row.body=value;row.body_format='redacted-json';}catch{row.body=bytes.toString('utf8');row.body_format='redacted-text';errors.push('API_RESPONSE_JSON_INVALID: '+u.pathname);}return;}
@@ -237,15 +237,18 @@ export async function closePlayerObservation({browser,evidence,holder,errors,cle
 }
 
 export async function runPlayerAcceptance(options){
+ const profile=options.profile??PLAYER_FREE_PROFILE,catalog=playerCatalog(profile),assertOwned=(state,baseline)=>LEGACY_IDS.includes(state.game)?assertOwnedPlayerProbabilityState(state,baseline):assertOwnedPlayerArenaState(state,baseline);
  assert.ok(!process.env.NODE_TLS_REJECT_UNAUTHORIZED||process.env.NODE_TLS_REJECT_UNAUTHORIZED==='1','STRICT_TLS_REQUIRED');
  const redactor=createPlayerEvidenceRedactor(),artifact=await readPlayerArtifact(options.metadata,{shellRoot:join(ROOT,'android-player'),execute,apksigner:options.apksigner});
  const manifestPath=resolve(options.platformManifest),manifestInfo=await lstat(manifestPath);assert.ok(manifestInfo.isFile()&&!manifestInfo.isSymbolicLink(),'RELEASE_MANIFEST_FILE_REQUIRED');
  const manifestBytes=await readFile(manifestPath),manifest=playerResourceManifest(JSON.parse(manifestBytes)),manifestSha=playerEvidenceHash(manifestBytes);
- const runtimePins=await verifyPlayerAcceptanceRuntime(ROOT,manifest.inputs);
+ const runtimePins=await verifyPlayerAcceptanceRuntime(ROOT,manifest.inputs,{profile});
  const healthProducerContract=options.healthProducerContract?await readNativeHealthProducerContract(options.healthProducerContract,{root:ROOT,origin:artifact.origin}):null;
+ if(options.run&&profile===PLAYER_INTERNAL_PROFILE)assert.equal(healthProducerContract?.contract.schema,'root-source15-native-health-producer-contract-v1','ACTUAL_SOURCE15_HEALTH_PRODUCER_REQUIRED');
+ const qualityBytes=await readFile(join(ROOT,'specs/mobile-quality-v1.json')),quality=JSON.parse(qualityBytes);
  const out=resolve(options.output);await mkdir(out,{mode:0o700});await mkdir(join(out,'bodies'),{mode:0o700});
  const report={schema:'android-real-player-acceptance-v1',mode:options.mode,started_at:new Date().toISOString(),passed:false,executed:false,physical_device:false,
-  scope:'Signed real Player QA shell; production cookie identity and zero wallet; one trusted Android/UI action per admitted arena and original-session return/cleanup. Not complete game, frame-rate, iPhone or third-party transfer acceptance.',
+  scope:'Signed real Player QA shell; production cookie and ledger wallet; sequential one trusted action per BOT arena or one original settled probability cycle with own bonus/ACK/return. No concurrency load, GPU/frame-rate or iPhone claim.',admission_profile:profile,device_role:options.deviceRole??'physical',performanceStandard:{sha256:playerEvidenceHash(qualityBytes),thresholds:quality.thresholds},
   artifact:{metadataSha256:artifact.metadataSha256,apkSha256:artifact.apkSha256,certificateSha256:artifact.certificateSha256,origin:artifact.origin,appId:artifact.appId,packageName:artifact.packageName,sourceEvidence:artifact.sourceEvidence},release:{manifestSha256:manifestSha,runtimePins},games:[],resources:{events:[],errors:[]},lifecycle:{included:options.mode==='lifecycle',separate_report:options.mode==='lifecycle',basic_smoke_is_not_recovery_acceptance:true}};
  if(healthProducerContract)report.health_producer_contract=healthProducerContract;
  const save=async()=>writeFile(join(out,'report.json'),JSON.stringify(redactor.sanitize(report),null,2)+'\n',{mode:0o600});await save();
@@ -286,7 +289,7 @@ export async function runPlayerAcceptance(options){
  const cleanup=async holder=>{
   if(!holder?.state)return;const{state,result}=holder;
   try{if(!result.ui_stopped)await stopUI(result);await holder.drain({final:false});
-   if(state.androidBaseline){assertOwnedPlayerArenaState(state,baseline);state.phase='cleanup';result.cleanup=await cleanupOwnedAndroidSession({state,arenaGames:ARENA_IDS,api:createNativeCleanupApi({page:{request:apiContext},origin,state,result,clean:redactor.clean}),until,newId:()=> 'player_cleanup_'+randomUUID().replaceAll('-',''),uiStopped:true,clean:redactor.clean});}
+   if(state.androidBaseline){assertOwned(state,baseline);state.phase='cleanup';result.cleanup=await cleanupOwnedAndroidSession({state,arenaGames:ARENA_IDS,api:createNativeCleanupApi({page:{request:apiContext},origin,state,result,clean:redactor.clean}),until,newId:()=> 'player_cleanup_'+randomUUID().replaceAll('-',''),uiStopped:true,clean:redactor.clean});}
    else{assert.equal(state.creations.length+state.actionRequests.length+state.inputsRequests.length,0,'MUTATION_WITHOUT_CLEAN_BASELINE');result.cleanup={passed:true,attempted:false,scope:'No gameplay mutation; inherited obligations untouched'};}
   }catch(error){result.cleanup={passed:false,error:redactor.clean(error.message)};}
   try{await holder.drain({final:true});}catch(error){result.observer_errors.push({stage:'final-drain',message:redactor.clean(error.message)});}
@@ -304,13 +307,13 @@ export async function runPlayerAcceptance(options){
   forward={serial:options.serial,local:'tcp:'+port,port,remote};ownedAndroidForward(localBefore,await forwards(),forward);report.resources.events.push({event:'forward-created',...forward});
   browser=await chromium.connectOverCDP('http://127.0.0.1:'+port,{isWebView:true,noDefaults:true,timeout:15000});assert.equal(browser.contexts().length,1,'EXACT_PLAYER_CONTEXT_REQUIRED');context=browser.contexts()[0];
   await until(()=>context.pages().length===1,'EXACT_PLAYER_PAGE');page=context.pages()[0];await until(()=>page.url()===artifact.entryUrl,'EXACT_PLAYER_ENTRY');page.setDefaultTimeout(45000);await page.waitForLoadState('networkidle',{timeout:30000});
-  probe=await installNativeFetchProbe(context,{clean:redactor.clean,healthProducerContract});await probe.attach(page);const dir='connection-'+(++connection);await mkdir(join(out,dir),{mode:0o700});evidence=await collectPlayerEvidence({context,page,origin,manifest,out:join(out,dir),redactor,result:report});
+  probe=await installNativeFetchProbe(context,{clean:redactor.clean,healthProducerContract});await probe.attach(page);const dir='connection-'+(++connection);await mkdir(join(out,dir),{mode:0o700});evidence=await collectPlayerEvidence({context,page,origin,manifest,out:join(out,dir),redactor,result:report,games:catalog});
   report.resources.events.push({event:'fresh-measured-webview',connection,evidence:dir,initial_unobserved_document_excluded:true});
   await page.reload({waitUntil:'domcontentloaded'});await page.locator('.player-lobby').waitFor();
  };
  try{
   const devices=(await execute('adb',playerAdbArgs(options,['devices','-l'],{device:false}),{timeout:10000})).stdout;
-  assert.ok(devices.split('\n').some(line=>line.split(/\s+/)[0]===options.serial&&line.split(/\s+/)[1]==='device'&&line.includes('usb:')),'EXACT_PHYSICAL_ANDROID_REQUIRED');report.physical_device=true;
+  report.device=assertPlayerDeviceTransport(devices,options);report.physical_device=report.device.physicalDevice;report.device.model=await adb('shell','getprop','ro.product.model');report.device.androidRelease=await adb('shell','getprop','ro.build.version.release');report.device.webview=await adb('shell','dumpsys','webviewupdate');
   report.installed_before=await installed();beforeForwards=await forwards();foreground=androidForeground(await adb('shell','dumpsys','activity','activities'));report.resources.beforeForwards=beforeForwards;report.resources.originalForeground=foreground;
   started=true;report.executed=true;await connect();
   apiContext=await httpRequest.newContext({ignoreHTTPSErrors:false,timeout:12000});
@@ -323,7 +326,7 @@ export async function runPlayerAcceptance(options){
    const login=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/player/login'&&r.request().method()==='POST');await tap(page.getByRole('button',{name:'登录',exact:true}));const response=await login;assert.equal(response.status(),200,'PLAYER_REAL_LOGIN_FAILED');redactor.remember(await response.json());
   }
   await page.locator('.player-games').waitFor();const session=await requiredRead('/api/player/session'),wallet=await requiredRead('/api/player/wallet?app_id='+artifact.appId),recovery=await requiredRead('/api/player/recovery?app_id='+artifact.appId);
-  baseline=assertPlayerLobbyBaseline({metadata,session,wallet,recovery,appId:artifact.appId,username:credentials.username});redactor.add(baseline.playerId);redactor.add(baseline.externalUserId);report.baseline=baseline;report.catalog=metadata.game_ids;
+  baseline=assertPlayerLobbyBaseline({metadata,session,wallet,recovery,appId:artifact.appId,username:credentials.username,profile});redactor.add(baseline.playerId);redactor.add(baseline.externalUserId);report.baseline=baseline;report.catalog=metadata.game_ids;
   if(initial.status===401){
    // The signed-out lobby intentionally reads LOGIN_REQUIRED before login.
    // Preserve that phase, then measure games in a new authenticated WebView.
@@ -332,10 +335,10 @@ export async function runPlayerAcceptance(options){
    assert.ok(denied.length>0&&denied.every(row=>row.path==='/api/player/session'&&row.body?.error?.code==='LOGIN_REQUIRED'),'UNEXPECTED_PRELOGIN_HTTP_FAILURE');
    assert.ok(report.login_phase_page_errors.every(row=>row.kind==='console'&&row.page_url===artifact.entryUrl&&/^Failed to load resource: the server responded with a status of 401 \(\)$/.test(row.message)),'UNEXPECTED_PRELOGIN_PAGE_ERROR');
    await closeConnection();await connect();assert.equal((await requiredRead('/api/player/session')).player?.id,baseline.playerId,'AUTHENTICATED_RECONNECT_IDENTITY_CHANGED');
-   assertPlayerZeroWallet(await requiredRead('/api/player/wallet?app_id='+artifact.appId),artifact.appId,baseline);assert.deepEqual((await requiredRead('/api/player/recovery?app_id='+artifact.appId)).sessions,[],'AUTHENTICATED_RECONNECT_OBLIGATION_CHANGED');
+   assertPlayerWallet(await requiredRead('/api/player/wallet?app_id='+artifact.appId),artifact.appId,baseline);assert.deepEqual((await requiredRead('/api/player/recovery?app_id='+artifact.appId)).sessions,[],'AUTHENTICATED_RECONNECT_OBLIGATION_CHANGED');
   }
-  await page.getByRole('region',{name:'账户余额'}).getByText('可用',{exact:false}).waitFor();assert.ok((await page.getByRole('region',{name:'账户余额'}).textContent()).includes(formatPlayerMinor('0',baseline.currencyScale)+' '+baseline.currencyId),'REAL_ZERO_BALANCE_UI_REQUIRED');await screenshot('player-lobby-zero-wallet');
-  const games=options.games||ARENA_IDS;report.full_catalog=games.length===ARENA_IDS.length;
+  await page.getByRole('region',{name:'账户余额'}).getByText('可用',{exact:false}).waitFor();assert.ok((await page.getByRole('region',{name:'账户余额'}).textContent()).includes(formatPlayerMinor(wallet.balance.available_minor,baseline.currencyScale)+' '+baseline.currencyId),'REAL_LEDGER_BALANCE_UI_REQUIRED');await screenshot('player-lobby-wallet');
+  const games=options.games||catalog;report.full_catalog=games.length===catalog.length;report.catalog_expected=[...catalog];
   if(options.mode==='lifecycle'){
    report.lifecycle={included:true,separate_report:true,negative_network_errors_remain_strict_failures:true,scenarios:[]};
    const before=evidence.responses.length,failed=[];const walletPath=origin+'/api/player/wallet?app_id='+artifact.appId;
@@ -355,10 +358,19 @@ export async function runPlayerAcceptance(options){
     // Each earlier UI/authority return completed before this new launch.
     assert.deepEqual((await requiredRead('/api/player/recovery?app_id='+artifact.appId)).sessions,[],'INHERITED_OBLIGATIONS_PRESERVED');
     if(options.mode==='basic')await waitForNativeLobbyWallet({page,evidence,probe,artifact,baseline,diagnostic:result.lobby_wallet_readiness={}});
-    await tap(page.locator('.player-game-card').filter({has:page.getByText(ARENA_GAMES[game].name,{exact:true})}));
+    await tap(page.locator('.player-game-card').filter({has:page.getByText(ARENA_GAMES[game]?.name??({thunder:'雷霆',tiger:'虎虎生财'}[game]),{exact:true})}));
     await until(()=>Boolean(state.token&&state.sessionId),'OBSERVED_PLAYER_LAUNCH_EXCHANGE');await until(()=>page.frames().some(f=>f.url()===origin+'/play/'+game),'EXACT_PLAYER_GAME_IFRAME');
     const frame=page.frames().find(f=>f.url()===origin+'/play/'+game);assert.equal(await page.locator('iframe').count(),1);result.probe_installation=await probe.requireInstalled(frame);
-    const read=createNativeCleanupApi({page:{request:apiContext},origin,state,result,clean:redactor.clean}),arenaSession=await read('/api/arena/session');result.baseline=assertAndroidSessionBaseline(state,arenaSession,ARENA_IDS);assertOwnedPlayerArenaState(state,baseline);
+    const read=createNativeCleanupApi({page:{request:apiContext},origin,state,result,clean:redactor.clean}),probability=LEGACY_IDS.includes(game),originalSession=await read(probability?'/api/play/'+game+'/session':'/api/arena/session');result.baseline=assertAndroidSessionBaseline(state,originalSession,ARENA_IDS);assertOwned(state,baseline);
+    if(probability){
+     assertPlayerProbabilitySession(originalSession,{state,baseline});const config=await read('/api/play/'+game+'/config');assert.equal(config.demoOnly,false,'PRODUCTION_PROBABILITY_CONFIG_REQUIRED');assert.equal(config.unitsPerCoin,10**baseline.currencyScale);assert.equal(config.admission_profile,PLAYER_INTERNAL_PROFILE);
+     state.phase='playing';const performanceNonce=randomUUID().replaceAll('-',''),performanceIdentity=await frame.evaluate(installProbabilityPerformanceProbe,{origin,game,nonce:performanceNonce,entryUrl:artifact.entryUrl});
+     try{result.probability=await runNativeActionOnce(()=>playOneProbabilityCycle(frame,game,{state,tap,readSession:()=>read('/api/play/'+game+'/session'),assertSession:s=>assertPlayerProbabilitySession(s,{state,baseline}),drain:()=>drain({final:false}),beforeAction:()=>assertOwned(state,baseline),beforePaidSpin:()=>frame.evaluate(({nonce})=>{const p=globalThis.__oasisProbabilityNormalFrames;if(p?.nonce!==nonce)throw Error('PROBABILITY_PERFORMANCE_OWNER_CHANGED');p.start();},{nonce:performanceNonce})}),result,redactor.clean);}
+     finally{try{const raw=await frame.evaluate(({nonce})=>{const p=globalThis.__oasisProbabilityNormalFrames;if(p?.nonce!==nonce)throw Error('PROBABILITY_PERFORMANCE_OWNER_CHANGED');return p.stop();},{nonce:performanceNonce});result.probabilityPerformance=summarizeProbabilityPerformance(raw,{identity:performanceIdentity,thresholds:quality.thresholds});}catch(error){result.probabilityPerformance={status:'insufficient',error:redactor.clean(error.message),formalPhysicalPerformanceAccepted:false};}}
+     assert.notEqual(result.probabilityPerformance.status,'fail','OBSERVED_PROBABILITY_PRESENTATION_JANK');
+     assert.equal(result.probability.cycleId,assertAndroidPaidCycle(state));await evidence.drain();result.probability.config=config;result.probability.results=playerProbabilityResultEvidence(evidence.responses,{state,baseline,origin});for(const round of result.probability.results)assert.equal(round.bet,result.probability.selectedBet,'OBSERVED_BET_SELECTION_MISMATCH');assertPlayerProbabilitySession(result.probability.finalSession,{state,baseline,complete:true});
+     await screenshot(game+'-settled-cycle');
+    }else{
     state.phase='playing';state.practiceRequested=true;await tap(frame.getByRole('button',{name:'免费练习',exact:false}));await tap(frame.getByRole('button',{name:'确认规则 · 准备开局',exact:true}));
     await until(()=>state.room?.status==='active','THIS_RUN_BOT_PRACTICE_ACTIVE');assertOwnedPlayerArenaState(state,baseline);await frame.locator('.arena-loading').waitFor({state:'hidden'});
     if(options.mode==='lifecycle'&&game==='run'){
@@ -371,6 +383,7 @@ export async function runPlayerAcceptance(options){
     touch=playerTouchFrame(frame,{tap,touch:async(type,x,y)=>evidence.cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x,y,id:1}],modifiers:0})});
     result.action=await runNativeActionOnce(()=>playOneArenaAction(touch.frame,game,()=>state.room,{touch:true,beforeAction:()=>assertOwnedPlayerArenaState(state,baseline)}),result,redactor.clean);
     await drain({final:false});assertAndroidOneAction(state,result.action);result.input_scope='ADB system taps; CDP trusted touch drags in the actual physical WebView. Not a physical finger or full swipe-quality/FPS claim.';await screenshot(game+'-accepted-action');
+    }
     state.returning=true;state.phase='returning';const returnedAt=Date.now();await adb('shell','input','keyevent','4');await sleep(200);
     const leave=frame.getByRole('button',{name:'确认离开',exact:true});if(!frame.isDetached()&&await leave.isVisible())await tap(leave);
     const confirm=frame.locator('[data-return="confirm"]');if(!frame.isDetached()&&await confirm.isVisible())await tap(confirm);
@@ -378,7 +391,7 @@ export async function runPlayerAcceptance(options){
     await until(()=>evidence.responses.some(r=>r.path==='/api/player/wallet'&&r.status===200&&r.body?.app_id===artifact.appId&&r.request_at>=returnedAt),'REAL_UI_RETURN_WALLET_REFRESH');await evidence.drain();const refresh=evidence.responses.filter(r=>r.path==='/api/player/wallet'&&r.status===200&&r.body?.app_id===artifact.appId&&r.request_at>=returnedAt).at(-1);
     assert.ok(refresh&&refresh.body,'UI_WALLET_REFRESH_BODY_MISSING');result.wallet_refresh={status:refresh.status,after_return:true,original_sha256:refresh.original_sha256,body:refresh.body,return_requested_at:returnedAt};
     await cleanup(active);const returnedSession=await requiredRead('/api/player/session'),returnedRecovery=await requiredRead('/api/player/recovery?app_id='+artifact.appId),returnedWallet=await requiredRead('/api/player/wallet?app_id='+artifact.appId);
-    assertPlayerReturnReadback({state,result,session:returnedSession,recovery:returnedRecovery,wallet:returnedWallet,baseline});assertAndroidOneAction(state,result.action);result.passed=nativeErrorsEmpty(result)&&evidence.errors.length===0;assert.equal(result.passed,true,'PLAYER_STRICT_OBSERVATION_FAILED');await screenshot(game+'-returned-zero-wallet');
+    assertPlayerReturnReadback({state,result,session:returnedSession,recovery:returnedRecovery,wallet:returnedWallet,baseline});if(!probability)assertAndroidOneAction(state,result.action);else{assert.equal(probabilityCoinsToMinor(result.probability.finalSession.balance,baseline.currencyScale),returnedWallet.balance.available_minor,'RETURNED_PROBABILITY_WALLET_MISMATCH');result.probability.finalSession=assertPlayerProbabilitySession(await read('/api/play/'+game+'/session'),{state,baseline,complete:true});}result.passed=nativeErrorsEmpty(result)&&evidence.errors.length===0;assert.equal(result.passed,true,'PLAYER_STRICT_OBSERVATION_FAILED');await screenshot(game+'-returned-wallet');
    }catch(error){result.error=redactor.clean(error.message);result.failure_action={status:error.status??null,code:error.code??null,request_body:error.requestBody??null,response_body:error.responseBody??null};await screenshot(game+'-failure').catch(e=>{result.screenshot_error=redactor.clean(e.message);});throw error;}
    finally{await touch?.release().catch(e=>{result.observer_errors.push({stage:'touch-release',message:redactor.clean(e.message)});});if(!result.cleanup)await cleanup(active);result.passed=result.passed&&nativeErrorsEmpty(result)&&result.cleanup?.passed===true;await save();}
    active=null;
@@ -396,7 +409,7 @@ export async function runPlayerAcceptance(options){
   if(forward){try{assert.deepEqual((await forwards()).filter(r=>r.local===forward.local),[{serial:forward.serial,local:forward.local,remote:forward.remote}],'OWNED_FORWARD_REPLACED_NO_REMOVE');await adb('forward','--remove',forward.local);}catch(error){report.resources.errors.push(redactor.clean(error.message));}}
   if(started){try{await adb('shell','am','force-stop',pkg);if(foreground){await adb('shell','am','start','-n',foreground);report.resources.restoredForeground=await waitForPlayerForegroundRestoration(()=>adb('shell','dumpsys','activity','activities'),foreground);}else report.resources.restoredForeground=androidForeground(await adb('shell','dumpsys','activity','activities'));assert.equal(report.resources.restoredForeground,foreground,'ORIGINAL_FOREGROUND_NOT_RESTORED');}catch(error){report.resources.errors.push(redactor.clean(error.message));}}
   if(beforeForwards){try{report.resources.afterForwards=await forwards();assertAndroidForwardsRestored(beforeForwards,report.resources.afterForwards);}catch(error){report.resources.errors.push(redactor.clean(error.message));}}
-  report.resources.passed=report.resources.errors.length===0;report.basic_passed=report.full_catalog&&report.games.length===ARENA_IDS.length&&report.games.every(g=>g.passed&&g.post_close_drained&&g.cleanup?.passed);report.passed=options.mode==='basic'&&report.basic_passed&&!report.failure&&report.resources.passed;report.finished_at=new Date().toISOString();await save();
+  report.resources.passed=report.resources.errors.length===0;report.basic_passed=report.full_catalog&&report.games.length===catalog.length&&report.games.every(g=>g.passed&&g.post_close_drained&&g.cleanup?.passed);report.passed=options.mode==='basic'&&report.basic_passed&&!report.failure&&report.resources.passed;report.finished_at=new Date().toISOString();await save();
  }
  return report;
 }

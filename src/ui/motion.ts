@@ -1,5 +1,6 @@
 import './motion.css';
 import type { Cell, SymbolId } from '../game/types';
+import { ReelAtlas, type ReelViewport } from './reel-viewport';
 
 type Point = { x: number; y: number };
 type Particle = Point & {
@@ -10,6 +11,9 @@ type Wave = Point & { life: number; maxLife: number; radius: number; color: stri
 type Bolt = { points: Point[]; branches: Point[][]; life: number; maxLife: number; strength: number };
 type Counter = { element: HTMLElement; from: number; value: number; target: number; start: number; duration: number; format: (value: number) => string; resolve: () => void };
 const DECORATIVE_SYMBOLS: SymbolId[] = ['sapphire', 'emerald', 'ruby', 'amethyst', 'pearl', 'amber', 'crown', 'chalice', 'emerald', 'ruby', 'sapphire', 'amethyst'];
+// Six rows cover the five-row window even between symbols. A second copy
+// keeps the wrap seamless without rasterizing two twelve-row strips.
+const REEL_CYCLE_ROWS = 6;
 const MAX_PARTICLES = 200;
 
 /** All randomness here is decorative. Only supplied server cells are used at reel landing. */
@@ -19,6 +23,7 @@ export class GameMotion {
   private atmosphere: HTMLElement | null = null;
   private resizeObserver: ResizeObserver;
   private media = matchMedia('(prefers-reduced-motion: reduce)');
+  private compactEffects = matchMedia('(max-width: 600px), (pointer: coarse)');
   private particles: Particle[] = [];
   private waves: Wave[] = [];
   private bolts: Bolt[] = [];
@@ -27,6 +32,8 @@ export class GameMotion {
   private reelAnimations: Animation[] = [];
   private delayTasks = new Map<ReturnType<typeof setTimeout>, () => void>();
   private reelLayer: HTMLElement | null = null;
+  private reelAtlas: ReelAtlas;
+  private reelViewports = new Map<HTMLElement, { view: ReelViewport; animation: Animation; landing: boolean }>();
   private generation = 0;
   private raf = 0;
   private lastFrame = 0;
@@ -49,6 +56,7 @@ export class GameMotion {
     private quick: () => boolean,
   ) {
     shell.classList.add('motion-enabled');
+    this.reelAtlas = new ReelAtlas(board, symbolMarkup);
     this.canvas = document.createElement('canvas');
     this.canvas.className = 'motion-canvas';
     this.canvas.setAttribute('aria-hidden', 'true');
@@ -87,9 +95,19 @@ export class GameMotion {
     this.heroHeight = this.shell.querySelector<HTMLElement>('.hero')?.offsetHeight ?? this.height * .25;
     this.boardBounds = { x: boardRect.left - shellRect.left, y: boardRect.top - shellRect.top, width: boardRect.width, height: boardRect.height };
     const ratio = Math.min(devicePixelRatio || 1, 1.75);
-    this.canvas.width = Math.max(1, Math.round(this.width * ratio));
-    this.canvas.height = Math.max(1, Math.round(this.height * ratio));
+    const pixelWidth = Math.max(1, Math.round(this.width * ratio));
+    const pixelHeight = Math.max(1, Math.round(this.height * ratio));
+    // Assigning an unchanged canvas dimension still clears and reallocates its
+    // backing store. Spins and win effects measure often without resizing.
+    if (this.canvas.width !== pixelWidth) this.canvas.width = pixelWidth;
+    if (this.canvas.height !== pixelHeight) this.canvas.height = pixelHeight;
     this.context?.setTransform(ratio, 0, 0, ratio, 0, 0);
+    if (this.compactEffects.matches) {
+      const reelWidth = (this.board.clientWidth - 7) / 6;
+      const cellHeight = (this.board.clientHeight - 1) / 5;
+      this.reelAtlas.prepare(reelWidth, cellHeight);
+      this.reelViewports.forEach(({ view }) => view.resize(reelWidth, cellHeight, this.board.clientHeight - 2));
+    }
   };
 
   private onVisibility = () => {
@@ -141,24 +159,32 @@ export class GameMotion {
     layer.className = 'motion-reels';
     layer.setAttribute('aria-hidden', 'true');
     const cellHeight = (this.board.clientHeight - 1) / 5;
+    const raster = this.compactEffects.matches && this.reelAtlas.ready;
     for (let column = 0; column < 6; column++) {
       const reel = document.createElement('div');
       reel.className = 'motion-reel';
       const strip = document.createElement('div');
       strip.className = 'motion-reel-strip';
       // Two identical strips make the wrap mathematically seamless; no outcome is sampled here.
-      const cycle = Array.from({ length: 12 }, (_, row) => this.reelSymbol(DECORATIVE_SYMBOLS[(row * 5 + column * 3 + this.generation) % DECORATIVE_SYMBOLS.length], cellHeight)).join('');
-      strip.innerHTML = cycle + cycle;
+      const symbols = Array.from({ length: REEL_CYCLE_ROWS }, (_, row) => ({ symbol: DECORATIVE_SYMBOLS[(row * 5 + column * 3 + this.generation) % DECORATIVE_SYMBOLS.length] }));
+      const view = raster ? this.reelAtlas.viewport(reel, (this.board.clientWidth - 7) / 6, cellHeight, this.board.clientHeight - 2) : null;
+      if (view) view.setCells([...symbols, ...symbols]);
+      else {
+        const cycle = symbols.map(cell => this.reelSymbol(cell.symbol, cellHeight)).join('');
+        strip.innerHTML = cycle + cycle;
+      }
       reel.appendChild(strip); layer.appendChild(reel);
       const animation = this.track(strip.animate([
-        { transform: `translate3d(0,${-12 * cellHeight}px,0)` },
+        { transform: `translate3d(0,${-REEL_CYCLE_ROWS * cellHeight}px,0)` },
         { transform: 'translate3d(0,0,0)' },
-      ], { duration: (this.quick() ? 450 : 650) + column * 21, iterations: Infinity, easing: 'linear' }));
+      ], { duration: ((this.quick() ? 450 : 650) + column * 21) * REEL_CYCLE_ROWS / 12, iterations: Infinity, easing: 'linear' }));
       animation.currentTime = column * 47;
       this.reelAnimations.push(animation);
+      if (view) this.reelViewports.set(reel, { view, animation, landing: false });
     }
     this.reelLayer = layer;
     this.board.appendChild(layer);
+    this.drawReels();
     this.lightning(.45);
   }
 
@@ -173,13 +199,22 @@ export class GameMotion {
       await this.delay(column * (fast ? 42 : 100));
       if (generation !== this.generation || this.disposed) return;
       const reel = node as HTMLElement;
-      const strip = reel.firstElementChild as HTMLElement;
+      const strip = reel.querySelector<HTMLElement>(':scope > .motion-reel-strip')!;
       this.reelAnimations[column]?.cancel();
       const final = Array.from({ length: 5 }, (_, row) => finalBoard[row * 6 + column]);
       if (final.some(cell => !cell)) { reel.classList.add('stopped'); return; }
       const symbols = final.map(cell => this.reelSymbol(cell.symbol, cellHeight, cell.multiplier));
-      for (let row = 0; row < 15; row++) symbols.push(this.reelSymbol(DECORATIVE_SYMBOLS[(row * 7 + column * 3) % DECORATIVE_SYMBOLS.length], cellHeight));
-      strip.innerHTML = symbols.join('');
+      const viewport = this.reelViewports.get(reel);
+      const rasterCells = final.map(cell => ({ symbol: cell.symbol, multiplier: cell.multiplier }));
+      // The reveal starts ten rows down; five final plus ten decorative rows
+      // cover that viewport. Rows beyond it are never visible.
+      for (let row = 0; row < 10; row++) {
+        const symbol = DECORATIVE_SYMBOLS[(row * 7 + column * 3) % DECORATIVE_SYMBOLS.length];
+        symbols.push(this.reelSymbol(symbol, cellHeight));
+        rasterCells.push({ symbol, multiplier: undefined });
+      }
+      if (viewport) viewport.view.setCells(rasterCells);
+      else strip.innerHTML = symbols.join('');
       reel.classList.add('landing');
       const animation = this.track(strip.animate([
         { transform: `translate3d(0,${-10 * cellHeight}px,0)`, offset: 0 },
@@ -187,12 +222,35 @@ export class GameMotion {
         { transform: `translate3d(0,${-cellHeight * .035}px,0)`, offset: .94 },
         { transform: 'translate3d(0,0,0)', offset: 1 },
       ], { duration: fast ? 330 : 670, easing: 'cubic-bezier(.12,.65,.14,1)', fill: 'forwards' }));
+      if (viewport) { viewport.animation = animation; viewport.landing = true; this.drawReels(); }
       await animation.finished.catch(() => undefined);
       if (generation !== this.generation || this.disposed) return;
       reel.classList.add('stopped');
       this.waves.push({ x: this.boardBounds.x + (column + .5) * this.boardBounds.width / 6, y: this.boardBounds.y + this.boardBounds.height, life: .28, maxLife: .28, radius: cellHeight * .45, color: '#81c9ff' });
     }));
-    if (generation === this.generation) { layer.remove(); this.reelLayer = null; this.reelAnimations = []; }
+    if (generation === this.generation) { this.clearReelViewports(); layer.remove(); this.reelLayer = null; this.reelAnimations = []; }
+  }
+
+  private drawReels(): void {
+    this.reelViewports.forEach(({ view, animation, landing }, reel) => {
+      if (reel.classList.contains('stopped')) return;
+      // Read the original WAAPI clock/easing, including pause, column phase and
+      // overshoot; the empty timing strip has no pixels to rasterize.
+      const progress = animation.effect?.getComputedTiming().progress;
+      if (progress == null) return;
+      let rows = -REEL_CYCLE_ROWS * (1 - progress);
+      if (landing) {
+        rows = progress <= .84 ? -10 + 10.1 * progress / .84
+          : progress <= .94 ? .1 - .135 * (progress - .84) / .1
+            : -.035 + .035 * (progress - .94) / .06;
+      }
+      view.draw(rows);
+    });
+  }
+
+  private clearReelViewports(): void {
+    this.reelViewports.forEach(({ view }) => view.dispose());
+    this.reelViewports.clear();
   }
 
   cancelReels(): void {
@@ -203,6 +261,7 @@ export class GameMotion {
     if (this.reelLayer) this.reelLayer.getAnimations({ subtree: true }).forEach(animation => { animation.cancel(); this.activeAnimations.delete(animation); });
     for (const [timer, resolve] of this.delayTasks) { clearTimeout(timer); resolve(); }
     this.delayTasks.clear();
+    this.clearReelViewports();
     this.reelLayer?.remove(); this.reelLayer = null;
   }
 
@@ -289,7 +348,8 @@ export class GameMotion {
   }
 
   private addParticle(particle: Omit<Particle, 'maxLife' | 'angle' | 'spin'>) {
-    if (this.particles.length >= MAX_PARTICLES) this.particles.shift();
+    const limit = this.compactEffects.matches ? 120 : MAX_PARTICLES;
+    if (this.particles.length >= limit) this.particles.splice(0, this.particles.length - limit + 1);
     this.particles.push({ ...particle, maxLife: particle.life, angle: this.random() * Math.PI * 2, spin: (this.random() - .5) * 8 });
   }
 
@@ -298,11 +358,12 @@ export class GameMotion {
     if (this.disposed || document.hidden || this.reduced()) return;
     const dt = Math.min(.034, this.lastFrame ? (now - this.lastFrame) / 1000 : .016);
     this.lastFrame = now;
+    this.drawReels();
     const context = this.context;
     if (context) {
       context.clearRect(0, 0, this.width, this.height);
       if (now >= this.nextAmbient) {
-        this.nextAmbient = now + 120;
+        this.nextAmbient = now + (this.compactEffects.matches ? 180 : 120);
         this.addParticle({ x: this.width * (.05 + this.random() * .9), y: this.heroHeight * (.3 + this.random() * .75), vx: 4 + this.random() * 8, vy: -8 - this.random() * 19, life: 1.7 + this.random(), radius: .7 + this.random() * 1.2, color: this.random() > .3 ? '#82d4ff' : '#f4cc7d', kind: 'spark' });
       }
       if (now >= this.nextArc) { this.nextArc = now + 3900 + this.random() * 3200; if (!this.celebration) this.lightning(.3); }
@@ -403,6 +464,7 @@ export class GameMotion {
     this.disposed = true;
     cancelAnimationFrame(this.raf); this.raf = 0;
     this.cancelReels();
+    this.reelAtlas.dispose();
     this.activeAnimations.forEach(animation => animation.cancel()); this.activeAnimations.clear();
     for (const counter of [...this.counters.values()]) this.finishCounter(counter);
     this.resizeObserver.disconnect();

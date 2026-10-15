@@ -207,7 +207,7 @@ export async function collectHealth(config,probes,{now=Date.now()}={}){
    const valid=['platform','external','reference','unconfigured'].every(key=>Number.isSafeInteger(providers[key])&&providers[key]>=0)&&
     Number.isSafeInteger(value.external_required)&&value.external_required>=0&&Array.isArray(value.codes)&&value.codes.every(code=>/^[A-Z_]+$/.test(code))&&
     ['ok','failed'].includes(value.status)&&(value.status==='ok')===(value.codes.length===0)&&
-    !(config.production&&providers.reference>0)&&!(value.external_required>0&&!value.codes.includes('EXTERNAL_WALLET_PROBE_REQUIRED'));
+    !(config.production&&providers.reference>0)&&!(value.external_required>0&&value.external_connectivity!=='partner-owned'&&!value.codes.includes('EXTERNAL_WALLET_PROBE_REQUIRED'));
    checks.push(valid?check(name,value.codes,metrics):check(name,['DEPENDENCY_REPORT_INVALID']));
   }else if(name==='wallet'&&config.production){
    checks.push(check(name,['DEPENDENCY_REPORT_INVALID']));

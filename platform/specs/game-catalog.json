@@ -24,7 +24,7 @@
       "ruleVersion": "pvp-carrom-v1.0.0",
       "status": "local-sandbox-game",
       "designStage": "playable-build-physical-device-review-pending",
-      "conceptPath": "output/design/pvp-arena-concepts-v1/01-carrom.png",
+      "conceptPath": "platform/public/assets/01-carrom.png",
       "rulesPath": "platform/specs/game-rules-v1.md",
       "feeBpsDefault": 500,
       "implementationStatus": "local-authoritative-multiplayer"
@@ -44,7 +44,7 @@
       "ruleVersion": "pvp-match-v2.0.0",
       "status": "local-sandbox-sample",
       "designStage": "playable-sample-physical-device-review-pending",
-      "conceptPath": "output/design/pvp-arena-concepts-v1/02-match.png",
+      "conceptPath": "platform/public/assets/02-match.png",
       "rulesPath": "platform/specs/game-rules-v1.md",
       "feeBpsDefault": 500,
       "implementationStatus": "local-authoritative-multiplayer"
@@ -64,7 +64,7 @@
       "ruleVersion": "pvp-golf-v1.1.0",
       "status": "local-sandbox-sample",
       "designStage": "playable-sample-physical-device-review-pending",
-      "conceptPath": "output/design/pvp-arena-concepts-v1/03-golf.png",
+      "conceptPath": "platform/public/assets/03-golf.png",
       "rulesPath": "platform/specs/game-rules-v1.md",
       "feeBpsDefault": 500,
       "implementationStatus": "local-authoritative-multiplayer"
@@ -82,7 +82,7 @@
       "ruleVersion": "pvp-darts-v1.0.0",
       "status": "local-sandbox-game",
       "designStage": "playable-build-physical-device-review-pending",
-      "conceptPath": "output/design/pvp-arena-concepts-v1/04-darts.png",
+      "conceptPath": "platform/public/assets/04-darts.png",
       "rulesPath": "platform/specs/game-rules-v1.md",
       "feeBpsDefault": 500,
       "implementationStatus": "local-authoritative-multiplayer"
@@ -101,7 +101,7 @@
       "ruleVersion": "pvp-ludo-v1.1.0",
       "status": "local-sandbox-game",
       "designStage": "playable-build-physical-device-review-pending",
-      "conceptPath": "output/design/pvp-arena-concepts-v1/05-ludo.png",
+      "conceptPath": "platform/public/assets/05-ludo.png",
       "rulesPath": "platform/specs/game-rules-v1.md",
       "feeBpsDefault": 500,
       "implementationStatus": "local-authoritative-multiplayer"
@@ -119,7 +119,7 @@
       "ruleVersion": "pvp-pool-v1.0.0",
       "status": "local-sandbox-game",
       "designStage": "playable-build-physical-device-review-pending",
-      "conceptPath": "output/design/pvp-arena-concepts-v1/06-pool.png",
+      "conceptPath": "platform/public/assets/06-pool.png",
       "rulesPath": "platform/specs/game-rules-v1.md",
       "feeBpsDefault": 500,
       "implementationStatus": "local-authoritative-multiplayer"
@@ -139,7 +139,7 @@
       "ruleVersion": "pvp-bowling-v1.1.0",
       "status": "local-sandbox-game",
       "designStage": "playable-build-physical-device-review-pending",
-      "conceptPath": "output/design/pvp-arena-concepts-v1/07-bowling.png",
+      "conceptPath": "platform/public/assets/07-bowling.png",
       "rulesPath": "platform/specs/game-rules-v1.md",
       "feeBpsDefault": 500,
       "implementationStatus": "local-authoritative-multiplayer"
@@ -157,7 +157,7 @@
       "ruleVersion": "pvp-jackaroo-v1.0.0",
       "status": "local-sandbox-game",
       "designStage": "playable-build-physical-device-review-pending",
-      "conceptPath": "output/design/pvp-arena-concepts-v1/08-jackaroo.png",
+      "conceptPath": "platform/public/assets/08-jackaroo.png",
       "rulesPath": "platform/specs/game-rules-v1.md",
       "feeBpsDefault": 500,
       "implementationStatus": "local-authoritative-multiplayer"
@@ -176,7 +176,7 @@
       "ruleVersion": "pvp-domino-v1.0.0",
       "status": "local-sandbox-game",
       "designStage": "playable-build-physical-device-review-pending",
-      "conceptPath": "output/design/pvp-arena-concepts-v1/09-domino.png",
+      "conceptPath": "platform/public/assets/09-domino.png",
       "rulesPath": "platform/specs/game-rules-v1.md",
       "feeBpsDefault": 500,
       "implementationStatus": "local-authoritative-multiplayer"
@@ -196,7 +196,7 @@
       "ruleVersion": "pvp-run-v2.1.0",
       "status": "local-sandbox-game",
       "designStage": "playable-build-physical-device-review-pending",
-      "conceptPath": "output/design/pvp-arena-concepts-v1/10-run.png",
+      "conceptPath": "platform/public/assets/10-run.png",
       "rulesPath": "platform/specs/game-rules-v1.md",
       "feeBpsDefault": 500,
       "implementationStatus": "local-authoritative-multiplayer"

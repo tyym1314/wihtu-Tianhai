@@ -84,8 +84,8 @@ function PlayerGame({gameId,client,recoveryRevision,onReturn,backHandler,initial
   if(state!=='loading'){setError('原游戏尚未确认返回。请重试连接后从游戏内返回大厅。');setState('error');}
  }});
  useEffect(()=>{backHandler.current=back;return()=>{if(backHandler.current===back)backHandler.current=null;};},[backHandler,back]);
- return <section className="player-game" data-state={state} aria-label={ARENA_GAMES[gameId]?.name||gameId}>
-  <div className="player-game-bar"><button onClick={back}>返回大厅</button><strong>{ARENA_GAMES[gameId]?.name||gameId}</strong></div>
+ return <section className="player-game" data-state={state} aria-label={ARENA_GAMES[gameId]?.name||({thunder:'雷霆',tiger:'虎虎生财'}[gameId]||gameId)}>
+  <div className="player-game-bar"><button onClick={back}>返回大厅</button><strong>{ARENA_GAMES[gameId]?.name||({thunder:'雷霆',tiger:'虎虎生财'}[gameId]||gameId)}</strong></div>
   <div className="player-game-mount" ref={mount} aria-busy={state==='loading'}/>
   {state!=='loaded'&&<div className="player-game-status" role="status"><h2>{state==='loading'?'正在连接游戏':'连接未完成'}</h2><p>{state==='error'?error:'请稍候，正在准备游戏画面。'}</p>{state==='error'&&<button className="player-primary" onClick={()=>setRevision(value=>value+1)}>重试连接</button>}</div>}
  </section>;
@@ -136,6 +136,7 @@ export default function Player(){
     {!session?<Credentials client={client} canRegister={metadata.admission_open} onLogin={login}/>:<>
      <p className="player-welcome">{session.player.username}，选择一款游戏开始。</p>
      {metadata.free_training_only&&<p role="status">免费练习 · 对手为 BOT · 不扣金币</p>}
+     {metadata.internal_game_coins&&<p role="status">竞技游戏为免费 BOT 练习；雷霆与虎虎生财使用平台账本记录的内部游戏金币，不支持充值、提现或兑换。</p>}
      <MoneyBalance wallet={wallet} loading={walletLoading} error={walletError} onRetry={()=>setWalletRevision(value=>value+1)}/>
      {changingPassword?<PasswordChange client={client} onCancel={()=>setChangingPassword(false)} onComplete={notice=>{setChangingPassword(false);setAccountNotice(notice);setSession(null);setRecoverable([]);setReauth(false);}}/>:<>
      <button disabled={busy} onClick={()=>{setAccountNotice('');setChangingPassword(true);}}>修改密码</button>

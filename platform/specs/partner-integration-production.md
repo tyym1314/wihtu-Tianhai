@@ -1,0 +1,162 @@
+# OASIS 游戏平台 · 第三方 App 正式接入指南
+
+平台入口：`https://game.tianyahuyu.com`　|　协议版本：`gp-api-v1`　|　机器契约：[openapi.json](openapi.json)
+
+本指南面向接入方（第三方 App）的后端与客户端工程师。接入后，你的用户使用**你的账号体系**登录，游戏内金币**始终保存在你的钱包**里：平台在开局时通过签名请求冻结/扣除入场费，结束后派奖。平台不保存你的用户余额，也不提供充值或提现。
+
+## 1. 可接入的游戏
+
+| game_id | 名称 | 类型 | 人数 |
+|---|---|---|---|
+| `match` | 三消对战 | 竞技 | 2–4 |
+| `golf` | 绿洲高尔夫 | 竞技 3D | 2–4 |
+| `bowling` | 保龄球对决 | 竞技 3D | 2–4 |
+| `run` | 沙丘竞速 | 竞技 3D | 2–4 |
+| `carrom` | Carrom 弹盘 | 竞技 | 2 / 2v2 |
+| `pool` | 八球对决 | 竞技 | 2 |
+| `darts` | 飞镖对决 | 竞技 | 2 |
+| `ludo` | Ludo 快速版 | 棋类 | 2 / 4 |
+| `jackaroo` | Jackaroo 搭档赛 | 棋牌 | 2v2 |
+| `domino` | 多米诺对战 | 棋牌 | 2 / 4 |
+| `towerlink` | 连线占塔 | 策略 | 2–4 |
+| `thunder` | 雷霆 | 概率 | 1 |
+| `tiger` | 虎虎生财 | 概率 | 1 |
+
+竞技游戏：玩家自建好友房（入场 10/50/100/200 币），全员准备后冻结并扣除入场费，冠军（或胜队）分得奖池，平台按 App 配置的服务费率（默认 5%）收取服务费。每款都提供免费 BOT 练习（不扣币）。所有判定都在平台服务端完成，客户端不能提交分数。
+
+概率游戏：每次投注是一个完整周期（含免费转），开奖前先在你的钱包冻结投注与最高派彩责任；数学模型为 1000 万周期仿真验证的 RTP 98%/99% 两档，未经第三方认证。
+
+## 2. 开通流程
+
+1. **平台开账号**：平台管理员在管理台“合作方与应用”为你创建合作方账号，通过安全渠道发送初始密码。
+2. **登录工作台**：打开 `https://game.tianyahuyu.com`，选择“合作方”登录，首次登录后在“账户安全”修改密码。
+3. **创建 App**：新 App 默认**暂停**，并要求绑定你自己的钱包。创建结果中的 `key_id` 与 `secret_base64`（合作方→平台签名密钥）**只显示一次**，请立即存入你的后端密钥管理。丢失时可在“接入”页创建备用密钥再撤销旧密钥。
+4. **实现钱包接口**（第 5 节），部署到一个**公网 HTTPS** 域名（只解析到公网地址、证书有效、不跳转）。
+5. **绑定钱包**：在“接入”页填写钱包 Origin（如 `https://wallet.example.com`）以及你生成的**平台→钱包**签名密钥（Key ID + 32 字节以上随机数的 Base64）。绑定只能在 App 暂停且尚无任何会话/账务时进行，绑定后永久锁定。
+6. **余额探测**：输入一个已存在的用户 ID，点击“查询玩家余额”，确认签名、scope、币种精度都正确。
+7. **启用 App**：在应用设置中把状态改为“启用”，选择开放的游戏。
+
+> 建议先创建一个“测试 App”，绑定你的预发钱包和测试用户完成联调；再创建“正式 App”绑定正式钱包。两个 App 的用户、订单与密钥完全隔离。
+
+## 3. 后端：为用户创建游戏会话
+
+用户在你的 App 内点击某款游戏时，由**你的后端**（不能是客户端）签名调用：
+
+```
+POST https://game.tianyahuyu.com/v1/sessions
+```
+
+```json
+{
+  "partner_id": "<你的 partner_id>",
+  "app_id": "<app_id>",
+  "environment": "production",
+  "wallet_scope_id": "<App 的 wallet_scope_id>",
+  "currency_id": "COIN",
+  "request_id": "launch_7f3c...（你持久化的唯一业务号）",
+  "external_user_id": "<你的用户 ID，1–128 位 [A-Za-z0-9_-]>",
+  "game_id": "bowling",
+  "locale": "zh-CN",
+  "host_platform": "android"
+}
+```
+
+返回：`session_id`、`launch_code`（60 秒内一次有效）、`expires_at`、`entry_url`。
+
+- 签名规则见[接入教程第 3 节](integration-guide.md#3-hmac-sha256-签名规范--request-authentication)与[固定签名向量](examples/signature-vector.json)；Node.js 可直接使用 [sdk-node.mjs](examples/sdk-node.mjs) 的 `OasisClient.createSession()`。
+- 网络超时请用**相同 request_id 和相同正文**重试，平台返回同一结果；新的启动意图使用新 request_id。
+- 使用平台启动页（第 4.1 节）时**不要传 `host_origin`**。只有在你自己的网页里用 iframe 嵌入（第 4.2 节）时，才传入并在“接入”页登记你的网页 Origin。
+
+## 4. 客户端：打开游戏
+
+### 4.1 原生 App（Android / iOS WebView，推荐）
+
+用全屏 WebView 打开：
+
+```
+https://game.tianyahuyu.com/launch/?game=<game_id>#code=<launch_code>&session=<session_id>
+```
+
+启动码放在 `#` 片段中，不会发送到任何服务器日志；页面加载后会立即从地址栏移除。
+
+WebView 设置：开启 JavaScript 与 DOM Storage；允许媒体自动播放（Android `setMediaPlaybackRequiresUserGesture(false)`）；不要开启文件访问与混合内容；只允许 `https://game.tianyahuyu.com` 顶层导航。
+
+**游戏 → App 消息**（JSON 字符串）：
+
+| 平台 | 接收方式 |
+|---|---|
+| Android | `webView.addJavascriptInterface(obj, "OasisApp")`，实现 `@JavascriptInterface void postMessage(String json)` |
+| iOS | `WKUserContentController.add(handler, name: "oasis")` |
+| React Native | `onMessage`（`window.ReactNativeWebView.postMessage`） |
+
+| type | 含义 | App 处理 |
+|---|---|---|
+| `loaded` | 会话兑换成功，游戏已加载 | 可隐藏原生加载层 |
+| `close` | 玩家选择返回 | 关闭 WebView，回到游戏入口；随后从你的后端刷新余额 |
+| `reauth_required` | 长时间对局令牌过期 | 后端用 `resume_session_id=<session_id>` 再次调用 `/v1/sessions`，用新启动码重新打开启动页 |
+| `error` | 启动失败（启动码过期等） | 提示用户并允许重新进入 |
+
+**系统返回键**：调用 `webView.evaluateJavascript("window.OasisLauncher&&window.OasisLauncher.requestBack()", null)`。游戏会自行处理“对局中离开”的确认，确认后再发送 `close`。不要在对局中直接销毁 WebView（服务端对局仍会继续计时，断线 30 秒判弃权）。
+
+**切后台**：WebView 暂停即可；回到前台游戏会从服务端恢复状态。
+
+### 4.2 H5 网页嵌入
+
+在你自己的网页中使用 [H5 SDK](/sdk/oasis-h5.mjs)：
+
+```js
+import { OasisHost } from 'https://game.tianyahuyu.com/sdk/oasis-h5.mjs';
+const game = new OasisHost({
+  platformOrigin: 'https://game.tianyahuyu.com',
+  gameId: 'match',
+  requestLaunch: ({ gameId, resumeSessionId }) => yourBackend.launch(gameId, resumeSessionId), // 返回 /v1/sessions 的结果
+  onEvent: e => { if (e.type === 'return_requested') game.destroy(); }
+});
+await game.mount(document.querySelector('#game'));
+```
+
+此方式需在 `/v1/sessions` 传入 `host_origin`（你的网页 Origin），并在“接入”页登记该 Origin。
+
+## 5. 钱包接口（由你实现）
+
+平台以 `platform-to-wallet` 方向签名调用你的钱包，签名格式与第 3 节相同（方向字段不同）。所有资金命令以 `request_id` 作为持久幂等业务号：重复请求必须返回原结果；同业务号不同正文返回 `409 IDEMPOTENCY_CONFLICT`。
+
+| 方法 | 路径 | 作用 |
+|---|---|---|
+| GET | `/wallet/v1/scopes/{wallet_scope_id}/currencies/{currency_id}/users/{external_user_id}/balance` | 查询可用/冻结余额 |
+| POST | `/wallet/v1/reservations` | 冻结单个玩家入场费 |
+| POST | `/wallet/v1/matches/capture` | 原子扣除本局全部冻结 |
+| POST | `/wallet/v1/matches/release` | 未成局整局释放并写取消墓碑 |
+| POST | `/wallet/v1/matches/settle` | 原子派奖 + 服务费，或作废退款 |
+| POST | `/wallet/v1/probability/authorize` | 冻结投注 + 最高派彩责任 |
+| POST | `/wallet/v1/probability/accept` | 受理（之后平台才开奖） |
+| POST | `/wallet/v1/probability/cancel` | 受理前取消 |
+| POST | `/wallet/v1/probability/settle` | 按固定结果结算 |
+| GET | `/wallet/v1/operations/{operation_id}` | 按原业务号查单 |
+| GET | `/wallet/v1/matches/{match_id}` | 查比赛资金状态 |
+| GET | `/wallet/v1/probability/authorizations/{authorization_id}` | 查概率周期状态 |
+
+金额、状态机与错误码详见[钱包协议](wallet-protocol.md)与 openapi 中 `PartnerWallet` 标签。要点：
+
+- 金额为最小单位整数字符串（默认精度 2，即 `"10000"` = 100 币）。
+- 响应需在 3 秒内返回、`Content-Type: application/json`、不超过 128 KiB、不跳转。超时视为“结果未知”，平台会**用原业务号查单**，不会另起一笔扣款。
+- 钱包余额约束应与你 App 内其他消费（送礼、转赠等）共用同一原子账本，避免透支。
+- [参考实现](../server/wallet/index.mjs) 基于 PostgreSQL，演示合作方即直接运行它。
+
+## 6. 查单与对账
+
+- `GET /v1/matches/{match_id}`：本 App 的比赛状态与结算明细。
+- `GET /v1/operations/{operation_id}`：平台侧资金操作的镜像与对账状态。
+- 宿主消息（`loaded` / `close`）只是展示层信号，不代表扣款或派奖；余额以你的钱包账本为准。
+
+## 7. 演示合作方
+
+`https://partner-demo.43.98.202.236.sslip.io` 是一个完整运行的示例第三方：它拥有独立数据库的钱包（演示币），后端签名创建会话并通过启动页打开游戏。源码见 `platform/examples/partner-demo/server.mjs`。在手机浏览器中打开即可体验与真实接入完全相同的流程。
+
+## 8. 上线前检查
+
+- [ ] 签名向量自测通过；密钥只在后端，App 包与网页中没有任何 secret。
+- [ ] 钱包：并发重复请求只记一次账；超时后查单可恢复；取消墓碑阻止迟到扣款。
+- [ ] 测试 App 上完成：免费练习、2 人付费房（一方中途退出）、概率游戏至少一次中奖，并核对双方账务。
+- [ ] Android/iOS：系统返回、切后台、断网重连、进程被杀后重新进入。
+- [ ] 正式 App 绑定正式钱包并启用；测试用户与测试币不迁入正式环境。

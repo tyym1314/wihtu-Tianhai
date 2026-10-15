@@ -16,8 +16,8 @@ export function performanceLobbyWalletUiReady(observation,{artifact,baseline}){
  assert.equal(ui.alertCount,0,'PERFORMANCE_LOBBY_WALLET_ERROR');
  assert.ok(ui.statusCount===0||ui.statusCount===1,'PERFORMANCE_LOBBY_STATUS_AMBIGUOUS');
  if(!ui.lobbyVisible||!ui.visible||ui.regionCount!==1||ui.statusCount!==1||ui.statusTag!=='DIV')return false;
- const zero=formatPlayerMinor('0',baseline.currencyScale)+' '+baseline.currencyId;
- assert.deepEqual(ui.paragraphs,['可用 '+zero,'冻结 '+zero],'PERFORMANCE_LOBBY_ZERO_BALANCE_UNPROVEN');
+ const available=formatPlayerMinor(baseline.availableMinor??'0',baseline.currencyScale)+' '+baseline.currencyId,zero=formatPlayerMinor('0',baseline.currencyScale)+' '+baseline.currencyId;
+ assert.deepEqual(ui.paragraphs,['可用 '+available,'冻结 '+zero],baseline.profile==='firstparty-internal-games-v1'?'PERFORMANCE_LOBBY_BALANCE_UNPROVEN':'PERFORMANCE_LOBBY_ZERO_BALANCE_UNPROVEN');
  return true;
 }
 

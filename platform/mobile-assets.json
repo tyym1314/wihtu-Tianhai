@@ -33,26 +33,26 @@
     "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
   },
   {
-    "source": "public/assets/thunder-main.png",
-    "target": "public/assets/thunder-main-mobile-d6c646ceb2.webp",
-    "source_sha256": "5c5a75b808a20d1470badfde6caa775d89ef56df9b97ef1889264faca26f7118",
-    "target_sha256": "d6c646ceb249d4d47dc0a905da6d5eaa26f50475344c5fd138b7cbc5fb3c0074",
-    "source_bytes": 2781163,
-    "target_bytes": 499608,
-    "original_url": "/assets/thunder-main.png",
-    "optimized_url": "/assets/thunder-main-mobile-d6c646ceb2.webp",
-    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+    "source": "public/assets/thunder-main-release.png",
+    "target": "public/assets/thunder-main-release-mobile-c4e0f9a832.webp",
+    "source_sha256": "0ee357ec4d88fd3f3295c6df87d28a1b3566152791564074a2787cc1cf2d6121",
+    "target_sha256": "c4e0f9a8322006b6d56f8eeec833f9a51132324d7393f7e7c25c5fee12589b84",
+    "source_bytes": 2754298,
+    "target_bytes": 486666,
+    "original_url": "/assets/thunder-main-release.png",
+    "optimized_url": "/assets/thunder-main-release-mobile-c4e0f9a832.webp",
+    "codec": "WebP quality92, alpha100, original generated dimensions, ICC retained"
   },
   {
-    "source": "public/assets/hero-scene.png",
-    "target": "public/assets/hero-scene-mobile-b14b40ee3c.webp",
-    "source_sha256": "fd9cd0901fbe4e91b26288ef692e458cfe9bb34a95833abbeb3ce58a051a5efc",
-    "target_sha256": "b14b40ee3c989ff46874934727010e9ea77905bca1734c68c82b4d4ef4efc86c",
-    "source_bytes": 2614001,
-    "target_bytes": 458916,
-    "original_url": "/assets/hero-scene.png",
-    "optimized_url": "/assets/hero-scene-mobile-b14b40ee3c.webp",
-    "codec": "WebP quality92, alpha100, original dimensions, ICC retained"
+    "source": "public/assets/hero-scene-release.png",
+    "target": "public/assets/hero-scene-release-mobile-82ca959136.webp",
+    "source_sha256": "f620f5577939f0f88c8e39d4a2b66bacf42fa6083ef24f3513b36277079b5514",
+    "target_sha256": "82ca959136a423152c2545821a61a6a2b80020d3ee510fae28ad109edc30ace0",
+    "source_bytes": 2644835,
+    "target_bytes": 468712,
+    "original_url": "/assets/hero-scene-release.png",
+    "optimized_url": "/assets/hero-scene-release-mobile-82ca959136.webp",
+    "codec": "WebP quality92, alpha100, original generated dimensions, ICC retained"
   },
   {
     "source": "public/assets/hero-character.png",

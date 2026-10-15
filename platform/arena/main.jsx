@@ -215,6 +215,9 @@ function Arena(){
  const amount=BigInt(social?'0':entry)*BigInt(capacity),prize=amount-amount*BigInt(fee)/10000n;
  const buttonDisabled=busy||!!recovering||!!context?.other_active_game;
  const assetsLoading=PRELOAD_GAME&&(gameAssets!=='ready'||IS_RUN&&preparedRunKinds!==runnerKinds);
+ // A BOT practice has nobody to wait for: confirm readiness automatically once assets are ready.
+ const autoReadyRoom=useRef(null);
+ useEffect(()=>{if(room?.status==='waiting'&&room.practice&&me&&!me.ready&&!busy&&!assetsLoading&&!runCourseUnconfirmed&&!runInputUnconfirmed&&!exitOpen&&autoReadyRoom.current!==room.id){autoReadyRoom.current=room.id;attempt(()=>command(`/api/pvp/rooms/${room.id}/ready`));}},[room?.id,room?.status,me?.ready,busy,assetsLoading,runCourseUnconfirmed,runInputUnconfirmed,exitOpen]);
  const assetLoadNotice=<>{assetsLoading&&<p role="status">{gameAssets==='failed'?<>游戏资源加载失败，请重试后准备。<button className="arena-text-button" onClick={()=>setAssetAttempt(n=>n+1)}>重新加载资源</button></>:<>正在准备游戏资源，完成后才能开局…</>}</p>}{IS_TOWER&&towerArt==='loading'&&<p role="status">战场画面正在后台加载，已可使用简化画面开局。</p>}{IS_TOWER&&towerArt==='failed'&&<p role="status">部分战场画面加载失败，简化画面仍可操作。<button className="arena-text-button" onClick={()=>setTowerArtAttempt(n=>n+1)}>重试画面资源</button></p>}</>;
  const sounds=<button className="arena-circle" aria-label={muted?'开启声音':'关闭声音'} onClick={()=>{audio.toggle();setMuted(!audio.enabled);}}>{muted?<VolumeX size={19}/>:<Volume2 size={19}/>}</button>;
  const sentReturn=hostReturnSent.current,returningToHost=!!room&&(hostBackPending.current&&(terminal(room.status)||me?.forfeited&&room.status!=='settling')||sentReturn?.owner===contextRef.current&&sentReturn.roomId===room.id&&sentReturn.until>performance.now());

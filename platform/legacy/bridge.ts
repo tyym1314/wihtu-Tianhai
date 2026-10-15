@@ -10,15 +10,17 @@ export function subscribeHostState(listener:(state:any)=>void){stateListeners.ad
 export function registerPresentationHost(adapter:{prepareBack?:()=>{pending?:boolean}}){prepareBack=adapter.prepareBack||null;}
 function hostBack(){
  if(document.querySelector('.oasis-return-dialog'))return;
- const detail=prepareBack?.()||{},dialog=document.createElement('dialog');dialog.className='oasis-return-dialog';
+ const detail=prepareBack?.()||{};
+ // Nothing in flight: return immediately instead of asking the player to confirm.
+ if(prepareBack&&!detail.pending){gameBridge?.completeReturn({reason:'user',status:'idle'});return;}
+ const dialog=document.createElement('dialog');dialog.className='oasis-return-dialog';
  dialog.innerHTML='<h2>返回应用？</h2><p>已提交的游戏结果会保留。返回不会撤销投入或表示已退款；重新进入可继续查询与恢复。</p><div><button data-return="cancel">继续游戏</button><button data-return="confirm">返回应用</button></div>';
  dialog.querySelector('[data-return="cancel"]')!.addEventListener('click',()=>dialog.remove());dialog.querySelector('[data-return="confirm"]')!.addEventListener('click',()=>{gameBridge?.completeReturn({reason:'user',status:detail.pending?'pending':'idle'});dialog.remove();});document.body.append(dialog);dialog.showModal();
 }
-function updateProfileNote(){const note=document.querySelector('.oasis-profile-note');if(note)note.textContent=`PLATFORM · ${platformConfig.version??platformConfig.mathVersion??'—'} · ${Math.round((platformConfig.targetRtp??.99)*100)}% TARGET`;}
 async function refreshProfile(game:string){
   const response=await nativeFetch(`/api/play/${game}/config`,{headers:{Authorization:`Bearer ${token}`},credentials:'same-origin'});
   if(!response.ok)throw new Error('无法读取平台游戏配置');
-  const supplied=await response.json();platformConfig={...(supplied.config??{}),...supplied};updateProfileNote();
+  const supplied=await response.json();platformConfig={...(supplied.config??{}),...supplied};
 }
 function screen(title:string,message:string,error=false){
   const app=document.querySelector<HTMLDivElement>('#app');if(!app)return;
@@ -26,7 +28,7 @@ function screen(title:string,message:string,error=false){
   app.querySelector('p')!.textContent=message;
 }
 export async function boot(game:'thunder'|'tiger',load:()=>Promise<unknown>){
-  const style=document.createElement('style');style.textContent=`html,body{margin:0;background:#081321;color:#f0e2bf;font-family:system-ui,sans-serif}.oasis-launch-screen{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;box-sizing:border-box;text-align:center;background:radial-gradient(ellipse at top,#184650,#081321 65%)}.oasis-launch-symbol{font-size:64px;color:#e1bc74}.oasis-launch-screen small{letter-spacing:3px;color:#bca977}.oasis-launch-screen h1{font-size:24px}.oasis-launch-screen p{max-width:420px;line-height:1.7;color:#a9c0ce}.oasis-launch-screen span{font-size:12px;color:#698797}[data-action="reset"],[data-action="reset-confirm"],[data-setting="reset"]{display:none!important}.oasis-profile-note{position:fixed;bottom:3px;right:8px;color:#9fb5bd;font:9px/1.4 system-ui,sans-serif;pointer-events:none;z-index:200;max-width:80vw;text-align:right}`;document.head.append(style);
+  const style=document.createElement('style');style.textContent=`html,body{margin:0;background:#081321;color:#f0e2bf;font-family:system-ui,sans-serif}.oasis-launch-screen{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;box-sizing:border-box;text-align:center;background:radial-gradient(ellipse at top,#184650,#081321 65%)}.oasis-launch-symbol{font-size:64px;color:#e1bc74}.oasis-launch-screen small{letter-spacing:3px;color:#bca977}.oasis-launch-screen h1{font-size:24px}.oasis-launch-screen p{max-width:420px;line-height:1.7;color:#a9c0ce}.oasis-launch-screen span{font-size:12px;color:#698797}[data-action="reset"],[data-action="reset-confirm"],[data-setting="reset"]{display:none!important}`;document.head.append(style);
   screen('正在连接游戏','保留完整人物、画面、音效与演出；余额由接入应用的钱包提供。');
   if(!window.opener&&window.parent===window){screen('请从合作方平台启动','此页面需要合作方完成登录后发送一次性启动码；直接打开链接不会生成试玩账户或金币。',true);return;}
   let loaded=false;
@@ -59,7 +61,7 @@ export async function boot(game:'thunder'|'tiger',load:()=>Promise<unknown>){
     const result=await response.json();if(!response.ok||typeof result.access_token!=='string')throw Object.assign(new Error(result.error?.message||result.message||'启动授权未成功'),{code:result.error?.code||result.code});
     if(result.host_origin&&result.host_origin!==body.host_origin||result.game_id&&result.game_id!==game)throw new Error('启动授权与宿主或游戏不匹配');
     token=result.access_token;await refreshProfile(game);
-    if(!loaded){await load();loaded=true;const note=document.createElement('div');note.className='oasis-profile-note';document.body.append(note);updateProfileNote();for(const item of document.querySelectorAll('.demo-badge,.desktop-demo'))if(item.textContent?.includes('DEMO'))item.textContent='PLATFORM · APP WALLET';}
+    if(!loaded){await load();loaded=true;for(const item of document.querySelectorAll('.demo-badge,.desktop-demo'))if(item.textContent?.includes('DEMO'))item.textContent='PLATFORM · APP WALLET';}
     return{host_origin:result.host_origin||body.host_origin,game_id:game,session_id:result.session_id};
   },onState:(state:any)=>{hostState=state;stateListeners.forEach(listener=>listener(state));},onBack:hostBack,onError:(error:Error)=>{if(!loaded)screen('暂时无法启动',error.message||'请重新获取启动授权',true);}});
   window.addEventListener('pagehide',()=>{token='';gameBridge?.dispose();stateListeners.clear();},{once:true});

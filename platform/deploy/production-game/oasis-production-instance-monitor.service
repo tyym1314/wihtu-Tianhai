@@ -1,0 +1,14 @@
+[Unit]
+Description=OASIS production dependency monitor
+After=oasis-production-api.service
+
+[Service]
+Type=oneshot
+Group=oasis-prod
+WorkingDirectory=/opt/oasis/production-current/platform
+EnvironmentFile=/opt/oasis/production-instance-private/runtime.env
+ExecStart=/usr/bin/node /opt/oasis/production-current/platform/deploy/production-instance/monitor.mjs
+TimeoutStartSec=75
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true

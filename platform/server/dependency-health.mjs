@@ -12,7 +12,7 @@ export const DEPENDENCY_APPS_SQL=`SELECT a.id,a.partner_id,a.environment,a.statu
  EXISTS(SELECT 1 FROM pvp_rooms r WHERE r.app_id=a.id AND r.status NOT IN ('settled','cancelled','voided'))) AS has_obligations
  FROM gp_apps a LEFT JOIN gp_wallet_bindings b ON b.app_id=a.id ORDER BY a.id LIMIT 2001`;
 
-export function evaluateWalletDependencies(rows,{environment,referenceOrigin,allowedOrigins=[]}){
+export function evaluateWalletDependencies(rows,{environment,referenceOrigin,allowedOrigins=[],partnerAdmission=environment==='production'&&process.env.OASIS_PARTNER_ADMISSION==='1'}){
  if(!['sandbox','production'].includes(environment)||!Array.isArray(rows)||rows.length>2000)throw Error('DEPENDENCY_INVENTORY_INVALID');
  const codes=new Set(),providers={platform:0,external:0,reference:0,unconfigured:0},allow=new Set(allowedOrigins.map(origin)),reference=origin(referenceOrigin);
  let referenceRequired=false,externalRequired=0;
@@ -28,7 +28,7 @@ export function evaluateWalletDependencies(rows,{environment,referenceOrigin,all
   }else if(a.provider==='external'){
    providers.external++;if(required)externalRequired++;
    const value=origin(a.wallet_url),protocol=value&&new URL(value).protocol;
-   if(!value||value!==a.binding_url||!allow.has(value)||value===reference||a.wallet_key_ready!==true||
+   if(!value||value!==a.binding_url||(!allow.has(value)&&!(partnerAdmission&&protocol==='https:'))||value===reference||a.wallet_key_ready!==true||
       (environment==='production'?protocol!=='https:':!['http:','https:'].includes(protocol))||
       (protocol==='http:'&&!['127.0.0.1','[::1]'].includes(new URL(value).hostname)))codes.add('EXTERNAL_WALLET_NOT_CONFIGURED');
   }else if(a.provider==null&&environment==='sandbox'){
@@ -40,8 +40,9 @@ export function evaluateWalletDependencies(rows,{environment,referenceOrigin,all
   }else codes.add('WALLET_PROVIDER_INVALID');
  }
  // No generic external /health contract exists. Never substitute reference-wallet health.
- if(externalRequired)codes.add('EXTERNAL_WALLET_PROBE_REQUIRED');
- return {status:codes.size?'failed':'ok',codes:[...codes].sort(),providers,reference_required:referenceRequired,external_required:externalRequired,external_connectivity:'not_checked'};
+ // Partner-admission wallets are owned and monitored by each partner; per-App probes are in the console.
+ if(externalRequired&&!partnerAdmission)codes.add('EXTERNAL_WALLET_PROBE_REQUIRED');
+ return {status:codes.size?'failed':'ok',codes:[...codes].sort(),providers,reference_required:referenceRequired,external_required:externalRequired,external_connectivity:partnerAdmission?'partner-owned':'not_checked'};
 }
 
 export async function readWalletDependencies(db,options){

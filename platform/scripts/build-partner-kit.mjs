@@ -25,7 +25,7 @@ export function rewriteKitLinks(name,text,files,downloads){
  });
 }
 
-export async function buildPartnerKit({output=resolve(root,'public'+kitDownload)}={}){
+export async function buildPartnerKit({output=resolve(root,'.local/partner-kit/oasis-partner-sandbox-kit.zip')}={}){
 const files=new Map();
 const put=(name,value)=>files.set(name,Buffer.from(value));
 const json=value=>JSON.stringify(value,null,2)+'\n';
@@ -150,7 +150,7 @@ phaseF=phaseF.replace(/```sh\nnpx tsx -e [\s\S]*?\n```/,'公开沙箱数学元�
 phaseF='> 离线示例包：命令路径从包根开始。平台 API/游戏由部署方提供；第 1 节平台开服命令只供部署方参考，本包只能启动钱包与 BFF。见 [包 README](../README.md)。\n\n'+phaseF;
 put('specs/phase-f-self-integration.md',phaseF);
 const downloads=new Set();
-for(const entry of await readdir(resolve(root,'public/downloads'),{withFileTypes:true})){
+for(const entry of await readdir(resolve(root,'public/downloads'),{withFileTypes:true}).catch(error=>{if(error.code==='ENOENT')return [];throw error;})){
  if(entry.isFile()&&!(await lstat(resolve(root,'public/downloads',entry.name))).isSymbolicLink())downloads.add('/downloads/'+entry.name);
 }
 for(const [name,bytes]of files)if(name.endsWith('.md')){

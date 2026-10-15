@@ -22,6 +22,9 @@ const clone=structuredClone;
 function freeze(o){if(o&&typeof o==='object'&&!Object.isFrozen(o)){for(const v of Object.values(o))freeze(v);Object.freeze(o);}return o;}
 function same(a,b){if(a===b)return true;if(!a||!b||typeof a!=='object'||typeof b!=='object'||Array.isArray(a)!==Array.isArray(b))return false;const keys=Object.keys(a);return keys.length===Object.keys(b).length&&keys.every(k=>Object.hasOwn(b,k)&&same(a[k],b[k]));}
 const own=p=>Object.fromEntries(fields.map(k=>[k,clone(p[k])]));
+// Admission mutates only its private copy. Clone each object separately so
+// arrays that alias in an input retain the original per-field isolation.
+const admissionOwn=p=>Object.fromEntries(fields.map(k=>{const value=p[k];return[k,value!==null&&typeof value==='object'?clone(value):value];}));
 const fail=reason=>Object.freeze({ok:false,reason});
 const matches=(a,b)=>a.commandSeq===b.commandSeq&&a.type===b.type&&a.executeTick===b.executeTick;
 
@@ -107,6 +110,8 @@ function replay(base,end,commands,work,{capture=true,authorized=false,strict=fal
  * authority freshness. A GET cursor never acknowledges the outbox.
  * Only the actual renderer calls sample(RAF timestamp). HUD consumers use
  * peek(), which reads the last immutable result without advancing that clock.
+ * inputReadiness(now) reads the exact enqueue admission on private clones;
+ * it never samples motion, renews authority, allocates a command or dispatches.
  */
 export function createRunPracticeController({roomId,playerKey,clockEpoch,makeRequestId,profile:requestedProfile={ruleVersion:RUN_PRACTICE_OUTBOX_RULE_VERSION,protocol:RUN_PRACTICE_OUTBOX_PROTOCOL}}={}){
  if(!id(roomId)||!id(playerKey)||!integer(clockEpoch,1)||typeof makeRequestId!=='function')throw new TypeError('INVALID_CONTROLLER_SCOPE');
@@ -312,17 +317,33 @@ export function createRunPracticeController({roomId,playerKey,clockEpoch,makeReq
   if(why&&lastPose)lastPose={...lastPose,visualSpeed:0};
   reason=why;refreshOutbox(at);
   return lastSample=Object.freeze({mode:closed?'closed':base?.authorization?'authoritative-terminal':why?'hold':'provisional',reason:why,
-   pose:lastPose?Object.freeze({...lastPose}):null,authorityExpired:base?at-firstReceivedAt>=L.authorityMs:true,
+   inputs:inputReadiness(at),pose:lastPose?Object.freeze({...lastPose}):null,authorityExpired:base?at-firstReceivedAt>=L.authorityMs:true,
    headTick:base?.headTick??null,revision:base?.revision??null,provisionalTick:lastRaw,firstReceivedAt,hardDeadline:firstReceivedAt===null?null:firstReceivedAt+L.provisionalMs,
    correction,clockReset,resultAuthorization:base?.authorization??null});
  }
- function enqueue(type,now){
+ function inspectInput(type,now,box){
   if(!time(now)||now<lastSampleAt)return fail('invalid-time');const why=gate(now);if(why)return fail(why);
   if(!types.has(type))return fail('invalid-command');if(local.size>=L.localCommands)return fail('local-history-limit');
   const raw=rawAt(now),executeTick=Math.floor(raw)+1,current=trajectory.states[Math.floor(raw)-base.anchorTick];
   if(executeTick<=base.committedThroughTick)return fail('input-expired');
   if(!current||executeTick>Math.min(END,base.headTick+L.futureTicks))return fail('provisional-budget-expired');
-  const p=own(current),error=admit(p,{type,executeTick},executeTick-1,base.game);if(error)return fail(error);
+  const p=admissionOwn(current),error=admit(p,{type,executeTick},executeTick-1,base.game);if(error)return fail(error);
+  box??=outbox?.state();
+  if(box?.lastCommandSeq===Number.MAX_SAFE_INTEGER)return fail('SEQUENCE_EXHAUSTED');
+  if((box?.pendingCommands.length??0)>=profile.pendingCommands)return fail('PENDING_LIMIT');
+  return Object.freeze({ok:true,executeTick});
+ }
+ function inputReadiness(now){
+  const box=outbox?.state();
+  const actions=Object.fromEntries([...types].map(type=>[type,inspectInput(type,now,box)]));
+  return freeze({ready:Object.values(actions).some(action=>action.ok),actions,at:now,
+   revision:base?.revision??null,headTick:base?.headTick??null,
+   authorityExpired:base?now-firstReceivedAt>=L.authorityMs:true,
+   admissionLeaseFresh:base?gate(now)===null:false});
+ }
+ function enqueue(type,now){
+  const admitted=inspectInput(type,now);if(!admitted.ok)return admitted;
+  const {executeTick}=admitted;
   const queued=outbox.enqueue({type,executeTick});if(!queued.ok)return queued;
   local.set(queued.command.commandSeq,{...queued.command,decision:null});const work={steps:0};
   try{trajectory=build(base,local,work);}catch(error){replayFailure=reason=error.message;outbox.suspend();return fail(reason);}
@@ -349,6 +370,6 @@ export function createRunPracticeController({roomId,playerKey,clockEpoch,makeReq
  function state(){return freeze({scope:{roomId,playerKey,clockEpoch},closed,reason,hidden,resumeAfter,headTick:base?.headTick??null,revision:base?.revision??null,
   firstReceivedAt,hardDeadline:firstReceivedAt===null?null:firstReceivedAt+L.provisionalMs,lastWorkSteps,localCommands:[...local.values()].map(i=>({...i})),issues:trajectory?.issues??[],
   outbox:outbox?.state()??null,statistics:{...statistics}});}
- return Object.freeze({scope,profile,receive,enqueue,sample,peek:()=>lastSample,suspend,resume,clear,state,transport,
+ return Object.freeze({scope,profile,receive,enqueue,inputReadiness,sample,peek:()=>lastSample,suspend,resume,clear,state,transport,
   stateAtTick(tick){return base&&integer(tick,base.anchorTick,base.anchorTick+(trajectory?.states.length??0)-1)?trajectory.states[tick-base.anchorTick]:null;}});
 }

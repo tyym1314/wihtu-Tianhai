@@ -22,7 +22,7 @@
  * Rule helpers below are pure reads of the public snapshot. They never submit
  * actions, advance simulation, or access private state. All submission is UI.
  */
-import { ARENA_IDS } from '../shared/games.mjs';
+import { ARENA_IDS, LEGACY_IDS } from '../shared/games.mjs';
 import { legalMoves as matchLegalMoves } from '../arena/match/engine.mjs';
 import { cueDefault, POCKETS } from '../arena/pool/geometry.mjs';
 import { nearestLegalOffset } from '../arena/carrom/geometry.mjs';
@@ -30,6 +30,42 @@ import { RUN_PRACTICE_PROFILES, resolveRunPracticeProfile } from '../shared/run-
 
 const GAMES = new Set(ARENA_IDS);
 const LIMIT_MS = 60_000;
+/** One real paid cycle only. Continue only its already-owned bonus through UI,
+ * and require actual session readback after every original presentation ACK.
+ * No direct POST, replay, RNG manipulation or synthetic result is supplied. */
+export async function playOneProbabilityCycle(frame,game,{state,tap,readSession,assertSession,drain,beforeAction=()=>{},beforePaidSpin=async()=>{},timeoutMs=120000,now=Date.now,wait=ms=>new Promise(r=>setTimeout(r,ms))}={}){
+ if(!LEGACY_IDS.includes(game)||typeof frame?.locator!=='function'||typeof tap!=='function'||typeof readSession!=='function'||typeof assertSession!=='function'||typeof drain!=='function')throw Error('REAL_PROBABILITY_UI_AND_READBACK_REQUIRED');
+ if(!Number.isSafeInteger(timeoutMs)||timeoutMs<=0||timeoutMs>120000)throw Error('PROBABILITY_DEADLINE_INVALID');
+ const deadline=now()+timeoutMs,guard=async()=>{if(now()>=deadline)throw Error('ORIGINAL_PROBABILITY_CYCLE_DEADLINE');await beforeAction();if(now()>=deadline)throw Error('ORIGINAL_PROBABILITY_CYCLE_DEADLINE');};
+ const read=async()=>{await guard();const s=await readSession();await guard();return assertSession(s);};
+ const initial=await read();if(initial.pendingRound!==null||initial.freeSpins!==0||state.spins.length)throw Error('INHERITED_PROBABILITY_CYCLE_PRESERVED');
+ if(!Array.isArray(initial.betChoices)||!initial.betChoices.length||initial.betChoices.some((v,i)=>!Number.isFinite(v)||v<=0||i>0&&v<=initial.betChoices[i-1]))throw Error('REAL_PROBABILITY_BET_CHOICES_REQUIRED');const selectedBet=initial.betChoices[0];if(!Number.isFinite(initial.balance)||initial.balance<selectedBet)throw Error('PROBABILITY_AVAILABLE_BALANCE_INSUFFICIENT');
+ const bet=frame.locator('#bet-value');await bet.waitFor({timeout:Math.max(1,deadline-now())});await guard();await tap(bet);const choice=frame.locator(game==='tiger'?'[data-bet="'+selectedBet+'"]':'[data-value="'+selectedBet+'"]');await choice.waitFor({timeout:Math.max(1,deadline-now())});await guard();await tap(choice);
+ const spin=frame.locator('#spin');await spin.waitFor({timeout:Math.max(1,deadline-now())});await guard();await beforePaidSpin();await guard();await tap(spin);
+ while(now()<deadline){
+  await guard();await drain();const current=await read();await drain();await guard();
+  if(state.spins.filter(s=>!s.isFreeSpin).length>1)throw Error('MULTIPLE_PAID_CYCLES_REFUSED');
+  const cycles=new Set(state.spins.map(s=>s.cycleId));if(cycles.size>1)throw Error('MULTIPLE_PROBABILITY_CYCLES_REFUSED');
+  if(current.pendingRound&&!state.spins.some(s=>s.id===current.pendingRound.id)){
+   // A session GET can observe the committed round before the UI spin body is
+   // delivered. Wait only for that exact original, owned POST; never ACK an
+   // unknown round or submit another spin to resolve an observation race.
+   const requests=(state.probabilityRequests||[]).filter(p=>p.type==='spin'),pending=current.pendingRound;
+   const matching=requests.filter(p=>p.request_id===pending.requestId),original=matching[0];
+   if(typeof pending.requestId!=='string'||!pending.requestId||matching.length!==1||requests.length!==state.spins.length+1
+    ||original.path!=='/api/play/'+game+'/spin'||original.method!=='POST'||original.game_frame_request!==true
+    ||original.session_id!==state.sessionId||original.player_id!==state.playerId||original.phase!=='playing'
+    ||original.transport_error||(original.status!==null&&original.status!==200))throw Error('UNOBSERVED_PROBABILITY_PRESENTATION_PRESERVED');
+   await wait(Math.min(1000,Math.max(1,deadline-now())));continue;
+  }
+  const close=frame.locator(game==='tiger'?'#continue':'.celebration-close');
+  if(await close.isVisible()){await guard();await tap(close);}
+  else if(current.pendingRound===null&&current.freeSpins>0&&state.spins.length&&await spin.isEnabled()){await guard();await tap(spin);}
+  else if(current.pendingRound===null&&current.freeSpins===0&&state.spins.length&&state.spins.every(s=>s.status==='SETTLED'&&state.acks.has(s.id))){await drain();await guard();return{game,selectedBet,cycleId:[...cycles][0],spins:state.spins.length,matchingAcks:state.acks.size,finalSession:current,source:'One original trusted UI paid cycle, its own natural bonus UI continuations, exact ACKs and original-session idle readback'};}
+  await wait(Math.min(1000,Math.max(1,deadline-now())));
+ }
+ throw Error('ORIGINAL_PROBABILITY_CYCLE_DEADLINE');
+}
 const attr = (name, value) => {
   // These selectors only use engine-issued identifiers or numeric indices.
   if (!/^[A-Za-z0-9_:.-]+$/.test(String(value))) throw new Error(`Unsafe ${name} identifier`);

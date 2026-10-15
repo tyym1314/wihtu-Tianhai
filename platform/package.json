@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1 --port 8795 --strictPort",
     "build": "vite build",
     "build:release": "node scripts/build-release.mjs",
-    "build:android": "bash android-smoke/build.sh",
+    "build:android": "bash android-player/build.sh",
     "preview": "vite preview --host 127.0.0.1 --port 8795 --strictPort",
     "check:contracts": "node scripts/check-contracts.mjs",
     "server": "tsx server/index.mjs",
