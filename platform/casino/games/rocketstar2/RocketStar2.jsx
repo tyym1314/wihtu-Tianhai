@@ -3,7 +3,7 @@ import {api,requestId,registerHostControls,requestExit} from '../../shared/clien
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
-import {Stage,Box,CountUp} from '../../shared/Stage.jsx';
+import {Stage,Box,CountUp,PhaseBanner} from '../../shared/Stage.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import './rocketstar2.css';
 
@@ -20,7 +20,7 @@ const HIST_X=[199,335,472,608,742];
 const PANEL_Y=[1279,1473];
 function phaseOf(r,n){if(n<r.bet_until)return'betting';if(!r.result)return'flying';return'crashed';}
 
-function Flight({round,now,phase,ship}){
+function Flight({round,now,phase,ship,tip}){
  const ref=useRef(null);
  useEffect(()=>{
   const c=ref.current;if(!c)return;const W=FLIGHT.w,H=FLIGHT.h;if(c.width!==W){c.width=W;c.height=H;}const g=c.getContext('2d');g.clearRect(0,0,W,H);
@@ -41,6 +41,7 @@ function Flight({round,now,phase,ship}){
   for(let i=6;i<pts.length;i+=12){g.beginPath();g.arc(pts[i][0],pts[i][1],7,0,7);g.fillStyle='#fff6d0';g.fill();}
   const [x,y]=pts.at(-1),[px,py]=pts[Math.max(0,pts.length-5)],ang=Math.atan2(py-y,x-px)*180/Math.PI;
   el.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%) rotate(${45-ang}deg)`;el.style.opacity=phase==='crashed'?0:1;
+  tip.current=[FLIGHT.x+x,FLIGHT.y+y];
  });
  return <canvas ref={ref} className="rs-canvas" style={{left:FLIGHT.x,top:FLIGHT.y,width:FLIGHT.w,height:FLIGHT.h}}/>;
 }
@@ -73,9 +74,9 @@ function Panel({index,state,phase,mult,balance,onBet,onCash,audio}){
 
 export default function RocketStar2({initial}){
  const [state,setState]=useState(initial),[balance,setBalance]=useState(initial.balance?.available_minor??null),[now,setNow]=useState(Date.now());
- const [toast,setToast]=useState(null),[menu,setMenu]=useState(false),[rules,setRules]=useState(false),[offline,setOffline]=useState(false);
- const audio=useAudio('rocketstar2',['launch','boom','cash','click','chip','tick','engine']);
- const offset=useRef(initial.server_now-Date.now()),balanceRound=useRef(null),ref=useRef(initial),ship=useRef(null),seen=useRef({});
+ const [toast,setToast]=useState(null),[menu,setMenu]=useState(false),[rules,setRules]=useState(false),[offline,setOffline]=useState(false),[pop,setPop]=useState(null);
+ const audio=useAudio('rocketstar2',['launch','boom','cash','click','chip','tick','coin','select','close']);
+ const offset=useRef(initial.server_now-Date.now()),balanceRound=useRef(null),ref=useRef(initial),ship=useRef(null),seen=useRef({}),tip=useRef([560,500]);
  const serverNow=()=>Date.now()+offset.current;
  const say=useCallback(key=>setToast({key,id:Math.random()}),[]);
  const refresh=useCallback(async withBalance=>{
@@ -103,17 +104,22 @@ export default function RocketStar2({initial}){
   catch(e){if(balance!==null)setBalance(b=>String(BigInt(b)+BigInt(stake)));say(ERR[e.code]||'failed');}
  }
  async function onCash(bet){
-  try{const done=await api('/api/casino/cashout',{bet_id:bet.id});audio.play('cash');setState(s=>({...s,my_bets:s.my_bets.map(b=>b.id===done.id?done:b)}));if(balance!==null)setBalance(b=>String(BigInt(b)+BigInt(done.payout_minor)));}
+  try{const done=await api('/api/casino/cashout',{bet_id:bet.id});audio.play('cash');audio.play('coin');setPop({id:Math.random(),x:done.cashout_x100,v:done.payout_minor});setTimeout(()=>setPop(null),1600);setState(s=>({...s,my_bets:s.my_bets.map(b=>b.id===done.id?done:b)}));if(balance!==null)setBalance(b=>String(BigInt(b)+BigInt(done.payout_minor)));}
   catch(e){say(ERR[e.code]||'failed');}
  }
  const tone=x=>x>=1000?'gold':x>=200?'green':'red';
+ const tier=mult>=1000?'t4':mult>=500?'t3':mult>=200?'t2':'t1';
  return <Stage plate={img('plate')} className={`rs-${phase}`} dir={isRtl()?'rtl':'ltr'}>
-  <Flight round={round} now={now} phase={phase} ship={ship}/>
+  {phase==='flying'&&<div className="rs-stars" style={{animationDuration:`${Math.max(.25,1.6-Math.log2(mult/100)*.35)}s`}}/>}
+  <div className={phase==='crashed'?'rs-shake':''}><Flight round={round} now={now} phase={phase} ship={ship} tip={tip}/></div>
+  <PhaseBanner round={round} phase={phase} text={{betting:t('startBet'),flying:t('stopBet')}} onShow={p=>audio.play(p==='betting'?'select':'close')}/>
+  {pop&&<Box key={pop.id} x={170} y={720} w={600} h={160} className="rs-pop"><b>{fx(pop.x)}x</b><span>+{full(pop.v)}</span></Box>}
   <img ref={ship} className="rs-ship" src={img('ship')} alt="" style={{left:FLIGHT.x,top:FLIGHT.y}} draggable="false"/>
-  {phase==='crashed'&&<div className="rs-boom" style={{left:'60%',top:420}}/>}
+  {phase==='crashed'&&<React.Fragment key={round.id}><div className="rs-smoke" style={{left:tip.current[0],top:tip.current[1]}}/><div className="rs-boom" style={{left:tip.current[0],top:tip.current[1],margin:0,transform:'translate(-50%,-50%)'}}/>
+   {Array.from({length:14},(_,i)=>{const a=i/14*Math.PI*2;return <span key={i} className="rs-debris" style={{left:tip.current[0],top:tip.current[1],'--dx':`${Math.cos(a)*(180+i%3*80)}px`,'--dy':`${Math.sin(a)*(180+i%4*60)}px`}}/>;})}</React.Fragment>}
   <Box x={0} y={430} w={941} h={240} className="rs-center">
    {phase==='betting'?<><b className="rs-count">{t('nextIn',[secs])}</b><div className="rs-bar"><i style={{width:`${Math.min(100,(round.bet_until-now)/GAME.round.betMs*100)}%`}}/></div></>
-    :<><b className={`rs-mult ${phase}`}>{fx(mult)}x</b>{phase==='crashed'&&<small>{t('crashedAt',[fx(mult)])}</small>}</>}
+    :<><b key={phase==='flying'?tier:'c'} className={`rs-mult ${phase} ${tier}`}>{fx(mult)}x</b>{phase==='crashed'&&<small>{t('crashedAt',[fx(mult)])}</small>}</>}
   </Box>
   {state.history.slice(0,5).map((h,i)=>{const x=Math.round(Number(h.outcome)*100);return <Box key={h.seq} x={HIST_X[i]-56} y={186} w={112} h={44} className={`rs-hist ${tone(x)}`}>{h.outcome}x</Box>;})}
   <Box x={712} y={38} w={150} h={50} className="rs-balance">{balance===null?'—':<CountUp value={Number(balance)} format={v=>full(Math.round(v))}/>}</Box>

@@ -1,9 +1,9 @@
 .rs-canvas{position:absolute;pointer-events:none}
-.rs-ship{position:absolute;width:150px;filter:drop-shadow(0 0 24px #ffb84d);will-change:transform;pointer-events:none;transition:opacity .15s}
+.rs-ship{position:absolute;width:250px;filter:drop-shadow(0 0 24px #ffb84d);will-change:transform;pointer-events:none;transition:opacity .15s}
 .rs-flying .rs-ship{animation:rs-shake .12s linear infinite alternate}
 @keyframes rs-shake{to{margin-top:2px;margin-left:-1px}}
-.rs-boom{position:absolute;width:320px;height:320px;margin:-160px 0 0 -160px;border-radius:50%;background:radial-gradient(#fff 0,#ffe37a 18%,#ff8a1f 38%,#ff3b5c 55%,transparent 72%);animation:rs-boom .7s ease-out forwards;pointer-events:none}
-@keyframes rs-boom{from{transform:scale(.2);opacity:1}to{transform:scale(1.6);opacity:0}}
+.rs-boom{position:absolute;width:560px;height:560px;margin:-280px 0 0 -280px;z-index:6;border-radius:50%;background:radial-gradient(#fff 0,#ffe37a 18%,#ff8a1f 38%,#ff3b5c 55%,transparent 72%);animation:rs-boom .7s ease-out forwards;pointer-events:none}
+@keyframes rs-boom{from{transform:translate(-50%,-50%) scale(.2);opacity:1}to{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
 .rs-center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;pointer-events:none;text-align:center}
 .rs-mult{font:900 170px/1 'Arial Black',Impact,sans-serif;color:#fff;-webkit-text-stroke:4px #6a3cff;text-shadow:0 0 30px #b28cff,0 8px 0 #3a1a8a;font-variant-numeric:tabular-nums}
 .rs-mult.crashed{color:#ff5b78;-webkit-text-stroke-color:#7a0018;text-shadow:0 0 30px #ff3b5c,0 8px 0 #5a0012}
@@ -32,3 +32,22 @@
 @keyframes rs-pulse{to{transform:scale(1.04);filter:brightness(1.25)}}
 .rs-menu{position:absolute;background:none;border-radius:20px}
 .rs-ib{background:radial-gradient(#3a2a7a,#140c34);border-color:#8fd8ff;color:#dff6ff}
+.rs-stars{position:absolute;left:0;top:236px;width:941px;height:900px;pointer-events:none;opacity:.8;
+ background-image:radial-gradient(2px 30px at 10% 20%,#fff,transparent),radial-gradient(2px 24px at 30% 70%,#cfe6ff,transparent),radial-gradient(2px 36px at 55% 35%,#fff,transparent),radial-gradient(2px 22px at 75% 80%,#ffe9b6,transparent),radial-gradient(2px 30px at 90% 15%,#fff,transparent),radial-gradient(2px 26px at 45% 90%,#cfe6ff,transparent);
+ background-size:100% 450px;animation:rs-stream 1s linear infinite;transform:rotate(-35deg) scale(1.6);mix-blend-mode:screen}
+@keyframes rs-stream{from{background-position:0 0}to{background-position:0 450px}}
+.rs-shake{animation:rs-quake .5s ease-out}
+@keyframes rs-quake{0%,100%{transform:none}15%{transform:translate(-14px,8px)}30%{transform:translate(12px,-10px)}45%{transform:translate(-10px,6px)}60%{transform:translate(8px,-4px)}80%{transform:translate(-4px,2px)}}
+.rs-mult.t1{animation:rs-tick 1s ease-in-out infinite}
+.rs-mult.t2{color:#9dffbe;-webkit-text-stroke-color:#0a6a2c;animation:rs-tier .4s cubic-bezier(.2,1.6,.4,1)}
+.rs-mult.t3{color:#ffe37a;-webkit-text-stroke-color:#8a5a06;text-shadow:0 0 40px #ffb300,0 8px 0 #6a4206;animation:rs-tier .4s cubic-bezier(.2,1.6,.4,1)}
+.rs-mult.t4{color:#ffd0ff;-webkit-text-stroke-color:#7a1aa8;text-shadow:0 0 50px #e07dff,0 8px 0 #4a0a6a;animation:rs-tier .4s cubic-bezier(.2,1.6,.4,1)}
+@keyframes rs-tier{from{transform:scale(1.4)}}
+@keyframes rs-tick{50%{transform:scale(1.03)}}
+.rs-pop{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:30px;background:linear-gradient(#0d4a26f0,#062a14f0);border:4px solid #7dffb0;box-shadow:0 0 40px #2fd47a;z-index:12;animation:rs-popin 1.6s cubic-bezier(.2,1.4,.4,1) forwards;pointer-events:none}
+.rs-pop b{font:900 64px 'Arial Black',sans-serif;color:#fff}.rs-pop span{font:900 44px 'Arial Black',sans-serif;color:#9dffbe}
+@keyframes rs-popin{0%{transform:scale(.3);opacity:0}20%{transform:scale(1.05);opacity:1}80%{opacity:1}100%{transform:translateY(-60px);opacity:0}}
+.rs-debris{position:absolute;width:22px;height:22px;margin:-11px;border-radius:50%;background:radial-gradient(#fff,#ffd34d 40%,#ff6a1f 70%,transparent);z-index:6;pointer-events:none;animation:rs-debris .9s cubic-bezier(.2,.7,.4,1) forwards}
+@keyframes rs-debris{from{transform:translate(0,0) scale(1.4);opacity:1}to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+.rs-smoke{position:absolute;width:300px;height:300px;margin:-150px;border-radius:50%;background:radial-gradient(#ffffff55,#9a8cc855 40%,transparent 70%);z-index:5;pointer-events:none;animation:rs-smoke 1.6s ease-out forwards}
+@keyframes rs-smoke{from{transform:scale(.3);opacity:.9}to{transform:scale(2.2);opacity:0}}

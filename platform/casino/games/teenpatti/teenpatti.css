@@ -37,3 +37,4 @@
 .tp-banner{display:grid;place-items:center;border-radius:24px;background:linear-gradient(#4a0c14f2,#1e0306f2);border:3px solid #f0c060;box-shadow:0 14px 40px #000c;animation:tp-pop .4s ease-out;z-index:6}
 .tp-banner p{margin:0;font-size:32px;color:#ffe6b0}.tp-banner b{font-size:44px;color:#ffd84a}
 .tp-ib{background:radial-gradient(#6a1420,#2a0508);border-color:#f0c060}
+.tp-flychip{width:80px;height:80px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(#ffe37a,#c9861a);border:4px dashed #fff3c4;color:#3d1a00;font-weight:900;font-size:22px}

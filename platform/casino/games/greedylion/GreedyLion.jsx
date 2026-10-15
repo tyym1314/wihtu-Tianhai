@@ -2,7 +2,7 @@ import React,{useEffect,useRef,useState} from 'react';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {useRound,full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
-import {Stage,Box,CountUp} from '../../shared/Stage.jsx';
+import {Stage,Box,CountUp,PhaseBanner} from '../../shared/Stage.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import './greedylion.css';
 
@@ -14,12 +14,14 @@ const PLATE={tomato:[472,652],corn:[670,736],carrot:[740,933],lettuce:[673,1109]
 const CHIP_X=[75,212,348,484,620],CHIP_Y=1425,CENTER=[472,923],BALANCE=[808,45];
 const MULT=Object.fromEntries(GAME.options.map(o=>[o.id,o.multiplier]));
 const SPARKS=[[40,300],[118,420],[60,980],[905,640],[860,1010],[150,1270],[800,1300],[420,520]];
+// Lantern flames on the plate (design px) for a soft flicker.
+const LANTERNS=[[45,540,110],[250,305,90],[95,752,70],[846,342,95],[831,700,100]];
 const icon=id=>ORDER.includes(id)?img(`icon-${id}`):img(id);
 
 export default function GreedyLion({initial}){
- const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('greedylion',['chip','tick','win','lose','coin','click','select']);
+ const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('greedylion',['chip','tick','win','lose','coin','click','select','close','chips']);
  const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[rules,setRules]=useState(false);
- const [light,setLight]=useState(-1),[flies,setFlies]=useState([]),[coins,setCoins]=useState([]);
+ const [light,setLight]=useState(-1),[flies,setFlies]=useState([]),[coins,setCoins]=useState([]),[landed,setLanded]=useState(false);
  const lastStep=useRef(-1),lastSec=useRef(-1),played=useRef(null);
 
  // Travelling light during the draw: ease-out over the draw window, landing on the outcome.
@@ -29,7 +31,7 @@ export default function GreedyLion({initial}){
   const target=ORDER.indexOf(r.outcome),special=target<0,end=round.reveal_at-450;
   const steps=special?4*ORDER.length:3*ORDER.length+target,p=Math.min(1,Math.max(0,(now-round.bet_until)/(end-round.bet_until)));
   const step=Math.floor((1-(1-p)**3)*steps);
-  if(now>=end)setLight(special?-2:target);else{setLight(step%ORDER.length);if(step!==lastStep.current){lastStep.current=step;audio.play('tick',{volume:.5,rate:1+p*.3});}}
+  if(now>=end){setLight(special?-2:target);if(!landed){setLanded(true);audio.play(special?'win':'select');}}else{if(landed)setLanded(false);setLight(step%ORDER.length);if(step!==lastStep.current){lastStep.current=step;audio.play('tick',{volume:.5,rate:1+p*.3});}}
  },[now,phase,round]);
  // Countdown ticks in the last five seconds.
  const secs=Math.max(0,Math.ceil((round.bet_until-now)/1000));
@@ -52,7 +54,10 @@ export default function GreedyLion({initial}){
  const winners=phase==='result'&&round.result?round.result.winners:[];
  const totals=state.totals||{};
  return <Stage plate={img('plate')} className={`gl-${phase}`} dir={isRtl()?'rtl':'ltr'}>
+  {LANTERNS.map(([x,y,r],i)=><span key={'l'+i} className="cs-glow" style={{left:x-r,top:y-r,width:2*r,height:2*r,background:'radial-gradient(#ffe7a0cc,#ffb34d55 40%,transparent 70%)',animationDelay:`${i*.53}s`}}/>)}
   {SPARKS.map(([x,y],i)=><span key={i} className="cs-sparkle" style={{left:x,top:y,animationDelay:`${i*.37}s`}}/>)}
+  <PhaseBanner round={round} phase={phase} text={{betting:t('startBet'),drawing:t('stopBet')}} onShow={p=>audio.play(p==='betting'?'select':'close')}/>
+  {landed&&round.result&&round.result.winners.filter(w=>PLATE[w]).map(w=><span key={w} className="cs-burst" style={{left:PLATE[w][0],top:PLATE[w][1]-12}}/>)}
   <Box x={517} y={30} w={116} h={116} className={`gl-timer ${phase==='betting'&&secs<=5?'urgent':''}`}>
    {phase==='betting'?<><small>{t('bet')}</small><b>{secs}s</b></>:phase==='drawing'?<b className="gl-spin">★</b>:<small>{t('result')}</small>}
   </Box>
@@ -67,6 +72,7 @@ export default function GreedyLion({initial}){
    {totals[id]&&<Box x={x-60} y={y-118} w={120} h={30} className="gl-total">{short(totals[id].stake_minor)}</Box>}
    {g.mine[id]&&<Box x={x+30} y={y-70} w={84} h={40} className="gl-mine">{short(g.mine[id])}</Box>}
   </React.Fragment>;})}
+  {phase==='result'&&round.result&&!ORDER.includes(round.result.outcome)&&now<round.reveal_at+2200&&<div className="cs-special"><div><img src={icon(round.result.outcome)} alt=""/><b>{t(round.result.outcome)}</b></div></div>}
   {phase==='result'&&round.result&&<Box x={CENTER[0]-95} y={CENTER[1]-95} w={190} h={190} className="gl-center"><img src={icon(round.result.outcome)} alt=""/></Box>}
   {phase==='result'&&round.result&&<Box x={170} y={1250} w={600} h={110} className="gl-banner">
    {!ORDER.includes(round.result.outcome)&&<p className="special">{t(round.result.outcome)}</p>}

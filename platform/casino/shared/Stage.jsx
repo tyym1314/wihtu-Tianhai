@@ -23,3 +23,10 @@ export function CountUp({value,format=v=>v,ms=900}){
   const step=t=>{const p=Math.min(1,(t-t0)/ms),v=from+(to-from)*(1-(1-p)**3);setShown(p<1?v:to);if(p<1)raf=requestAnimationFrame(step);};raf=requestAnimationFrame(step);return()=>cancelAnimationFrame(raf);},[value]);
  return <>{format(shown)}</>;
 }
+
+/** Short banner when betting opens or closes (keyed by round + phase). */
+export function PhaseBanner({round,phase,text,onShow}){
+ const [shown,setShown]=useState(null);
+ useEffect(()=>{if(phase!=='betting'&&phase!=='drawing'&&phase!=='flying')return;const k=round.id+phase;setShown({k,text:text[phase]});onShow?.(phase);const id=setTimeout(()=>setShown(s=>s?.k===k?null:s),1300);return()=>clearTimeout(id);},[round.id,phase]);
+ return shown?<div key={shown.k} className={`cs-phase ${phase}`}><span>{shown.text}</span></div>:null;
+}

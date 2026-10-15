@@ -2,7 +2,7 @@ import React,{useEffect,useRef,useState} from 'react';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {useRound,full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
-import {Stage,Box,CountUp} from '../../shared/Stage.jsx';
+import {Stage,Box,CountUp,PhaseBanner} from '../../shared/Stage.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import './teenpatti.css';
 
@@ -23,8 +23,8 @@ function Card({code,open,i,dealt}){
 }
 
 export default function TeenPatti({initial}){
- const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('teenpatti',['chip','deal','flip','win','lose','click','tick','chips','coin']);
- const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[rules,setRules]=useState(false),[coins,setCoins]=useState([]);
+ const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('teenpatti',['chip','deal','flip','win','lose','click','tick','chips','coin','shuffle','select','close']);
+ const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[rules,setRules]=useState(false),[coins,setCoins]=useState([]),[flies,setFlies]=useState([]);
  const since=now-round.bet_until,result=round.result,seen=useRef({});
  const shown=i=>phase==='result'||(phase==='drawing'&&since>=FLIP_AT[i]);
  const winner=result&&(phase==='result'||since>=WIN_AT)?result.outcome:null;
@@ -39,12 +39,14 @@ export default function TeenPatti({initial}){
  return <Stage plate={img('plate')} className={`tp-${phase}`} dir={isRtl()?'rtl':'ltr'}>
   <Box x={129} y={214} w={179} h={54} className={`tp-timer ${phase==='betting'&&secs<=5?'urgent':''}`}>{phase==='betting'?`${t('bet').toUpperCase()} ${secs}s`:phase==='drawing'?t('drawing'):t('result')}</Box>
   <Box x={688} y={32} w={170} h={46} className="tp-balance">{g.balance===null?'—':<CountUp value={Number(g.balance)} format={v=>full(Math.round(v))}/>}</Box>
+  <PhaseBanner round={round} phase={phase} text={{betting:t('startBet'),drawing:t('stopBet')}} onShow={p=>audio.play(p==='betting'?'shuffle':'close')}/>
+  {winner&&<span className="cs-burst" style={{left:CARD_X[winner],top:CARD_Y}}/>}
   {HANDS.map((id,i)=><div key={id} className={`tp-hand ${winner===id?'win':''} ${winner&&winner!==id?'lose':''}`} style={{left:CARD_X[id],top:CARD_Y}}>
    {[0,1,2].map(k=><Card key={k} i={k} code={result&&shown(i)?result.hands[id][k]:null} open={!!result&&shown(i)} dealt={phase!=='betting'}/>)}
    {result&&shown(i)&&<span className="tp-cat">{t(result.categories[id])}</span>}
    {winner===id&&<span className="tp-ribbon">{t('winner')} ×{MULT}</span>}
   </div>)}
-  {HANDS.map(id=><button key={id} className={`tp-zone ${winner===id?'win':''}`} style={{left:ZONE_X[id],top:689,width:ZONE_W,height:381}} onClick={()=>{if(phase==='betting'){audio.play('chip');g.bet(id,chip);}}} aria-label={LABEL[id]}>
+  {HANDS.map(id=><button key={id} className={`tp-zone ${winner===id?'win':''}`} style={{left:ZONE_X[id],top:689,width:ZONE_W,height:381}} onClick={()=>{if(phase!=='betting')return;audio.play('chip');const i=GAME.chips.indexOf(chip),f={id:Math.random(),x:CHIP_X[i],y:CHIP_Y,tx:ZONE_X[id]+ZONE_W/2,ty:960,label:short(chip)};setFlies(v=>[...v,f]);requestAnimationFrame(()=>requestAnimationFrame(()=>setFlies(v=>v.map(x=>x.id===f.id?{...x,go:true}:x))));setTimeout(()=>setFlies(v=>v.filter(x=>x.id!==f.id)),500);g.bet(id,chip);}} aria-label={LABEL[id]}>
    <span className="tp-total">{full(totals[id]?.stake_minor||0)}</span>
    <span className="tp-players">{t('players',[totals[id]?.players||0])}</span>
    {g.mine[id]?<span className="tp-mine"><i/>{short(g.mine[id])}</span>:null}
@@ -53,6 +55,7 @@ export default function TeenPatti({initial}){
   <button className="tp-btn" style={{left:37,top:1267,width:418,height:117}} disabled={phase!=='betting'||!g.canRepeat} onClick={()=>{audio.play('chips');g.repeat();}} aria-label={t('repeat')}/>
   <button className="tp-btn" style={{left:486,top:1267,width:418,height:117}} disabled={phase!=='betting'||!g.myStake} onClick={doubleBets} aria-label={t('double')}/>
   <Box x={50} y={1466} w={724} h={120} className="tp-road">{state.history.slice(0,24).reverse().map(h=><i key={h.seq} className={`d-${h.outcome}`}>{LABEL[h.outcome]}</i>)}</Box>
+  {flies.map(f=><span key={f.id} className="cs-fly tp-flychip" style={{left:f.x-40,top:f.y-40,transform:f.go?`translate(${f.tx-f.x}px,${f.ty-f.y}px) scale(.7)`:'none',opacity:f.go?.3:1}}>{f.label}</span>)}
   {coins.map(c=><span key={c.id} className="cs-coin" style={{left:c.x-22,top:c.y-22,'--dx':`${c.dx}px`,'--dy':`${c.dy}px`,animationDelay:`${c.delay}ms`}}/>)}
   <div className="cs-menu" style={{right:24,top:104}}>
    <button className="cs-icon-btn tp-ib" onClick={()=>setMenu(m=>!m)} aria-label="menu">≡</button>
