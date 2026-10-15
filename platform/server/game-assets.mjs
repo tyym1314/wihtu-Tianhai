@@ -2,10 +2,11 @@ import {open} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {pipeline} from 'node:stream/promises';
-import {ARENA_IDS,RELEASED_IDS} from '../shared/games.mjs';
+import {ALL_GAME_IDS,ARENA_IDS,CASINO_IDS} from '../shared/games.mjs';
 
 const defaultLegacyRoot=fileURLToPath(new URL('../legacy/dist/',import.meta.url));
 const defaultArenaRoot=fileURLToPath(new URL('../arena/dist/',import.meta.url));
+const defaultCasinoRoot=fileURLToPath(new URL('../casino/dist/',import.meta.url));
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.json':'application/json','.glb':'model/gltf-binary','.gltf':'model/gltf+json','.wasm':'application/wasm','.png':'image/png','.webp':'image/webp','.jpg':'image/jpeg','.jpeg':'image/jpeg','.svg':'image/svg+xml','.mp3':'audio/mpeg','.ogg':'audio/ogg','.woff2':'font/woff2'};
 function fail(status,code,message=code){throw Object.assign(new Error(message),{status,code});}
 function fresh(headers,etag,mtimeMs){
@@ -15,11 +16,12 @@ function fresh(headers,etag,mtimeMs){
   return Number.isFinite(since)&&Math.floor(mtimeMs/1000)*1000<=since;
 }
 
-export async function serveGameAsset(req,res,path,{legacyRoot=defaultLegacyRoot,arenaRoot=defaultArenaRoot}={}){
-  const candidate=path.match(/^\/play\/([a-z]+)$/)?.[1],game=RELEASED_IDS.includes(candidate)?candidate:null;
-  const arena=path.startsWith('/arena/')||ARENA_IDS.includes(game),base=arena?arenaRoot:legacyRoot;
+export async function serveGameAsset(req,res,path,{legacyRoot=defaultLegacyRoot,arenaRoot=defaultArenaRoot,casinoRoot=defaultCasinoRoot}={}){
+  const candidate=path.match(/^\/play\/([a-z]+)$/)?.[1],game=ALL_GAME_IDS.includes(candidate)?candidate:null;
+  const casino=path.startsWith('/casino/')||CASINO_IDS.includes(game),arena=casino||path.startsWith('/arena/')||ARENA_IDS.includes(game);
+  const base=casino?casinoRoot:arena?arenaRoot:legacyRoot,prefix=casino?'/casino':'/arena';
   if(req.method!=='GET'&&req.method!=='HEAD')fail(405,'METHOD_NOT_ALLOWED');
-  const target=game?resolve(base,arena?'index.html':game+'.html'):resolve(base,'.'+path.slice(arena?'/arena'.length:'/legacy'.length));
+  const target=game?resolve(base,arena?'index.html':game+'.html'):resolve(base,'.'+path.slice(arena?prefix.length:'/legacy'.length));
   if(!target.startsWith(resolve(base)+sep))fail(404,'NOT_FOUND');
   if(path.includes('..')||path.includes('%')||path.includes('\\'))fail(400,'INVALID_PATH');
   // An open descriptor pins the same file for its validators and streamed body,
@@ -32,7 +34,7 @@ export async function serveGameAsset(req,res,path,{legacyRoot=defaultLegacyRoot,
     // Vite uses eight-character hashes. The verified mobile asset manifest
     // uses an explicit -mobile-<10 hex SHA256> suffix, including subdirectories.
     // Other copied images still revalidate; a version-looking name is not a hash.
-    const hashed=!html&&(/\/(?:assets|bundles)\/[^/]+-[A-Za-z0-9_-]{8}\.[a-z0-9]+$/.test(path)||/\/(?:arena|legacy)\/assets\/(?:[^/]+\/)*[^/]+-mobile-[a-f0-9]{10}\.webp$/.test(path));
+    const hashed=!html&&(/\/(?:assets|bundles)\/[^/]+-[A-Za-z0-9_-]{8}\.[a-z0-9]+$/.test(path)||/\/(?:arena|legacy|casino)\/assets\/(?:[^/]+\/)*[^/]+-mobile-[a-f0-9]{10}\.webp$/.test(path));
     const headers={'content-type':types[extension]||'application/octet-stream','cache-control':html?'no-store':hashed?'public,max-age=31536000,immutable':'public,max-age=0,must-revalidate','referrer-policy':'no-referrer','x-content-type-options':'nosniff'};
     if(!html){
       // Weak metadata validators avoid hashing/reading a model for every poll.

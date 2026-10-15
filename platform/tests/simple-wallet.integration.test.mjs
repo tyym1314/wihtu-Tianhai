@@ -6,7 +6,7 @@ import {mkdtemp,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import pg from 'pg';
-import {RELEASED_IDS} from '../shared/games.mjs';
+import {ALL_GAME_IDS as RELEASED_IDS} from '../shared/games.mjs';
 import {dropOwnedTestDatabase} from './database-cleanup.mjs';
 import {migrateSimpleDemoWallet,seedSimpleDemoUsers,simpleBalance,handleSimpleWallet} from '../examples/partner-demo/simple-wallet.mjs';
 
@@ -17,7 +17,7 @@ const origin='https://simple-wallet.example.invalid',walletOrigin='https://simpl
 const adminUrl=new URL(process.env.OASIS_TEST_ADMIN_DATABASE_URL||'postgres://oasis_local@127.0.0.1:5487/postgres');
 const databaseUrl=new URL(adminUrl);databaseUrl.pathname='/'+name;
 const previous={...process.env},uid=p=>p+'_'+randomBytes(8).toString('hex');
-let admin,pool,tx,closePools,closeEnginePool,dir,created=false,platform,wallet,binding,pvp,cycles,runtimeMode,simple,partnerServer,app;
+let admin,pool,tx,closePools,closeEnginePool,dir,created=false,platform,wallet,binding,pvp,cycles,runtimeMode,simple,casino,partnerServer,app;
 const walletKey={keyId:uid('wk'),secretBase64:randomBytes(32).toString('base64')};
 const faults={dropNextDebitResponse:false};
 
@@ -38,9 +38,9 @@ before(async()=>{
  dir=await mkdtemp(join(tmpdir(),'oasis-simple-wallet-'));await writeFile(join(dir,'master.key'),randomBytes(32),{mode:0o600,flag:'wx'});
  for(const key of ['OASIS_ADMISSION_PROFILE','OASIS_FIRSTPARTY_APP_ID','OASIS_ADMISSION_RELEASE','OASIS_ADMISSION_MANIFEST_SHA256','OASIS_WALLET_ALLOWED_ORIGINS'])delete process.env[key];
  Object.assign(process.env,{OASIS_DATABASE_URL:databaseUrl.href,OASIS_ENVIRONMENT:'production',OASIS_LOCAL_DIR:dir,OASIS_START_WALLET:'0',OASIS_PUBLIC_ORIGIN:origin,OASIS_PRODUCTION_ADMISSION_ENABLED:'0',OASIS_PARTNER_ADMISSION:'1'});
- ({pool,tx,closePools}=await import('../server/db.mjs'));platform=await import('../server/platform.mjs');wallet=await import('../server/wallet/index.mjs');binding=await import('../server/wallet-binding.mjs');pvp=await import('../server/pvp/index.mjs');cycles=await import('../server/cycles.mjs');runtimeMode=await import('../server/runtime-mode.mjs');simple=await import('../server/simple-wallet.mjs');
+ ({pool,tx,closePools}=await import('../server/db.mjs'));platform=await import('../server/platform.mjs');wallet=await import('../server/wallet/index.mjs');binding=await import('../server/wallet-binding.mjs');pvp=await import('../server/pvp/index.mjs');cycles=await import('../server/cycles.mjs');runtimeMode=await import('../server/runtime-mode.mjs');simple=await import('../server/simple-wallet.mjs');casino=await import('../server/casino/rounds.mjs');
  ({closeEnginePool}=await import('../server/pvp/engine-pool.mjs'));
- await wallet.migrateWallet(pool);await platform.migratePlatform();await pvp.migratePvp(pool);await binding.migrateWalletBindings(pool);await simple.migrateSimpleWallet(pool);await runtimeMode.migrateRuntime(pool);await(await import('../server/transfers/index.mjs')).migrateTransfers(pool);
+ await wallet.migrateWallet(pool);await platform.migratePlatform();await pvp.migratePvp(pool);await binding.migrateWalletBindings(pool);await simple.migrateSimpleWallet(pool);await casino.migrateCasino(pool);await runtimeMode.migrateRuntime(pool);await(await import('../server/transfers/index.mjs')).migrateTransfers(pool);
  // The partner's own wallet tables live in a separate schema-free namespace of this test database.
  await migrateSimpleDemoWallet(pool);await seedSimpleDemoUsers(pool,[{external_user_id:'alice',balance_minor:'100000'},{external_user_id:'bob',balance_minor:'100000'},{external_user_id:'poor',balance_minor:'500'}]);
  partnerServer=createServer(async(req,res)=>{let raw='';for await(const c of req)raw+=c;if(!await handleSimpleWallet(pool,walletKey,req,res,raw)){res.writeHead(404);res.end('{}');}});
@@ -145,4 +145,61 @@ test('pausing the App blocks new sessions and the hosted platform account flow i
  await pool.query("UPDATE gp_apps SET status='paused' WHERE id=$1",[app.id]);app=await platform.appById(app.id);
  const body={...platform.scope(app),request_id:uid('launch'),external_user_id:'alice',game_id:'match',locale:'en',host_platform:'web'};
  await assert.rejects(platform.createSession(app,body,JSON.stringify(body)),{code:'APP_PAUSED'});
+});
+
+test('a shared Lion Feast round debits each bet and credits winners at their multiplier',async()=>{
+ await pool.query("UPDATE gp_apps SET status='active' WHERE id=$1",[app.id]);app=await platform.appById(app.id);
+ const [alice,bob]=await Promise.all([sessionFor('alice','lionfeast'),sessionFor('bob','lionfeast')]);
+ const state=await casino.casinoState(alice,{balance:true});assert.equal(state.round.status,'betting');assert.ok(state.round.commitment);assert.equal(state.round.result,undefined);
+ assert.equal((await casino.casinoState(bob)).round.id,state.round.id,'one shared round per App and game');
+ const before={alice:await partnerBalance('alice'),bob:await partnerBalance('bob')};
+ const bet=(s,option,stake='10000',request_id=uid('bet'))=>casino.placeBet(s,{request_id,round_id:state.round.id,option_id:option,stake_minor:stake});
+ const first=await bet(alice,'tomato','10000','alice_bet_0001');assert.equal(first.status,'ACCEPTED');
+ assert.deepEqual(await bet(alice,'tomato','10000','alice_bet_0001'),first,'same request_id is one bet');
+ await bet(alice,'chicken','10000');for(const o of ['corn','carrot','lettuce','shrimp'])await bet(alice,o);
+ await assert.rejects(bet(alice,'fish'),{code:'TOO_MANY_OPTIONS'});
+ await assert.rejects(bet(alice,'tomato','12345'),{code:'INVALID_STAKE'});
+ await bet(bob,'steak','10000');
+ assert.equal(await partnerBalance('alice'),before.alice-60000n);assert.equal(await partnerBalance('bob'),before.bob-10000n);
+ const totals=(await casino.casinoState(bob)).totals;assert.equal(totals.tomato.stake_minor,'10000');assert.equal(totals.steak.players,1);
+ await pool.query('UPDATE casino_rounds SET bet_until=$2 WHERE id=$1',[state.round.id,Date.now()-1]);
+ await assert.rejects(bet(bob,'fish'),{code:'BETTING_CLOSED'});
+ await casino.tickCasino();await casino.tickCasino();await recover();
+ const round=(await pool.query('SELECT status,result FROM casino_rounds WHERE id=$1',[state.round.id])).rows[0];assert.equal(round.status,'settled');
+ const bets=(await pool.query('SELECT external_user_id,option_id,stake_minor,payout_minor,status FROM casino_bets WHERE round_id=$1',[state.round.id])).rows;
+ assert.ok(bets.every(b=>b.status==='SETTLED'));
+ const m={tomato:5,corn:5,carrot:5,lettuce:5,shrimp:10,fish:15,steak:25,chicken:45};
+ for(const b of bets)assert.equal(BigInt(b.payout_minor),round.result.winners.includes(b.option_id)?BigInt(b.stake_minor)*BigInt(m[b.option_id]):0n);
+ const won=u=>bets.filter(b=>b.external_user_id===u).reduce((a,b)=>a+BigInt(b.payout_minor),0n);
+ assert.equal(await partnerBalance('alice'),before.alice-60000n+won('alice'));assert.equal(await partnerBalance('bob'),before.bob-10000n+won('bob'));
+ assert.equal(await transit(),'0');
+ const after=await casino.casinoState(alice);assert.equal(after.history[0]?.outcome??round.result.outcome,round.result.outcome);
+});
+
+
+test('Rocket Rush hides the crash point in flight and pays manual and automatic cash-outs below it',async()=>{
+ const {timeToReach}=await import('../server/casino/crash.mjs');
+ const [alice,bob]=await Promise.all([sessionFor('alice','rocketrush'),sessionFor('bob','rocketrush')]);
+ const s0=await casino.casinoState(alice);assert.equal(s0.round.status,'betting');assert.equal(s0.round.reveal_at,null);
+ const before={alice:await partnerBalance('alice'),bob:await partnerBalance('bob')};
+ const auto=await casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:'a',stake_minor:'10000',auto_x100:150});
+ await assert.rejects(casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:'a',stake_minor:'10000'}),{code:'OPTION_ALREADY_BET'});
+ await assert.rejects(casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:'b',stake_minor:'10000',auto_x100:100}),{code:'INVALID_AUTO_CASHOUT'});
+ const manual=await casino.placeBet(bob,{request_id:uid('bet'),round_id:s0.round.id,option_id:'a',stake_minor:'10000'});
+ const late=await casino.placeBet(bob,{request_id:uid('bet'),round_id:s0.round.id,option_id:'b',stake_minor:'10000'});
+ // Close betting with a pinned crash point (5.00x) and the flight at ~1.30x, for a deterministic test.
+ const now=Date.now(),start=now-timeToReach(130);
+ await pool.query(`UPDATE casino_rounds SET status='drawing',result='{"outcome":"5.00","crash_x100":500}'::jsonb,bet_until=$2,reveal_at=$3,ends_at=$4 WHERE id=$1`,[s0.round.id,start,start+timeToReach(500),start+timeToReach(500)+3500]);
+ const flying=await casino.casinoState(bob);assert.equal(flying.round.status,'drawing');assert.equal(flying.round.result,undefined);assert.equal(flying.round.reveal_at,null);
+ const out=await casino.cashOut(bob,{bet_id:manual.id});assert.ok(out.cashout_x100>=130&&out.cashout_x100<140,String(out.cashout_x100));
+ assert.equal((await casino.casinoState(bob)).cashouts.length,1);
+ await pool.query('UPDATE casino_rounds SET reveal_at=$2,ends_at=$3 WHERE id=$1',[s0.round.id,Date.now()-1,Date.now()+3000]);
+ await assert.rejects(casino.cashOut(bob,{bet_id:late.id}),{code:'CRASHED'});
+ await casino.tickCasino();await casino.tickCasino();await recover();
+ const bets=Object.fromEntries((await pool.query('SELECT id,payout_minor,status FROM casino_bets WHERE round_id=$1',[s0.round.id])).rows.map(b=>[b.id,b]));
+ assert.equal(bets[auto.id].payout_minor,'15000');assert.equal(bets[late.id].payout_minor,'0');assert.equal(bets[manual.id].payout_minor,String(100*out.cashout_x100));
+ assert.ok(Object.values(bets).every(b=>b.status==='SETTLED'));
+ assert.equal(await partnerBalance('alice'),before.alice-10000n+15000n);assert.equal(await partnerBalance('bob'),before.bob-20000n+BigInt(100*out.cashout_x100));
+ assert.equal(await transit(),'0');
+ const done=await casino.casinoState(alice);assert.equal(done.round.result.crash_x100,500);
 });

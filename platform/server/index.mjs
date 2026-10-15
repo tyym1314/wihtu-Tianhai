@@ -11,14 +11,16 @@ import {compactRoomSnapshot} from './pvp/snapshot-transfer.mjs';
 import {runPracticeCourseCapability} from './pvp/run-course-policy.mjs';
 import {RUN_PRACTICE_INPUT_PROTOCOL} from './pvp/run-practice-protocol.mjs';
 import {getProfile} from './math/index.ts';
-import {ARENA_IDS,RELEASED_IDS} from '../shared/games.mjs';
+import {ALL_GAME_IDS,ARENA_IDS,RELEASED_IDS} from '../shared/games.mjs';
 import {migratePortal,routePortal} from './portal.mjs';
 import {migrateWalletBindings} from './wallet-binding.mjs';
 import {migrateSimpleWallet,recoverSimpleWallets} from './simple-wallet.mjs';
+import {migrateCasino,registerCasinoProfiles,casinoState,placeBet,cashOut,tickCasino} from './casino/rounds.mjs';
+import {isCasinoGame,CASINO_IDS} from '../shared/casino-games.mjs';
 import {routeIntegration} from './integration-routes.mjs';
 import {migrateIntegrationChecks,recoverIntegrationChecks} from './integration-checks.mjs';
 import {operationsStatus} from './operations-status.mjs';
-import {unitsPerCoin,firstpartyProfile,partnerProfile,publicAdmissionCapability,assertExternalFinancialRouteAllowed} from './production-admission.mjs';
+import {unitsPerCoin,firstpartyProfile,partnerProfile,publicAdmissionCapability,assertExternalFinancialRouteAllowed,isPartnerApp} from './production-admission.mjs';
 import {publicAdmissionStatus} from './admission-status.mjs';
 import {enginePoolStats,closeEnginePool} from './pvp/engine-pool.mjs';
 import {runtime,preflightRuntime,migrateRuntime,assertProductionAppReady} from './runtime-mode.mjs';
@@ -70,7 +72,7 @@ async function adminRoutes(req,res,path,b){
       if(!Object.keys(b).length||Object.keys(b).some(k=>!allowedPatch.has(k)))fail(400,'INVALID_REQUEST');
       if(b.name!==undefined&&(typeof b.name!=='string'||b.name.trim().length<2||b.name.length>60))fail(400,'INVALID_NAME');
       if(b.status!==undefined&&!['active','paused'].includes(b.status))fail(400,'INVALID_STATUS');
-      if(b.game_ids!==undefined&&(!Array.isArray(b.game_ids)||b.game_ids.some(g=>!RELEASED_IDS.includes(g))||new Set(b.game_ids).size!==b.game_ids.length))fail(400,'INVALID_GAMES');
+      if(b.game_ids!==undefined&&(!Array.isArray(b.game_ids)||b.game_ids.some(g=>!ALL_GAME_IDS.includes(g))||new Set(b.game_ids).size!==b.game_ids.length))fail(400,'INVALID_GAMES');
       if(b.math_profile!==undefined&&!['98','99'].includes(b.math_profile))fail(400,'INVALID_PROFILE');
       if(b.competitive_fee_bps!==undefined&&![300,500,800,1000].includes(b.competitive_fee_bps))fail(400,'INVALID_FEE');
       const updated=await tx(async c=>{const locked=(await c.query('SELECT * FROM gp_apps WHERE id=$1 FOR UPDATE',[app.id])).rows[0];if(b.status==='active'||(locked.status==='active'&&(b.game_ids||b.math_profile)))await assertProductionAppReady(c,{...locked,...b},{intent:'activate'});const changed=(await c.query('UPDATE gp_apps SET name=$1,status=$2,game_ids=$3,math_profile=$4,competitive_fee_bps=$6 WHERE id=$5 RETURNING *',[b.name?.trim()||locked.name,b.status||locked.status,JSON.stringify(b.game_ids||locked.game_ids),b.math_profile||locked.math_profile,app.id,b.competitive_fee_bps??locked.competitive_fee_bps])).rows[0];await audit(user.id,'app.configured',app.id,b,c);return changed;});return send(res,200,{app:updated});
@@ -97,7 +99,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
   const path=req.url||'/';assertExternalFinancialRouteAllowed(runtime,path);if(path.includes('?')&&path.startsWith('/v1/'))fail(400,'INVALID_TARGET');
   if(path==='/health/ready'&&req.method==='GET'){await pool.query('SELECT 1');return send(res,200,{status:'ok',environment:runtime.environment});}
   if(path==='/health'&&req.method==='GET')return send(res,200,{status:'ok',environment:runtime.environment});
-  if(path.startsWith('/legacy/')||path.startsWith('/arena/')||path.startsWith('/play/'))return await serveLegacy(req,res,path);
+  if(path.startsWith('/legacy/')||path.startsWith('/arena/')||path.startsWith('/casino/')||path.startsWith('/play/'))return await serveLegacy(req,res,path);
   const {raw,body}=await readBody(req);
   if(await routePlayer(req,res,path,body,raw))return;
   if(path.startsWith('/api/admin/')||path.startsWith('/api/partner/')){
@@ -119,6 +121,18 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
     const op=path.match(/^\/v1\/operations\/([A-Za-z0-9_-]+)$/);
     if(op&&req.method==='GET'){const r=(await pool.query('SELECT id,app_id,path,raw_body,state,response,created_at,updated_at FROM gp_operations WHERE id=$1 AND app_id=$2 UNION ALL SELECT id,app_id,path,raw_body,state,response,created_at,updated_at FROM pvp_operations WHERE id=$1 AND app_id=$2',[op[1],app.id])).rows[0];if(!r)fail(404,'NOT_FOUND');if(r.response)return send(res,200,r.response);return send(res,202,{...scope(app),operation_id:r.id,state:'PENDING',kind:r.path.includes('probability')?r.path.split('/').pop()+'_probability':r.path.endsWith('/reservations')?'reserve':r.path.split('/').pop()+'_match',body_sha256:hash(r.raw_body),created_at:r.created_at,updated_at:r.updated_at});}
     fail(404,'NOT_FOUND');
+  }
+  if(path.split('?')[0]==='/api/casino/state'&&req.method==='GET'){
+    const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','GET',path);if(!isCasinoGame(s.game_id))fail(403,'GAME_SESSION_REQUIRED');
+    return send(res,200,await casinoState(s,{balance:new URL(req.url,'http://x').searchParams.get('balance')==='1'}));
+  }
+  if(path==='/api/casino/bets'&&req.method==='POST'){
+    checkOrigin(req);const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','POST',path);if(!isCasinoGame(s.game_id))fail(403,'GAME_SESSION_REQUIRED');
+    return send(res,200,await placeBet(s,body));
+  }
+  if(path==='/api/casino/cashout'&&req.method==='POST'){
+    checkOrigin(req);const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','POST',path);
+    return send(res,200,await cashOut(s,body));
   }
   if(path==='/api/arena/session'&&req.method==='GET'){
     const s=await authenticated(req,()=>playSession(req));limiter.player(s,'pvp','GET',path);if(!ARENA_IDS.includes(s.game_id))fail(403,'GAME_SESSION_REQUIRED');// One fresh snapshot binds both reads to the authenticated App and user.
@@ -151,7 +165,12 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
   }
   fail(404,'NOT_FOUND');
 }catch(e){if(res.headersSent||res.destroyed)return;const status=e.status||500;if(status===429)res.setHeader('retry-after',String(e.retryAfterSeconds||60));if(status>=500&&!(e instanceof ApiError))console.error('[platform]',e.code||e.message);const message=(e.status?e.message:'服务暂时不可用，请保留原请求重试').slice(0,512);if((req.url||'').startsWith('/v1/')){const allowed=['INVALID_REQUEST','AMOUNT_MISMATCH','SIGNATURE_INVALID','TIMESTAMP_EXPIRED','NONCE_REPLAY','LAUNCH_CODE_INVALID','SCOPE_FORBIDDEN','GAME_DISABLED','NOT_FOUND','IDEMPOTENCY_CONFLICT','INVALID_STATE','RATE_LIMITED','INTERNAL_ERROR'];const code=(allowed.includes(e.code)||TRANSFER_PUBLIC_CODES.includes(e.code))?e.code:status>=500?'INTERNAL_ERROR':status===403?'SCOPE_FORBIDDEN':status===409?'INVALID_STATE':'INVALID_REQUEST';send(res,status,{code,message,trace_id:id('trace'),retryable:status>=500||status===429});}else send(res,status,{error:{code:e.code||'INTERNAL_ERROR',message}});}});}
-await preflightRuntime(pool);await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateSimpleWallet(pool);await migrateIntegrationChecks();await upgradeArenaSandbox();await migrateTransfers(pool);
+await preflightRuntime(pool);await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateSimpleWallet(pool);await migrateCasino(pool);
+if(runtime.production&&runtime.partnerAdmission){
+ // Partner Apps get newly released casino games; the first-party App keeps its reviewed catalogue.
+ for(const app of (await pool.query("SELECT * FROM gp_apps WHERE environment='production'")).rows)
+  if(isPartnerApp(runtime,app)){const missing=CASINO_IDS.filter(g=>!app.game_ids.includes(g));if(missing.length)await pool.query('UPDATE gp_apps SET game_ids=game_ids||$2::jsonb WHERE id=$1',[app.id,JSON.stringify(missing)]);}
+}for(const {scope_id} of (await walletPool.query('SELECT scope_id FROM wallet_scopes')).rows)await registerCasinoProfiles(walletPool,scope_id);await migrateIntegrationChecks();await upgradeArenaSandbox();await migrateTransfers(pool);
 // Fail before listening if persisted credentials cannot be decrypted with this instance key.
 for(const key of (await pool.query('SELECT secret_enc FROM gp_keys')).rows)unseal(key.secret_enc);
 const wallet=process.env.OASIS_START_WALLET==='0'?null:createWalletServer(walletPool);if(wallet)await new Promise(r=>wallet.listen(WALLET_PORT,'127.0.0.1',r));
@@ -161,6 +180,7 @@ roomTimingSink?.closed.then(result=>console.log(JSON.stringify({event:'oasis.roo
  confirmed_written_bytes:result.confirmed_written_bytes,dropped:result.dropped}))).catch(()=>{});
 const server=createPlatformServer();await new Promise(r=>server.listen(PORT,'127.0.0.1',r));
 const timer=setInterval(()=>recoverPending().catch(e=>console.error('[recovery]',e.code||e.message)),3000);timer.unref();
+let casinoTicking=false;const casinoTimer=setInterval(()=>{if(casinoTicking)return;casinoTicking=true;tickCasino().catch(e=>console.error('[casino rounds]',e.code||e.message)).finally(()=>{casinoTicking=false;});},250);casinoTimer.unref();
 const pvpTimer=setInterval(()=>tickPvp().catch(e=>console.error('[arena recovery]',e.code||e.message)),250);pvpTimer.unref();
 const integrationTimer=setInterval(()=>recoverIntegrationChecks().catch(e=>console.error('[integration recovery]',e.code||e.message)),3000);integrationTimer.unref();
 const simpleBinding=async appId=>{const app=(await pool.query('SELECT * FROM gp_apps WHERE id=$1',[appId])).rows[0];const binding=(await pool.query("SELECT * FROM gp_wallet_bindings WHERE app_id=$1 AND provider='simple'",[appId])).rows[0];return app&&binding?{app,binding}:null;};

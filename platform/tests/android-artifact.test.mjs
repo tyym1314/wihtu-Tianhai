@@ -60,10 +60,10 @@ test('release build completes without APK downloads and does not publish Android
  const stamp=JSON.parse(await readFile(join(root,'release-build-manifest.json'),'utf8'));
  assert.equal(stamp.outputs[retainedPath],createHash('sha256').update(retainedBytes).digest('hex'));
  const commands=(await readFile(log,'utf8')).trim().split('\n');
- assert.deepEqual(commands.slice(0,4),['check:contracts','build:legacy','build:arena','build'].map(name=>'npm run '+name));
- assert.match(commands[4],/^python3 .*\/deploy\/release_build\.py retained-inspect --root /);
- assert.match(commands[5],/^python3 .*\/deploy\/release_build\.py retained-materialize --root .* --archive /);
- assert.equal(commands[6],'python3 deploy/release_build.py record');assert.equal(commands.length,7);assert.doesNotMatch(commands.join('\n'),/build:android/);
+ assert.deepEqual(commands.slice(0,5),['check:contracts','build:legacy','build:arena','build:casino','build'].map(name=>'npm run '+name));
+ assert.match(commands[5],/^python3 .*\/deploy\/release_build\.py retained-inspect --root /);
+ assert.match(commands[6],/^python3 .*\/deploy\/release_build\.py retained-materialize --root .* --archive /);
+ assert.equal(commands[7],'python3 deploy/release_build.py record');assert.equal(commands.length,8);assert.doesNotMatch(commands.join('\n'),/build:android/);
 });
 
 test('changed, added, or removed Android inputs invalidate the reviewed artifact',async t=>{

@@ -6,7 +6,7 @@ import {materializeRetainedAssets} from './retained-assets.mjs';
 const cwd=fileURLToPath(new URL('..',import.meta.url));
 // A failed rebuild must never leave an apparently valid previous stamp.
 rmSync(new URL('../release-build-manifest.json',import.meta.url),{force:true});
-for(const script of ['check:contracts','build:legacy','build:arena','build']){
+for(const script of ['check:contracts','build:legacy','build:arena','build:casino','build']){
   const child=spawnSync('npm',['run',script],{cwd,stdio:'inherit'});
   if(child.error)throw child.error;
   if(child.status!==0)process.exit(child.status||1);

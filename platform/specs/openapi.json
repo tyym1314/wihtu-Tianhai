@@ -1703,7 +1703,9 @@
           "run",
           "thunder",
           "tiger",
-          "towerlink"
+          "towerlink",
+          "lionfeast",
+          "rocketrush"
         ]
       },
       "CompetitiveGameId": {
@@ -1726,7 +1728,9 @@
         "type": "string",
         "enum": [
           "thunder",
-          "tiger"
+          "tiger",
+          "lionfeast",
+          "rocketrush"
         ]
       },
       "Scope": {

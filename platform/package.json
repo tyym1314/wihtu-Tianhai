@@ -18,7 +18,8 @@
     "db:stop": "node scripts/local-db.mjs stop",
     "partner:smoke": "node scripts/partner-smoke.mjs",
     "build:arena": "vite build --config arena/vite.config.mjs",
-    "test:release": "node scripts/test-backend-isolated.mjs"
+    "test:release": "node scripts/test-backend-isolated.mjs",
+    "build:casino": "vite build --config casino/vite.config.mjs"
   },
   "dependencies": {
     "ajv": "^8.20.0",

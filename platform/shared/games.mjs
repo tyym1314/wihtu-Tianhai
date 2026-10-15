@@ -1,3 +1,4 @@
+import {CASINO_IDS} from './casino-games.mjs';
 /** Local released game definitions. Client and server share admission and presentation metadata. */
 export const ARENA_GAMES=Object.freeze({
  match:{id:'match',name:'三消对战',en:'MATCH ARENA',brand:['MATCH','ARENA'],tag:'EVERY MATCH IS MAGIC',players:[2,3,4],theme:'match',icon:'✦',duration:90000,scoreUnit:'分',description:'90 秒宝石对决。积分、指定宝石或特殊消除三种目标，同局同条件。',rules:['单指滑动或依次点击相邻宝石交换，3 个相同即可消除。','4 连生成条纹；5 连生成彩球；T/L 形生成炸弹。','每局固定积分、指定色收集或特殊触发目标；90 秒结束先比本局目标成绩，相同再比连锁积分。','目标门槛是挑战徽标，不提前结束比赛；同局所有玩家使用相同目标、初盘和补充序列。']},
@@ -14,6 +15,11 @@ export const ARENA_GAMES=Object.freeze({
 });
 export const ARENA_IDS=Object.freeze(Object.keys(ARENA_GAMES));
 export const LEGACY_IDS=Object.freeze(['thunder','tiger']);
+export {CASINO_IDS};
+/** Probability games: per-user cycles (thunder/tiger) and shared-round casino games. */
+export const PROBABILITY_IDS=Object.freeze([...LEGACY_IDS,...CASINO_IDS]);
 export const RELEASED_IDS=Object.freeze([...LEGACY_IDS,...ARENA_IDS]);
+/** Every game a partner or sandbox App can enable: the original catalogue plus casino games. */
+export const ALL_GAME_IDS=Object.freeze([...RELEASED_IDS,...CASINO_IDS]);
 export const teamSizeFor=(game,capacity)=>ARENA_GAMES[game]?.teamCapacity===capacity?2:1;
 export const allowedCapacity=(game,capacity)=>Object.hasOwn(ARENA_GAMES,game)&&ARENA_GAMES[game].players.includes(capacity);

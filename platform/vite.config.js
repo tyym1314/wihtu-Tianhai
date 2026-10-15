@@ -21,4 +21,4 @@ function specs() {
     closeBundle() { if (fs.existsSync(path.join(root, 'specs'))) fs.cpSync(path.join(root, 'specs'), path.join(root, 'dist/specs'), { recursive: true }); }
   };
 }
-export default defineConfig({ plugins: [react(), specs()], server: { fs: { deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**', '**/.local/**', '**/server/**', '**/tests/**', '**/scripts/**'] }, host: '127.0.0.1', port: 8795, strictPort: true, proxy: { '/arena': 'http://127.0.0.1:8797', '/api': 'http://127.0.0.1:8797', '/v1': 'http://127.0.0.1:8797', '/play': 'http://127.0.0.1:8797', '/legacy': 'http://127.0.0.1:8797' } }, build: { chunkSizeWarningLimit: 650 } });
+export default defineConfig({ plugins: [react(), specs()], server: { fs: { deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**', '**/.local/**', '**/server/**', '**/tests/**', '**/scripts/**'] }, host: '127.0.0.1', port: 8795, strictPort: true, proxy: { '/arena': 'http://127.0.0.1:8797', '/api': 'http://127.0.0.1:8797', '/v1': 'http://127.0.0.1:8797', '/play': 'http://127.0.0.1:8797', '/legacy': 'http://127.0.0.1:8797', '/casino': 'http://127.0.0.1:8797' } }, build: { chunkSizeWarningLimit: 650 } });

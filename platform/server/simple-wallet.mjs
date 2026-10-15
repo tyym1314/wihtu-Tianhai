@@ -16,6 +16,7 @@ import {WalletError} from './wallet/security.mjs';
 import {fail} from './security.mjs';
 import {getProfile} from './math/index.ts';
 import {signedPartnerRequest} from './wallet-binding.mjs';
+import {registerCasinoProfiles} from './casino/rounds.mjs';
 
 export const SIMPLE_PROTOCOL='simple-v1';
 const fields=['partner_id','app_id','environment','wallet_scope_id','currency_id'];
@@ -47,6 +48,7 @@ export async function createSimpleWalletScope(db,app){
   VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING`,[scopeId(app),app.partner_id,app.id,app.environment,app.wallet_scope_id,app.currency_id,app.currency_scale,INTERNAL_TREASURY]);
  for(const game of ['thunder','tiger'])for(const tier of ['98','99']){const m=getProfile(game,tier);
   await db.query('INSERT INTO wallet_math_profiles(scope_id,game_id,math_version,math_config_hash,max_payout_multiplier) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING',[scopeId(app),game,m.version,m.hash,String(m.maxMultiplier)]);}
+ await registerCasinoProfiles(db,scopeId(app));
 }
 
 async function internal(db,app,method,path,raw,requestId){

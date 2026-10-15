@@ -1,3 +1,4 @@
+import {CASINO_GAMES} from '../shared/casino-games.mjs';
 import {readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 import Ajv from 'ajv/dist/2020.js';
@@ -6,7 +7,7 @@ import {pool,tx} from './db.mjs';
 import {id,hash,seal,unseal,localDir,fail,verifySignature} from './security.mjs';
 import {provisionWallet} from './wallet/index.mjs';
 import {getProfile} from './math/index.ts';
-import {ARENA_IDS,RELEASED_IDS} from '../shared/games.mjs';
+import {ALL_GAME_IDS,ARENA_IDS,RELEASED_IDS} from '../shared/games.mjs';
 import {FIRSTPARTY_FREE_PROFILE,FIRSTPARTY_INTERNAL_PROFILE,PARTNER_EXTERNAL_PROFILE,isPartnerApp} from './production-admission.mjs';
 import {runtime,assertProductionAppReady} from './runtime-mode.mjs';
 import {resolveHostOrigin,assertExchangeOrigin} from './launch-policy.mjs';
@@ -14,7 +15,8 @@ import {loginCredential} from './credentials.mjs';
 import {appPlayerId} from './player-records.mjs';
 import {createPlatformWallet} from './platform-wallet.mjs';
 const spec=JSON.parse(readFileSync(new URL('../specs/openapi.json',import.meta.url),'utf8'));
-const catalog=JSON.parse(readFileSync(new URL('../specs/game-catalog.json',import.meta.url),'utf8')).games;
+const catalog=[...JSON.parse(readFileSync(new URL('../specs/game-catalog.json',import.meta.url),'utf8')).games,
+ ...Object.values(CASINO_GAMES).map(g=>({id:g.id,name:g.zh,nameEn:g.name,category:'probability',family:g.family,status:'casino-shared-round',reference:g.reference}))];
 const ajv=new Ajv({strict:false,allErrors:true});addFormats(ajv);ajv.addSchema(spec,'contract');
 const validators=new Map();
 export function validate(name,body){let fn=validators.get(name);if(!fn){fn=ajv.compile({$ref:`contract#/components/schemas/${name}`});validators.set(name,fn);}if(!fn(body))fail(400,'INVALID_REQUEST',ajv.errorsText(fn.errors));}
@@ -31,7 +33,7 @@ export async function createApp(name,options='partner_oasis_demo') {
   if(typeof name!=='string'||name.trim().length<2||name.length>60)fail(400,'INVALID_NAME','应用名称需要 2–60 个字符');
   if(runtime.production&&partner==='partner_oasis_demo')fail(400,'PRODUCTION_PARTNER_REQUIRED');
   const app={id:id('app'),name:name.trim(),partner_id:partner,environment:runtime.environment,wallet_scope_id:id('wallet'),currency_id:'COIN',currency_scale:2,status:'active',game_ids:[...RELEASED_IDS],competitive_fee_bps:500,wallet_url:process.env.OASIS_REFERENCE_WALLET_URL||'http://127.0.0.1:8798',math_profile:'99'};
-  if(runtime.production){app.status='paused';app.game_ids=runtime.partnerAdmission?[...RELEASED_IDS]:[...ARENA_IDS];app.wallet_url='';}
+  if(runtime.production){app.status='paused';app.game_ids=runtime.partnerAdmission?[...ALL_GAME_IDS]:[...ARENA_IDS];app.wallet_url='';}
   const credentials={key_id:id('pk'),secret_base64:randomBytes(32).toString('base64')};
   const walletKey={key_id:id('wk'),secret_base64:randomBytes(32).toString('base64')};
   // Idempotent reference-wallet provisioning precedes visibility of this new App.
@@ -107,7 +109,7 @@ export async function createSession(app,b,raw,{playerId=null}={}){
     if(sid){const old=(await c.query('SELECT * FROM gp_sessions WHERE id=$1 FOR UPDATE',[sid])).rows[0];if(!old||old.app_id!==app.id||old.external_user_id!==externalUserId||old.game_id!==game||(runtime.production&&old.player_id!==playerId))fail(403,'SCOPE_FORBIDDEN');}
     else {
       const admission=await assertProductionAppReady(c,app,{intent:'session',gameId:game});
-      if(app.status!=='active')fail(403,'APP_PAUSED');if(game!=='lobby'&&!app.game_ids.includes(game))fail(403,'GAME_DISABLED');if(!RELEASED_IDS.includes(game))fail(409,'GAME_NOT_RELEASED','此竞技游戏尚未发布');
+      if(app.status!=='active')fail(403,'APP_PAUSED');if(game!=='lobby'&&!app.game_ids.includes(game))fail(403,'GAME_DISABLED');if(!ALL_GAME_IDS.includes(game))fail(409,'GAME_NOT_RELEASED','此竞技游戏尚未发布');
       if(runtime.production&&admission.profile===FIRSTPARTY_FREE_PROFILE){
         const account=(await c.query('SELECT available,reserved,credit_pending FROM wallet_users WHERE scope_id=$1 AND external_user_id=$2',[Object.values(scope(app)).join(':'),externalUserId])).rows[0];
         if(!account)fail(409,'PLAYER_WALLET_NOT_READY');
@@ -131,7 +133,7 @@ export async function exchange(b){validate('ExchangeLaunchRequest',b);return tx(
   return {session_id:s.id,access_token:token,token_type:'Bearer',expires_in:900,game_entry_url:origin+'/play/'+s.game_id,scope:scope(app),external_user_id:s.external_user_id,host_origin:hostOrigin,game_id:s.game_id,locale:s.locale||null};
 });}
 export async function playSession(req){const token=req.headers.authorization?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1];if(!token)fail(401,'SESSION_REQUIRED');const s=(await pool.query('SELECT * FROM gp_sessions WHERE token_hash=$1 AND token_expires_at>now()',[hash(token)])).rows[0];if(!s)fail(401,'SESSION_EXPIRED','请返回应用重新打开游戏');return s;}
-export function gamesFor(app){const partner=isPartnerApp(runtime,app);return {partner_id:app.partner_id,app_id:app.id,environment:app.environment,as_of:new Date().toISOString(),games:catalog.filter(g=>app.game_ids.includes(g.id)).map(g=>({game_id:g.id,title:g.name||g.title||g.id,category:g.category,available:app.status==='active'&&RELEASED_IDS.includes(g.id),configuration_version:partner?PARTNER_EXTERNAL_PROFILE:runtime.production&&runtime.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE?FIRSTPARTY_INTERNAL_PROFILE:'sandbox-v1',modes:g.id==='towerlink'?[{mode_id:'competitive',player_counts:[2],team_size:1,rule_version:g.ruleVersion},{mode_id:'social',player_counts:[2,3,4],team_size:1,rule_version:g.ruleVersion},{mode_id:'practice',player_counts:[2,3,4],team_size:1,rule_version:g.ruleVersion}]:g.id==='carrom'?[{mode_id:'duel',player_counts:[2],team_size:1,rule_version:g.ruleVersion},{mode_id:'teams',player_counts:[4],team_size:2,rule_version:g.ruleVersion}]:[{mode_id:'default',player_counts:g.players||[1],team_size:g.id==='jackaroo'?2:1,rule_version:g.ruleVersion||'sandbox-v1'}],locales:['zh','en'],...(['thunder','tiger'].includes(g.id)?{math_profiles:['98','99'].map(p=>{const m=getProfile(g.id,p);return {math_version:m.version,math_config_hash:m.hash,target_rtp_bps:Number(p)*100,validation_status:partner?'statistical-model-uncertified':runtime.production&&runtime.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE?'internal-coins-statistical-model-uncertified':'draft',max_cycle_payout_description:partner?`Partner wallet coins, maximum ${m.maxMultiplier} times stake; target RTP from 10M-cycle simulation, not third-party certified`:runtime.production&&runtime.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE?`Internal nonredeemable game coins, maximum ${m.maxMultiplier} times stake; target RTP is not exact theoretical certification`:`Sandbox profile, maximum ${m.maxMultiplier} times stake; not approved for production`};})}:{})}))};}
+export function gamesFor(app){const partner=isPartnerApp(runtime,app);return {partner_id:app.partner_id,app_id:app.id,environment:app.environment,as_of:new Date().toISOString(),games:catalog.filter(g=>app.game_ids.includes(g.id)).map(g=>({game_id:g.id,title:g.name||g.title||g.id,category:g.category,available:app.status==='active'&&ALL_GAME_IDS.includes(g.id),configuration_version:partner?PARTNER_EXTERNAL_PROFILE:runtime.production&&runtime.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE?FIRSTPARTY_INTERNAL_PROFILE:'sandbox-v1',modes:g.id==='towerlink'?[{mode_id:'competitive',player_counts:[2],team_size:1,rule_version:g.ruleVersion},{mode_id:'social',player_counts:[2,3,4],team_size:1,rule_version:g.ruleVersion},{mode_id:'practice',player_counts:[2,3,4],team_size:1,rule_version:g.ruleVersion}]:g.id==='carrom'?[{mode_id:'duel',player_counts:[2],team_size:1,rule_version:g.ruleVersion},{mode_id:'teams',player_counts:[4],team_size:2,rule_version:g.ruleVersion}]:[{mode_id:'default',player_counts:g.players||[1],team_size:g.id==='jackaroo'?2:1,rule_version:g.ruleVersion||'sandbox-v1'}],locales:['zh','en'],...(['thunder','tiger'].includes(g.id)?{math_profiles:['98','99'].map(p=>{const m=getProfile(g.id,p);return {math_version:m.version,math_config_hash:m.hash,target_rtp_bps:Number(p)*100,validation_status:partner?'statistical-model-uncertified':runtime.production&&runtime.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE?'internal-coins-statistical-model-uncertified':'draft',max_cycle_payout_description:partner?`Partner wallet coins, maximum ${m.maxMultiplier} times stake; target RTP from 10M-cycle simulation, not third-party certified`:runtime.production&&runtime.admissionProfile===FIRSTPARTY_INTERNAL_PROFILE?`Internal nonredeemable game coins, maximum ${m.maxMultiplier} times stake; target RTP is not exact theoretical certification`:`Sandbox profile, maximum ${m.maxMultiplier} times stake; not approved for production`};})}:{})}))};}
 
 // One-time local upgrade. Existing disabled/custom entitlement selections are preserved.
 export async function upgradeArenaSandbox(){
