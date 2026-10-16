@@ -16,7 +16,7 @@ import {migratePortal,routePortal} from './portal.mjs';
 import {migrateWalletBindings} from './wallet-binding.mjs';
 import {migrateSimpleWallet,recoverSimpleWallets} from './simple-wallet.mjs';
 import {migrateCasino,registerCasinoProfiles,casinoState,casinoHistory,placeBet,cashOut,tickCasino} from './casino/rounds.mjs';
-import {migrateInstant,spin as casinoSpin,recoverInstant} from './casino/instant.mjs';
+import {migrateInstant,spin as casinoSpin,choose as casinoChoose,recoverInstant} from './casino/instant.mjs';
 import {migrateArcade,openArcade,shoot as arcadeShoot,closeArcade,recoverArcade} from './casino/arcade.mjs';
 import {isCasinoGame,CASINO_IDS} from '../shared/casino-games.mjs';
 import {routeIntegration} from './integration-routes.mjs';
@@ -140,6 +140,10 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
   if(arcade&&req.method==='POST'){
     checkOrigin(req);const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','POST',path);
     return send(res,200,await ({open:openArcade,shoot:arcadeShoot,close:closeArcade})[arcade[1]](s,body));
+  }
+  if(path==='/api/casino/choose'&&req.method==='POST'){
+    checkOrigin(req);const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','POST',path);
+    return send(res,200,await casinoChoose(s,body));
   }
   if(path==='/api/casino/spin'&&req.method==='POST'){
     checkOrigin(req);const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','POST',path);

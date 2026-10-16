@@ -24,9 +24,9 @@ const LINES_3x3=[[1,1,1],[0,0,0],[2,2,2],[0,1,2],[2,1,0]];
 const LINES_20=[...LINES_12,[0,1,0,1,0],[2,1,2,1,2],[1,0,1,0,1],[1,2,1,2,1],[0,0,2,0,0],[2,2,0,2,2],[0,2,0,2,0],[2,0,2,0,2]];
 const LINES_20x4=[[0,0,0,0,0],[1,1,1,1,1],[2,2,2,2,2],[3,3,3,3,3],[0,1,2,1,0],[3,2,1,2,3],[1,2,3,2,1],[2,1,0,1,2],[0,1,0,1,0],[3,2,3,2,3],[1,0,1,0,1],[2,3,2,3,2],[0,0,1,2,3],[3,3,2,1,0],[1,1,2,3,3],[2,2,1,0,0],[0,1,1,1,0],[3,2,2,2,3],[1,2,2,2,1],[2,1,1,1,2]];
 /** A paylines slot from a compact description; payScale is calibrated by scripts/casino-lines-sim.mjs. */
-function linesSlot(id,name,{columns=5,rows=3,lines,counts=[3,4,5],symbols,weights,wild,scatter,freeSpins,maxWin=2000,payScale=1,multiplierReel,bonus}){
+function linesSlot(id,name,{columns=5,rows=3,lines,counts=[3,4,5],symbols,weights,freeWeights,wild,scatter,freeSpins,maxWin=2000,payScale=1,multiplierReel,bonus,collect,wheel,randomWilds,expandingWild}){
  return Object.freeze({id,family:'slot',kind:'instant',reference:name,name,zh:name,ar:name,stakes:SLOT_STAKES,
-  slot:Object.freeze({pay:'lines',columns,rows,targetRtp:0.97,maxWin,payScale,lines,wild,symbols:symN(counts,symbols),scatter,freeSpins,multiplierReel,bonus,weights:{base:weights}})});
+  slot:Object.freeze({pay:'lines',columns,rows,targetRtp:0.97,maxWin,payScale,lines,wild,symbols:symN(counts,symbols),scatter,freeSpins,multiplierReel,bonus,collect,wheel,randomWilds,expandingWild,weights:{base:weights,...(freeWeights?{free:freeWeights}:{})}})});
 }
 /** 2000-ways cascading slot (4-5-5-5-4): golden symbols on reels 2-4 turn wild when they win; cascades raise the multiplier. */
 function waysSlot(id,name,scatter,symbols){
@@ -174,6 +174,38 @@ export const CASINO_GAMES=Object.freeze({
    wild:{id:'wild',reels:[1],maxPerReel:1},cascade:{base:[1],free:[1]},
    multiplierReel:[{x:1,w:600},{x:2,w:200},{x:3,w:100},{x:5,w:60},{x:10,w:20}],
    weights:{base:{trophy:8,ball:12,boot:16,whistle:20,flag:24,card:28,wild:[0,10,0]}}})}),
+
+ // ChilliSlot: 5x3, 25 lines; 3 scatters give 12 free spins on 2 boards. Collected chillies: 9 -> 3rd board and
+ // reel 5 wild, 14 -> 4th board and reel 4 wild, 30 -> reel 3 wild. 3+ scatters on a board add 3 spins.
+ chillislot:linesSlot('chillislot','ChilliSlot',{lines:[...LINES_20,[0,1,1,1,2],[2,1,1,1,0],[1,0,1,2,1],[1,2,1,0,1],[0,2,2,2,0]],payScale:25,
+  symbols:[['mariachi',[500,2000,8000]],['guitar',[300,1200,5000]],['sombrero',[200,800,3000]],['taco',[150,600,2000]],['maraca',[100,400,1500]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
+  weights:{mariachi:10,guitar:14,sombrero:18,taco:22,maraca:26,A:40,K:44,Q:48,J:52,wild:[0,12,12,12,12],pepper:7},
+  freeWeights:{mariachi:10,guitar:14,sombrero:18,taco:22,maraca:26,A:40,K:44,Q:48,J:52,wild:[0,10,10,10,10],pepper:3,chilli:14},
+  wild:{id:'wild',reels:[1,2,3,4]},scatter:{id:'pepper',pays:[[3,200],[4,800],[5,3000]]},
+  freeSpins:{trigger:3,award:12,perExtra:0,retrigger:3,multiplier:1,maxPlayed:60,boards:{start:2,collect:'chilli',steps:[{at:9,boards:3,wildReel:4},{at:14,boards:4,wildReel:3},{at:30,wildReel:2}]}},maxWin:5000}),
+ // sphinxlegend: 5x3, 20 lines; 3 scatters let the player choose one of four free spin packages of equal value.
+ sphinxlegend:linesSlot('sphinxlegend','sphinxlegend',{lines:LINES_20,payScale:31.6,
+  symbols:[['sphinx',[500,2000,8000]],['pharaoh',[300,1200,5000]],['cat',[200,800,3000]],['eye',[150,600,2000]],['ankh',[100,400,1500]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
+  weights:{sphinx:10,pharaoh:14,cat:18,eye:22,ankh:26,A:40,K:44,Q:48,J:52,wild:[0,12,12,12,12],pyramid:8},wild:{id:'wild',reels:[1,2,3,4]},
+  scatter:{id:'pyramid',pays:[[3,200],[4,1000],[5,5000]]},
+  freeSpins:{trigger:3,award:20,perExtra:0,retrigger:0,maxPlayed:60,choices:[{award:20,multiplier:1},{award:10,multiplier:2},{award:7,multiplier:3},{award:4,multiplier:5}]},maxWin:5000}),
+ // 1001Nights: 5x3, 20 lines; random wild spins; a wild on reel 2 or 4 grows into a 1x3 mega wild;
+ // 3 lamps give 10 "fortune" free spins with the low symbols removed.
+ nights1001:linesSlot('nights1001','1001Nights',{lines:LINES_20,payScale:3.95,
+  symbols:[['sultan',[500,2000,8000]],['princess',[300,1200,5000]],['carpet',[200,800,3000]],['dagger',[150,600,2000]],['jewel',[100,400,1500]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
+  weights:{sultan:10,princess:14,carpet:18,dagger:22,jewel:26,A:40,K:44,Q:48,J:52,wild:[0,8,8,8,8],lamp:8},
+  freeWeights:{sultan:10,princess:14,carpet:18,dagger:22,jewel:26,wild:[0,8,8,8,8],lamp:4},
+  wild:{id:'wild',reels:[1,2,3,4]},randomWilds:{chanceBp:600,min:3,max:6},expandingWild:{reels:[1,3]},
+  scatter:{id:'lamp',pays:[[3,200],[4,800],[5,3000]]},freeSpins:{trigger:3,award:10,perExtra:2,retrigger:5,multiplier:1,maxPlayed:60},maxWin:5000}),
+ // PyramidSlots / MagicSlot: 5x3 lines; 5+ coins pay their values (x1-x5 each); 3 wheel symbols spin a 10x-100x wheel.
+ pyramidslots:linesSlot('pyramidslots','PyramidSlots',{lines:LINES_20,payScale:31.3,
+  symbols:[['pharaoh',[500,2000,8000]],['ankh',[300,1200,5000]],['scarab',[200,800,3000]],['eye',[150,600,2000]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
+  weights:{pharaoh:10,ankh:14,scarab:18,eye:22,A:40,K:44,Q:48,J:52,wild:[0,12,12,12,12],coin:12,wheel:5},wild:{id:'wild',reels:[1,2,3,4]},
+  collect:{id:'coin',min:5,values:[{x:1,w:50},{x:2,w:25},{x:3,w:13},{x:4,w:8},{x:5,w:4}]},wheel:{id:'wheel',count:3,values:[{x:10,w:50},{x:20,w:25},{x:30,w:13},{x:50,w:8},{x:100,w:4}]},maxWin:3000}),
+ magicslot:linesSlot('magicslot','MagicSlot',{lines:LINES_20,payScale:31.1,
+  symbols:[['wizard',[500,2000,8000]],['crystal',[300,1200,5000]],['potion',[200,800,3000]],['book',[150,600,2000]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
+  weights:{wizard:10,crystal:14,potion:18,book:22,A:40,K:44,Q:48,J:52,wild:[0,12,12,12,12],coin:12,wheel:5},wild:{id:'wild',reels:[1,2,3,4]},
+  collect:{id:'coin',min:5,values:[{x:1,w:50},{x:2,w:25},{x:3,w:13},{x:4,w:8},{x:5,w:4}]},wheel:{id:'wheel',count:3,values:[{x:10,w:50},{x:20,w:25},{x:30,w:13},{x:50,w:8},{x:100,w:4}]},maxWin:3000}),
 
  // ---- Round games on the wheel engine (unreleased until art ships). ----
  crazyfruit:wheelGame('crazyfruit','CrazyFruit',{veg:['orange','lemon','grape','cherry'],meat:[['apple',10],['watermelon',15],['mango',25],['strawberry',45]],specials:['lucky','superlucky'],chips:CHIPS2,round:{betMs:25000,drawMs:7000,showMs:5000}}),

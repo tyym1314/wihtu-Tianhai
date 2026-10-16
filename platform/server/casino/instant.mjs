@@ -25,16 +25,18 @@ export async function migrateInstant(db=pool){
  await db.query(`CREATE TABLE IF NOT EXISTS casino_spins (
   id text PRIMARY KEY, app_id text NOT NULL REFERENCES gp_apps(id), session_id text NOT NULL, external_user_id text NOT NULL, request_id text NOT NULL,
   game_id text NOT NULL, stake_minor bigint NOT NULL CHECK(stake_minor>0), math_version text NOT NULL, math_hash text NOT NULL,
-  status text NOT NULL CHECK(status IN ('AUTHORIZING','ACCEPTED','RESULT_FIXED','SETTLED','REJECTED')),
+  status text NOT NULL,
   seed_enc text, result jsonb, payout_minor bigint, error text, attempts integer NOT NULL DEFAULT 0, mode text NOT NULL DEFAULT 'normal', base_stake_minor bigint,
   created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), UNIQUE(app_id,external_user_id,request_id));
  ALTER TABLE casino_spins ADD COLUMN IF NOT EXISTS mode text NOT NULL DEFAULT 'normal';
  ALTER TABLE casino_spins ADD COLUMN IF NOT EXISTS base_stake_minor bigint;
+ ALTER TABLE casino_spins DROP CONSTRAINT IF EXISTS casino_spins_status_check;
+ ALTER TABLE casino_spins ADD CONSTRAINT casino_spins_status_check CHECK(status IN ('AUTHORIZING','ACCEPTED','CHOOSING','RESULT_FIXED','SETTLED','REJECTED'));
  CREATE INDEX IF NOT EXISTS casino_spins_open ON casino_spins(status,updated_at) WHERE status NOT IN ('SETTLED','REJECTED');`);
 }
 
 const view=s=>({id:s.id,request_id:s.request_id,status:s.status,mode:s.mode||'normal',stake_minor:String(s.stake_minor),base_stake_minor:String(s.base_stake_minor??s.stake_minor),
- ...(s.result&&['RESULT_FIXED','SETTLED'].includes(s.status)?{result:s.result,payout_minor:String(s.payout_minor)}:{}),error:s.error||null});
+ ...(s.result&&['RESULT_FIXED','SETTLED','CHOOSING'].includes(s.status)?{result:s.result,payout_minor:s.status==='CHOOSING'?null:String(s.payout_minor)}:{}),error:s.error||null});
 
 export async function instantState(session,{balance=false}={}){
  const app=await appById(session.app_id);
@@ -63,7 +65,7 @@ export async function spin(session,body){
  }
  s=await advance(app,s);
  if(s.status==='REJECTED')fail(409,s.error||'WALLET_REJECTED');
- if(!['RESULT_FIXED','SETTLED'].includes(s.status))fail(503,'WALLET_PENDING');
+ if(!['RESULT_FIXED','SETTLED','CHOOSING'].includes(s.status))fail(503,'WALLET_PENDING');
  return view(s);
 }
 
@@ -81,7 +83,8 @@ async function advance(app,s){
    // No RNG before acceptance is persisted; afterwards every caller reads this one result.
    const seed=randomBytes(32).toString('hex'),result=engineOf(CASINO_GAMES[s.game_id]).play(model,seed,String(s.base_stake_minor??s.stake_minor),{buy:s.mode==='buy'});
    if(BigInt(result.gross_payout_minor)>BigInt(s.stake_minor)*BigInt(model.maxMultiplier))throw new Error('casino liability invariant');
-   s=(await pool.query("UPDATE casino_spins SET status='RESULT_FIXED',seed_enc=$2,result=$3,payout_minor=$4,updated_at=now() WHERE id=$1 AND status='ACCEPTED' RETURNING *",[s.id,seal(seed),result,result.gross_payout_minor])).rows[0]||(await pool.query('SELECT * FROM casino_spins WHERE id=$1',[s.id])).rows[0];
+   // A feature with a player choice waits in CHOOSING; the seed is fixed, so the base spin never changes.
+   s=(await pool.query("UPDATE casino_spins SET status=$5,seed_enc=$2,result=$3,payout_minor=$4,updated_at=now() WHERE id=$1 AND status='ACCEPTED' RETURNING *",[s.id,seal(seed),result,result.gross_payout_minor,result.pending?'CHOOSING':'RESULT_FIXED'])).rows[0]||(await pool.query('SELECT * FROM casino_spins WHERE id=$1',[s.id])).rows[0];
   }
   if(s.status==='RESULT_FIXED'){
    await command(app,s.id,'/wallet/v1/probability/settle',{...base,request_id:'settle_'+s.id,game_id:s.game_id,math_version:model.version,math_config_hash:model.hash,
@@ -95,9 +98,25 @@ async function advance(app,s){
  return s;
 }
 
+/** Pick a free spins option for a CHOOSING spin; the complete result is then fixed and settled. */
+export async function choose(session,body){
+ const s=(await pool.query('SELECT * FROM casino_spins WHERE id=$1 AND app_id=$2 AND external_user_id=$3',[body.spin_id,session.app_id,session.external_user_id])).rows[0];
+ if(!s)fail(404,'SPIN_NOT_FOUND');if(s.status!=='CHOOSING'){if(['RESULT_FIXED','SETTLED'].includes(s.status))return view(s);fail(409,'SPIN_NOT_CHOOSING');}
+ if(!Number.isSafeInteger(body.choice))fail(400,'INVALID_CHOICE');
+ return view(await decide(s,body.choice));
+}
+async function decide(s,choice){
+ const model=models[s.game_id],result=engineOf(CASINO_GAMES[s.game_id]).play(model,unseal(s.seed_enc),String(s.base_stake_minor??s.stake_minor),{choice});
+ if(BigInt(result.gross_payout_minor)>BigInt(s.stake_minor)*BigInt(model.maxMultiplier))throw new Error('casino liability invariant');
+ const fixed=(await pool.query("UPDATE casino_spins SET status='RESULT_FIXED',result=$2,payout_minor=$3,updated_at=now() WHERE id=$1 AND status='CHOOSING' RETURNING *",[s.id,result,result.gross_payout_minor])).rows[0]||(await pool.query('SELECT * FROM casino_spins WHERE id=$1',[s.id])).rows[0];
+ return advance(await appById(fixed.app_id),fixed);
+}
+
 /** Recovery: resume spins whose wallet steps did not finish (the client sees the result once fixed). */
 export async function recoverInstant(){
- const open=(await pool.query("SELECT * FROM casino_spins WHERE status NOT IN ('SETTLED','REJECTED') AND updated_at<now()-interval '3 seconds' ORDER BY updated_at LIMIT 50")).rows;
+ const open=(await pool.query("SELECT * FROM casino_spins WHERE status NOT IN ('SETTLED','REJECTED','CHOOSING') AND updated_at<now()-interval '3 seconds' ORDER BY updated_at LIMIT 50")).rows;
  for(const s of open){try{await advance(await appById(s.app_id),s);}catch{}}
+ // An unanswered choice falls back to the first option after a minute.
+ for(const s of (await pool.query("SELECT * FROM casino_spins WHERE status='CHOOSING' AND updated_at<now()-interval '60 seconds' LIMIT 50")).rows){try{await decide(s,0);}catch{}}
 }
 export {unseal};

@@ -1736,7 +1736,12 @@
           "djlive",
           "jackpotslots",
           "yummy",
-          "worldgoal"
+          "worldgoal",
+          "pyramidslots",
+          "magicslot",
+          "chillislot",
+          "sphinxlegend",
+          "nights1001"
         ]
       },
       "CompetitiveGameId": {
@@ -1792,7 +1797,12 @@
           "djlive",
           "jackpotslots",
           "yummy",
-          "worldgoal"
+          "worldgoal",
+          "pyramidslots",
+          "magicslot",
+          "chillislot",
+          "sphinxlegend",
+          "nights1001"
         ]
       },
       "Scope": {

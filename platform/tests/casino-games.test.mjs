@@ -53,3 +53,21 @@ test('lines/ways slots: deterministic, capped, and wild/golden rules hold',async
    for(const s of r.spins){s.initial.forEach((reel,col)=>{const w=reel.filter(x=>x.s==='wild').length;if(m.config.wild)assert.ok(m.config.wild.reels.includes(col)||w===0,`${id} wild on reel ${col}`);if(m.config.golden)assert.ok(m.config.golden.reels.includes(col)||!reel.some(x=>x.g));});}}
  }
 });
+test('ChilliSlot free spins play 2-4 boards; collected chillies unlock boards and wild reels',async()=>{
+ const {linesModel,playLinesCycle}=await import('../server/casino/slot-lines.mjs');
+ const m=linesModel(CASINO_GAMES.chillislot);let r;do r=playLinesCycle(m,seed(),'10000');while(!r.free_spins);
+ let before=0;
+ for(const s of r.spins.filter(s=>s.free)){
+  const steps=m.config.freeSpins.boards.steps.filter(x=>before>=x.at),boards=Math.max(2,...steps.map(x=>x.boards||0));
+  assert.equal(s.boards.length,boards);assert.deepEqual(s.wild_reels,steps.map(x=>x.wildReel).filter(x=>x!=null));
+  for(const b of s.boards)for(const col of s.wild_reels)assert.ok(b.initial[col].every(x=>x.s==='wild'));
+  before=s.collected;
+ }
+});
+test('sphinxlegend: a triggered feature waits for a choice; the base spin is identical whichever package is chosen',async()=>{
+ const {linesModel,playLinesCycle}=await import('../server/casino/slot-lines.mjs');
+ const m=linesModel(CASINO_GAMES.sphinxlegend);let sd,r;do{sd=seed();r=playLinesCycle(m,sd,'10000');}while(!r.pending);
+ assert.equal(r.pending.choices.length,4);assert.equal(r.free_spins,0);
+ for(let c=0;c<4;c++){const f=playLinesCycle(m,sd,'10000',{choice:c});assert.deepEqual(f.spins[0],r.spins[0]);assert.equal(f.free_spins,m.config.freeSpins.choices[c].award);assert.equal(f.choice,c);}
+ assert.throws(()=>playLinesCycle(m,sd,'10000',{choice:9}),/INVALID_CHOICE/);
+});
