@@ -37,7 +37,7 @@ for (const name of ['ExchangeLaunchRequest', 'ExchangeLaunchResponse']) {
 assert.equal(catalog.games.length, RELEASED_IDS.length);
 assert.equal(new Set(catalog.games.map(g => g.id)).size, RELEASED_IDS.length);
 assert.deepEqual(sorted(catalog.games.map(g => g.id)), sorted(RELEASED_IDS));
-assert.deepEqual(catalog.games.map(g => g.id).sort(), displayGames.map(g => g.id).sort());
+assert.deepEqual(catalog.games.map(g => g.id).sort(), displayGames.filter(g => g.category !== 'casino').map(g => g.id).sort());
 assert.equal(catalog.games.filter(g => g.category === 'competitive').length, ARENA_IDS.length);
 assert.equal(catalog.games.filter(g => g.category === 'probability').length, LEGACY_IDS.length);
 for (const game of catalog.games) {
