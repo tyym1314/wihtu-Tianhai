@@ -15,9 +15,19 @@ function wheelGame(id,name,{veg,meat,specials=[],groups=[],chips,round,bonus}){
   specials:Object.freeze(specials.map((sp,i)=>Object.freeze({id:sp,covers:i?'meat':'veg',probability:0.0005}))),...(bonus?{bonus:Object.freeze(bonus)}:{})});
 }
 const SLOT_STAKES=Object.freeze([coins(10),coins(50),coins(100),coins(500),coins(1000),coins(5000)]);
-const sym=list=>list.map(([id,[a,b,c]])=>({id,pays:[[3,a],[4,b],[5,c]]}));
 // Standard 12 paylines on 5x3 (row index per reel, 0 = top).
 const LINES_12=[[1,1,1,1,1],[0,0,0,0,0],[2,2,2,2,2],[0,1,2,1,0],[2,1,0,1,2],[0,0,1,2,2],[2,2,1,0,0],[1,0,0,0,1],[1,2,2,2,1],[0,1,1,1,0],[2,1,1,1,2],[1,1,0,1,1]];
+const sym=list=>list.map(([id,[a,b,c]])=>({id,pays:[[3,a],[4,b],[5,c]]}));
+const symN=(counts,list)=>list.map(([id,pays])=>({id,pays:counts.map((n,i)=>[n,pays[i]])}));
+const LINES_3x3=[[1,1,1],[0,0,0],[2,2,2],[0,1,2],[2,1,0]];
+// 20 paylines for 5x3 and 5x4 boards.
+const LINES_20=[...LINES_12,[0,1,0,1,0],[2,1,2,1,2],[1,0,1,0,1],[1,2,1,2,1],[0,0,2,0,0],[2,2,0,2,2],[0,2,0,2,0],[2,0,2,0,2]];
+const LINES_20x4=[[0,0,0,0,0],[1,1,1,1,1],[2,2,2,2,2],[3,3,3,3,3],[0,1,2,1,0],[3,2,1,2,3],[1,2,3,2,1],[2,1,0,1,2],[0,1,0,1,0],[3,2,3,2,3],[1,0,1,0,1],[2,3,2,3,2],[0,0,1,2,3],[3,3,2,1,0],[1,1,2,3,3],[2,2,1,0,0],[0,1,1,1,0],[3,2,2,2,3],[1,2,2,2,1],[2,1,1,1,2]];
+/** A paylines slot from a compact description; payScale is calibrated by scripts/casino-lines-sim.mjs. */
+function linesSlot(id,name,{columns=5,rows=3,lines,counts=[3,4,5],symbols,weights,wild,scatter,freeSpins,maxWin=2000,payScale=1,multiplierReel,bonus}){
+ return Object.freeze({id,family:'slot',kind:'instant',reference:name,name,zh:name,ar:name,stakes:SLOT_STAKES,
+  slot:Object.freeze({pay:'lines',columns,rows,targetRtp:0.97,maxWin,payScale,lines,wild,symbols:symN(counts,symbols),scatter,freeSpins,multiplierReel,bonus,weights:{base:weights}})});
+}
 /** 2000-ways cascading slot (4-5-5-5-4): golden symbols on reels 2-4 turn wild when they win; cascades raise the multiplier. */
 function waysSlot(id,name,scatter,symbols){
  const w={};symbols.forEach(([s],i)=>{w[s]=[10,14,18,24,30,36,44,52][i];});
@@ -132,6 +142,38 @@ export const CASINO_GAMES=Object.freeze({
    weights:{base:{pearl:14,shell:20,starfish:26,seahorse:32,turtle:38,A:60,K:64,Q:68,J:72,ten:76,wild:[0,26,26,26,26],chest:9}}})}),
  mahjongslot:waysSlot('mahjongslot','MahjongSlot','hu',[['green',[1500,6000,10000]],['red',[1000,4000,8000]],['white',[800,2000,6000]],['wan',[600,1500,4000]],['tiao',[300,800,2000]],['tong',[300,800,2000]],['five',[200,400,1000]],['two',[100,300,600]]]),
  cleopatraslot:waysSlot('cleopatraslot','CleopatraSlot','cleopatra',[['scarab',[1500,6000,10000]],['ankh',[1000,4000,8000]],['eye',[800,2000,6000]],['vase',[600,1500,4000]],['A',[300,800,2000]],['K',[300,800,2000]],['Q',[200,400,1000]],['J',[100,300,600]]]),
+
+ // CrazyGems: 3x3, five lines, all three reels to win; a fourth reel multiplies the spin (x1-x15).
+ crazygems:linesSlot('crazygems','CrazyGems',{columns:3,rows:3,lines:LINES_3x3,counts:[3],payScale:0.65,
+  symbols:[['diamond',[5000]],['ruby',[2500]],['emerald',[1500]],['sapphire',[1000]],['amethyst',[600]],['topaz',[400]]],
+  weights:{diamond:6,ruby:9,emerald:12,sapphire:15,amethyst:18,topaz:22,wild:5},wild:{id:'wild',reels:[0,1,2]},
+  multiplierReel:[{x:1,w:500},{x:2,w:220},{x:3,w:120},{x:5,w:70},{x:10,w:30},{x:15,w:15}],maxWin:1500}),
+ // Slot777: classic 3x3, five lines, two or more from the left pay.
+ slot777:linesSlot('slot777','Slot777',{columns:3,rows:3,lines:LINES_3x3,counts:[2,3],payScale:2.127,
+  symbols:[['seven',[200,5000]],['bar3',[100,2000]],['bar2',[60,1200]],['bar',[40,800]],['bell',[30,500]],['cherry',[20,300]]],
+  weights:{seven:6,bar3:9,bar2:12,bar:15,bell:18,cherry:22,wild:4},wild:{id:'wild',reels:[1,2]},maxWin:1000}),
+ // DJlive: 5x4, 20 lines, scatter free spins x2.
+ djlive:linesSlot('djlive','DJlive',{columns:5,rows:4,lines:LINES_20x4,payScale:22.82,
+  symbols:[['dj',[500,2000,10000]],['speaker',[300,1200,5000]],['mic',[200,800,3000]],['headphones',[150,600,2000]],['vinyl',[100,400,1500]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
+  weights:{dj:10,speaker:14,mic:18,headphones:22,vinyl:26,A:40,K:44,Q:48,J:52,wild:[0,14,14,14,14],disc:8},wild:{id:'wild',reels:[1,2,3,4]},
+  scatter:{id:'disc',pays:[[3,200],[4,1000],[5,5000]]},freeSpins:{trigger:3,award:10,perExtra:5,retrigger:5,multiplier:2,maxPlayed:60}}),
+ // jackpotSlots: 5x3, 20 lines; five jackpot symbols on a line pay 1000x line; 3 scatters give 10 free spins.
+ jackpotslots:linesSlot('jackpotslots','jackpotSlots',{lines:LINES_20,payScale:26.6,
+  symbols:[['jackpot',[2000,10000,100000]],['crown',[500,2000,8000]],['gold',[300,1200,5000]],['diamond',[200,800,3000]],['bell',[150,600,2000]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
+  weights:{jackpot:5,crown:12,gold:16,diamond:20,bell:24,A:40,K:44,Q:48,J:52,wild:[0,12,12,12,12],star:8},wild:{id:'wild',reels:[1,2,3,4]},
+  scatter:{id:'star',pays:[[3,200],[4,800],[5,4000]]},freeSpins:{trigger:3,award:10,perExtra:0,retrigger:10,multiplier:1,maxPlayed:60},maxWin:5000}),
+ // Yummy: 5x3, 20 lines; wilds on reels 2-5; 3+ clovers give free spins; 3+ bonus symbols triple the spin; 5 jackpots on a line pay big.
+ yummy:linesSlot('yummy','Yummy',{lines:LINES_20,payScale:13.63,
+  symbols:[['jackpot',[2000,10000,50000]],['cake',[400,1500,6000]],['donut',[300,1000,4000]],['icecream',[200,800,3000]],['cookie',[150,600,2000]],['candy',[100,400,1500]],['lollipop',[60,250,800]],['jelly',[40,150,500]]],
+  weights:{jackpot:5,cake:14,donut:18,icecream:22,cookie:26,candy:32,lollipop:44,jelly:52,wild:[0,12,12,12,12],clover:8,bonus:9},wild:{id:'wild',reels:[1,2,3,4]},
+  scatter:{id:'clover',pays:[]},freeSpins:{trigger:3,award:8,perExtra:2,retrigger:8,multiplier:1,maxPlayed:60},bonus:{id:'bonus',count:3,multiplier:3},maxWin:5000}),
+ // WorldGoal: 3x3, 27 ways; every spin draws a multiplier (x1-x10) for its wins.
+ worldgoal:Object.freeze({id:'worldgoal',family:'slot',kind:'instant',reference:'WorldGoal',name:'WorldGoal',zh:'WorldGoal',ar:'WorldGoal',stakes:SLOT_STAKES,
+  slot:Object.freeze({pay:'ways',columns:3,rows:3,waysDivisor:1,targetRtp:0.97,maxWin:1000,payScale:0.066,
+   symbols:symN([3],[['trophy',[2000]],['ball',[1000]],['boot',[600]],['whistle',[400]],['flag',[250]],['card',[150]]]),
+   wild:{id:'wild',reels:[1],maxPerReel:1},cascade:{base:[1],free:[1]},
+   multiplierReel:[{x:1,w:600},{x:2,w:200},{x:3,w:100},{x:5,w:60},{x:10,w:20}],
+   weights:{base:{trophy:8,ball:12,boot:16,whistle:20,flag:24,card:28,wild:[0,10,0]}}})}),
 
  // ---- Round games on the wheel engine (unreleased until art ships). ----
  crazyfruit:wheelGame('crazyfruit','CrazyFruit',{veg:['orange','lemon','grape','cherry'],meat:[['apple',10],['watermelon',15],['mango',25],['strawberry',45]],specials:['lucky','superlucky'],chips:CHIPS2,round:{betMs:25000,drawMs:7000,showMs:5000}}),

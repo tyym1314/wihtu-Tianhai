@@ -26,7 +26,7 @@ function drawCell(rng,c,col,free){
  const weights=ids.map(id=>{const v=w[id];return Array.isArray(v)?v[col]:v;});
  const s=ids[rng.weighted(weights)];
  const cell={s};
- if(c.golden&&c.golden.reels.includes(col)&&s!==c.wild?.id&&s!==c.scatter.id&&rng.int(10000)<c.golden.chanceBp)cell.g=1;
+ if(c.golden&&c.golden.reels.includes(col)&&s!==c.wild?.id&&s!==c.scatter?.id&&rng.int(10000)<c.golden.chanceBp)cell.g=1;
  return cell;
 }
 function drawGrid(rng,c,free){
@@ -74,7 +74,7 @@ function evalWays(c,grid){
 export function playLinesCycle(model,seedHex,stakeMinor,{buy=false}={}){
  const c=model.config,rng=createRng(seedHex,`${model.version}:cycle`),cap=c.maxWin*100;
  let total=0,capped=false;
- const scatterCount=g=>g.flat().filter(x=>x.s===c.scatter.id).length;
+ const scatterCount=g=>c.scatter?g.flat().filter(x=>x.s===c.scatter.id).length:0;
  function spin(free){
   let grid=drawGrid(rng,c,free);const initial=grid.map(r=>r.map(x=>({...x})));
   const steps=[];let win=0,cascade=0;
@@ -92,17 +92,21 @@ export function playLinesCycle(model,seedHex,stakeMinor,{buy=false}={}){
    });
    steps.push({wins,multiplier:mult,grid:next.map(r=>r.map(x=>({...x})))});grid=next;
   }
+  // Optional multiplier reel (applies to the spin's symbol wins) and bonus symbols (x N when enough land).
+  const reelMult=c.multiplierReel?c.multiplierReel[rng.weighted(c.multiplierReel.map(m=>m.w))].x:1;
+  const bonusHit=c.bonus&&initial.flat().filter(x=>x.s===c.bonus.id).length>=c.bonus.count;
+  win*=reelMult*(bonusHit?c.bonus.multiplier:1);
   const scatters=scatterCount(free&&c.pay==='lines'?grid:initial);
-  const sc=payOf({pays:c.scatter.pays||[]},scatters)||0;
+  const sc=payOf({pays:c.scatter?.pays||[]},scatters)||0;
   let spinWin=(free?win*(c.freeSpins.multiplier||1):win)+sc;
   if(total+spinWin>=cap){spinWin=cap-total;capped=true;}
   total+=spinWin;
-  return {free,initial,steps,scatters,scatter_pay_x100:sc,win_x100:spinWin};
+  return {free,initial,steps,scatters,scatter_pay_x100:sc,win_x100:spinWin,reel_multiplier:reelMult,bonus:!!bonusHit};
  }
- const award=n=>n>=c.freeSpins.trigger?c.freeSpins.award+(n-c.freeSpins.trigger)*(c.freeSpins.perExtra||0):0;
+ const award=n=>c.freeSpins&&n>=c.freeSpins.trigger?c.freeSpins.award+(n-c.freeSpins.trigger)*(c.freeSpins.perExtra||0):0;
  const spins=buy?[]:[spin(false)];
  let left=buy?c.freeSpins.award:award(spins[0].scatters),played=0;
- while(left>0&&!capped&&played<c.freeSpins.maxPlayed){const s=spin(true);spins.push(s);played++;left--;left+=c.freeSpins.retrigger&&s.scatters>=c.freeSpins.trigger?c.freeSpins.retrigger:0;}
+ while(left>0&&!capped&&played<(c.freeSpins?.maxPlayed||0)){const s=spin(true);spins.push(s);played++;left--;left+=c.freeSpins.retrigger&&s.scatters>=c.freeSpins.trigger?c.freeSpins.retrigger:0;}
  const totalX100=Math.floor(total);
  return {outcome:`${(totalX100/100).toFixed(2)}x`,mode:buy?'buy':'normal',base_stake_minor:String(stakeMinor),win_x100:totalX100,
   gross_payout_minor:String(BigInt(stakeMinor)*BigInt(totalX100)/100n),capped,free_spins:played,spins};

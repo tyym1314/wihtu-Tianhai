@@ -269,11 +269,11 @@ test('FruitParty feeds 2% of each stake into the jackpot and a jackpot draw pays
 });
 
 test('lines and ways slots (OceanSlot, MahjongSlot) settle one complete cycle per spin',async()=>{
- const instant=await import('../server/casino/instant.mjs');
- for(const game of ['oceanslot','mahjongslot']){
+ const instant=await import('../server/casino/instant.mjs'),CASINO_GAMES_DEF=(await import('../shared/casino-games.mjs')).CASINO_GAMES;
+ for(const game of ['oceanslot','mahjongslot','crazygems','slot777','djlive','jackpotslots','yummy','worldgoal']){
   const carol=await sessionFor('carol',game),before=await partnerBalance('carol');
   const r=await instant.spin(carol,{request_id:uid('spin'),stake_minor:'1000'});
-  assert.equal(r.status,'SETTLED');assert.ok(r.result.spins[0].initial.length===5,game);
+  assert.equal(r.status,'SETTLED');assert.equal(r.result.spins[0].initial.length,CASINO_GAMES_DEF[game].slot.columns,game);
   await recover();assert.equal(await partnerBalance('carol'),before-1000n+BigInt(r.payout_minor),game);
  }
  assert.equal(await transit(),'0');
