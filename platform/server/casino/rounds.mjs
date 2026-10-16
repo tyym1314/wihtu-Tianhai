@@ -48,6 +48,8 @@ export async function migrateCasino(db=pool){
   UNIQUE(app_id,external_user_id,request_id));
  ALTER TABLE casino_bets ADD COLUMN IF NOT EXISTS auto_x100 integer;
  ALTER TABLE casino_bets ADD COLUMN IF NOT EXISTS cashout_x100 integer;
+ ALTER TABLE casino_bets ADD COLUMN IF NOT EXISTS jackpot_minor bigint;
+ CREATE TABLE IF NOT EXISTS casino_jackpots (app_id text NOT NULL REFERENCES gp_apps(id), game_id text NOT NULL, pool_minor bigint NOT NULL DEFAULT 0 CHECK(pool_minor>=0), updated_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(app_id,game_id));
  CREATE INDEX IF NOT EXISTS casino_bets_round ON casino_bets(round_id,status);
  CREATE INDEX IF NOT EXISTS casino_bets_open ON casino_bets(status,updated_at) WHERE status IN ('PENDING','VOIDING','SETTLING');`);
 }
@@ -89,7 +91,7 @@ function view(r,now){
  return {id:r.id,seq:r.seq,status:r.status,starts_at:r.starts_at,bet_until:r.bet_until,reveal_at:hidden?null:r.reveal_at,ends_at:hidden?null:r.ends_at,commitment:r.commitment,
   ...(r.result&&!hidden&&now>=r.bet_until?{result:r.result}:{}),...(r.result&&now>=r.reveal_at?{seed:unseal(r.seed_enc)}:{})};
 }
-const betView=b=>({id:b.id,request_id:b.request_id,option_id:b.option_id,stake_minor:String(b.stake_minor),status:b.status,payout_minor:b.payout_minor===null?null:String(b.payout_minor),
+const betView=b=>({id:b.id,request_id:b.request_id,option_id:b.option_id,stake_minor:String(b.stake_minor),status:b.status,payout_minor:b.payout_minor===null?null:String(b.payout_minor),jackpot_minor:b.jackpot_minor?String(b.jackpot_minor):null,
  auto_x100:b.auto_x100??null,cashout_x100:b.cashout_x100??null,error:b.error||null});
 
 export async function casinoState(session,{balance=false}={}){
@@ -113,7 +115,8 @@ export async function casinoState(session,{balance=false}={}){
   cashouts:CASINO_GAMES[session.game_id].family==='crash'?(await pool.query('SELECT external_user_id,stake_minor::text stake_minor,cashout_x100 FROM casino_bets WHERE round_id=$1 AND cashout_x100 IS NOT NULL ORDER BY cashout_x100 LIMIT 30',[round.id])).rows:undefined,
   // Last finished round's top winners are only shown once its reveal has played.
   top_winners:round.status==='betting'||now>=round.reveal_at?winners.rows.map(w=>({external_user_id:w.external_user_id,payout_minor:w.payout})):[],
-  today_winners:today.rows.map(w=>({external_user_id:w.external_user_id,payout_minor:w.payout}))};
+  today_winners:today.rows.map(w=>({external_user_id:w.external_user_id,payout_minor:w.payout})),
+  ...(CASINO_GAMES[session.game_id].bonus?.jackpot?{jackpot_minor:(await pool.query('SELECT pool_minor::text p FROM casino_jackpots WHERE app_id=$1 AND game_id=$2',[app.id,session.game_id])).rows[0]?.p||'0'}:{})};
  if(balance){try{out.balance=(await walletBalance(app,session.external_user_id)).balance;}catch{out.balance=null;}}
  return out;
 }
@@ -161,6 +164,8 @@ async function fundBet(app,model,bet){
   await command(app,bet.id,'/wallet/v1/probability/accept',{...base,request_id:'accept_'+bet.id});
   // Acceptance may race the close of betting; only a still-open round takes the bet.
   const accepted=(await pool.query("UPDATE casino_bets b SET status='ACCEPTED',updated_at=now() FROM casino_rounds r WHERE b.id=$1 AND b.status='PENDING' AND r.id=b.round_id AND r.status='betting' RETURNING b.*",[bet.id])).rows[0];
+  const jp=CASINO_GAMES[model.gameId].bonus?.jackpot;
+  if(accepted&&jp)await pool.query('INSERT INTO casino_jackpots(app_id,game_id,pool_minor) VALUES($1,$2,$3) ON CONFLICT(app_id,game_id) DO UPDATE SET pool_minor=casino_jackpots.pool_minor+EXCLUDED.pool_minor,updated_at=now()',[app.id,model.gameId,String(BigInt(accepted.stake_minor)*BigInt(jp.contributionBps)/10000n)]);
   return accepted||(await pool.query('SELECT * FROM casino_bets WHERE id=$1',[bet.id])).rows[0];
  }catch(e){
   if(e.status===409){return (await pool.query("UPDATE casino_bets SET status='REJECTED',error=$2,updated_at=now() WHERE id=$1 AND status='PENDING' RETURNING *",[bet.id,e.code||'WALLET_REJECTED'])).rows[0]||(await pool.query('SELECT * FROM casino_bets WHERE id=$1',[bet.id])).rows[0];}
@@ -198,7 +203,32 @@ export async function tickCasino(now=Date.now()){
 
 async function resolveAccepted(c,game,result,roundId){
  const bets=(await c.query("SELECT * FROM casino_bets WHERE round_id=$1 AND status='ACCEPTED' FOR UPDATE",[roundId])).rows;
- for(const b of bets)await c.query("UPDATE casino_bets SET status='SETTLING',payout_minor=$2,updated_at=now() WHERE id=$1",[b.id,String(families[game.family].payout(game,result,b))]);
+ const base=new Map(bets.map(b=>[b.id,families[game.family].payout(game,result,b)]));
+ const shares=result.bonus?.type==='jackpot'&&game.bonus?.jackpot?await jackpotShares(c,game,roundId,bets.filter(b=>base.get(b.id)>0n)):new Map();
+ for(const b of bets){const j=shares.get(b.id)||0n;await c.query("UPDATE casino_bets SET status='SETTLING',payout_minor=$2,jackpot_minor=$3,updated_at=now() WHERE id=$1",[b.id,String(base.get(b.id)+j),j?String(j):null]);}
+}
+
+/**
+ * Jackpot draw: each winning bet takes pool x tier% (tier by its player's winning stake this round)
+ * x its share of all winning stake, capped so the bet stays within its reserved wallet liability.
+ */
+async function jackpotShares(c,game,roundId,winning){
+ const r=(await c.query('SELECT app_id FROM casino_rounds WHERE id=$1',[roundId])).rows[0];
+ const row=(await c.query('SELECT pool_minor FROM casino_jackpots WHERE app_id=$1 AND game_id=$2 FOR UPDATE',[r.app_id,game.id])).rows[0];
+ const poolMinor=BigInt(row?.pool_minor||0),total=winning.reduce((a,b)=>a+BigInt(b.stake_minor),0n),shares=new Map();
+ if(!poolMinor||!total)return shares;
+ const byUser={};for(const b of winning)byUser[b.external_user_id]=(byUser[b.external_user_id]||0n)+BigInt(b.stake_minor);
+ const pct=stake=>BigInt(game.bonus.jackpot.tiers.filter(([min])=>stake>=BigInt(min)).at(-1)[1]);
+ const maxBase=BigInt(Math.max(...game.options.map(o=>o.multiplier)))*BigInt(Math.max(1,...game.bonus.table.filter(x=>x.type==='multiplier').map(x=>x.value)));
+ let paid=0n;
+ for(const b of winning){
+  const stake=BigInt(b.stake_minor),cap=stake*(BigInt(game.bonus.liabilityMultiplier)-maxBase);
+  let s=poolMinor*pct(byUser[b.external_user_id])*stake/(100n*total);if(s>cap)s=cap;
+  if(s>0n){shares.set(b.id,s);paid+=s;}
+ }
+ await c.query('UPDATE casino_jackpots SET pool_minor=pool_minor-$3,updated_at=now() WHERE app_id=$1 AND game_id=$2',[r.app_id,game.id,String(paid)]);
+ await c.query(`UPDATE casino_rounds SET result=result||jsonb_build_object('jackpot',jsonb_build_object('pool_minor',$2::text,'paid_minor',$3::text)) WHERE id=$1`,[roundId,String(poolMinor),String(paid)]);
+ return shares;
 }
 
 /** Crash: cash out an accepted bet at the server's current multiplier, if the rocket is still flying. */

@@ -6,9 +6,12 @@ import {mkdtemp,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import pg from 'pg';
-import {ALL_GAME_IDS as RELEASED_IDS} from '../shared/games.mjs';
 import {dropOwnedTestDatabase} from './database-cleanup.mjs';
 import {migrateSimpleDemoWallet,seedSimpleDemoUsers,simpleBalance,handleSimpleWallet} from '../examples/partner-demo/simple-wallet.mjs';
+
+// Unreleased casino definitions are playable in this test (OASIS_CASINO_PREVIEW=test).
+process.env.OASIS_CASINO_PREVIEW='test';
+const {ALL_GAME_IDS:RELEASED_IDS}=await import('../shared/games.mjs');
 
 // A partner App on the simple-v1 protocol: only balance/debit/credit at the partner,
 // every escrow state in the platform's internal ledger.
@@ -42,7 +45,7 @@ before(async()=>{
  ({closeEnginePool}=await import('../server/pvp/engine-pool.mjs'));
  await wallet.migrateWallet(pool);await platform.migratePlatform();await pvp.migratePvp(pool);await binding.migrateWalletBindings(pool);await simple.migrateSimpleWallet(pool);await casino.migrateCasino(pool);await(await import('../server/casino/instant.mjs')).migrateInstant(pool);await runtimeMode.migrateRuntime(pool);await(await import('../server/transfers/index.mjs')).migrateTransfers(pool);
  // The partner's own wallet tables live in a separate schema-free namespace of this test database.
- await migrateSimpleDemoWallet(pool);await seedSimpleDemoUsers(pool,[{external_user_id:'alice',balance_minor:'100000'},{external_user_id:'bob',balance_minor:'100000'},{external_user_id:'poor',balance_minor:'500'}]);
+ await migrateSimpleDemoWallet(pool);await seedSimpleDemoUsers(pool,[{external_user_id:'alice',balance_minor:'100000'},{external_user_id:'bob',balance_minor:'100000'},{external_user_id:'carol',balance_minor:'5000000'},{external_user_id:'dave',balance_minor:'5000000'},{external_user_id:'poor',balance_minor:'500'}]);
  partnerServer=createServer(async(req,res)=>{let raw='';for await(const c of req)raw+=c;if(!await handleSimpleWallet(pool,walletKey,req,res,raw)){res.writeHead(404);res.end('{}');}});
  await new Promise(r=>partnerServer.listen(0,'127.0.0.1',r));const loopback='http://127.0.0.1:'+partnerServer.address().port;
  binding.setWalletTransportForTests(async(target,method,path,headers,raw)=>{
@@ -55,7 +58,7 @@ before(async()=>{
 });
 after(async()=>{
  binding?.setWalletTransportForTests(null);if(partnerServer?.listening)await new Promise(r=>partnerServer.close(r));
- try{await closeEnginePool?.();}finally{try{await closePools?.();}finally{if(created)await dropOwnedTestDatabase(admin,name,{created});await admin?.end();if(dir)await rm(dir,{recursive:true,force:true});for(const k of Object.keys(process.env))if(!(k in previous))delete process.env[k];Object.assign(process.env,previous);}}
+ try{await closeEnginePool?.();}finally{try{await closePools?.();}finally{if(created)await dropOwnedTestDatabase(admin,name,{created});await admin?.end();if(dir)await rm(dir,{recursive:true,force:true});delete process.env.OASIS_CASINO_PREVIEW;for(const k of Object.keys(process.env))if(!(k in previous))delete process.env[k];Object.assign(process.env,previous);}}
 });
 
 test('a new partner App starts paused and cannot launch before its wallet is bound',async()=>{
@@ -231,4 +234,36 @@ test('buying the Olympus free spins debits base x 10.2 and plays the feature dir
  const r=await instant.spin(alice,{request_id:uid('buy'),stake_minor:'1000',buy:true});
  assert.equal(r.mode,'buy');assert.equal(r.stake_minor,'10200');assert.equal(r.base_stake_minor,'1000');assert.ok(r.result.spins.every(s=>s.free));
  await recover();assert.equal(await partnerBalance('alice'),before-10200n+BigInt(r.payout_minor));assert.equal(await transit(),'0');
+});
+
+test('GreedyKing group bets: SALAD pays x1.25 on any vegetable and PIZZA x4.37 on any meat',async()=>{
+ const alice=await sessionFor('carol','greedyking'),s0=await casino.casinoState(alice),before=await partnerBalance('carol');
+ await casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:'salad',stake_minor:'100000'});
+ await assert.rejects(casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:'pizza',stake_minor:'10000'}),{code:'INVALID_STAKE'});
+ await pool.query('UPDATE casino_rounds SET bet_until=$2 WHERE id=$1',[s0.round.id,Date.now()-1]);await casino.tickCasino();await casino.tickCasino();await recover();
+ const r=(await pool.query('SELECT result FROM casino_rounds WHERE id=$1',[s0.round.id])).rows[0].result;
+ const veg=['carrot','cabbage','corn','tomato'].some(v=>r.winners.includes(v));
+ assert.equal(await partnerBalance('carol'),before-100000n+(veg?125000n:0n));assert.equal(await transit(),'0');
+});
+
+test('FruitParty feeds 2% of each stake into the jackpot and a jackpot draw pays it to the winning bets',async()=>{
+ const [alice,bob]=await Promise.all([sessionFor('carol','fruitparty'),sessionFor('dave','fruitparty')]);
+ const s0=await casino.casinoState(alice),fruits=['cherry','lemon','orange','plum','bell','watermelon','seven','star'];
+ const before={carol:await partnerBalance('carol'),dave:await partnerBalance('dave')};
+ for(const f of fruits)await casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:f,stake_minor:'100000'});
+ await casino.placeBet(bob,{request_id:uid('bet'),round_id:s0.round.id,option_id:'star',stake_minor:'100000'});
+ const pool0=BigInt((await casino.casinoState(alice)).jackpot_minor);assert.equal(pool0,9n*2000n,'2% of nine 1,000-coin bets');
+ // Force the close to draw a jackpot bonus by pinning the round seed until one is found.
+ const {wheelModel,drawWheel}=await import('../server/casino/wheel.mjs');const {CASINO_GAMES}=await import('../shared/casino-games.mjs');const {seal}=await import('../server/security.mjs');
+ const m=wheelModel(CASINO_GAMES.fruitparty);let seed;do seed=randomBytes(32).toString('hex');while(drawWheel(m,seed).bonus.type!=='jackpot');
+ await pool.query('UPDATE casino_rounds SET seed_enc=$2,bet_until=$3 WHERE id=$1',[s0.round.id,seal(seed),Date.now()-1]);
+ await casino.tickCasino();await casino.tickCasino();await recover();
+ const r=(await pool.query('SELECT result FROM casino_rounds WHERE id=$1',[s0.round.id])).rows[0].result;
+ assert.equal(r.bonus.type,'jackpot');assert.equal(r.jackpot.pool_minor,String(pool0));
+ const bets=(await pool.query('SELECT external_user_id,option_id,stake_minor,payout_minor,jackpot_minor FROM casino_bets WHERE round_id=$1',[s0.round.id])).rows;
+ const jack=bets.reduce((a,b)=>a+BigInt(b.jackpot_minor||0),0n);assert.equal(String(jack),r.jackpot.paid_minor);assert.ok(jack>0n);
+ assert.equal(BigInt((await casino.casinoState(alice)).jackpot_minor),pool0-jack);
+ const paid=u=>bets.filter(b=>b.external_user_id===u).reduce((a,b)=>a+BigInt(b.payout_minor),0n);
+ assert.equal(await partnerBalance('carol'),before.carol-800000n+paid('carol'));assert.equal(await partnerBalance('dave'),before.dave-100000n+paid('dave'));
+ assert.equal(await transit(),'0');
 });

@@ -1,4 +1,4 @@
-import {CASINO_GAMES} from '../shared/casino-games.mjs';
+import {CASINO_GAMES,CASINO_IDS} from '../shared/casino-games.mjs';
 import {readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 import Ajv from 'ajv/dist/2020.js';
@@ -16,7 +16,7 @@ import {appPlayerId} from './player-records.mjs';
 import {createPlatformWallet} from './platform-wallet.mjs';
 const spec=JSON.parse(readFileSync(new URL('../specs/openapi.json',import.meta.url),'utf8'));
 const catalog=[...JSON.parse(readFileSync(new URL('../specs/game-catalog.json',import.meta.url),'utf8')).games,
- ...Object.values(CASINO_GAMES).map(g=>({id:g.id,name:g.zh,nameEn:g.name,category:'probability',family:g.family,status:'casino-shared-round',reference:g.reference}))];
+ ...Object.values(CASINO_GAMES).filter(g=>CASINO_IDS.includes(g.id)).map(g=>({id:g.id,name:g.zh,nameEn:g.name,category:'probability',family:g.family,status:'casino-shared-round',reference:g.reference}))];
 const ajv=new Ajv({strict:false,allErrors:true});addFormats(ajv);ajv.addSchema(spec,'contract');
 const validators=new Map();
 export function validate(name,body){let fn=validators.get(name);if(!fn){fn=ajv.compile({$ref:`contract#/components/schemas/${name}`});validators.set(name,fn);}if(!fn(body))fail(400,'INVALID_REQUEST',ajv.errorsText(fn.errors));}

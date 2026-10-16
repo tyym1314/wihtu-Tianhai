@@ -5,6 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { createHash, createHmac } from 'node:crypto';
 import { games as displayGames } from '../src/data.js';
 import { RELEASED_IDS, ARENA_IDS, LEGACY_IDS, ALL_GAME_IDS, PROBABILITY_IDS } from '../shared/games.mjs';
+import { ALL_CASINO_DEFINITIONS } from '../shared/casino-games.mjs';
+// The wallet contract also names casino games that are defined but not yet released.
+const WALLET_IDS=[...new Set([...ALL_GAME_IDS,...ALL_CASINO_DEFINITIONS])],WALLET_PROBABILITY_IDS=[...new Set([...PROBABILITY_IDS,...ALL_CASINO_DEFINITIONS])];
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = name => JSON.parse(fs.readFileSync(path.join(root, 'specs', name), 'utf8'));
@@ -25,9 +28,9 @@ function walk(value) {
 }
 walk(spec);
 const sorted = values => [...values].sort();
-assert.deepEqual(sorted(spec.components.schemas.GameId.enum), sorted(ALL_GAME_IDS), 'OpenAPI GameId must cover the runtime catalogue');
+assert.deepEqual(sorted(spec.components.schemas.GameId.enum), sorted(WALLET_IDS), 'OpenAPI GameId must cover the runtime catalogue');
 assert.deepEqual(sorted(spec.components.schemas.CompetitiveGameId.enum), sorted(ARENA_IDS));
-assert.deepEqual(sorted(spec.components.schemas.ProbabilityGameId.enum), sorted(PROBABILITY_IDS));
+assert.deepEqual(sorted(spec.components.schemas.ProbabilityGameId.enum), sorted(WALLET_PROBABILITY_IDS));
 for (const name of ['ExchangeLaunchRequest', 'ExchangeLaunchResponse']) {
   assert.equal(spec.components.schemas[name].properties.game_id.$ref, '#/components/schemas/GameId', `${name} must share the game identity contract`);
 }

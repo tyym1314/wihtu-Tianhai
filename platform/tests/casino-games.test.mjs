@@ -36,3 +36,12 @@ test('a slot cycle never pays more than the cap and its gross matches the win mu
  const m=slotModel(CASINO_GAMES.olympus);
  for(let i=0;i<3000;i++){const r=playSlotCycle(m,seed(),'10000');assert.ok(r.win_x100<=m.maxMultiplier*100);assert.equal(r.gross_payout_minor,String(100n*BigInt(r.win_x100)));}
 });
+test('every wheel game returns 97-98% on each option and reserves its maximum payout',async()=>{
+ const {ALL_CASINO_DEFINITIONS}=await import('../shared/casino-games.mjs');
+ for(const id of ALL_CASINO_DEFINITIONS.filter(id=>CASINO_GAMES[id].family==='wheel')){
+  const g=CASINO_GAMES[id],m=wheelModel(g);
+  if(!g.bonus){assert.ok(m.targetRtp>0.97&&m.targetRtp<0.98,`${id} ${m.targetRtp}`);}
+  else assert.ok(m.maxMultiplier>=Math.max(...g.options.map(o=>o.multiplier))*Math.max(...g.bonus.table.filter(x=>x.type==='multiplier').map(x=>x.value)),id);
+  for(const o of g.options.filter(o=>o.covers))assert.ok(Math.abs(o.multiplier*o.covers.reduce((a,c)=>a+m.config.weights[m.outcomes.findIndex(x=>x.id===c)]/m.config.total,0)/m.targetRtp-1)<0.01,`${id}/${o.id} group RTP`);
+ }
+});
