@@ -13,13 +13,21 @@ const canonical=v=>v===null||typeof v!=='object'?JSON.stringify(v):Array.isArray
  * R = (1 + sum_s p_s * (|group_s| - 1)) / sum_i (1 / m_i).
  */
 // Group bets (`covers`) win when the drawn outcome pays any covered option; they are not drawn themselves.
-const drawable=game=>game.options.filter(o=>!o.covers);
+const drawable=game=>game.draw?[]:game.options.filter(o=>!o.covers);
 export function wheelModel(game){
  const specials=game.specials||[];
  game={...game,options:drawable(game),groups:game.options.filter(o=>o.covers)};
  const groupSize=g=>game.options.filter(o=>o.group===g).length;
  const sumInverse=game.options.reduce((a,o)=>a+1/o.multiplier,0);
  const rtp=(1+specials.reduce((a,s)=>a+s.probability*(groupSize(s.covers)-1),0))/sumInverse;
+ // Explicit draws (e.g. roulette 0-36): fixed outcome weights; every bet is a group bet over outcomes.
+ if(game.draw){
+  const weights=game.draw.map(o=>o.weight),total=weights.reduce((a,b)=>a+b,0),outcomes=game.draw.map(o=>({id:o.id,covers:[o.id]}));
+  const rtp=Math.min(...game.groups.map(g=>g.multiplier*g.covers.reduce((a,c)=>a+game.draw.find(o=>o.id===c).weight,0)/total));
+  const config={family:'wheel',draw:game.draw,groups:game.groups,total,rng:'HMAC-SHA256 counter, rejection sampled'};
+  const hash=createHash('sha256').update(canonical(config)).digest('hex');
+  return Object.freeze({gameId:game.id,version:`${game.id}-wheel-v1`,hash,maxMultiplier:Math.ceil(Math.max(...game.groups.map(g=>g.multiplier))),targetRtp:rtp,weights,outcomes,config:{...config,weights,options:[]}});
+ }
  const special=g=>specials.filter(s=>s.covers===g).reduce((a,s)=>a+s.probability,0);
  const probs=[...game.options.map(o=>rtp/o.multiplier-special(o.group)),...specials.map(s=>s.probability)];
  if(probs.some(p=>p<=0))throw new Error('infeasible wheel');
@@ -27,7 +35,7 @@ export function wheelModel(game){
  weights[0]+=TOTAL-weights.reduce((a,b)=>a+b,0);
  const outcomes=[...game.options.map(o=>({id:o.id,covers:[o.id]})),...specials.map(s=>({id:s.id,covers:game.options.filter(o=>o.group===s.covers).map(o=>o.id)}))];
  // With a bonus (multiplier / jackpot share) the wallet reserve uses the configured liability cap.
- const maxMultiplier=game.bonus?.liabilityMultiplier||Math.max(...game.options.map(o=>o.multiplier));
+ const maxMultiplier=game.bonus?.liabilityMultiplier||Math.ceil(Math.max(...game.options.map(o=>o.multiplier)));
  const bonus=game.bonus||null;
  const config={family:'wheel',options:game.options,groups:game.groups,specials,weights,total:TOTAL,bonus,rng:'HMAC-SHA256 counter, rejection sampled'};
  const hash=createHash('sha256').update(canonical(config)).digest('hex');

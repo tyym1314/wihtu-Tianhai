@@ -1715,7 +1715,18 @@
           "fruitparty",
           "oceanslot",
           "mahjongslot",
-          "cleopatraslot"
+          "cleopatraslot",
+          "crazyfruit",
+          "magiccard",
+          "bountyfootball",
+          "footballleague",
+          "glorycup",
+          "solomonmines",
+          "roulette",
+          "roulettepro",
+          "sicbo",
+          "crash",
+          "crashstar"
         ]
       },
       "CompetitiveGameId": {
@@ -1750,7 +1761,18 @@
           "fruitparty",
           "oceanslot",
           "mahjongslot",
-          "cleopatraslot"
+          "cleopatraslot",
+          "crazyfruit",
+          "magiccard",
+          "bountyfootball",
+          "footballleague",
+          "glorycup",
+          "solomonmines",
+          "roulette",
+          "roulettepro",
+          "sicbo",
+          "crash",
+          "crashstar"
         ]
       },
       "Scope": {

@@ -28,6 +28,24 @@ function waysSlot(id,name,scatter,symbols){
    cascade:{base:[1,2,3,5],free:[2,4,6,10]},freeSpins:{trigger:3,award:10,perExtra:2,retrigger:2,maxPlayed:100},
    weights:{base:{...w,wild:[0,3,3,3,0],[scatter]:4}}})});
 }
+const range=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
+const DICE=[1,2,3,4,5,6].flatMap(a=>[1,2,3,4,5,6].flatMap(b=>[1,2,3,4,5,6].map(c=>[a,b,c]))),sum=d=>d[0]+d[1]+d[2],triple=d=>d[0]===d[1]&&d[1]===d[2];
+const RED=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36],BLACK=range(1,36).filter(n=>!RED.includes(n));
+/** Every option drawn with weights that give each the same RTP (no specials or groups). */
+function plainWheel(id,name,items,{maxOptions,chips=CHIPS2,bonus,round={betMs:25000,drawMs:8000,showMs:5000}}){
+ return Object.freeze({id,family:'wheel',reference:name,name,zh:name,ar:name,round:Object.freeze(round),chips,maxOptionsPerRound:maxOptions,maxStakePerRound:coins(1000000),
+  options:Object.freeze(items.map(([o,m])=>Object.freeze({id:o,multiplier:m}))),...(bonus?{bonus:Object.freeze(bonus)}:{})});
+}
+/** European single-zero roulette with the reference's simplified bet board. */
+function rouletteGame(id,name,bets){
+ return Object.freeze({id,family:'wheel',reference:name,name,zh:name,ar:name,round:Object.freeze({betMs:20000,drawMs:9000,showMs:5000}),chips:CHIPS2,maxOptionsPerRound:8,maxStakePerRound:coins(1000000),
+  draw:Object.freeze(range(0,36).map(n=>Object.freeze({id:'n'+n,weight:1}))),
+  options:Object.freeze(bets.map(([o,m,nums])=>Object.freeze({id:o,multiplier:m,covers:nums.map(n=>'n'+n)})))});
+}
+function crashGame(id,name){
+ return Object.freeze({id,family:'crash',reference:name,name,zh:name,ar:name,round:Object.freeze({betMs:8000,showMs:3500}),chips:CHIPS2,maxOptionsPerRound:2,maxStakePerRound:coins(200000),
+  options:Object.freeze([{id:'a'},{id:'b'}].map(Object.freeze)),rtp:0.97,maxMultiplier:1000,autoCashout:Object.freeze({min_x100:101,max_x100:100000})});
+}
 export const CASINO_GAMES=Object.freeze({
  greedylion:Object.freeze({
   id:'greedylion',released:true,family:'wheel',reference:'GreedyLion',name:'GreedyLion',zh:'GreedyLion',ar:'GreedyLion',
@@ -109,6 +127,25 @@ export const CASINO_GAMES=Object.freeze({
    weights:{base:{pearl:14,shell:20,starfish:26,seahorse:32,turtle:38,A:60,K:64,Q:68,J:72,ten:76,wild:[0,26,26,26,26],chest:9}}})}),
  mahjongslot:waysSlot('mahjongslot','MahjongSlot','hu',[['green',[1500,6000,10000]],['red',[1000,4000,8000]],['white',[800,2000,6000]],['wan',[600,1500,4000]],['tiao',[300,800,2000]],['tong',[300,800,2000]],['five',[200,400,1000]],['two',[100,300,600]]]),
  cleopatraslot:waysSlot('cleopatraslot','CleopatraSlot','cleopatra',[['scarab',[1500,6000,10000]],['ankh',[1000,4000,8000]],['eye',[800,2000,6000]],['vase',[600,1500,4000]],['A',[300,800,2000]],['K',[300,800,2000]],['Q',[200,400,1000]],['J',[100,300,600]]]),
+
+ // ---- Round games on the wheel engine (unreleased until art ships). ----
+ crazyfruit:wheelGame('crazyfruit','CrazyFruit',{veg:['orange','lemon','grape','cherry'],meat:[['apple',10],['watermelon',15],['mango',25],['strawberry',45]],specials:['lucky','superlucky'],chips:CHIPS2,round:{betMs:25000,drawMs:7000,showMs:5000}}),
+ magiccard:plainWheel('magiccard','MagicCard',[['leo',100],['aries',4],['libra',4],['scorpio',5],['virgo',50],['taurus',25],['sagittarius',15],['aquarius',5]],{maxOptions:4,chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(30000)])}),
+ bountyfootball:plainWheel('bountyfootball','BountyFootball',[['club2',2],['club5',5],['club8',8],['club18',18],['club20',20],['club30',30],['club50',50],['club66',66],['club88',88],['club100',100]],{maxOptions:10,chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(100000),coins(300000)])}),
+ // FootballLeague / GloryCup: 8 clubs x40/x40/x12/x12/x6/x6/x4/x4; a rare "god prize" adds 3 extra winning clubs.
+ footballleague:plainWheel('footballleague','FootballLeague',[['club1',40],['club2',40],['club3',12],['club4',12],['club5',6],['club6',6],['club7',4],['club8',4]],{maxOptions:8,bonus:{liabilityMultiplier:160,table:[{type:'none',weight:9953},{type:'extra',value:3,weight:47}]}}),
+ glorycup:plainWheel('glorycup','GloryCup',[['team1',40],['team2',40],['team3',12],['team4',12],['team5',6],['team6',6],['team7',4],['team8',4]],{maxOptions:8,bonus:{liabilityMultiplier:160,table:[{type:'none',weight:9953},{type:'extra',value:3,weight:47}]}}),
+ // SolomonMines: three chests, one wins; x2.91 (stake included) -> 97%.
+ solomonmines:plainWheel('solomonmines','SolomonMines',[['courage',2.91],['wisdom',2.91],['strength',2.91]],{maxOptions:3,chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(50000)])}),
+ roulette:rouletteGame('roulette','roulette',[['zero',36,[0]],['d1',3,range(1,12)],['d2',3,range(13,24)],['d3',3,range(25,36)],['red',2,RED],['black',2,BLACK],['even',2,range(1,36).filter(n=>n%2===0)],['odd',2,range(1,36).filter(n=>n%2)]]),
+ roulettepro:rouletteGame('roulettepro','RoulettePro',[['zero',36,[0]],['d1',3,range(1,12)],['d2',3,range(13,24)],['d3',3,range(25,36)],['red',2,RED],['black',2,BLACK],['single',2,range(1,36).filter(n=>n%2)],['double',2,range(1,36).filter(n=>n%2===0)]]),
+ // SicBo: three dice (216 equally likely); BIG 11-17 / SMALL 4-10 lose on any triple; ANY TRIPLE x35.
+ sicbo:Object.freeze({id:'sicbo',family:'wheel',reference:'SicBo',name:'SicBo',zh:'SicBo',ar:'SicBo',round:Object.freeze({betMs:15000,drawMs:6000,showMs:5000}),
+  chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(50000)]),maxOptionsPerRound:3,maxStakePerRound:coins(1000000),
+  draw:Object.freeze(DICE.map(d=>Object.freeze({id:'d'+d.join(''),weight:1}))),
+  options:Object.freeze([['big',2,d=>sum(d)>=11&&!triple(d)],['triple',35,triple],['small',2,d=>sum(d)<=10&&!triple(d)]].map(([o,m,f])=>Object.freeze({id:o,multiplier:m,covers:DICE.filter(f).map(d=>'d'+d.join(''))})))}),
+ crash:crashGame('crash','Crash'),
+ crashstar:crashGame('crashstar','CrashStar'),
 });
 /** Games playable by Apps; unreleased definitions exist for math and server work before their art ships. */
 const preview=typeof process!=='undefined'&&process.env?.OASIS_CASINO_PREVIEW==='1'&&process.env?.OASIS_ENVIRONMENT!=='production'||typeof process!=='undefined'&&process.env?.OASIS_CASINO_PREVIEW==='test';

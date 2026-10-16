@@ -278,3 +278,18 @@ test('lines and ways slots (OceanSlot, MahjongSlot) settle one complete cycle pe
  }
  assert.equal(await transit(),'0');
 });
+
+test('SicBo and roulette settle every board bet against the drawn dice or number',async()=>{
+ for(const [game,options] of [['sicbo',['big','small','triple']],['roulette',['zero','d1','red','odd']]]){
+  const carol=await sessionFor('carol',game),s0=await casino.casinoState(carol),before=await partnerBalance('carol');
+  for(const o of options)await casino.placeBet(carol,{request_id:uid('bet'),round_id:s0.round.id,option_id:o,stake_minor:'100000'});
+  await pool.query('UPDATE casino_rounds SET bet_until=$2 WHERE id=$1',[s0.round.id,Date.now()-1]);await casino.tickCasino();await casino.tickCasino();await recover();
+  const r=(await pool.query('SELECT result FROM casino_rounds WHERE id=$1',[s0.round.id])).rows[0].result;
+  const bets=(await pool.query('SELECT option_id,payout_minor FROM casino_bets WHERE round_id=$1',[s0.round.id])).rows;
+  if(game==='sicbo'){const d=r.outcome.slice(1).split('').map(Number),t=d[0]===d[1]&&d[1]===d[2],s=d[0]+d[1]+d[2];
+   assert.equal(bets.find(b=>b.option_id==='big').payout_minor,!t&&s>=11?'200000':'0');assert.equal(bets.find(b=>b.option_id==='triple').payout_minor,t?'3500000':'0');}
+  const paid=bets.reduce((a,b)=>a+BigInt(b.payout_minor),0n);
+  assert.equal(await partnerBalance('carol'),before-BigInt(options.length)*100000n+paid,game);
+ }
+ assert.equal(await transit(),'0');
+});
