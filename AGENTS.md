@@ -30,7 +30,8 @@
 - 音频：`node scripts/casino-audio.mjs`（CC0 来源见 `casino/public/audio/LICENSES.md`，原始文件在 `.local/audio/`）；前端 `casino/shared/audio.mjs` 的 `useAudio(game)`。每款都要有背景音乐和音效。
 - 前端：`platform/casino/`（React，`/play/<id>` → `casino/dist`），`npm run build:casino`。界面按 `.local/concepts/` 效果图还原，按钮/Logo/柱子等界面素材也用生图生成（如 `.local/art/olympus-ui/`，手动 `cwebp` 到 `casino/public/olympus/`）。
 - 美术：`scripts/casino-art.sh <输出目录> <名称> <提示词>` 调本机 Codex CLI 生图（ChatGPT 账号），原图放 `.local/art/<game>/`；`node scripts/casino-assets.mjs <game> [名称:宽度]` 转 WebP 到 `casino/public/<game>/`。
-- 老虎机返还率：`node scripts/casino-slot-sim.mjs <game> 1000000`（高波动，需多次百万局取均值）。
+- 老虎机返还率：`node scripts/casino-slot-sim.mjs <game> 1000000`（anywhere 消除类，高波动需多次百万局取均值）；连线/路数类用 `node scripts/casino-lines-sim.mjs <game> 500000`，按输出的 `pay_scale_for_target` 调 `slot.payScale`。
+- 新游戏先以 `released` 缺省（不发布）加入定义，服务端/数学/测试先做，界面完成后再设 `released:true`；测试里用 `process.env.OASIS_CASINO_PREVIEW='test'` 可玩未发布游戏。新增定义后运行 `node scripts/sync-casino-enums.mjs` 同步 OpenAPI 枚举。
 - 参考资料（本地、不入库）：`.local/reference/`（`urls.json` 来自 withu 日志；`extract_all.py` 从公开资源提取规则文本/规则图集到 `rules/<游戏>/`；`shots/` 主界面截图）。
 - 本地走查：`npm run db:start && npm run server && npm run dev`，然后 `node scripts/casino-local-e2e.mjs <game> zh`。
 

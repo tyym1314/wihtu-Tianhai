@@ -11,10 +11,13 @@ import {command,walletBalance} from '../cycles.mjs';
 import {assertNewFinancialAdmission} from '../production-admission.mjs';
 import {CASINO_GAMES} from '../../shared/casino-games.mjs';
 import {slotModel,playSlotCycle} from './slots.mjs';
+import {linesModel,playLinesCycle} from './slot-lines.mjs';
 
 const sha=v=>createHash('sha256').update(v).digest('hex');
-const engines={slot:{model:slotModel,play:playSlotCycle}};
-const models=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>g.kind==='instant').map(g=>[g.id,engines[g.family].model(g)]));
+// Slot pay types: 'anywhere' tumbles (slots.mjs); 'lines' and 'ways' (slot-lines.mjs).
+const engines={anywhere:{model:slotModel,play:playSlotCycle},lines:{model:linesModel,play:playLinesCycle},ways:{model:linesModel,play:playLinesCycle}};
+const engineOf=g=>engines[g.slot.pay];
+const models=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>g.kind==='instant').map(g=>[g.id,engineOf(g).model(g)]));
 export const instantModels=()=>Object.values(models);
 export const isInstantGame=gameId=>CASINO_GAMES[gameId]?.kind==='instant';
 
@@ -76,7 +79,7 @@ async function advance(app,s){
   }
   if(s.status==='ACCEPTED'){
    // No RNG before acceptance is persisted; afterwards every caller reads this one result.
-   const seed=randomBytes(32).toString('hex'),result=engines[CASINO_GAMES[s.game_id].family].play(model,seed,String(s.base_stake_minor??s.stake_minor),{buy:s.mode==='buy'});
+   const seed=randomBytes(32).toString('hex'),result=engineOf(CASINO_GAMES[s.game_id]).play(model,seed,String(s.base_stake_minor??s.stake_minor),{buy:s.mode==='buy'});
    if(BigInt(result.gross_payout_minor)>BigInt(s.stake_minor)*BigInt(model.maxMultiplier))throw new Error('casino liability invariant');
    s=(await pool.query("UPDATE casino_spins SET status='RESULT_FIXED',seed_enc=$2,result=$3,payout_minor=$4,updated_at=now() WHERE id=$1 AND status='ACCEPTED' RETURNING *",[s.id,seal(seed),result,result.gross_payout_minor])).rows[0]||(await pool.query('SELECT * FROM casino_spins WHERE id=$1',[s.id])).rows[0];
   }

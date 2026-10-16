@@ -45,3 +45,11 @@ test('every wheel game returns 97-98% on each option and reserves its maximum pa
   for(const o of g.options.filter(o=>o.covers))assert.ok(Math.abs(o.multiplier*o.covers.reduce((a,c)=>a+m.config.weights[m.outcomes.findIndex(x=>x.id===c)]/m.config.total,0)/m.targetRtp-1)<0.01,`${id}/${o.id} group RTP`);
  }
 });
+test('lines/ways slots: deterministic, capped, and wild/golden rules hold',async()=>{
+ const {linesModel,playLinesCycle}=await import('../server/casino/slot-lines.mjs');
+ for(const id of ['oceanslot','mahjongslot','cleopatraslot']){
+  const m=linesModel(CASINO_GAMES[id]),sd=seed();assert.deepEqual(playLinesCycle(m,sd,'10000'),playLinesCycle(m,sd,'10000'));
+  for(let i=0;i<2000;i++){const r=playLinesCycle(m,seed(),'10000');assert.ok(r.win_x100<=m.maxMultiplier*100);
+   for(const s of r.spins){s.initial.forEach((reel,col)=>{const w=reel.filter(x=>x.s==='wild').length;if(m.config.wild)assert.ok(m.config.wild.reels.includes(col)||w===0,`${id} wild on reel ${col}`);if(m.config.golden)assert.ok(m.config.golden.reels.includes(col)||!reel.some(x=>x.g));});}}
+ }
+});

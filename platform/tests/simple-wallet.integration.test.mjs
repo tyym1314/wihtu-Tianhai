@@ -267,3 +267,14 @@ test('FruitParty feeds 2% of each stake into the jackpot and a jackpot draw pays
  assert.equal(await partnerBalance('carol'),before.carol-800000n+paid('carol'));assert.equal(await partnerBalance('dave'),before.dave-100000n+paid('dave'));
  assert.equal(await transit(),'0');
 });
+
+test('lines and ways slots (OceanSlot, MahjongSlot) settle one complete cycle per spin',async()=>{
+ const instant=await import('../server/casino/instant.mjs');
+ for(const game of ['oceanslot','mahjongslot']){
+  const carol=await sessionFor('carol',game),before=await partnerBalance('carol');
+  const r=await instant.spin(carol,{request_id:uid('spin'),stake_minor:'1000'});
+  assert.equal(r.status,'SETTLED');assert.ok(r.result.spins[0].initial.length===5,game);
+  await recover();assert.equal(await partnerBalance('carol'),before-1000n+BigInt(r.payout_minor),game);
+ }
+ assert.equal(await transit(),'0');
+});

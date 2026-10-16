@@ -1712,7 +1712,10 @@
           "greedybrutal",
           "bigeater",
           "greedyking",
-          "fruitparty"
+          "fruitparty",
+          "oceanslot",
+          "mahjongslot",
+          "cleopatraslot"
         ]
       },
       "CompetitiveGameId": {
@@ -1744,7 +1747,10 @@
           "greedybrutal",
           "bigeater",
           "greedyking",
-          "fruitparty"
+          "fruitparty",
+          "oceanslot",
+          "mahjongslot",
+          "cleopatraslot"
         ]
       },
       "Scope": {

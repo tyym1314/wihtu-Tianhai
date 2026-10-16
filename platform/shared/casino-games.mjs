@@ -14,6 +14,20 @@ function wheelGame(id,name,{veg,meat,specials=[],groups=[],chips,round}){
   options:Object.freeze([...options,...groups.map(g=>({id:g.id,multiplier:g.multiplier,covers:all[g.group]}))].map(Object.freeze)),
   specials:Object.freeze(specials.map((sp,i)=>Object.freeze({id:sp,covers:i?'meat':'veg',probability:0.0005})))});
 }
+const SLOT_STAKES=Object.freeze([coins(10),coins(50),coins(100),coins(500),coins(1000),coins(5000)]);
+const sym=list=>list.map(([id,[a,b,c]])=>({id,pays:[[3,a],[4,b],[5,c]]}));
+// Standard 12 paylines on 5x3 (row index per reel, 0 = top).
+const LINES_12=[[1,1,1,1,1],[0,0,0,0,0],[2,2,2,2,2],[0,1,2,1,0],[2,1,0,1,2],[0,0,1,2,2],[2,2,1,0,0],[1,0,0,0,1],[1,2,2,2,1],[0,1,1,1,0],[2,1,1,1,2],[1,1,0,1,1]];
+/** 2000-ways cascading slot (4-5-5-5-4): golden symbols on reels 2-4 turn wild when they win; cascades raise the multiplier. */
+function waysSlot(id,name,scatter,symbols){
+ const w={};symbols.forEach(([s],i)=>{w[s]=[10,14,18,24,30,36,44,52][i];});
+ return Object.freeze({id,family:'slot',kind:'instant',reference:name,name,zh:name,ar:name,stakes:SLOT_STAKES,
+  slot:Object.freeze({pay:'ways',columns:5,rows:[4,5,5,5,4],waysDivisor:20,targetRtp:0.97,maxWin:5000,payScale:0.0552,
+   wild:{id:'wild',reels:[1,2,3],maxPerReel:2},golden:{reels:[1,2,3],chanceBp:900},
+   symbols:sym(symbols),scatter:{id:scatter,pays:[]},
+   cascade:{base:[1,2,3,5],free:[2,4,6,10]},freeSpins:{trigger:3,award:10,perExtra:2,retrigger:2,maxPlayed:100},
+   weights:{base:{...w,wild:[0,3,3,3,0],[scatter]:4}}})});
+}
 export const CASINO_GAMES=Object.freeze({
  greedylion:Object.freeze({
   id:'greedylion',released:true,family:'wheel',reference:'GreedyLion',name:'GreedyLion',zh:'GreedyLion',ar:'GreedyLion',
@@ -85,6 +99,16 @@ export const CASINO_GAMES=Object.freeze({
    jackpot:Object.freeze({contributionBps:200,tiers:[[0,10],[coins(10000),30],[coins(100000),50],[coins(1000000),70]]}),
    table:Object.freeze([{type:'none',weight:9780},{type:'extra',value:1,weight:50},{type:'extra',value:2,weight:25},{type:'extra',value:3,weight:10},{type:'multiplier',value:2,weight:60},{type:'multiplier',value:3,weight:30},{type:'jackpot',weight:45}])}),
  }),
+
+ // ---- Slots on the lines/ways engine (unreleased until art ships). Pays: hundredths of line bet (lines) or of total bet per way / waysDivisor (ways).
+ oceanslot:Object.freeze({id:'oceanslot',family:'slot',kind:'instant',reference:'OceanSlot',name:'OceanSlot',zh:'OceanSlot',ar:'OceanSlot',stakes:SLOT_STAKES,
+  slot:Object.freeze({pay:'lines',columns:5,rows:3,targetRtp:0.97,maxWin:2000,payScale:44.3,
+   lines:LINES_12,wild:{id:'wild',reels:[1,2,3,4],maxPerReel:1},
+   symbols:sym([['pearl',[300,1500,5000]],['shell',[200,800,3000]],['starfish',[150,600,2000]],['seahorse',[120,500,1500]],['turtle',[100,400,1200]],['A',[60,200,600]],['K',[50,160,500]],['Q',[40,120,400]],['J',[30,100,300]],['ten',[20,80,250]]]),
+   scatter:{id:'chest',pays:[[3,200],[4,1000],[5,5000]]},freeSpins:{trigger:3,award:8,perExtra:4,retrigger:4,multiplier:2,maxPlayed:60},
+   weights:{base:{pearl:14,shell:20,starfish:26,seahorse:32,turtle:38,A:60,K:64,Q:68,J:72,ten:76,wild:[0,26,26,26,26],chest:9}}})}),
+ mahjongslot:waysSlot('mahjongslot','MahjongSlot','hu',[['green',[1500,6000,10000]],['red',[1000,4000,8000]],['white',[800,2000,6000]],['wan',[600,1500,4000]],['tiao',[300,800,2000]],['tong',[300,800,2000]],['five',[200,400,1000]],['two',[100,300,600]]]),
+ cleopatraslot:waysSlot('cleopatraslot','CleopatraSlot','cleopatra',[['scarab',[1500,6000,10000]],['ankh',[1000,4000,8000]],['eye',[800,2000,6000]],['vase',[600,1500,4000]],['A',[300,800,2000]],['K',[300,800,2000]],['Q',[200,400,1000]],['J',[100,300,600]]]),
 });
 /** Games playable by Apps; unreleased definitions exist for math and server work before their art ships. */
 const preview=typeof process!=='undefined'&&process.env?.OASIS_CASINO_PREVIEW==='1'&&process.env?.OASIS_ENVIRONMENT!=='production'||typeof process!=='undefined'&&process.env?.OASIS_CASINO_PREVIEW==='test';
