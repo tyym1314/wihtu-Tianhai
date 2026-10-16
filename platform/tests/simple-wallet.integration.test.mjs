@@ -43,7 +43,7 @@ before(async()=>{
  Object.assign(process.env,{OASIS_DATABASE_URL:databaseUrl.href,OASIS_ENVIRONMENT:'production',OASIS_LOCAL_DIR:dir,OASIS_START_WALLET:'0',OASIS_PUBLIC_ORIGIN:origin,OASIS_PRODUCTION_ADMISSION_ENABLED:'0',OASIS_PARTNER_ADMISSION:'1'});
  ({pool,tx,closePools}=await import('../server/db.mjs'));platform=await import('../server/platform.mjs');wallet=await import('../server/wallet/index.mjs');binding=await import('../server/wallet-binding.mjs');pvp=await import('../server/pvp/index.mjs');cycles=await import('../server/cycles.mjs');runtimeMode=await import('../server/runtime-mode.mjs');simple=await import('../server/simple-wallet.mjs');casino=await import('../server/casino/rounds.mjs');
  ({closeEnginePool}=await import('../server/pvp/engine-pool.mjs'));
- await wallet.migrateWallet(pool);await platform.migratePlatform();await pvp.migratePvp(pool);await binding.migrateWalletBindings(pool);await simple.migrateSimpleWallet(pool);await casino.migrateCasino(pool);await(await import('../server/casino/instant.mjs')).migrateInstant(pool);await runtimeMode.migrateRuntime(pool);await(await import('../server/transfers/index.mjs')).migrateTransfers(pool);
+ await wallet.migrateWallet(pool);await platform.migratePlatform();await pvp.migratePvp(pool);await binding.migrateWalletBindings(pool);await simple.migrateSimpleWallet(pool);await casino.migrateCasino(pool);await(await import('../server/casino/instant.mjs')).migrateInstant(pool);await(await import('../server/casino/arcade.mjs')).migrateArcade(pool);await runtimeMode.migrateRuntime(pool);await(await import('../server/transfers/index.mjs')).migrateTransfers(pool);
  // The partner's own wallet tables live in a separate schema-free namespace of this test database.
  await migrateSimpleDemoWallet(pool);await seedSimpleDemoUsers(pool,[{external_user_id:'alice',balance_minor:'100000'},{external_user_id:'bob',balance_minor:'100000'},{external_user_id:'carol',balance_minor:'5000000'},{external_user_id:'dave',balance_minor:'5000000'},{external_user_id:'poor',balance_minor:'500'}]);
  partnerServer=createServer(async(req,res)=>{let raw='';for await(const c of req)raw+=c;if(!await handleSimpleWallet(pool,walletKey,req,res,raw)){res.writeHead(404);res.end('{}');}});
@@ -301,4 +301,21 @@ test('casino history lists the player\'s revealed rounds and spins with stake an
  assert.equal(r.stake_minor,'300000');assert.equal(r.payout_minor,String(r.bets.reduce((a,b)=>a+BigInt(b.payout_minor),0n)));
  const spins=await casino.casinoHistory(await sessionFor('carol','oceanslot'));assert.equal(spins.kind,'instant');assert.equal(spins.records[0].stake_minor,'1000');
  const other=await casino.casinoHistory(await sessionFor('dave','sicbo'));assert.equal(other.records.length,0,'never another player\'s records');
+});
+
+test('an arcade session (Monster) debits its ammo once, resolves shots on the server and settles wins plus unused ammo',async()=>{
+ const arcade=await import('../server/casino/arcade.mjs');
+ const carol=await sessionFor('carol','monster'),before=await partnerBalance('carol');
+ const open=await arcade.openArcade(carol,{request_id:uid('arc'),bet_minor:'1000',shots:20});
+ assert.equal(open.status,'OPEN');assert.equal(await partnerBalance('carol'),before-20000n);
+ await assert.rejects(arcade.openArcade(carol,{request_id:uid('arc'),bet_minor:'1000',shots:20}),{code:'ARCADE_OPEN'});
+ let seq=0,last;
+ for(let i=0;i<5;i++)last=await arcade.shoot(carol,{arcade_id:open.id,seq:++seq,weapon:'arrow',targets:['dragon']});
+ const again=await arcade.shoot(carol,{arcade_id:open.id,seq,weapon:'arrow',targets:['dragon']});assert.deepEqual(again.hits,last.hits,'a replayed shot returns its stored result');
+ await assert.rejects(arcade.shoot(carol,{arcade_id:open.id,seq:seq+2,weapon:'arrow',targets:['bat']}),{code:'SHOT_OUT_OF_ORDER'});
+ await arcade.shoot(carol,{arcade_id:open.id,seq:++seq,weapon:'lightning',targets:['bat','slime','goblin','wolf','orc']});
+ await assert.rejects(arcade.shoot(carol,{arcade_id:open.id,seq:++seq,weapon:'triple',targets:['bat','slime','goblin','wolf']}),{code:'INVALID_TARGETS'});
+ const closed=await arcade.closeArcade(carol,{arcade_id:open.id});assert.equal(closed.status,'SETTLED');assert.equal(closed.used,10);assert.ok(closed.seed);
+ await recover();
+ assert.equal(await partnerBalance('carol'),before-20000n+BigInt(closed.win_minor)+10000n);assert.equal(await transit(),'0');
 });

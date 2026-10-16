@@ -15,6 +15,7 @@ import {wheelModel,drawWheel,wheelPayout} from './wheel.mjs';
 import {crashModel,drawCrash,crashPayout,multiplierAt,timeToReach} from './crash.mjs';
 import {cards3Model,drawCards3,cards3Payout} from './cards3.mjs';
 import {instantModels,instantState,isInstantGame} from './instant.mjs';
+import {arcadeModels,isArcadeGame} from './arcade.mjs';
 
 const sha=v=>createHash('sha256').update(v).digest('hex');
 // settleAtClose: bets resolve when betting closes (result shown at once).
@@ -25,9 +26,9 @@ const families={
  crash:{model:crashModel,draw:drawCrash,payout:crashPayout,settleAtClose:false,oneBetPerOption:true,
   timing:(game,result,r)=>{const reveal=r.bet_until+timeToReach(result.crash_x100);return{reveal_at:reveal,ends_at:reveal+game.round.showMs};}},
 };
-const models=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>g.kind!=='instant').map(g=>[g.id,families[g.family].model(g)]));
+const models=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>!g.kind).map(g=>[g.id,families[g.family].model(g)]));
 export const casinoProfile=gameId=>models[gameId];
-export const casinoProfiles=()=>[...Object.values(models),...instantModels()];
+export const casinoProfiles=()=>[...Object.values(models),...instantModels(),...arcadeModels()];
 const ACTIVE_MS=60000,HISTORY=20,CLOSE_GUARD_MS=300;
 const watchers=new Map();
 
@@ -97,6 +98,7 @@ const betView=b=>({id:b.id,request_id:b.request_id,option_id:b.option_id,stake_m
 export async function casinoState(session,{balance=false}={}){
  if(!isCasinoGame(session.game_id))fail(403,'GAME_SESSION_REQUIRED');
  if(isInstantGame(session.game_id))return instantState(session,{balance});
+ if(isArcadeGame(session.game_id))return arcadeState(session,{balance});
  const app=await appById(session.app_id),now=Date.now(),round=await currentRound(app,session.game_id,now);
  const [totals,mine,history,winners,today]=await Promise.all([
   pool.query("SELECT option_id,sum(stake_minor)::text total,count(DISTINCT external_user_id)::int players FROM casino_bets WHERE round_id=$1 AND status IN ('ACCEPTED','SETTLING','SETTLED') GROUP BY option_id",[round.id]),
@@ -121,6 +123,13 @@ export async function casinoState(session,{balance=false}={}){
  return out;
 }
 
+async function arcadeState(session,{balance}){
+ const app=await appById(session.app_id),open=(await pool.query("SELECT id,status,bet_minor::text bet_minor,shots,used,win_minor::text win_minor,commitment FROM casino_arcade WHERE app_id=$1 AND external_user_id=$2 AND game_id=$3 AND status IN ('OPEN','CLOSING') ORDER BY created_at DESC LIMIT 1",[app.id,session.external_user_id,session.game_id])).rows[0];
+ const out={game_id:session.game_id,kind:'arcade',server_now:Date.now(),me:session.external_user_id,open:open||null};
+ if(balance){try{out.balance=(await walletBalance(app,session.external_user_id)).balance;}catch{out.balance=null;}}
+ return out;
+}
+
 /** The player's recent bets (round games) or spins (instant games) in this game, newest first. */
 export async function casinoHistory(session,{limit=30}={}){
  if(!isCasinoGame(session.game_id))fail(403,'GAME_SESSION_REQUIRED');
@@ -140,7 +149,7 @@ export async function casinoHistory(session,{limit=30}={}){
 function walletBase(app,bet){return {...scope(app),authorization_id:'auth_'+bet.id,cycle_id:bet.id};}
 
 export async function placeBet(session,body){
- if(!isCasinoGame(session.game_id)||isInstantGame(session.game_id))fail(403,'GAME_SESSION_REQUIRED');
+ if(!isCasinoGame(session.game_id)||isInstantGame(session.game_id)||isArcadeGame(session.game_id))fail(403,'GAME_SESSION_REQUIRED');
  const game=CASINO_GAMES[session.game_id],model=models[game.id];
  if(!/^[A-Za-z0-9_-]{8,128}$/.test(body.request_id||'')||typeof body.round_id!=='string'||typeof body.option_id!=='string'||typeof body.stake_minor!=='string')fail(400,'INVALID_REQUEST');
  if(!game.options.some(o=>o.id===body.option_id))fail(400,'INVALID_OPTION');

@@ -1726,7 +1726,11 @@
           "roulettepro",
           "sicbo",
           "crash",
-          "crashstar"
+          "crashstar",
+          "greedyforest",
+          "herochest",
+          "monster",
+          "molestar"
         ]
       },
       "CompetitiveGameId": {
@@ -1772,7 +1776,11 @@
           "roulettepro",
           "sicbo",
           "crash",
-          "crashstar"
+          "crashstar",
+          "greedyforest",
+          "herochest",
+          "monster",
+          "molestar"
         ]
       },
       "Scope": {

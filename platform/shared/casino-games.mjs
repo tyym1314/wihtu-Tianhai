@@ -7,12 +7,12 @@ const CHIPS=Object.freeze([coins(100),coins(1000),coins(10000),coins(50000),coin
 
 const CHIPS2=Object.freeze([coins(1000),coins(5000),coins(10000),coins(50000),coins(100000)]);
 /** A Greedy-style wheel: four x5 items, four higher items, optional all-of-a-group specials and group bets. */
-function wheelGame(id,name,{veg,meat,specials=[],groups=[],chips,round}){
+function wheelGame(id,name,{veg,meat,specials=[],groups=[],chips,round,bonus}){
  const options=[...veg.map(o=>({id:o,multiplier:5,group:'veg'})),...meat.map(([o,m])=>({id:o,multiplier:m,group:'meat'}))];
  const all={veg:veg,meat:meat.map(([o])=>o)};
  return Object.freeze({id,family:'wheel',reference:name,name,zh:name,ar:name,round:Object.freeze(round),chips,maxOptionsPerRound:groups.length?10:6,maxStakePerRound:coins(1000000),
   options:Object.freeze([...options,...groups.map(g=>({id:g.id,multiplier:g.multiplier,covers:all[g.group]}))].map(Object.freeze)),
-  specials:Object.freeze(specials.map((sp,i)=>Object.freeze({id:sp,covers:i?'meat':'veg',probability:0.0005})))});
+  specials:Object.freeze(specials.map((sp,i)=>Object.freeze({id:sp,covers:i?'meat':'veg',probability:0.0005}))),...(bonus?{bonus:Object.freeze(bonus)}:{})});
 }
 const SLOT_STAKES=Object.freeze([coins(10),coins(50),coins(100),coins(500),coins(1000),coins(5000)]);
 const sym=list=>list.map(([id,[a,b,c]])=>({id,pays:[[3,a],[4,b],[5,c]]}));
@@ -106,6 +106,11 @@ export const CASINO_GAMES=Object.freeze({
  greedyking:wheelGame('greedyking','GreedyKing',{veg:['carrot','cabbage','corn','tomato'],meat:[['hotdog',10],['kebab',15],['ham',25],['steak',45]],specials:[],
   groups:[{id:'salad',multiplier:1.25,group:'veg'},{id:'pizza',multiplier:4.37,group:'meat'}],chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(100000),coins(300000)]),round:{betMs:30000,drawMs:7000,showMs:5000}}),
 
+ // GreedyForest: herbivores x5; carnivore and herbivore jackpots pay their whole group.
+ greedyforest:wheelGame('greedyforest','GreedyForest',{veg:['rabbit','cow','sheep','deer'],meat:[['fox',10],['bear',15],['tiger',25],['lion',45]],specials:['grass','meat'],chips:CHIPS2,round:{betMs:20000,drawMs:7000,showMs:5000}}),
+ // HeroChest: eight boxes with salad/pizza lucky jackpots; a rare "God" reward opens 4 extra random boxes.
+ herochest:wheelGame('herochest','HeroChest',{veg:['tomato','corn','carrot','grape'],meat:[['fish',10],['lobster',15],['beef',25],['chicken',45]],specials:['salad','pizza'],chips:CHIPS2,round:{betMs:25000,drawMs:7000,showMs:5000},
+  bonus:{liabilityMultiplier:45,table:[{type:'none',weight:9995},{type:'extra',value:4,weight:5}]}}),
  // FruitParty: 8-fruit machine; after each draw a mini reel may add fruits, multiply, or award the jackpot.
  fruitparty:Object.freeze({
   id:'fruitparty',family:'wheel',reference:'FruitParty',name:'FruitParty',zh:'FruitParty',ar:'FruitParty',
@@ -144,6 +149,16 @@ export const CASINO_GAMES=Object.freeze({
   chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(50000)]),maxOptionsPerRound:3,maxStakePerRound:coins(1000000),
   draw:Object.freeze(DICE.map(d=>Object.freeze({id:'d'+d.join(''),weight:1}))),
   options:Object.freeze([['big',2,d=>sum(d)>=11&&!triple(d)],['triple',35,triple],['small',2,d=>sum(d)<=10&&!triple(d)]].map(([o,m,f])=>Object.freeze({id:o,multiplier:m,covers:DICE.filter(f).map(d=>'d'+d.join(''))})))}),
+ // ---- Arcade shooters: every shot returns rtp of its cost; targets only change variance. ----
+ monster:Object.freeze({id:'monster',family:'arcade',kind:'arcade',reference:'Monster',name:'Monster',zh:'Monster',ar:'Monster',
+  arcade:Object.freeze({rtp:0.97,bets:Object.freeze([coins(1),coins(5),coins(10),coins(50),coins(100)]),
+   targets:Object.freeze([{id:'bat',multiplier:2},{id:'slime',multiplier:3},{id:'goblin',multiplier:5},{id:'wolf',multiplier:8},{id:'orc',multiplier:12},{id:'troll',multiplier:20},{id:'golem',multiplier:30},{id:'dragon',multiplier:50},{id:'chest',min:10,max:100}].map(Object.freeze)),
+   // Normal arrow (1 bet, 1 target), triple arrow (3 bets, 3 targets), lightning (5 bets, chains up to 5 targets).
+   weapons:Object.freeze([{id:'arrow',cost:1,targets:1},{id:'triple',cost:3,targets:3},{id:'lightning',cost:5,targets:5}].map(Object.freeze))})}),
+ molestar:Object.freeze({id:'molestar',family:'arcade',kind:'arcade',reference:'MoleStar',name:'MoleStar',zh:'MoleStar',ar:'MoleStar',
+  arcade:Object.freeze({rtp:0.97,bets:Object.freeze([coins(1),coins(5),coins(10),coins(50),coins(100)]),
+   targets:Object.freeze([{id:'mole',multiplier:2},{id:'helmet',multiplier:3},{id:'miner',multiplier:5},{id:'ninja',multiplier:10},{id:'king',multiplier:20},{id:'golden',multiplier:50},{id:'star',multiplier:100}].map(Object.freeze)),
+   weapons:Object.freeze([{id:'hammer',cost:1,targets:1},{id:'bomb',cost:5,targets:5}].map(Object.freeze))})}),
  crash:crashGame('crash','Crash'),
  crashstar:crashGame('crashstar','CrashStar'),
 });

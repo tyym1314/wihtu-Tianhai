@@ -17,6 +17,7 @@ import {migrateWalletBindings} from './wallet-binding.mjs';
 import {migrateSimpleWallet,recoverSimpleWallets} from './simple-wallet.mjs';
 import {migrateCasino,registerCasinoProfiles,casinoState,casinoHistory,placeBet,cashOut,tickCasino} from './casino/rounds.mjs';
 import {migrateInstant,spin as casinoSpin,recoverInstant} from './casino/instant.mjs';
+import {migrateArcade,openArcade,shoot as arcadeShoot,closeArcade,recoverArcade} from './casino/arcade.mjs';
 import {isCasinoGame,CASINO_IDS} from '../shared/casino-games.mjs';
 import {routeIntegration} from './integration-routes.mjs';
 import {migrateIntegrationChecks,recoverIntegrationChecks} from './integration-checks.mjs';
@@ -135,6 +136,11 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
     checkOrigin(req);const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','POST',path);if(!isCasinoGame(s.game_id))fail(403,'GAME_SESSION_REQUIRED');
     return send(res,200,await placeBet(s,body));
   }
+  const arcade=path.match(/^\/api\/casino\/arcade\/(open|shoot|close)$/);
+  if(arcade&&req.method==='POST'){
+    checkOrigin(req);const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','POST',path);
+    return send(res,200,await ({open:openArcade,shoot:arcadeShoot,close:closeArcade})[arcade[1]](s,body));
+  }
   if(path==='/api/casino/spin'&&req.method==='POST'){
     checkOrigin(req);const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','POST',path);
     return send(res,200,await casinoSpin(s,body));
@@ -174,7 +180,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
   }
   fail(404,'NOT_FOUND');
 }catch(e){if(res.headersSent||res.destroyed)return;const status=e.status||500;if(status===429)res.setHeader('retry-after',String(e.retryAfterSeconds||60));if(status>=500&&!(e instanceof ApiError))console.error('[platform]',e.code||e.message);const message=(e.status?e.message:'服务暂时不可用，请保留原请求重试').slice(0,512);if((req.url||'').startsWith('/v1/')){const allowed=['INVALID_REQUEST','AMOUNT_MISMATCH','SIGNATURE_INVALID','TIMESTAMP_EXPIRED','NONCE_REPLAY','LAUNCH_CODE_INVALID','SCOPE_FORBIDDEN','GAME_DISABLED','NOT_FOUND','IDEMPOTENCY_CONFLICT','INVALID_STATE','RATE_LIMITED','INTERNAL_ERROR'];const code=(allowed.includes(e.code)||TRANSFER_PUBLIC_CODES.includes(e.code))?e.code:status>=500?'INTERNAL_ERROR':status===403?'SCOPE_FORBIDDEN':status===409?'INVALID_STATE':'INVALID_REQUEST';send(res,status,{code,message,trace_id:id('trace'),retryable:status>=500||status===429});}else send(res,status,{error:{code:e.code||'INTERNAL_ERROR',message}});}});}
-await preflightRuntime(pool);await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateSimpleWallet(pool);await migrateCasino(pool);await migrateInstant(pool);
+await preflightRuntime(pool);await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateSimpleWallet(pool);await migrateCasino(pool);await migrateInstant(pool);await migrateArcade(pool);
 // Drop game ids that no longer exist (renamed casino pilots) so App game lists stay valid.
 await pool.query(`UPDATE gp_apps SET game_ids=(SELECT COALESCE(jsonb_agg(g),'[]'::jsonb) FROM jsonb_array_elements_text(game_ids) g WHERE g=ANY($1::text[]))
  WHERE EXISTS (SELECT 1 FROM jsonb_array_elements_text(game_ids) g WHERE NOT g=ANY($1::text[]))`,[ALL_GAME_IDS]);
@@ -192,6 +198,7 @@ roomTimingSink?.closed.then(result=>console.log(JSON.stringify({event:'oasis.roo
  confirmed_written_bytes:result.confirmed_written_bytes,dropped:result.dropped}))).catch(()=>{});
 const server=createPlatformServer();await new Promise(r=>server.listen(PORT,'127.0.0.1',r));
 const timer=setInterval(()=>recoverPending().catch(e=>console.error('[recovery]',e.code||e.message)),3000);timer.unref();
+const arcadeTimer=setInterval(()=>recoverArcade().catch(e=>console.error('[casino arcade]',e.code||e.message)),5000);arcadeTimer.unref();
 const instantTimer=setInterval(()=>recoverInstant().catch(e=>console.error('[casino spins]',e.code||e.message)),3000);instantTimer.unref();
 let casinoTicking=false;const casinoTimer=setInterval(()=>{if(casinoTicking)return;casinoTicking=true;tickCasino().catch(e=>console.error('[casino rounds]',e.code||e.message)).finally(()=>{casinoTicking=false;});},250);casinoTimer.unref();
 const pvpTimer=setInterval(()=>tickPvp().catch(e=>console.error('[arena recovery]',e.code||e.message)),250);pvpTimer.unref();

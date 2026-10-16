@@ -23,6 +23,8 @@
 ## 娱乐场游戏（复刻百顺/小游的概率游戏）
 
 - 定义：`platform/shared/casino-games.mjs`（`family`：wheel 转盘 / crash 爆点 / cards3 三家比牌 / slot 老虎机；`kind:'instant'` 为单人即时游戏）。新增游戏还要加到 `specs/openapi.json` 的 `GameId`/`ProbabilityGameId` 与 `public/launch/index.html` 的 `GAMES`（`tests/casino-games.test.mjs` 会检查）。
+- 街机射击（Monster、MoleStar）：`server/casino/arcade.mjs`，一次开局 = 一个钱包周期（买弹 → 服务端逐发判定 → 结束时结算赢得 + 退回未用弹药，闲置 2 分钟自动结算）；每发返还率固定，瞄准哪个目标只影响波动。
+- 参考资料补抓：手机游戏页有防截屏，可直接解析 Cocos 资源包的 `text/<语言>` 文本（见 `.local/reference/rules/<游戏>/*.json`）。
 - 服务端：`server/casino/`。`rounds.mjs` 共享回合（每个 App 每款游戏一条连续回合，承诺/揭示种子；每注一个钱包概率周期：下注时 authorize+accept，开奖后 settle）；`instant.mjs` 单人旋转（一次付费旋转含全部免费旋转 = 一个周期）。数学：`wheel.mjs`、`crash.mjs`、`cards3.mjs`、`slots.mjs`。接口：`GET /api/casino/state`、`POST /api/casino/bets|cashout|spin`。
 - 只对三方 App 与沙箱开放（`ALL_GAME_IDS`）；第一方 13 款（`RELEASED_IDS`）不变；生产启动时自动给三方 App 补上新游戏。
 - 命名：游戏名与 ID 沿用参考游戏（如 `greedylion` GreedyLion、`rocketstar2` RocketStar2、`teenpatti` TeenPatti、`olympus` Olympus）；改名后服务启动会自动从各 App 的 `game_ids` 去掉已不存在的 ID。
