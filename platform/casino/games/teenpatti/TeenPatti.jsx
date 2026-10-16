@@ -4,6 +4,7 @@ import {useRound,full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
 import {Stage,Box,CountUp,PhaseBanner} from '../../shared/Stage.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
+import {HistoryModal} from '../../shared/History.jsx';
 import './teenpatti.css';
 
 const GAME=CASINO_GAMES.teenpatti,HANDS=GAME.options.map(o=>o.id),LABEL={ruby:'A',jade:'B',sapphire:'C'},MULT=(GAME.payout_x100/100).toFixed(2);
@@ -24,7 +25,7 @@ function Card({code,open,i,dealt}){
 
 export default function TeenPatti({initial}){
  const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('teenpatti',['chip','deal','flip','win','lose','click','tick','chips','coin','shuffle','select','close']);
- const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[rules,setRules]=useState(false),[coins,setCoins]=useState([]),[flies,setFlies]=useState([]);
+ const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false),[coins,setCoins]=useState([]),[flies,setFlies]=useState([]);
  const since=now-round.bet_until,result=round.result,seen=useRef({});
  const shown=i=>phase==='result'||(phase==='drawing'&&since>=FLIP_AT[i]);
  const winner=result&&(phase==='result'||since>=WIN_AT)?result.outcome:null;
@@ -60,6 +61,7 @@ export default function TeenPatti({initial}){
   <div className="cs-menu" style={{right:24,top:104}}>
    <button className="cs-icon-btn tp-ib" onClick={()=>setMenu(m=>!m)} aria-label="menu">≡</button>
    {menu&&<><button className="cs-icon-btn tp-ib" onClick={()=>{setRules(true);setMenu(false);}}>?</button>
+    <button className="cs-icon-btn tp-ib" onClick={()=>{setRecords(true);setMenu(false);}} aria-label={t('records')}>📜</button>
     <button className="cs-icon-btn tp-ib" onClick={audio.toggle}>{audio.muted?'🔇':'🔊'}</button>
     <button className="cs-icon-btn tp-ib" onClick={g.exit}>⏻</button></>}
   </div>
@@ -69,5 +71,6 @@ export default function TeenPatti({initial}){
   {rules&&<div className="cs-modal-back" onClick={()=>setRules(false)}><div className="cs-modal" onClick={e=>e.stopPropagation()}>
    <h2>{t('rules')}</h2><p>{t('pattiRules').replace(/红宝石、翡翠、蓝宝石|Ruby, Emerald and Sapphire|الياقوت والزمرد والياقوت الأزرق/,'A / B / C')}</p><h2>{t('fair')}</h2><p>{t('fairText')}</p><small>commitment: {round.commitment}</small>{round.seed&&<small>seed: {round.seed}</small>}
    <button className="cs-gold-btn" onClick={()=>setRules(false)}>{t('close')}</button></div></div>}
+   {records&&<HistoryModal onClose={()=>setRecords(false)} label={id=>LABEL[id]||id}/>}
  </Stage>;
 }

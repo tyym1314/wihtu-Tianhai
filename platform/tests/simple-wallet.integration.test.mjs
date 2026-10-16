@@ -293,3 +293,12 @@ test('SicBo and roulette settle every board bet against the drawn dice or number
  }
  assert.equal(await transit(),'0');
 });
+
+test('casino history lists the player\'s revealed rounds and spins with stake and payout',async()=>{
+ await pool.query("UPDATE casino_rounds SET reveal_at=$1 WHERE game_id='sicbo' AND status='settled'",[Date.now()-1]);
+ const carol=await sessionFor('carol','sicbo'),h=await casino.casinoHistory(carol);
+ assert.equal(h.kind,'round');assert.ok(h.records.length>=1);const r=h.records[0];assert.equal(r.bets.length,3);
+ assert.equal(r.stake_minor,'300000');assert.equal(r.payout_minor,String(r.bets.reduce((a,b)=>a+BigInt(b.payout_minor),0n)));
+ const spins=await casino.casinoHistory(await sessionFor('carol','oceanslot'));assert.equal(spins.kind,'instant');assert.equal(spins.records[0].stake_minor,'1000');
+ const other=await casino.casinoHistory(await sessionFor('dave','sicbo'));assert.equal(other.records.length,0,'never another player\'s records');
+});

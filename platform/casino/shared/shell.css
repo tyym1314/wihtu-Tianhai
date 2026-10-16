@@ -38,3 +38,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cs-special img{width:300px;height:300px;object-fit:contain;filter:drop-shadow(0 0 40px #ffd56b);animation:ol-pulse .5s ease-in-out infinite alternate}
 .cs-special b{font:900 72px Georgia,serif;color:#fff6d8;text-shadow:0 6px 0 #6a4206,0 0 30px #ffb300;text-align:center;padding:0 40px}
 @keyframes ol-pulse{to{transform:scale(1.08)}}
+.cs-history ul{list-style:none;margin:0;padding:0;max-height:52vh;overflow:auto}
+.cs-history li{padding:8px 4px;border-bottom:1px solid #ffffff1a;font-size:12px;color:#f3e2c2}
+.cs-history li div{display:flex;justify-content:space-between;gap:10px}
+.cs-history small{color:#b99a6a;font-size:11px}.cs-history em{font-style:normal;color:#ffd77a;white-space:nowrap}
+.cs-history b{font-size:14px}.cs-history b.up{color:#7dffb0}.cs-history b.down{color:#ff9fb0}

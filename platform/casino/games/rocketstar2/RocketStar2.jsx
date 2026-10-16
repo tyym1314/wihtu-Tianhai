@@ -5,6 +5,7 @@ import {full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
 import {Stage,Box,CountUp,PhaseBanner} from '../../shared/Stage.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
+import {HistoryModal} from '../../shared/History.jsx';
 import './rocketstar2.css';
 
 const GAME=CASINO_GAMES.rocketstar2;
@@ -74,7 +75,7 @@ function Panel({index,state,phase,mult,balance,onBet,onCash,audio}){
 
 export default function RocketStar2({initial}){
  const [state,setState]=useState(initial),[balance,setBalance]=useState(initial.balance?.available_minor??null),[now,setNow]=useState(Date.now());
- const [toast,setToast]=useState(null),[menu,setMenu]=useState(false),[rules,setRules]=useState(false),[offline,setOffline]=useState(false),[pop,setPop]=useState(null);
+ const [toast,setToast]=useState(null),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false),[offline,setOffline]=useState(false),[pop,setPop]=useState(null);
  const audio=useAudio('rocketstar2',['launch','boom','cash','click','chip','tick','coin','select','close']);
  const offset=useRef(initial.server_now-Date.now()),balanceRound=useRef(null),ref=useRef(initial),ship=useRef(null),seen=useRef({}),tip=useRef([560,500]);
  const serverNow=()=>Date.now()+offset.current;
@@ -128,12 +129,14 @@ export default function RocketStar2({initial}){
   <button className="rs-menu" style={{left:17,top:19,width:80,height:80}} onClick={()=>setMenu(m=>!m)} aria-label="menu"/>
   {menu&&<div className="cs-menu" style={{left:22,top:110}}>
    <button className="cs-icon-btn rs-ib" onClick={()=>{setRules(true);setMenu(false);}}>?</button>
-   <button className="cs-icon-btn rs-ib" onClick={audio.toggle}>{audio.muted?'🔇':'🔊'}</button>
+   <button className="cs-icon-btn rs-ib" onClick={()=>{setRecords(true);setMenu(false);}} aria-label={t('records')}>📜</button>
+    <button className="cs-icon-btn rs-ib" onClick={audio.toggle}>{audio.muted?'🔇':'🔊'}</button>
    <button className="cs-icon-btn rs-ib" onClick={()=>requestExit()}>⏻</button></div>}
   {offline&&<div className="cs-toast">{t('offline')}</div>}
   {toast&&<div className="cs-toast" key={toast.id}>{t(toast.key)}</div>}
   {rules&&<div className="cs-modal-back" onClick={()=>setRules(false)}><div className="cs-modal" onClick={e=>e.stopPropagation()}>
    <h2>{t('rules')}</h2><p>{t('rocketRules')}</p><h2>{t('fair')}</h2><p>{t('fairText')}</p><small>commitment: {round.commitment}</small>{round.seed&&<small>seed: {round.seed}</small>}
    <button className="cs-gold-btn" onClick={()=>setRules(false)}>{t('close')}</button></div></div>}
+   {records&&<HistoryModal onClose={()=>setRecords(false)} label={id=>id.length===1?id.toUpperCase():id}/>}
  </Stage>;
 }

@@ -4,6 +4,7 @@ import {useRound,full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
 import {Stage,Box,CountUp,PhaseBanner} from '../../shared/Stage.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
+import {HistoryModal} from '../../shared/History.jsx';
 import './greedylion.css';
 
 const GAME=CASINO_GAMES.greedylion;
@@ -20,7 +21,7 @@ const icon=id=>ORDER.includes(id)?img(`icon-${id}`):img(id);
 
 export default function GreedyLion({initial}){
  const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('greedylion',['chip','tick','win','lose','coin','click','select','close','chips']);
- const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[rules,setRules]=useState(false);
+ const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false);
  const [light,setLight]=useState(-1),[flies,setFlies]=useState([]),[coins,setCoins]=useState([]),[landed,setLanded]=useState(false);
  const lastStep=useRef(-1),lastSec=useRef(-1),played=useRef(null);
 
@@ -86,6 +87,7 @@ export default function GreedyLion({initial}){
   <div className="cs-menu" style={{right:22,top:290}}>
    <button className="cs-icon-btn" onClick={()=>setMenu(m=>!m)} aria-label="menu">≡</button>
    {menu&&<><button className="cs-icon-btn" onClick={()=>{setRules(true);setMenu(false);}} aria-label={t('rules')}>?</button>
+    <button className="cs-icon-btn" onClick={()=>{setRecords(true);setMenu(false);}} aria-label={t('records')}>📜</button>
     <button className="cs-icon-btn" onClick={audio.toggle} aria-label={t('sound')}>{audio.muted?'🔇':'🔊'}</button>
     <button className="cs-icon-btn" onClick={g.exit} aria-label="exit">⏻</button></>}
   </div>
@@ -94,5 +96,6 @@ export default function GreedyLion({initial}){
   {rules&&<div className="cs-modal-back gl-modal" onClick={()=>setRules(false)}><div className="cs-modal" onClick={e=>e.stopPropagation()}>
    <h2>{t('rules')}</h2><p>{t('lionRules')}</p><h2>{t('fair')}</h2><p>{t('fairText')}</p><small>commitment: {round.commitment}</small>{round.seed&&<small>seed: {round.seed}</small>}
    <button className="cs-gold-btn" onClick={()=>setRules(false)}>{t('close')}</button></div></div>}
+   {records&&<HistoryModal onClose={()=>setRecords(false)}/>}
  </Stage>;
 }

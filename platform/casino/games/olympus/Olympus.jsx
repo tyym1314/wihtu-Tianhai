@@ -5,6 +5,7 @@ import {full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
 import {Stage,Box,CountUp} from '../../shared/Stage.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
+import {HistoryModal} from '../../shared/History.jsx';
 import './olympus.css';
 
 const GAME=CASINO_GAMES.olympus,SLOT=GAME.slot,COLS=SLOT.columns,ROWS=SLOT.rows;
@@ -22,7 +23,7 @@ export default function Olympus({initial}){
  const [grid,setGrid]=useState(()=>last?.tumbles.at(-1)?.grid||last?.initial||idle());
  const [gen,setGen]=useState(0),[winCells,setWinCells]=useState([]),[popping,setPopping]=useState(false),[win,setWin]=useState(0n),[busy,setBusy]=useState(false);
  const [free,setFree]=useState(null),[mult,setMult]=useState(null),[big,setBig]=useState(null),[turbo,setTurbo]=useState(false),[toast,setToast]=useState(null);
- const [modal,setModal]=useState(null),[auto,setAuto]=useState(0),[menu,setMenu]=useState(false);
+ const [modal,setModal]=useState(null),[auto,setAuto]=useState(0),[menu,setMenu]=useState(false),[records,setRecords]=useState(false);
  const [leaving,setLeaving]=useState(false),[pops,setPops]=useState([]),[flash,setFlash]=useState(0),[fountain,setFountain]=useState(0),[scatterHit,setScatterHit]=useState(false),[summary,setSummary]=useState(null);
  const audio=useAudio('olympus',['spin','drop','tumble','win','bigwin','orb','thunder','feature','click','coin']);
  const speed=useRef(1);speed.current=turbo?0.45:1;
@@ -115,6 +116,7 @@ export default function Olympus({initial}){
   <div className="cs-menu" style={{right:22,top:30}}>
    <button className="cs-icon-btn ol-ib" onClick={()=>setMenu(m=>!m)} aria-label="menu">≡</button>
    {menu&&<><button className="cs-icon-btn ol-ib" onClick={()=>{setModal('rules');setMenu(false);}}>?</button>
+    <button className="cs-icon-btn ol-ib" onClick={()=>{setRecords(true);setMenu(false);}} aria-label={t('records')}>📜</button>
     <button className="cs-icon-btn ol-ib" onClick={audio.toggle}>{audio.muted?'🔇':'🔊'}</button>
     <button className="cs-icon-btn ol-ib" disabled={busy} onClick={()=>requestExit()}>⏻</button></>}
   </div>
@@ -131,5 +133,6 @@ export default function Olympus({initial}){
    <h2>{t('rules')}</h2><p>{t('slotRules')}</p>
    <div className="ol-pay">{SLOT.symbols.map(s=><div key={s.id}><img src={img(s.id)} alt=""/><span>{s.bands.map(([n,x])=>`${n}+ ×${x/100}`).join('   ')}</span></div>)}</div>
    <button className="cs-gold-btn" onClick={()=>setModal(null)}>{t('close')}</button></div></div>}
+   {records&&<HistoryModal onClose={()=>setRecords(false)}/>}
  </Stage>;
 }

@@ -121,6 +121,22 @@ export async function casinoState(session,{balance=false}={}){
  return out;
 }
 
+/** The player's recent bets (round games) or spins (instant games) in this game, newest first. */
+export async function casinoHistory(session,{limit=30}={}){
+ if(!isCasinoGame(session.game_id))fail(403,'GAME_SESSION_REQUIRED');
+ const n=Math.min(100,Math.max(1,Number(limit)||30));
+ if(isInstantGame(session.game_id)){
+  const rows=(await pool.query("SELECT id,mode,stake_minor::text stake,payout_minor::text payout,status,created_at,result->>'outcome' outcome,(result->>'free_spins')::int free_spins FROM casino_spins WHERE app_id=$1 AND external_user_id=$2 AND game_id=$3 AND status IN ('SETTLED','RESULT_FIXED') ORDER BY created_at DESC LIMIT $4",[session.app_id,session.external_user_id,session.game_id,n])).rows;
+  return {game_id:session.game_id,kind:'instant',records:rows.map(r=>({id:r.id,at:r.created_at,mode:r.mode,stake_minor:r.stake,payout_minor:r.payout,outcome:r.outcome,free_spins:r.free_spins||0}))};
+ }
+ // Group bets by round; only rounds whose result has been revealed are shown.
+ const rows=(await pool.query(`SELECT r.seq,r.id round_id,r.result->>'outcome' outcome,b.option_id,b.stake_minor::text stake,b.payout_minor::text payout,b.status,b.created_at FROM casino_bets b JOIN casino_rounds r ON r.id=b.round_id
+  WHERE b.app_id=$1 AND b.external_user_id=$2 AND r.game_id=$3 AND r.reveal_at<=$4 AND b.status IN ('SETTLED','VOIDED','SETTLING') ORDER BY b.created_at DESC LIMIT 400`,[session.app_id,session.external_user_id,session.game_id,Date.now()])).rows;
+ const rounds=[];for(const b of rows){let r=rounds.find(x=>x.round_id===b.round_id);if(!r){if(rounds.length>=n)break;r={round_id:b.round_id,seq:Number(b.seq),outcome:b.outcome,at:b.created_at,stake_minor:0n,payout_minor:0n,bets:[]};rounds.push(r);}
+  r.bets.push({option_id:b.option_id,stake_minor:b.stake,payout_minor:b.payout,status:b.status});if(b.status!=='VOIDED'){r.stake_minor+=BigInt(b.stake);r.payout_minor+=BigInt(b.payout||0);}}
+ return {game_id:session.game_id,kind:'round',records:rounds.map(r=>({...r,stake_minor:String(r.stake_minor),payout_minor:String(r.payout_minor)}))};
+}
+
 function walletBase(app,bet){return {...scope(app),authorization_id:'auth_'+bet.id,cycle_id:bet.id};}
 
 export async function placeBet(session,body){

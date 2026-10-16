@@ -15,7 +15,7 @@ import {ALL_GAME_IDS,ARENA_IDS,RELEASED_IDS} from '../shared/games.mjs';
 import {migratePortal,routePortal} from './portal.mjs';
 import {migrateWalletBindings} from './wallet-binding.mjs';
 import {migrateSimpleWallet,recoverSimpleWallets} from './simple-wallet.mjs';
-import {migrateCasino,registerCasinoProfiles,casinoState,placeBet,cashOut,tickCasino} from './casino/rounds.mjs';
+import {migrateCasino,registerCasinoProfiles,casinoState,casinoHistory,placeBet,cashOut,tickCasino} from './casino/rounds.mjs';
 import {migrateInstant,spin as casinoSpin,recoverInstant} from './casino/instant.mjs';
 import {isCasinoGame,CASINO_IDS} from '../shared/casino-games.mjs';
 import {routeIntegration} from './integration-routes.mjs';
@@ -122,6 +122,10 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
     const op=path.match(/^\/v1\/operations\/([A-Za-z0-9_-]+)$/);
     if(op&&req.method==='GET'){const r=(await pool.query('SELECT id,app_id,path,raw_body,state,response,created_at,updated_at FROM gp_operations WHERE id=$1 AND app_id=$2 UNION ALL SELECT id,app_id,path,raw_body,state,response,created_at,updated_at FROM pvp_operations WHERE id=$1 AND app_id=$2',[op[1],app.id])).rows[0];if(!r)fail(404,'NOT_FOUND');if(r.response)return send(res,200,r.response);return send(res,202,{...scope(app),operation_id:r.id,state:'PENDING',kind:r.path.includes('probability')?r.path.split('/').pop()+'_probability':r.path.endsWith('/reservations')?'reserve':r.path.split('/').pop()+'_match',body_sha256:hash(r.raw_body),created_at:r.created_at,updated_at:r.updated_at});}
     fail(404,'NOT_FOUND');
+  }
+  if(path.split('?')[0]==='/api/casino/history'&&req.method==='GET'){
+    const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','GET','/api/casino/history');
+    return send(res,200,await casinoHistory(s,{limit:new URL(req.url,'http://x').searchParams.get('limit')}));
   }
   if(path.split('?')[0]==='/api/casino/state'&&req.method==='GET'){
     const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','GET',path);if(!isCasinoGame(s.game_id))fail(403,'GAME_SESSION_REQUIRED');
