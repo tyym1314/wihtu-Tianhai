@@ -44,7 +44,7 @@ export const LAYOUTS={
  crazyfruit:{banner:[170,940,600],order:['orange','lemon','grape','cherry','superlucky','apple','watermelon','mango','strawberry','lucky'],
   items:{orange:[180,441,180,180],lemon:[373,441,180,180],grape:[567,441,180,180],cherry:[756,441,180,180],lucky:[180,639,180,180],superlucky:[756,639,180,180],strawberry:[180,837,180,180],mango:[373,837,180,180],watermelon:[567,837,180,180],apple:[756,837,180,180]},
   timer:[468,639,62],timerStyle:'led',balance:[160,1318,290,56],todayWin:[620,1318,260,56],winners:null,repeat:null,center:null,menuY:20,
-  chips:{xs:[144,315,477,648,814],y:1152,r:72},results:[54,1467,846,90],
+  chips:{xs:[140,310,473,637,808],y:1146,r:62},results:[54,1467,846,90],
   glows:[[90,20,90],[850,20,90],[40,300,60],[900,300,60]],accent:'#ffe066'},
  footballleague:{banner:[296,1000,350],order:['club1','club2','club4','club6','club8','club7','club5','club3'],
   items:{club1:[261,531,86],club2:[680,531,86],club3:[247,729,86],club4:[697,729,86],club5:[239,927,86],club6:[702,927,86],club7:[234,1134,86],club8:[707,1134,86]},

@@ -27,7 +27,7 @@
 .tp-mine{display:flex;align-items:center;gap:8px;margin-top:auto;margin-bottom:26px;padding:8px 18px;border-radius:999px;background:linear-gradient(#5ee28a,#159e4c);border:3px solid #e5ffd1;font-size:28px;font-weight:900;color:#063b18;box-shadow:0 6px 14px #0009;animation:tp-pop .3s cubic-bezier(.2,1.6,.4,1)}
 .tp-mine i{width:26px;height:26px;border-radius:50%;background:radial-gradient(#fff7c2,#ffd34d 50%,#c98a12);border:2px dashed #fff}
 .tp-chip{position:absolute;width:168px;height:168px;border-radius:50%;background:none;transition:transform .15s}
-.tp-chip.on{transform:translateY(-16px);box-shadow:0 0 0 6px #ffd84a,0 0 40px 10px #ffd34d99}
+.tp-chip.on{box-shadow:0 0 0 6px #ffd84a,0 0 40px 10px #ffd34d99}
 .tp-btn{position:absolute;background:none;border-radius:24px}
 .tp-btn:disabled{background:#0007}
 .tp-road{display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(2,1fr);gap:6px;align-items:center;justify-items:center}

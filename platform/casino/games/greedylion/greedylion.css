@@ -29,7 +29,7 @@
 .gl-banner .won b{font-size:44px;color:#ffd84a;text-shadow:0 0 16px #ffb300}
 .gl-banner .special{color:#7dff9c;font-weight:900}
 .gl-chip{position:absolute;width:124px;height:124px;border-radius:50%;background:none;transition:transform .15s}
-.gl-chip.on{transform:translateY(-14px);box-shadow:0 0 0 6px #ffd84a,0 0 34px 8px #ffd34d99}
+.gl-chip.on{box-shadow:0 0 0 6px #ffd84a,0 0 34px 8px #ffd34d99}
 .gl-repeat{position:absolute;background:none;border-radius:20px;display:grid;place-items:center}
 .gl-repeat span{display:none}
 .gl-repeat:disabled{background:#0006}
