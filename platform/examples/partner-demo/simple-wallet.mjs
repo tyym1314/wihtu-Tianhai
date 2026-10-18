@@ -33,8 +33,10 @@ export async function simpleBalance(pool,user){return(await pool.query('SELECT b
 
 const nonces=new Map();
 /** Returns true when it handled the request. */
-export async function handleSimpleWallet(pool,{keyId,secretBase64},req,res,raw){
- const path=(req.url||'').split('?')[0];if(!path.startsWith('/wallet/simple/v1/'))return false;
+export async function handleSimpleWallet(pool,{keyId,secretBase64,basePath=''},req,res,raw){
+ // The wallet may live under a base path (wallet URL https://host/base); the signature covers the full request path.
+ const full=(req.url||'').split('?')[0];if(basePath&&!full.startsWith(basePath+'/'))return false;
+ const path=full.slice(basePath.length);if(!path.startsWith('/wallet/simple/v1/'))return false;
  const send=(status,body)=>{res.writeHead(status,{'content-type':'application/json'});res.end(JSON.stringify(body));};
  try{
   if(req.headers['x-gp-key-id']!==keyId)return send(401,{code:'SIGNATURE_INVALID'}),true;

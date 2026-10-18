@@ -18,6 +18,8 @@ export class OasisHost {
   if(data.type==='oasis.loaded'&&this.sent){this.loaded=true;this.reauthorizing=false;clearTimeout(this.timer);this.emit('loaded',{session_id:this.sessionId});this.setHostState(this.state);}
   else if(data.type==='oasis.error'){clearTimeout(this.timer);this.reauthorizing=false;this.fail(typeof data.code==='string'?data.code:'GAME_ERROR',String(data.message||'Game failed').slice(0,300));}
   else if(data.type==='oasis.return_requested'&&this.loaded){this.emit('return_requested',{reason:data.reason==='completed'?'completed':'user',room_id:typeof data.room_id==='string'?data.room_id:undefined,status:typeof data.status==='string'?data.status:undefined,presentation_only:true});}
+  else if(data.type==='oasis.progress'&&this.loaded&&Number.isFinite(data.value))this.emit('progress',{value:Math.max(0,Math.min(1,data.value))});
+  else if(data.type==='oasis.shown'&&this.loaded)this.emit('shown',{});
   else if(data.type==='oasis.host_state_applied'&&this.loaded)this.emit('host_state_applied',{request_id:data.request_id});
   else if(data.type==='oasis.reauth_required'&&this.loaded&&!this.reauthorizing){this.reauthorizing=true;this.emit('reauthorizing');clearTimeout(this.timer);this.timer=setTimeout(()=>{this.reauthorizing=false;this.fail('REAUTH_TIMEOUT','The original session was not reauthorized; return to the App and reopen.');},this.timeoutMs);this.getLaunch(true).catch(e=>{clearTimeout(this.timer);this.reauthorizing=false;this.fail('REAUTH_FAILED',e.message);});}
  }

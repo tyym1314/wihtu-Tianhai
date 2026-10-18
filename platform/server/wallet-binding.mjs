@@ -45,6 +45,15 @@ function normalizedOrigin(value){
   if(url.protocol==='http:'&&!['127.0.0.1','[::1]'].includes(url.hostname))fail(400,'WALLET_HTTPS_REQUIRED');
   return url.origin;
 }
+/** A simple-v1 wallet may sit under a base path (https://api.example.com/callback/x): requests go to
+ * base + /wallet/simple/v1/..., and that full path is what gets signed. */
+export function walletBase(value){
+  if(typeof value!=='string'||value.length>512||value.trim()!==value)fail(400,'INVALID_WALLET_URL');
+  let url;try{url=new URL(value);}catch{fail(400,'INVALID_WALLET_URL');}
+  const base=url.pathname.replace(/\/$/,'');
+  if(url.search||url.hash||url.username||url.password||(base&&!/^(?:\/[A-Za-z0-9_-]+){1,4}$/.test(base))||value!==url.origin+base&&value!==url.origin+base+'/')fail(400,'INVALID_WALLET_URL','Use an HTTPS origin with an optional plain base path, without query or fragment');
+  return{origin:normalizedOrigin(url.origin),base};
+}
 function referenceOrigin(){return normalizedOrigin(process.env.OASIS_REFERENCE_WALLET_URL||'http://127.0.0.1:8798');}
 function allowedOrigins(){return new Set((process.env.OASIS_WALLET_ALLOWED_ORIGINS||'').split(',').map(s=>s.trim()).filter(Boolean).map(normalizedOrigin));}
 export function validateWalletOrigin(value,{external=false}={}){
@@ -85,7 +94,7 @@ export async function configureWallet(appId,input,actor){
 }
 async function configureWalletUncached(appId,input,actor){
   if(!input||Object.keys(input).some(k=>!['wallet_url','wallet_key_id','wallet_secret_base64'].includes(k)))fail(400,'INVALID_REQUEST');
-  const wallet_url=validateWalletOrigin(input.wallet_url,{external:true}),wallet_key_id=input.wallet_key_id,secret=input.wallet_secret_base64;
+  const target=walletBase(input.wallet_url),wallet_url=validateWalletOrigin(target.origin,{external:true})+target.base,wallet_key_id=input.wallet_key_id,secret=input.wallet_secret_base64;
   if(!safeId(appId)||!safeId(wallet_key_id)||typeof secret!=='string'||!/^[A-Za-z0-9+/]+={0,2}$/.test(secret))fail(400,'INVALID_WALLET_KEY');
   const bytes=Buffer.from(secret,'base64');if(bytes.length<32||bytes.length>128||bytes.toString('base64')!==secret)fail(400,'INVALID_WALLET_KEY','Wallet key must be 32–128 random bytes encoded as canonical Base64');
   if(typeof actor!=='string'||!actor||actor.length>128)fail(400,'INVALID_ACTOR');
@@ -97,6 +106,7 @@ async function configureWalletUncached(appId,input,actor){
     if(app.environment==='production'&&!wallet_url.startsWith('https://'))fail(400,'WALLET_HTTPS_REQUIRED');
     // Production partners implement only the simple-v1 wallet; the local sandbox keeps its reference wallet.
     const provider=app.environment==='production'?'simple':'external';
+    if(provider!=='simple'&&target.base)fail(400,'INVALID_WALLET_URL','Only a production simple-v1 wallet may use a base path');
     if((await db.query('SELECT 1 FROM gp_wallet_bindings WHERE app_id=$1',[appId])).rowCount)fail(409,'WALLET_ALREADY_BOUND');
     if(await hasActivity(db,appId))fail(409,'WALLET_BINDING_HAS_ACTIVITY','Existing sessions or money operations prevent wallet replacement; create a separate sandbox App');
     if((await db.query('SELECT 1 FROM gp_keys WHERE id=$1',[wallet_key_id])).rowCount)fail(409,'WALLET_KEY_ALREADY_USED');
@@ -151,11 +161,11 @@ export function setWalletTransportForTests(fn){if(process.env.NODE_ENV==='produc
 /** Signed simple-v1 call to the partner wallet. Returns the HTTP status and JSON body; never retries. */
 export async function signedPartnerRequest(app,binding,method,path,raw,requestId){
   if(!/^\/wallet\/simple\/v1(?:\/[A-Za-z0-9_-]+)+$/.test(path)||!safeId(requestId))fail(400,'INVALID_WALLET_REQUEST');
-  const origin=validateWalletOrigin(binding.wallet_url,{external:true});
+  const {origin:walletOrigin,base}=walletBase(binding.wallet_url),origin=validateWalletOrigin(walletOrigin,{external:true}),target=base+path;
   const key=(await pool.query("SELECT * FROM gp_keys WHERE app_id=$1 AND direction='platform-to-wallet' AND active AND id=$2",[app.id,binding.wallet_key_id])).rows[0];
   if(!key)fail(503,'WALLET_NOT_CONFIGURED');
-  const headers=sign({key_id:key.id,secret_base64:unseal(key.secret_enc),direction:'platform-to-wallet',method,path,raw,request_id:requestId});
-  const {status,body}=await transport(origin,method,path,headers,raw);
+  const headers=sign({key_id:key.id,secret_base64:unseal(key.secret_enc),direction:'platform-to-wallet',method,path:target,raw,request_id:requestId});
+  const {status,body}=await transport(origin,method,target,headers,raw);
   if(!body||typeof body!=='object'||Array.isArray(body))fail(503,'WALLET_INVALID_RESPONSE');
   return{status,body};
 }

@@ -5,6 +5,8 @@ let accessToken='',bridge=null;const controls=new Set();
 export const requestId=()=>crypto.randomUUID().replaceAll('-','');
 export const hostState=()=>bridge?.state||{muted:false,voiceActive:false,visible:true,safeArea:{top:0,right:0,bottom:0,left:0}};
 export function registerHostControls(callbacks){controls.add(callbacks);return()=>controls.delete(callbacks);}
+export const reportProgress=value=>bridge?.progress?.(value);
+export const reportShown=()=>bridge?.shown?.();
 export function requestExit(details={}){return bridge?.completeReturn?.({reason:'user',...details})===true;}
 
 export async function api(path,body,{signal}={}){

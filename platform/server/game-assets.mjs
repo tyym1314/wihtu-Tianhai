@@ -25,6 +25,8 @@ function casinoAssetVersion(casinoRoot){
  versionCache.set(casinoRoot,{at:Date.now(),value});return value;
 }
 export async function serveGameAsset(req,res,path,{legacyRoot=defaultLegacyRoot,arenaRoot=defaultArenaRoot,casinoRoot=defaultCasinoRoot}={}){
+  // Callers pass req.url; the query (e.g. the ?v= content version) is not part of the file path.
+  path=path.split('?')[0];
   const candidate=path.match(/^\/play\/([a-z0-9]+)$/)?.[1],game=ALL_GAME_IDS.includes(candidate)?candidate:null;
   const casino=path.startsWith('/casino/')||CASINO_IDS.includes(game),arena=casino||path.startsWith('/arena/')||ARENA_IDS.includes(game);
   const base=casino?casinoRoot:arena?arenaRoot:legacyRoot,prefix=casino?'/casino':'/arena';

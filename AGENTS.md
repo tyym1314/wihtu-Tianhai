@@ -3,6 +3,9 @@
 ## 产品与线上形态（2026-10-15）
 
 - 平台名称：**Tianhai 游戏平台**（管理台、合作方工作台、接入文档）。游戏内不显示任何平台或 App 品牌（通用中性设计，竞技大厅为 “PLAY TOGETHER”；绿洲高尔夫改名“迷你高尔夫 / MINI GOLF”）。对外桥接名：Android `TianhaiApp`、iOS `tianhai`、返回 `window.TianhaiLauncher.requestBack()`、H5 SDK `/sdk/tianhai-h5.mjs`（`TianhaiHost`）；旧名 `OasisApp`/`oasis`/`OasisLauncher`/`oasis-h5.mjs` 仍兼容。内部代码、环境变量、服务名中的 oasis 不改。
+- 加载页（`public/launch/index.html`，样式 B）：游戏图标 + 环形真实进度 + 三语提示，全屏/半屏自适应。数据 `public/launch/meta.json` 与图标 `public/launch/icons/<id>.webp` 由 `node scripts/launch-meta.mjs` 从 `.local/art/icons/<id>.png`（`node .local/art/icons/gen.mjs [id...]` 用各游戏效果图生成）生成。游戏经桥接发 `oasis.progress`（0–1）与 `oasis.shown`（第一帧已显示）驱动进度与淡出；雷霆/虎虎没有 shown，收到 loaded 后 1.2 秒淡出。新增游戏要补图标和 meta。
+- 娱乐场图片/音频带内容版本号 `?v=<casino/dist/asset-version.txt>`，与当前版本一致时服务端返回一年 immutable 缓存。
+- simple-v1 钱包地址可带基础路径（如 `https://api.x.com/callback/tianhai`）：平台请求 `基础路径 + /wallet/simple/v1/...`，签名覆盖完整路径（`walletBase()`）。
 - 发布时被 `retained-assets.lock.json` 锁定的未带版本号的旧资源（如 `public/assets/*.png`）不能原地替换，新图要用新文件名。
 
 - 正式入口：`https://game.tianyahuyu.com`（管理台/合作方工作台 `/`，游戏 `/play/<id>`，原生启动页 `/launch/`，H5 SDK `/sdk/oasis-h5.mjs`，文档 `/specs/*.md`）。

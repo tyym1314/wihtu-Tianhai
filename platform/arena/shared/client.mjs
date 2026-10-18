@@ -7,6 +7,8 @@ let accessToken='',hostBridge=null,sessionId=null,launchPending=false;const cont
 export const requestId=()=>crypto.randomUUID().replaceAll('-','');
 export function authorize(token){if(token!==accessToken){snapshotTransfer.clear();roomResponseTiming.clear();}accessToken=token;}
 export function registerHostControls(callbacks){controls.add(callbacks);return()=>controls.delete(callbacks);}
+export const reportProgress=value=>hostBridge?.progress?.(value);
+export const reportShown=()=>hostBridge?.shown?.();
 export function completeHostReturn(details={}){return hostBridge?.completeReturn(details)===true;}
 export function hostState(){return hostBridge?.state||{muted:false,voiceActive:false,visible:true,safeArea:{top:0,right:0,bottom:0,left:0}};}
 export async function api(path,body,{signal}={}){

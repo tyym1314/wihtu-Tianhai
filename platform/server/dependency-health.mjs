@@ -27,8 +27,10 @@ export function evaluateWalletDependencies(rows,{environment,referenceOrigin,all
    if(environment!=='production'||a.wallet_url!==''||a.binding_url!==null||a.wallet_key_id!==null||a.ledger_scope_ready!==true)codes.add('PLATFORM_LEDGER_NOT_READY');
   }else if(a.provider==='external'||a.provider==='simple'){
    providers.external++;if(required)externalRequired++;
-   const value=origin(a.wallet_url),protocol=value&&new URL(value).protocol;
-   if(!value||value!==a.binding_url||(!allow.has(value)&&!(partnerAdmission&&protocol==='https:'))||value===reference||a.wallet_key_ready!==true||
+   // A simple-v1 wallet may carry a base path (see walletBase); its origin is what the allowlist and protocol checks use.
+   const simpleBase=a.provider==='simple'&&typeof a.wallet_url==='string'?/^(https:\/\/[^/?#]+)((?:\/[A-Za-z0-9_-]+){0,4})$/.exec(a.wallet_url):null;
+   const value=simpleBase?origin(simpleBase[1]):origin(a.wallet_url),protocol=value&&new URL(value).protocol;
+   if(!value||a.wallet_url!==a.binding_url||(!allow.has(value)&&!(partnerAdmission&&protocol==='https:'))||value===reference||a.wallet_key_ready!==true||
       (environment==='production'?protocol!=='https:':!['http:','https:'].includes(protocol))||
       (protocol==='http:'&&!['127.0.0.1','[::1]'].includes(new URL(value).hostname)))codes.add('EXTERNAL_WALLET_NOT_CONFIGURED');
   }else if(a.provider==null&&environment==='sandbox'){

@@ -17,11 +17,35 @@ html,body{margin:0;height:100%;background:#120b24;color:#f6ecd2;font-family:-app
 .spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(243,212,143,.25);border-top-color:#f3d48f;animation:r .8s linear infinite}
 #status[data-state=error] .spin{display:none}
 @keyframes r{to{transform:rotate(1turn)}}
+/* Loading screen (style B): game icon, ring progress, title, percentage and a tip. Sized by the short side, so it also fits the half-screen panel. */
+#loader{--c:58,20,96;--u:min(1vw,1vh);position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*3.2);padding:calc(var(--u)*6) 24px calc(var(--u)*16);box-sizing:border-box;overflow:hidden;
+ background:radial-gradient(120% 80% at 50% 38%,rgba(var(--c),.85) 0%,rgba(var(--c),.35) 42%,#07040d 78%) #07040d;transition:opacity .38s ease}
+#loader.done{opacity:0;pointer-events:none}
+#loader[hidden]{display:none}
+#loader::before{content:"";position:absolute;inset:-10%;background:radial-gradient(circle at 18% 22%,rgba(255,214,140,.16) 0 2.2%,transparent 2.6%),radial-gradient(circle at 82% 30%,rgba(255,214,140,.12) 0 3%,transparent 3.4%),radial-gradient(circle at 70% 78%,rgba(255,214,140,.10) 0 4%,transparent 4.4%),radial-gradient(circle at 28% 70%,rgba(255,255,255,.07) 0 3.4%,transparent 3.8%);filter:blur(6px);animation:ld-drift 9s ease-in-out infinite alternate}
+@keyframes ld-drift{to{transform:translate3d(2%,-3%,0) scale(1.05)}}
+.ld-card{position:relative;width:calc(var(--u)*62);height:calc(var(--u)*62);max-width:330px;max-height:330px;display:grid;place-items:center}
+.ld-ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);filter:drop-shadow(0 0 calc(var(--u)*2) rgba(255,196,84,.55))}
+.ld-ring circle{fill:none;stroke-width:4.2;stroke-linecap:round}
+.ld-ring .track{stroke:rgba(255,255,255,.12)}
+.ld-ring .bar{stroke:url(#ld-gold);stroke-dasharray:339.3;stroke-dashoffset:339.3}
+.ld-icon{width:72%;height:72%;border-radius:22%;object-fit:cover;box-shadow:0 calc(var(--u)*1.6) calc(var(--u)*6) rgba(0,0,0,.55),0 0 0 2px rgba(255,214,140,.45),0 0 calc(var(--u)*8) rgba(255,180,60,.35);animation:ld-breathe 2.4s ease-in-out infinite}
+.ld-icon[hidden]{visibility:hidden}
+@keyframes ld-breathe{50%{transform:scale(1.025)}}
+.ld-title{margin:calc(var(--u)*1.5) 0 0;font-size:clamp(22px,calc(var(--u)*8.4),44px);font-weight:800;letter-spacing:.01em;text-align:center;background:linear-gradient(180deg,#fff6d8 0%,#ffd77a 45%,#e2a33c 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
+.ld-pct{font-size:clamp(14px,calc(var(--u)*4.4),22px);font-weight:600;color:#f6ecd2;opacity:.92;font-variant-numeric:tabular-nums}
+.ld-tip{position:absolute;left:24px;right:24px;bottom:calc(var(--u)*7);margin:0;text-align:center;font-size:clamp(12px,calc(var(--u)*3.6),16px);color:rgba(246,236,210,.78);line-height:1.5}
 </style>
 </head>
 <body>
 <main id="game" aria-label="游戏"></main>
-<section id="status" data-state="loading" role="status" aria-live="polite">
+<section id="loader" role="status" aria-live="polite">
+ <div class="ld-card"><svg class="ld-ring" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="ld-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff2c2"/><stop offset=".5" stop-color="#ffc14d"/><stop offset="1" stop-color="#e08a1e"/></linearGradient></defs><circle class="track" cx="60" cy="60" r="54"/><circle class="bar" cx="60" cy="60" r="54"/></svg><img class="ld-icon" alt="" hidden></div>
+ <h1 class="ld-title"></h1>
+ <div class="ld-pct">0%</div>
+ <p class="ld-tip"></p>
+</section>
+<section id="status" data-state="loading" role="status" aria-live="polite" hidden>
  <div class="spin" aria-hidden="true"></div>
  <h1 id="title">正在进入游戏</h1>
  <p id="message">请稍候…</p>
@@ -60,7 +84,37 @@ function requestBack(){if(closed)return true;if(sdk?.loaded&&!sdk.closed){$('sta
 const launcher=Object.freeze({requestBack,setHostState:state=>sdk?.setHostState(state)});
 for(const name of ['TianhaiLauncher','OasisLauncher'])Object.defineProperty(window,name,{value:launcher,configurable:false});
 $('back').addEventListener('click',()=>close({reason:'error'}));
-if(!GAMES.includes(gameId)||!code||code.length<8||!sessionId){show('error',T.badTitle,T.badMsg);}
+// Loading screen: eases toward the latest real milestone; the game's own 'progress' and 'shown'
+// messages drive the second half. Thunder/Tiger (no 'shown') fade out shortly after 'loaded'.
+const TIPS={
+ wheel:{zh:['倒计时变红时停止下注','押中的选项按倍数赢得奖励','可以同时押注多个选项'],en:['Bets close when the timer turns red','A winning option pays its multiplier','You can bet on several options at once'],ar:['يتوقف الرهان عندما يتحول المؤقت إلى الأحمر','الخيار الفائز يدفع حسب مضاعفه','يمكنك المراهنة على عدة خيارات معاً']},
+ crash:{zh:['在爆炸之前点击提现','可以设置自动提现倍数'],en:['Cash out before it crashes','Set an auto cash-out multiplier'],ar:['اسحب أرباحك قبل الانفجار','حدّد مضاعف سحب تلقائي']},
+ cards3:{zh:['押注你认为会赢的那一手牌'],en:['Bet on the hand you think will win'],ar:['راهن على اليد التي تتوقع فوزها']},
+ slot:{zh:['连成同类符号即可赢奖','免费旋转的奖励会一并结算','可以开启自动旋转'],en:['Line up matching symbols to win','Free-spin wins are paid with the spin','Turn on auto spin any time'],ar:['اجمع الرموز المتطابقة لتربح','تُدفع أرباح الدورات المجانية مع الدورة','يمكنك تشغيل الدوران التلقائي']},
+ arcade:{zh:['击中目标即可按倍数赢得奖励','没用完的弹药会全额退回'],en:['Hit a target to win its multiplier','Unused ammo is refunded in full'],ar:['أصب الهدف لتربح مضاعفه','تُعاد الذخيرة غير المستخدمة بالكامل']},
+ arena:{zh:['和真人对手同场竞技','免费练习不消耗金币','邀请好友一起开房间'],en:['Play live against real opponents','Free practice costs no coins','Invite friends to your own room'],ar:['العب مباشرة ضد خصوم حقيقيين','التدريب المجاني لا يستهلك عملات','ادعُ أصدقاءك إلى غرفتك']}};
+const loader=$('loader'),bar=loader.querySelector('.bar'),pct=loader.querySelector('.ld-pct');
+let shownValue=0,target=0,milestone=0,loadedAt=0,finished=false;const started=performance.now(),RING=339.3;
+fetch('/launch/meta.json').then(r=>r.ok?r.json():{}).then(all=>{const m=all[gameId];if(!m)return;
+ loader.querySelector('.ld-title').textContent=m.name?.[lang]||m.name?.en||'';
+ if(m.color)loader.style.setProperty('--c',m.color.map(v=>Math.round(v*.62)).join(','));
+ if(m.icon){const img=loader.querySelector('.ld-icon');img.onload=()=>{img.hidden=false;};img.src='/launch/icons/'+gameId+'.webp';}
+ const tips=(TIPS[m.family]||TIPS.wheel)[lang]||[];loader.querySelector('.ld-tip').textContent=tips[Math.floor(Math.random()*tips.length)]||'';
+}).catch(()=>{});
+function finish(){if(finished)return;finished=true;target=100;}
+function step(now){
+ const t=(now-started)/1000;
+ // Before the game answers, approach 35% over a couple of seconds; afterwards creep toward the next milestone.
+ const creep=loadedAt?Math.min(95,milestone+(95-milestone)*(1-Math.exp(-(now-loadedAt)/6000))*.35):35*(1-Math.exp(-t/1.6));
+ target=finished?100:Math.max(target,milestone,creep);
+ shownValue+=(target-shownValue)*(finished?.22:.08);
+ bar.style.strokeDashoffset=String(RING*(1-shownValue/100));pct.textContent=Math.round(shownValue)+'%';
+ if(finished&&shownValue>99.4){bar.style.strokeDashoffset='0';pct.textContent='100%';loader.classList.add('done');setTimeout(()=>{loader.hidden=true;},400);return;}
+ requestAnimationFrame(step);
+}
+requestAnimationFrame(step);
+const signalsShown=!['thunder','tiger'].includes(gameId);
+if(!GAMES.includes(gameId)||!code||code.length<8||!sessionId){loader.hidden=true;show('error',T.badTitle,T.badMsg);}
 else{
  sdk=new OasisHost({platformOrigin:location.origin,gameId,timeoutMs:45000,
   requestLaunch:async({resumeSessionId})=>{
@@ -70,13 +124,13 @@ else{
    throw Object.assign(new Error(T.expired),{code:'REAUTH_REQUIRED'});
   },
   onEvent:event=>{
-   if(event.type==='loaded'){$('status').hidden=true;notifyApp('loaded',{session_id:event.session_id});}
+   if(event.type==='loaded'){$('status').hidden=true;loadedAt=performance.now();milestone=Math.max(milestone,40);setTimeout(finish,signalsShown?20000:1200);notifyApp('loaded',{session_id:event.session_id});}
+   else if(event.type==='progress')milestone=Math.max(milestone,40+event.value*55);
+   else if(event.type==='shown')finish();
    else if(event.type==='return_requested')close({reason:event.reason,room_id:event.room_id,status:event.status});
-   else if(event.type==='error'){show('error',T.errTitle,event.code==='REAUTH_REQUIRED'||event.code==='REAUTH_FAILED'?T.expired:T.retry);notifyApp('error',{code:event.code});}
+   else if(event.type==='error'){loader.hidden=true;show('error',T.errTitle,event.code==='REAUTH_REQUIRED'||event.code==='REAUTH_FAILED'?T.expired:T.retry);notifyApp('error',{code:event.code});}
   }});
  sdk.mount($('game')).catch(()=>{});
- // The game page has its own branded loader; reveal it as soon as it paints.
- sdk.frame?.addEventListener('load',()=>{if($('status').dataset.state==='loading')$('status').hidden=true;},{once:true});
 }
 document.addEventListener('visibilitychange',()=>sdk?.setHostState({visible:!document.hidden}));
 </script>

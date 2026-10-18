@@ -29,6 +29,9 @@ export function createGameHostBridge({game,onLaunch,onState=()=>{},onBack=()=>{}
  function dispose(){disposed=true;clearTimeout(timer);clearInterval(readyTimer);window.removeEventListener('message',receive);window.removeEventListener('pagehide',dispose);}
  window.addEventListener('message',receive);window.addEventListener('pagehide',dispose,{once:true});ready();readyTimer=setInterval(ready,1000);armTimeout();
  return{get state(){return{...state,safeArea:{...state.safeArea}};},get origin(){return pinnedOrigin;},get modern(){return modern;},get phase(){return phase;},dispose,
+  // Loading-screen signals for the host: asset progress (0-1) and the first rendered frame.
+  progress(value){if(phase==='loaded'&&modern&&Number.isFinite(value))post('oasis.progress',{value:Math.max(0,Math.min(1,value))});},
+  shown(){if(phase==='loaded'&&modern)post('oasis.shown');},
   requestReauth(){if(phase==='loaded'&&modern){phase='reauth';armTimeout();post('oasis.reauth_required');return true;}return false;},
   // This confirms dispatch to the pinned host, not host navigation or an ACK.
   completeReturn(details={}){if(disposed||phase!=='loaded'||!pinnedOrigin)return false;try{post('oasis.return_requested',{reason:['user','completed'].includes(details.reason)?details.reason:'user',...(typeof details.room_id==='string'?{room_id:details.room_id}:{}),...(typeof details.status==='string'?{status:details.status}:{}),presentation_only:true});return true;}catch{return false;}},

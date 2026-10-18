@@ -16,7 +16,7 @@ const RunPracticeCourses=lazy(()=>import('./run/PracticeCourses.jsx'));
 const loadBowlingGame=()=>import('./bowling/BowlingGame.jsx');
 const TowerLinkGame=lazy(loadTowerGame);
 import {ArenaAudio} from './shared/audio.mjs';
-import {api,coins,requestId,waitForLaunch,registerHostControls,completeHostReturn} from './shared/client.mjs';
+import {api,coins,requestId,waitForLaunch,registerHostControls,completeHostReturn,reportProgress,reportShown} from './shared/client.mjs';
 import {ARENA_GAMES,teamSizeFor} from '../shared/games.mjs';
 import {TRAINING_LESSONS,TRAINING_VERSION,getTrainingLesson} from './towerlink/training.mjs';
 import LobbyArt from './shared/LobbyArt.jsx';
@@ -117,6 +117,8 @@ function Arena(){
  function cancelRunRoomReads(){for(const controller of runRoomReads.current)controller.abort(new DOMException('OASIS_ROOM_POLL_STOPPED','AbortError'));}
  function ownedRoomRead(id,owner,{controller=new AbortController(),isCurrent=()=>contextRef.current===owner}={}){if(!IS_RUN&&!IS_TOWER)return api(`/api/pvp/rooms/${id}`,undefined,{signal:controller.signal});runRoomReads.current.add(controller);return readRunRoomOnce({read:signal=>api(`/api/pvp/rooms/${id}`,undefined,{signal}),rateScope:JSON.stringify([owner?.scope?.app_id,owner?.external_user_id]),signal:controller.signal,isCurrent}).finally(()=>runRoomReads.current.delete(controller));}
  function accept(raw,{poll=false}={}){const r=unwrap(raw);if(!r?.id)return r;const old=roomRef.current;if(old?.id===r.id&&Number(r.version)<Number(old.version))return old;if(poll&&unchangedRunPoll(old,r))return old;roomRef.current=r;setRoom(r);return r;}
+ // The host's loading screen stays until the lobby (or the recovered room) is on screen.
+ useEffect(()=>{if(!context)return;reportProgress(.9);let id=requestAnimationFrame(()=>{id=requestAnimationFrame(reportShown);});return()=>cancelAnimationFrame(id);},[!!context]);
  useEffect(()=>{mounted.current=true;audio.subscribe(()=>setMuted(!audio.enabled));waitForLaunch(GAME,setBoot).then(async c=>{if(!mounted.current)return;if(c.locale)setLocale(c.locale);contextRef.current=c;setContext(c);setBalance(c.balance?.balance?.available_minor??null);setBoot('');if(c.active_room_id)setRecovering(c.active_room_id);if(c.other_active_game)setError($t("你在另一款游戏中仍有进行中的房间，请先回到该游戏完成或退出。"));}).catch(e=>setBoot(e.message));return()=>{mounted.current=false;cancelRunRoomReads();audio.dispose();};},[]);
  useEffect(()=>{if(!recovering)return;let stopped=false,timer;const owner=contextRef.current,controller=new AbortController();const recover=async()=>{try{const r=await ownedRoomRead(recovering,owner,{controller,isCurrent:()=>!stopped&&contextRef.current===owner});if(!stopped&&contextRef.current===owner){accept(r);setRecovering(null);setError(pending.current?$t("上一项操作仍待确认，可重试原请求核对结果。"):'');}}catch(e){if(!stopped&&contextRef.current===owner){setError($t("原房间正在恢复：")+e.message);timer=setTimeout(recover,2000);}}};recover();return()=>{stopped=true;clearTimeout(timer);controller.abort(new DOMException('OASIS_ROOM_POLL_STOPPED','AbortError'));};},[recovering,context]);
  useEffect(()=>{const unlock=event=>{if(!event.isTrusted||event.type==='keydown'&&(event.repeat||event.altKey||event.ctrlKey||event.metaKey||['Shift','Control','Alt','Meta','CapsLock','Fn'].includes(event.key)))return;void audio.unlock();};const gestures=['pointerdown','click','keydown'];for(const name of gestures)window.addEventListener(name,unlock,{passive:true});return()=>{for(const name of gestures)window.removeEventListener(name,unlock);};},[]);

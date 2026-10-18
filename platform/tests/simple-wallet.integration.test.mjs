@@ -36,6 +36,8 @@ const transit=async()=>(await pool.query("SELECT COALESCE(sum(available+reserved
 const recover=()=>simple.recoverSimpleWallets(pool,async appId=>({app:await platform.appById(appId),binding:(await pool.query('SELECT * FROM gp_wallet_bindings WHERE app_id=$1',[appId])).rows[0]}));
 async function tickUntil(roomId,statuses,limit=40){for(let i=0;i<limit;i++){await pvp.tickPvp({roomIds:[roomId]}).catch(()=>{});const s=(await pool.query('SELECT status FROM pvp_rooms WHERE id=$1',[roomId])).rows[0].status;if(statuses.includes(s))return s;await new Promise(r=>setTimeout(r,50));}return(await pool.query('SELECT status FROM pvp_rooms WHERE id=$1',[roomId])).rows[0].status;}
 
+// A partner wallet under a base path, the way WithU exposes it (/callback/tianhai/wallet/simple/v1/...).
+const WALLET_BASE='/callback/tianhai';
 before(async()=>{
  admin=new pg.Pool({connectionString:adminUrl.href,max:1});await admin.query(`CREATE DATABASE "${name}"`);created=true;
  dir=await mkdtemp(join(tmpdir(),'oasis-simple-wallet-'));await writeFile(join(dir,'master.key'),randomBytes(32),{mode:0o600,flag:'wx'});
@@ -46,10 +48,10 @@ before(async()=>{
  await wallet.migrateWallet(pool);await platform.migratePlatform();await pvp.migratePvp(pool);await binding.migrateWalletBindings(pool);await simple.migrateSimpleWallet(pool);await casino.migrateCasino(pool);await(await import('../server/casino/instant.mjs')).migrateInstant(pool);await(await import('../server/casino/arcade.mjs')).migrateArcade(pool);await runtimeMode.migrateRuntime(pool);await(await import('../server/transfers/index.mjs')).migrateTransfers(pool);
  // The partner's own wallet tables live in a separate schema-free namespace of this test database.
  await migrateSimpleDemoWallet(pool);await seedSimpleDemoUsers(pool,[{external_user_id:'alice',balance_minor:'100000'},{external_user_id:'bob',balance_minor:'100000'},{external_user_id:'carol',balance_minor:'5000000'},{external_user_id:'dave',balance_minor:'5000000'},{external_user_id:'poor',balance_minor:'500'}]);
- partnerServer=createServer(async(req,res)=>{let raw='';for await(const c of req)raw+=c;if(!await handleSimpleWallet(pool,walletKey,req,res,raw)){res.writeHead(404);res.end('{}');}});
+ partnerServer=createServer(async(req,res)=>{let raw='';for await(const c of req)raw+=c;if(!await handleSimpleWallet(pool,{...walletKey,basePath:WALLET_BASE},req,res,raw)){res.writeHead(404);res.end('{}');}});
  await new Promise(r=>partnerServer.listen(0,'127.0.0.1',r));const loopback='http://127.0.0.1:'+partnerServer.address().port;
  binding.setWalletTransportForTests(async(target,method,path,headers,raw)=>{
-  assert.equal(target,walletOrigin);
+  assert.equal(target,walletOrigin);assert.ok(path.startsWith(WALLET_BASE+'/wallet/simple/v1/'),'requests go under the bound base path');
   const r=await fetch(loopback+path,{method,headers,body:method==='GET'?undefined:raw});const body=await r.json();
   if(path.endsWith('/debit')&&faults.dropNextDebitResponse){faults.dropNextDebitResponse=false;const e=new Error('lost');e.status=503;e.code='WALLET_UNKNOWN';throw e;}
   return{status:r.status,body};
@@ -72,7 +74,8 @@ test('a new partner App starts paused and cannot launch before its wallet is bou
 });
 
 test('binding a simple-v1 wallet opens an internal escrow ledger and admits sessions',async()=>{
- const bound=await binding.configureWallet(app.id,{wallet_url:walletOrigin,wallet_key_id:walletKey.keyId,wallet_secret_base64:walletKey.secretBase64},'fixture');
+ await assert.rejects(binding.configureWallet(app.id,{wallet_url:walletOrigin+'/a?b=1',wallet_key_id:walletKey.keyId,wallet_secret_base64:walletKey.secretBase64},'fixture'),{code:'INVALID_WALLET_URL'});
+ const bound=await binding.configureWallet(app.id,{wallet_url:walletOrigin+WALLET_BASE,wallet_key_id:walletKey.keyId,wallet_secret_base64:walletKey.secretBase64},'fixture');
  assert.equal(bound.mode,'simple');
  await tx(async db=>{const locked=(await db.query('SELECT * FROM gp_apps WHERE id=$1 FOR UPDATE',[app.id])).rows[0];await runtimeMode.assertProductionAppReady(db,{...locked,status:'active'},{intent:'activate'});await db.query("UPDATE gp_apps SET status='active' WHERE id=$1",[app.id]);});
  app=await platform.appById(app.id);

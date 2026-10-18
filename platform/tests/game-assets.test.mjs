@@ -98,10 +98,10 @@ test('casino art requested with the current content version is immutable; any ot
  const {mkdtemp,writeFile,mkdir,rm}=await import('node:fs/promises');const {tmpdir}=await import('node:os');const {join}=await import('node:path');const http=await import('node:http');
  const {serveGameAsset}=await import('../server/game-assets.mjs');
  const root=await mkdtemp(join(tmpdir(),'casino-assets-'));await mkdir(join(root,'greedylion'));await writeFile(join(root,'greedylion','plate.webp'),'img');await writeFile(join(root,'asset-version.txt'),'0123456789abcdef');
- const srv=http.createServer((req,res)=>serveGameAsset(req,res,new URL(req.url,'http://x').pathname,{casinoRoot:root}).catch(e=>{res.writeHead(e.status||500);res.end();}));
+ const srv=http.createServer((req,res)=>serveGameAsset(req,res,req.url,{casinoRoot:root}).catch(e=>{res.writeHead(e.status||500);res.end();}));
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${srv.address().port}/casino/greedylion/plate.webp`;
  try{
-  assert.equal((await fetch(base+'?v=0123456789abcdef')).headers.get('cache-control'),'public,max-age=31536000,immutable');
+  const hit=await fetch(base+'?v=0123456789abcdef');assert.equal(hit.status,200,'the query is not part of the file path');assert.equal(hit.headers.get('cache-control'),'public,max-age=31536000,immutable');
   assert.equal((await fetch(base+'?v=ffffffffffffffff')).headers.get('cache-control'),'public,max-age=0,must-revalidate');
   assert.equal((await fetch(base)).headers.get('cache-control'),'public,max-age=0,must-revalidate');
  }finally{await new Promise(r=>srv.close(r));await rm(root,{recursive:true,force:true});}
