@@ -89,3 +89,10 @@ npm run build:release            # 构建全部前端 + release-build-manifest.j
 
 `HANDOFF.md`、`ENGINE_AUDIT.md` 等为前任的详细证据记录，结论以本文件与线上实测为准。旧的 master 未提交改动保存在 `git stash`（`master-uncommitted-before-launch-20261015`）。
 
+
+## WithU 接入（2026-10-19，代码在 WithU 各仓库的本地分支，未推送）
+
+- 只替换概率游戏（40 款），Sud 不动；WithU 后台“游戏管理”里的“概率游戏新老切换”开关控制，开时 Android ≥ 1.6.5 看到 Tianhai 游戏、隐藏其他概率游戏。
+- 服务端 `feature/tianhai-games`（worktree `/Users/tyym/Documents/codes/withu-tianhai/server`，基于 master）：渠道 `tianhai`，游戏 ID `th_<平台ID>`；入口 `/callback/tianhai/launch`（校验票据→服务端签名建会话→302 到 `/launch/`）；钱包 `/callback/tianhai/wallet/simple/v1/*`（表 `t_tianhai_wallet_txn`，request_id 唯一、与钻石变动同事务）；配置全部来自 `TIANHAI_*` 环境变量；SQL 在 `withu-server/src/main/resources/script/tianhai165/`。平台绑定的钱包地址 = `https://<WithU API 域名>/callback/tianhai`。
+- 后台前端 `feature/tianhai-games`（worktree `/Users/tyym/Documents/codes/withu-tianhai/halla-operation-manager-platform`，基于 withu-master）；node_modules 是指向主检出的软链，**不要在 worktree 里跑 pnpm install/verify**，直接用 `node_modules/.bin/vue-tsc` 与 `node --test tests/*.test.mjs`。
+- Android `with/release/1.6.5_20261019`（worktree `/Users/tyym/Documents/codes/withu/android-1.6.4`）：`MKWebView` 的 `TianhaiApp` 桥、返回键交给 `TianhaiLauncher.requestBack()`、Tianhai 页面允许自动播放。构建用 JDK 17（`JAVA_HOME=~/Library/Java/JavaVirtualMachines/jbr-17.0.14/Contents/Home`），`./gradlew :app:assembleGoogleDebug`。
