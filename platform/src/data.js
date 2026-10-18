@@ -14,8 +14,8 @@ export const games = [
   { id:'thunder', name:'雷霆王座', en:'THUNDER THRONE', category:'probability', players:'1 人', mode:'连消 · 免费回合', render:'2.5D', theme:'众神之巅', art:'thunder-main.webp', accent:'#796fa6', demo:'http://127.0.0.1:8787/' },
   { id:'tiger', name:'虎虎生财', en:'FORTUNE TIGER', category:'probability', players:'1 人', mode:'重转 · 满盘奖励', render:'2.5D', theme:'金玉招财', art:'tiger-scene.webp', accent:'#c38932', demo:'http://127.0.0.1:8790/' }
 ];
-// Casino games (released only), generated from the shared definitions.
+// Probability games from the casino engine (released only), generated from the shared definitions.
 import {CASINO_GAMES,CASINO_IDS} from '../shared/casino-games.mjs';
-const FAMILY={wheel:'共享回合押注',crash:'爆点 · 实时提现',cards3:'三家比牌',slot:'老虎机'};
-for(const id of CASINO_IDS){const g=CASINO_GAMES[id];games.push({id,name:g.name,en:g.name.toUpperCase(),category:'casino',players:g.kind==='instant'?'1 人':'多人同局',mode:FAMILY[g.family]||g.family,render:'2.5D',theme:g.reference,art:null,artUrl:`/casino/${id}/plate.webp`,accent:'#c38932'});}
+const FAMILY={wheel:'共享回合押注',crash:'爆点 · 实时提现',cards3:'三家比牌',slot:'老虎机',arcade:'街机射击'};
+for(const id of CASINO_IDS){const g=CASINO_GAMES[id];games.push({id,name:g.name,en:g.name.toUpperCase(),category:'probability',players:g.kind==='instant'?'1 人':'多人同局',mode:FAMILY[g.family]||g.family,render:'2.5D',theme:g.reference,art:null,artUrl:`/casino/${id}/plate.webp`,accent:'#c38932'});}
 export const imageFor = game => game.artUrl||`/assets/${game.art}`;
