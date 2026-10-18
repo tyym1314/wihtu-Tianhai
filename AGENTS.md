@@ -30,6 +30,8 @@
 - 命名：游戏名与 ID 沿用参考游戏（如 `greedylion` GreedyLion、`rocketstar2` RocketStar2、`teenpatti` TeenPatti、`olympus` Olympus）；改名后服务启动会自动从各 App 的 `game_ids` 去掉已不存在的 ID。
 - 界面标准（用户要求）：**原样还原效果图**。做法：效果图放 `.local/concepts/`，用 `codex exec "<编辑说明>" -i concept.png` 生成去掉动态内容（数字、头像、卡牌、符号等）的干净底图 `.local/art/<game>-plate/plate.png`（尺寸 941x1672），前端用 `casino/shared/Stage.jsx` 按设计像素把实时数据/热区/动效叠加在底图空位上；需要单独动的元素（火箭等）同样用编辑从效果图里抠出。
 - 转盘类（Greedy 系列）共用 `casino/games/wheel/WheelGame.jsx`：每款只需在 `layouts.mjs` 写底图上的设计像素坐标（下注区、计时、余额、榜单、筹码、记录条等），`node scripts/casino-icons.mjs <game>` 从底图生成 `plate.webp` 与各选项图标，`casino/main.jsx` 注册到 `Wheel`；规则文字由 `casino/shared/rules.mjs` 按游戏定义自动生成（新选项要补 `NAMES` 中/阿译名）。
+- 其他前端：牌桌 `casino/games/table/`（轮盘号码圈由 SVG 按欧式真实顺序绘制，骰盅抠图）、爆点单面板 `casino/games/crash/`、街机 `casino/games/arcade/`（`shared/useArcade.js`：首发按 50 发买弹，打完/换注/离开结算）、连线/路数老虎机 `casino/games/slot/`（`layouts.mjs` 只需写盘面窗口和按钮坐标）。
+- 老虎机美术流水线：`.local/slots/gen.sh <game> "<效果图提示>" "<底图去除项>" "<符号列表>"` 生成 效果图 + 空盘面底图 + 透明符号表；符号表用 `.local/slots/slicer2.py`（`DIL=0|1|2` 调连通距离）连通域切图（按权重 key 顺序命名到 `casino/public/<game>/<symbol>.webp`）。稀有特色玩法用真实引擎结果做前端验证（用种子搜索出触发特色的结果，Playwright 拦截 `/api/casino/spin|choose` 返回）。
 - 音频：`node scripts/casino-audio.mjs`（CC0 来源见 `casino/public/audio/LICENSES.md`，原始文件在 `.local/audio/`）；前端 `casino/shared/audio.mjs` 的 `useAudio(game)`。每款都要有背景音乐和音效。
 - 前端：`platform/casino/`（React，`/play/<id>` → `casino/dist`），`npm run build:casino`。界面按 `.local/concepts/` 效果图还原，按钮/Logo/柱子等界面素材也用生图生成（如 `.local/art/olympus-ui/`，手动 `cwebp` 到 `casino/public/olympus/`）。
 - 美术：`scripts/casino-art.sh <输出目录> <名称> <提示词>` 调本机 Codex CLI 生图（ChatGPT 账号），原图放 `.local/art/<game>/`；`node scripts/casino-assets.mjs <game> [名称:宽度]` 转 WebP 到 `casino/public/<game>/`。
