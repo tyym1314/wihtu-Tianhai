@@ -9,6 +9,11 @@ const MUSIC={
  rocketstar2:['music/space-city--space_city_bpm115_0.ogg','Space City (OpenGameArt, CC0)'],
  teenpatti:['music/sitarian--sitarian_0.mp3','Sitarian (OpenGameArt, CC0)'],
  olympus:['music/experimenting-with-greek-instrument-samples--greek%20instruments_0.ogg','Greek instruments by Spring Spring (OpenGameArt, CC0)'],
+ greedycat2:['music/banana-track--banana_track.ogg','Banana Track by skrjablin (OpenGameArt, CC0)'],
+ greedyking:['music/banana-track--banana_track.ogg','Banana Track by skrjablin (OpenGameArt, CC0)'],
+ bigeater:['music/banana-track--banana_track.ogg','Banana Track by skrjablin (OpenGameArt, CC0)'],
+ greedybrutal:['music/experimenting-with-greek-instrument-samples--greek%20boss%20battle_0.ogg','Greek boss battle by Spring Spring (OpenGameArt, CC0)'],
+ fruitparty:['music/happy-clappy-loop--HappyClappyLoop.mp3','Happy Clappy Loop (OpenGameArt, CC0)'],
 };
 const SFX={
  click:find('interface-sounds','click_002.ogg'),select:find('interface-sounds','select_002.ogg'),error:find('interface-sounds','error_004.ogg'),

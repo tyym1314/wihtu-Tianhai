@@ -7,10 +7,10 @@ const CHIPS=Object.freeze([coins(100),coins(1000),coins(10000),coins(50000),coin
 
 const CHIPS2=Object.freeze([coins(1000),coins(5000),coins(10000),coins(50000),coins(100000)]);
 /** A Greedy-style wheel: four x5 items, four higher items, optional all-of-a-group specials and group bets. */
-function wheelGame(id,name,{veg,meat,specials=[],groups=[],chips,round,bonus}){
+function wheelGame(id,name,{veg,meat,specials=[],groups=[],chips,round,bonus,released=false}){
  const options=[...veg.map(o=>({id:o,multiplier:5,group:'veg'})),...meat.map(([o,m])=>({id:o,multiplier:m,group:'meat'}))];
  const all={veg:veg,meat:meat.map(([o])=>o)};
- return Object.freeze({id,family:'wheel',reference:name,name,zh:name,ar:name,round:Object.freeze(round),chips,maxOptionsPerRound:groups.length?10:6,maxStakePerRound:coins(1000000),
+ return Object.freeze({id,released,family:'wheel',reference:name,name,zh:name,ar:name,round:Object.freeze(round),chips,maxOptionsPerRound:groups.length?10:6,maxStakePerRound:coins(1000000),
   options:Object.freeze([...options,...groups.map(g=>({id:g.id,multiplier:g.multiplier,covers:all[g.group]}))].map(Object.freeze)),
   specials:Object.freeze(specials.map((sp,i)=>Object.freeze({id:sp,covers:i?'meat':'veg',probability:0.0005}))),...(bonus?{bonus:Object.freeze(bonus)}:{})});
 }
@@ -109,11 +109,11 @@ export const CASINO_GAMES=Object.freeze({
  }),
 
  // ---- Batch 1 (Greedy family). Unreleased until their concept art and front-ends ship. ----
- greedycat2:wheelGame('greedycat2','GreedyCat2',{veg:['tomato','corn','carrot','broccoli'],meat:[['fish',10],['crab',15],['steak',25],['chicken',45]],specials:['salad','pizza'],chips:CHIPS2,round:{betMs:25000,drawMs:7000,showMs:5000}}),
- greedybrutal:wheelGame('greedybrutal','GreedyBrutal',{veg:['goat','horse','deer','bull'],meat:[['wolf',10],['leopard',15],['eagle',25],['tiger',45]],specials:['herbivores','carnivores'],chips:CHIPS2,round:{betMs:25000,drawMs:7000,showMs:5000}}),
- bigeater:wheelGame('bigeater','BigEater',{veg:['tomato','turnip','mushroom','corn'],meat:[['sausage',10],['drumstick',15],['shrimp',25],['steak',45]],specials:['salad','pizza'],chips:CHIPS2,round:{betMs:30000,drawMs:7000,showMs:5000}}),
+ greedycat2:wheelGame('greedycat2','GreedyCat2',{released:true,veg:['tomato','corn','carrot','broccoli'],meat:[['fish',10],['crab',15],['steak',25],['chicken',45]],specials:['salad','pizza'],chips:CHIPS2,round:{betMs:25000,drawMs:7000,showMs:5000}}),
+ greedybrutal:wheelGame('greedybrutal','GreedyBrutal',{released:true,veg:['goat','horse','deer','bull'],meat:[['wolf',10],['leopard',15],['eagle',25],['tiger',45]],specials:['herbivores','carnivores'],chips:CHIPS2,round:{betMs:25000,drawMs:7000,showMs:5000}}),
+ bigeater:wheelGame('bigeater','BigEater',{released:true,veg:['tomato','turnip','mushroom','corn'],meat:[['sausage',10],['drumstick',15],['shrimp',25],['steak',45]],specials:['salad','pizza'],chips:CHIPS2,round:{betMs:30000,drawMs:7000,showMs:5000}}),
  // GreedyKing adds group bets: SALAD pays x1.25 on any vegetable, PIZZA x4.37 on any meat (same ~97% RTP).
- greedyking:wheelGame('greedyking','GreedyKing',{veg:['carrot','cabbage','corn','tomato'],meat:[['hotdog',10],['kebab',15],['ham',25],['steak',45]],specials:[],
+ greedyking:wheelGame('greedyking','GreedyKing',{released:true,veg:['carrot','cabbage','corn','tomato'],meat:[['hotdog',10],['kebab',15],['ham',25],['steak',45]],specials:[],
   groups:[{id:'salad',multiplier:1.25,group:'veg'},{id:'pizza',multiplier:4.37,group:'meat'}],chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(100000),coins(300000)]),round:{betMs:30000,drawMs:7000,showMs:5000}}),
 
  // GreedyForest: herbivores x5; carnivore and herbivore jackpots pay their whole group.
@@ -123,7 +123,7 @@ export const CASINO_GAMES=Object.freeze({
   bonus:{liabilityMultiplier:45,table:[{type:'none',weight:9995},{type:'extra',value:4,weight:5}]}}),
  // FruitParty: 8-fruit machine; after each draw a mini reel may add fruits, multiply, or award the jackpot.
  fruitparty:Object.freeze({
-  id:'fruitparty',family:'wheel',reference:'FruitParty',name:'FruitParty',zh:'FruitParty',ar:'FruitParty',
+  id:'fruitparty',released:true,family:'wheel',reference:'FruitParty',name:'FruitParty',zh:'FruitParty',ar:'FruitParty',
   round:Object.freeze({betMs:25000,drawMs:9000,showMs:5000}),chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(50000)]),maxOptionsPerRound:8,maxStakePerRound:coins(1000000),
   options:Object.freeze([{id:'cherry',multiplier:5},{id:'lemon',multiplier:5},{id:'orange',multiplier:5},{id:'plum',multiplier:5},{id:'bell',multiplier:10},{id:'watermelon',multiplier:10},{id:'seven',multiplier:20},{id:'star',multiplier:40}].map(Object.freeze)),
   bonus:Object.freeze({liabilityMultiplier:500,

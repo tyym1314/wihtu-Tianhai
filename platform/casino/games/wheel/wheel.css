@@ -1,0 +1,51 @@
+.wg-timer{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:50%;color:#ffe9b6;text-align:center;line-height:1;pointer-events:none}
+.wg-timer small{font-size:22px;font-weight:800;letter-spacing:2px;color:#ffd77a}
+.wg-timer b{font:900 46px Georgia,serif;color:#fff3d0;text-shadow:0 0 12px #ffb300}
+.wg-timer.urgent b{color:#ff6b5b;animation:wg-pulse .5s ease-in-out infinite alternate}
+.wg-fruitparty .wg-timer b{font-size:64px}
+.wg-spin{animation:cs-spin 1s linear infinite;color:#ffd34d!important}
+@keyframes wg-pulse{to{transform:scale(1.18)}}
+.wg-balance{display:flex;align-items:center;justify-content:center;font:900 30px Georgia,serif;color:#fff3d0;text-shadow:0 2px 0 #3a1a00;pointer-events:none}
+.wg-winners{display:flex;flex-direction:column;justify-content:space-around;padding:6px 10px;pointer-events:none}
+.wg-winners div{display:flex;align-items:center;gap:10px;font-size:22px;color:#ffe9b6}
+.wg-winners em{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:900;font-size:18px;color:#3d1a00;background:linear-gradient(#ffe37a,#d99a1e);border:2px solid #fff3c4}
+.wg-winners em.r1{background:linear-gradient(#eef2f7,#a8b3c2)}.wg-winners em.r2{background:linear-gradient(#f3c49a,#b8733c)}
+.wg-winners span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wg-winners b{color:#ffd84a}
+.wg-winners p{margin:auto;color:#c9a46a;font-size:24px}
+.wg-fruitparty .wg-winners div{flex-direction:column;gap:2px;font-size:18px}
+.wg-jackpot{display:flex;align-items:center;justify-content:center;font:900 34px Georgia,serif;color:#ffe37a;text-shadow:0 0 14px #ffb300,0 3px 0 #6a2a00;pointer-events:none}
+.wg-reel{display:grid;place-items:center;overflow:hidden;border-radius:12px;pointer-events:none}
+.wg-reel span{font:900 34px Georgia,serif;color:#c8102e;text-shadow:0 2px 0 #fff;animation:wg-pop .4s cubic-bezier(.2,1.6,.4,1)}
+.wg-reel.spinning{background:repeating-linear-gradient(#ffffff 0 30px,#f3d27a 30px 34px);background-size:100% 64px;animation:wg-roll .15s linear infinite}
+.wg-reel.hit{box-shadow:inset 0 0 0 4px #ffd34d,0 0 30px #ffd34d}
+@keyframes wg-roll{to{background-position:0 64px}}
+.wg-item{position:absolute;background:none;transition:filter .2s,transform .15s}
+.wg-item:active{transform:scale(.94)}
+.wg-item.lit{box-shadow:0 0 0 7px #fff4a8,0 0 40px 16px #ffcf3faa;background:radial-gradient(#fff6a822,transparent 70%)}
+.wg-item.win{animation:wg-win .5s ease-in-out infinite alternate}
+.wg-item.dim{background:#000a}
+@keyframes wg-win{from{box-shadow:0 0 0 6px #ffe37a,0 0 30px 10px #ffcf3f88}to{box-shadow:0 0 0 10px #fff3c4,0 0 70px 26px #ffcf3fdd}}
+.wg-group{position:absolute;background:none;border-radius:26px;transition:transform .15s}
+.wg-group:active{transform:scale(.97)}
+.wg-group.win{animation:wg-win .5s ease-in-out infinite alternate}
+.wg-total{display:grid;place-items:center;border-radius:999px;background:#000b;border:1.5px solid #ffffff44;color:#ffe9b6;font-size:20px;font-weight:800;pointer-events:none;z-index:2}
+.wg-mine{display:grid;place-items:center;border-radius:999px;background:linear-gradient(#5ee28a,#159e4c);border:2.5px solid #e5ffd1;font-size:22px;font-weight:900;color:#063b18;box-shadow:0 4px 10px #0008;pointer-events:none;z-index:3;animation:wg-pop .3s cubic-bezier(.2,1.6,.4,1)}
+.wg-center{display:grid;place-items:center;border-radius:50%;background:radial-gradient(#fff3c4,#e9b85e 60%,#8a5a12);box-shadow:0 0 50px #ffd34d;animation:wg-pop .5s cubic-bezier(.2,1.6,.4,1);z-index:4;pointer-events:none}
+.wg-center img{width:88%;height:88%;object-fit:cover;border-radius:50%}
+@keyframes wg-pop{from{transform:scale(.2);opacity:0}}
+.wg-banner{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:28px;background:linear-gradient(#3b1b0bf2,#1d0d05f2);border:3px solid #e9b85e;box-shadow:0 14px 40px #000c;animation:wg-pop .4s ease-out;z-index:6;pointer-events:none}
+.wg-banner p{margin:0;font-size:30px;color:#ffe6b0}
+.wg-banner .won b{font-size:44px;color:#ffd84a;text-shadow:0 0 16px #ffb300}
+.wg-special-icons{display:grid;grid-template-columns:repeat(2,160px);gap:16px}
+.wg-special-icons img{width:160px!important;height:160px!important;object-fit:cover;border-radius:24px;box-shadow:0 0 30px #ffd56b}
+.wg-jp b.amt{font-size:80px;color:#ffe37a}
+.wg-chip{position:absolute;border-radius:50%;background:none;transition:transform .15s}
+.wg-chip.on{transform:translateY(-14px);box-shadow:0 0 0 6px #ffd84a,0 0 34px 8px #ffd34d99}
+.wg-repeat{position:absolute;background:none;border-radius:22px}
+.wg-repeat:disabled{background:#0006}
+.wg-results{display:flex;align-items:center;gap:8px;padding:0 8px;overflow:hidden;pointer-events:none}
+.wg-results img{height:78%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:2px solid #e9b85e;box-shadow:0 2px 4px #000}
+.wg-results img:first-child{box-shadow:0 0 0 3px #ffd84a}
+.wg-sp{height:70%;aspect-ratio:1;display:grid;place-items:center;border-radius:50%;background:linear-gradient(#7dff9c,#159e4c);color:#063b18;font-weight:900;font-size:26px}
+.wg-flychip{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(#ffe37a,#c9861a);border:4px dashed #fff3c4;color:#3d1a00;font-weight:900;font-size:20px}
