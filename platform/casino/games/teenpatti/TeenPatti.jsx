@@ -8,7 +8,7 @@ import {HistoryModal} from '../../shared/History.jsx';
 import './teenpatti.css';
 
 const GAME=CASINO_GAMES.teenpatti,HANDS=GAME.options.map(o=>o.id),LABEL={ruby:'A',jade:'B',sapphire:'C'},MULT=(GAME.payout_x100/100).toFixed(2);
-const img=n=>`/casino/teenpatti/${n}.webp`;
+const img=n=>`/casino/teenpatti/${n}.webp?v=${__ASSET_VERSION__}`;
 const SUIT={s:'♠',h:'♥',c:'♣',d:'♦'},RANK=r=>r==='T'?'10':r;
 // Design pixels on the 941x1672 plate.
 const CARD_X={ruby:167,jade:470,sapphire:772},CARD_Y=493,ZONE_X={ruby:37,jade:328,sapphire:630},ZONE_W=274;

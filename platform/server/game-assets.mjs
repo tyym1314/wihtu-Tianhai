@@ -1,4 +1,5 @@
 import {open} from 'node:fs/promises';
+import {readFileSync} from 'node:fs';
 import {resolve,extname,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {pipeline} from 'node:stream/promises';
@@ -16,6 +17,13 @@ function fresh(headers,etag,mtimeMs){
   return Number.isFinite(since)&&Math.floor(mtimeMs/1000)*1000<=since;
 }
 
+// Written by the casino build (casino/vite.config.mjs); re-read when the release directory changes.
+const versionCache=new Map();
+function casinoAssetVersion(casinoRoot){
+ const hit=versionCache.get(casinoRoot);if(hit&&Date.now()-hit.at<10000)return hit.value;
+ let value=null;try{value=readFileSync(resolve(casinoRoot,'asset-version.txt'),'utf8').trim();if(!/^[a-f0-9]{16}$/.test(value))value=null;}catch{}
+ versionCache.set(casinoRoot,{at:Date.now(),value});return value;
+}
 export async function serveGameAsset(req,res,path,{legacyRoot=defaultLegacyRoot,arenaRoot=defaultArenaRoot,casinoRoot=defaultCasinoRoot}={}){
   const candidate=path.match(/^\/play\/([a-z0-9]+)$/)?.[1],game=ALL_GAME_IDS.includes(candidate)?candidate:null;
   const casino=path.startsWith('/casino/')||CASINO_IDS.includes(game),arena=casino||path.startsWith('/arena/')||ARENA_IDS.includes(game);
@@ -35,7 +43,9 @@ export async function serveGameAsset(req,res,path,{legacyRoot=defaultLegacyRoot,
     // uses an explicit -mobile-<10 hex SHA256> suffix, including subdirectories.
     // Other copied images still revalidate; a version-looking name is not a hash.
     const hashed=!html&&(/\/(?:assets|bundles)\/[^/]+-[A-Za-z0-9_-]{8}\.[a-z0-9]+$/.test(path)||/\/(?:arena|legacy|casino)\/assets\/(?:[^/]+\/)*[^/]+-mobile-[a-f0-9]{10}\.webp$/.test(path));
-    const headers={'content-type':types[extension]||'application/octet-stream','cache-control':html?'no-store':hashed?'public,max-age=31536000,immutable':'public,max-age=0,must-revalidate','referrer-policy':'no-referrer','x-content-type-options':'nosniff'};
+    // Casino art/audio requested with the current build's content version (?v=) is immutable.
+    const version=casino&&!html?casinoAssetVersion(casinoRoot):null,versioned=version!==null&&new URL(req.url,'http://x').searchParams.get('v')===version;
+    const headers={'content-type':types[extension]||'application/octet-stream','cache-control':html?'no-store':hashed||versioned?'public,max-age=31536000,immutable':'public,max-age=0,must-revalidate','referrer-policy':'no-referrer','x-content-type-options':'nosniff'};
     if(!html){
       // Weak metadata validators avoid hashing/reading a model for every poll.
       // ctime also invalidates a same-size rewrite with a restored mtime.

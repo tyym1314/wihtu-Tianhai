@@ -38,7 +38,7 @@ function Roulette({d,plate,angle,ball}){
 
 /** Roulette / SicBo style table games: bets on board cells, outcome drawn by a wheel or a dice cup. */
 export default function TableGame({initial}){
- const id=initial.game_id,GAME=CASINO_GAMES[id],L=TABLES[id],img=n=>`/casino/${id}/${n}.webp`,D=L.drawer;
+ const id=initial.game_id,GAME=CASINO_GAMES[id],L=TABLES[id],img=n=>`/casino/${id}/${n}.webp?v=${__ASSET_VERSION__}`,D=L.drawer;
  const g=useRound(initial,GAME),{state,round,phase,now}=g;
  const audio=useAudio(id,['chip','tick','win','lose','coin','click','select','close','chips','spin','dice','throw']);
  const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false);

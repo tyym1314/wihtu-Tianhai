@@ -11,7 +11,7 @@ import './rocketstar2.css';
 const GAME=CASINO_GAMES.rocketstar2;
 const GROWTH=Math.log(2)/8000;
 const multAt=ms=>Math.floor(100*Math.exp(GROWTH*Math.max(0,ms))+1e-9);
-const img=n=>`/casino/rocketstar2/${n}.webp`;
+const img=n=>`/casino/rocketstar2/${n}.webp?v=${__ASSET_VERSION__}`;
 const fx=x100=>(x100/100).toFixed(2);
 const ERR={INSUFFICIENT_FUNDS:'insufficient',BETTING_CLOSED:'closed',OPTION_ALREADY_BET:'already',CRASHED:'crashedErr',ROUND_STAKE_LIMIT:'limit'};
 const AUTO=[110,120,150,200,300,500,1000,2000,5000,10000];

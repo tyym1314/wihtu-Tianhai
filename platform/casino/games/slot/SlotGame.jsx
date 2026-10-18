@@ -17,7 +17,7 @@ const circ=([x,y,r])=>({left:x-r,top:y-r,width:2*r,height:2*r});
 
 /** Line / ways slots on a concept plate. Grids are column-major (grid[col][row]) as served by slot-lines.mjs. */
 export default function SlotGame({initial}){
- const id=initial.game_id,GAME=CASINO_GAMES[id],S=GAME.slot,L=SLOTS[id],img=n=>`/casino/${id}/${n}.webp`;
+ const id=initial.game_id,GAME=CASINO_GAMES[id],S=GAME.slot,L=SLOTS[id],img=n=>`/casino/${id}/${n}.webp?v=${__ASSET_VERSION__}`;
  const COLS=S.columns,rowsOf=c=>Array.isArray(S.rows)?S.rows[c]:S.rows,MAXR=Math.max(...Array.from({length:COLS},(_,c)=>rowsOf(c)));
  const SYMS=[...new Set([...Object.keys(S.weights.base),...Object.keys(S.weights.free||{})])];
  const randomGrid=()=>Array.from({length:COLS},(_,c)=>Array.from({length:rowsOf(c)},(_,r)=>({s:SYMS.filter(x=>x!==S.scatter?.id&&x!==S.wild?.id)[(c*3+r*5+1)%(SYMS.length-2)]})));

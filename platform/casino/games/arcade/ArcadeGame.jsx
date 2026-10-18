@@ -43,7 +43,7 @@ function useMonsters(L,game){
 }
 
 export default function ArcadeGame({initial}){
- const id=initial.game_id,GAME=CASINO_GAMES[id],img=n=>`/casino/${id}/${n}.webp`,isMonster=id==='monster',L=isMonster?MONSTER:MOLE;
+ const id=initial.game_id,GAME=CASINO_GAMES[id],img=n=>`/casino/${id}/${n}.webp?v=${__ASSET_VERSION__}`,isMonster=id==='monster',L=isMonster?MONSTER:MOLE;
  const A=useArcade(initial,GAME);
  const audio=useAudio(id,['shoot','zap','hit','whack','bomb','coin','click','win','bigwin']);
  const weapons=GAME.arcade.weapons,[weapon,setWeapon]=useState(weapons[0].id),[auto,setAuto]=useState(false),[menu,setMenu]=useState(false),[rules,setRules]=useState(false);

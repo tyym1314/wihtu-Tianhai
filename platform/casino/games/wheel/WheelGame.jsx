@@ -14,7 +14,7 @@ const rect=([x,y,a,b])=>b===undefined?{left:x-a,top:y-a,width:2*a,height:2*a,bor
 
 /** Greedy-style shared-round game rendered on its concept plate; everything game-specific comes from LAYOUTS. */
 export default function WheelGame({initial}){
- const id=initial.game_id,GAME=CASINO_GAMES[id],L=LAYOUTS[id],img=n=>`/casino/${id}/${n}.webp`;
+ const id=initial.game_id,GAME=CASINO_GAMES[id],L=LAYOUTS[id],img=n=>`/casino/${id}/${n}.webp?v=${__ASSET_VERSION__}`;
  const g=useRound(initial,GAME),{state,round,phase,now}=g;
  const audio=useAudio(id,['chip','tick','win','lose','coin','click','select','close','chips','spin']);
  const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false);

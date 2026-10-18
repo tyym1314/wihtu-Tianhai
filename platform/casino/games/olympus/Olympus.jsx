@@ -9,7 +9,7 @@ import {HistoryModal} from '../../shared/History.jsx';
 import './olympus.css';
 
 const GAME=CASINO_GAMES.olympus,SLOT=GAME.slot,COLS=SLOT.columns,ROWS=SLOT.rows;
-const img=n=>`/casino/olympus/${n}.webp`;
+const img=n=>`/casino/olympus/${n}.webp?v=${__ASSET_VERSION__}`;
 const SYMS=[...SLOT.symbols.map(s=>s.id),'scatter'];
 const idle=()=>Array.from({length:COLS*ROWS},(_,i)=>({s:SYMS[(i*7+3)%SYMS.length]}));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));

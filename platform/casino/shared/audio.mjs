@@ -3,7 +3,7 @@ import {useEffect,useRef,useState} from 'react';
 import {registerHostControls} from './client.mjs';
 
 const KEY='oasis-casino-muted';
-const url=n=>`/casino/audio/${n}.mp3`;
+const url=n=>`/casino/audio/${n}.mp3?v=${__ASSET_VERSION__}`;
 class CasinoAudio{
  constructor(game){this.game=game;this.muted=localStorage.getItem(KEY)==='1';this.host={muted:false,visible:true,voiceActive:false};this.buffers=new Map();this.ctx=null;this.music=null;}
  unlock(){

@@ -62,7 +62,7 @@ function Graph({L,round,now,phase,ship,tip}){
 
 /** Single-panel crash games (Crash, CrashStar): tap a chip to bet, TAKE to cash out, optional auto take. */
 export default function CrashGame({initial}){
- const id=initial.game_id,GAME=CASINO_GAMES[id],L=LAYOUTS[id],img=n=>`/casino/${id}/${n}.webp`;
+ const id=initial.game_id,GAME=CASINO_GAMES[id],L=LAYOUTS[id],img=n=>`/casino/${id}/${n}.webp?v=${__ASSET_VERSION__}`;
  const [state,setState]=useState(initial),[balance,setBalance]=useState(initial.balance?.available_minor??null),[now,setNow]=useState(Date.now());
  const [toast,setToast]=useState(null),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false),[offline,setOffline]=useState(false),[pop,setPop]=useState(null);
  const [autoOn,setAutoOn]=useState(false),[autoIdx,setAutoIdx]=useState(0),[busy,setBusy]=useState(false);

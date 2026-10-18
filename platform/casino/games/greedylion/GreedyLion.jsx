@@ -8,7 +8,7 @@ import {HistoryModal} from '../../shared/History.jsx';
 import './greedylion.css';
 
 const GAME=CASINO_GAMES.greedylion;
-const img=n=>`/casino/greedylion/${n}.webp`;
+const img=n=>`/casino/greedylion/${n}.webp?v=${__ASSET_VERSION__}`;
 // Design-pixel positions measured on the 941x1672 concept plate (clockwise from the top plate).
 const ORDER=['tomato','corn','carrot','lettuce','shrimp','fish','steak','chicken'];
 const PLATE={tomato:[472,652],corn:[670,736],carrot:[740,933],lettuce:[673,1109],shrimp:[472,1179],fish:[271,1107],steak:[201,930],chicken:[268,736]};
