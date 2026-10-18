@@ -321,3 +321,18 @@ test('an arcade session (Monster) debits its ammo once, resolves shots on the se
  await recover();
  assert.equal(await partnerBalance('carol'),before-20000n+BigInt(closed.win_minor)+10000n);assert.equal(await transit(),'0');
 });
+
+test('an arcade ammo purchase whose wallet response is lost is recovered in the background instead of blocking the player',async()=>{
+ const arcade=await import('../server/casino/arcade.mjs');
+ const dave=await sessionFor('dave','monster'),before=await partnerBalance('dave');
+ faults.dropNextDebitResponse=true;
+ await assert.rejects(arcade.openArcade(dave,{request_id:uid('arc'),bet_minor:'1000',shots:10}),{code:'WALLET_PENDING'});
+ const stuck=(await pool.query("SELECT * FROM casino_arcade WHERE external_user_id='dave' AND status='AUTHORIZING'")).rows[0];assert.ok(stuck);
+ await pool.query("UPDATE casino_arcade SET updated_at=now()-interval '10 seconds' WHERE id=$1",[stuck.id]);
+ await recover();await arcade.recoverArcade();
+ const row=(await pool.query('SELECT status FROM casino_arcade WHERE id=$1',[stuck.id])).rows[0];assert.equal(row.status,'OPEN','the retried purchase opens the session');
+ assert.equal(await partnerBalance('dave'),before-10000n,'ammo is debited exactly once');
+ const closed=await arcade.closeArcade(dave,{arcade_id:stuck.id});assert.equal(closed.status,'SETTLED');
+ await recover();assert.equal(await partnerBalance('dave'),before,'unused ammo is refunded in full');assert.equal(await transit(),'0');
+ const next=await arcade.openArcade(dave,{request_id:uid('arc'),bet_minor:'1000',shots:5});assert.equal(next.status,'OPEN');await arcade.closeArcade(dave,{arcade_id:next.id});await recover();
+});

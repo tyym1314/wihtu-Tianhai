@@ -61,6 +61,22 @@ export async function migrateArcade(db=pool){
 const base=(app,a)=>({...scope(app),authorization_id:'auth_'+a.id,cycle_id:a.id});
 const view=a=>({id:a.id,status:a.status,bet_minor:String(a.bet_minor),shots:a.shots,used:a.used,win_minor:String(a.win_minor),commitment:a.commitment,...(a.status==='SETTLED'?{seed:unseal(a.seed_enc)}:{})});
 
+/** Ammo purchase: authorize + accept, idempotent by request id; a wallet rejection (or an expired hold) rejects the session. */
+async function authorize(app,a){
+ const model=models[a.game_id];if(model.version!==a.math_version||model.hash!==a.math_hash)fail(503,'PINNED_MATH_UNAVAILABLE');
+ const stake=BigInt(a.bet_minor)*BigInt(a.shots);
+ try{
+  await command(app,a.id,'/wallet/v1/probability/authorize',{...base(app,a),request_id:'authorize_'+a.id,external_user_id:a.external_user_id,game_id:a.game_id,math_version:model.version,math_config_hash:model.hash,
+   stake_minor:String(stake),max_payout_minor:String(stake*BigInt(model.maxMultiplier)),expires_at:new Date(Date.now()+60000).toISOString()});
+  await command(app,a.id,'/wallet/v1/probability/accept',{...base(app,a),request_id:'accept_'+a.id});
+  return (await pool.query("UPDATE casino_arcade SET status='OPEN',last_shot_at=now(),updated_at=now() WHERE id=$1 AND status='AUTHORIZING' RETURNING *",[a.id])).rows[0]||(await pool.query('SELECT * FROM casino_arcade WHERE id=$1',[a.id])).rows[0];
+ }catch(e){
+  if(e.status===409)return (await pool.query("UPDATE casino_arcade SET status='REJECTED',error=$2,updated_at=now() WHERE id=$1 AND status='AUTHORIZING' RETURNING *",[a.id,e.code||'WALLET_REJECTED'])).rows[0]||(await pool.query('SELECT * FROM casino_arcade WHERE id=$1',[a.id])).rows[0];
+  if(e.status===503&&e.code==='PINNED_MATH_UNAVAILABLE')throw e;
+  await pool.query('UPDATE casino_arcade SET updated_at=now() WHERE id=$1',[a.id]);return a;
+ }
+}
+
 export async function openArcade(session,body){
  const game=CASINO_GAMES[session.game_id];if(game?.family!=='arcade')fail(403,'GAME_SESSION_REQUIRED');
  if(!/^[A-Za-z0-9_-]{8,128}$/.test(body.request_id||'')||!game.arcade.bets.includes(body.bet_minor)||!Number.isSafeInteger(body.shots)||body.shots<1||body.shots>MAX_SHOTS)fail(400,'INVALID_REQUEST');
@@ -74,18 +90,7 @@ export async function openArcade(session,body){
   a=(await pool.query("INSERT INTO casino_arcade(id,app_id,session_id,external_user_id,request_id,game_id,bet_minor,shots,math_version,math_hash,seed_enc,commitment,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'AUTHORIZING') RETURNING *",
    [id('arc'),app.id,session.id,session.external_user_id,body.request_id,game.id,body.bet_minor,body.shots,model.version,model.hash,seal(seed),sha(seed)])).rows[0];
  }
- if(a.status==='AUTHORIZING'){
-  const stake=BigInt(a.bet_minor)*BigInt(a.shots);
-  try{
-   await command(app,a.id,'/wallet/v1/probability/authorize',{...base(app,a),request_id:'authorize_'+a.id,external_user_id:a.external_user_id,game_id:a.game_id,math_version:model.version,math_config_hash:model.hash,
-    stake_minor:String(stake),max_payout_minor:String(stake*BigInt(model.maxMultiplier)),expires_at:new Date(Date.now()+60000).toISOString()});
-   await command(app,a.id,'/wallet/v1/probability/accept',{...base(app,a),request_id:'accept_'+a.id});
-   a=(await pool.query("UPDATE casino_arcade SET status='OPEN',last_shot_at=now(),updated_at=now() WHERE id=$1 AND status='AUTHORIZING' RETURNING *",[a.id])).rows[0]||(await pool.query('SELECT * FROM casino_arcade WHERE id=$1',[a.id])).rows[0];
-  }catch(e){
-   if(e.status===409){a=(await pool.query("UPDATE casino_arcade SET status='REJECTED',error=$2,updated_at=now() WHERE id=$1 RETURNING *",[a.id,e.code||'WALLET_REJECTED'])).rows[0];fail(409,a.error);}
-   fail(503,'WALLET_PENDING');
-  }
- }
+ if(a.status==='AUTHORIZING'){a=await authorize(app,a);if(a.status==='AUTHORIZING')fail(503,'WALLET_PENDING');}
  if(a.status==='REJECTED')fail(409,a.error||'WALLET_REJECTED');
  return view(a);
 }
@@ -128,4 +133,6 @@ async function settle(app,a){
 export async function recoverArcade(){
  const open=(await pool.query("SELECT * FROM casino_arcade WHERE (status='OPEN' AND last_shot_at<now()-$1::int*interval '1 millisecond') OR (status='CLOSING' AND updated_at<now()-interval '3 seconds') LIMIT 50",[IDLE_MS])).rows;
  for(const a of open){try{await settle(await appById(a.app_id),a);}catch{}}
+ // An ammo purchase whose wallet outcome was unknown is retried with the same request ids.
+ for(const a of (await pool.query("SELECT * FROM casino_arcade WHERE status='AUTHORIZING' AND updated_at<now()-interval '3 seconds' ORDER BY updated_at LIMIT 50")).rows){try{await authorize(await appById(a.app_id),a);}catch{}}
 }
