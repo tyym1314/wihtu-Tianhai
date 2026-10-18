@@ -26,7 +26,7 @@ export function wheelModel(game){
   const rtp=Math.min(...game.groups.map(g=>g.multiplier*g.covers.reduce((a,c)=>a+game.draw.find(o=>o.id===c).weight,0)/total));
   const config={family:'wheel',draw:game.draw,groups:game.groups,total,rng:'HMAC-SHA256 counter, rejection sampled'};
   const hash=createHash('sha256').update(canonical(config)).digest('hex');
-  return Object.freeze({gameId:game.id,version:`${game.id}-wheel-v1`,hash,maxMultiplier:Math.ceil(Math.max(...game.groups.map(g=>g.multiplier))),targetRtp:rtp,weights,outcomes,config:{...config,weights,options:[]}});
+  return Object.freeze({gameId:game.id,version:`${game.id}-wheel-v1-${hash.slice(0,12)}`,hash,maxMultiplier:Math.ceil(Math.max(...game.groups.map(g=>g.multiplier))),targetRtp:rtp,weights,outcomes,config:{...config,weights,options:[]}});
  }
  const special=g=>specials.filter(s=>s.covers===g).reduce((a,s)=>a+s.probability,0);
  const probs=[...game.options.map(o=>rtp/o.multiplier-special(o.group)),...specials.map(s=>s.probability)];
@@ -39,7 +39,7 @@ export function wheelModel(game){
  const bonus=game.bonus||null;
  const config={family:'wheel',options:game.options,groups:game.groups,specials,weights,total:TOTAL,bonus,rng:'HMAC-SHA256 counter, rejection sampled'};
  const hash=createHash('sha256').update(canonical(config)).digest('hex');
- return Object.freeze({gameId:game.id,version:`${game.id}-wheel-v1`,hash,maxMultiplier,targetRtp:rtp,weights,outcomes,config});
+ return Object.freeze({gameId:game.id,version:`${game.id}-wheel-v1-${hash.slice(0,12)}`,hash,maxMultiplier,targetRtp:rtp,weights,outcomes,config});
 }
 
 export function drawWheel(model,seedHex){

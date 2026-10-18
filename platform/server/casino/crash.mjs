@@ -17,7 +17,7 @@ export const timeToReach=x100=>x100<=100?0:Math.ceil(Math.log(x100/100)/GROWTH_P
 export function crashModel(game){
  const config={family:'crash',rtp:game.rtp,cap_x100:game.maxMultiplier*100,growth:'e^(ln2/8000*ms)',rng:'HMAC-SHA256 counter, 32-bit uniform'};
  const hash=createHash('sha256').update(canonical(config)).digest('hex');
- return Object.freeze({gameId:game.id,version:`${game.id}-crash-v1`,hash,maxMultiplier:game.maxMultiplier,targetRtp:game.rtp,config});
+ return Object.freeze({gameId:game.id,version:`${game.id}-crash-v1-${hash.slice(0,12)}`,hash,maxMultiplier:game.maxMultiplier,targetRtp:game.rtp,config});
 }
 
 export function drawCrash(model,seedHex){

@@ -18,7 +18,7 @@ const MAX_CASCADES=30;
 export function linesModel(game){
  const s=game.slot,config={family:'slot',...s,rng:'HMAC-SHA256 counter'};
  const hash=createHash('sha256').update(canonical(config)).digest('hex');
- return Object.freeze({gameId:game.id,version:`${game.id}-${s.pay}-v1`,hash,maxMultiplier:s.maxWin,targetRtp:s.targetRtp,config});
+ return Object.freeze({gameId:game.id,version:`${game.id}-${s.pay}-v1-${hash.slice(0,12)}`,hash,maxMultiplier:s.maxWin,targetRtp:s.targetRtp,config});
 }
 
 function drawCell(rng,c,col,free){

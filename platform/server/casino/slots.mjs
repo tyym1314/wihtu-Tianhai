@@ -15,7 +15,7 @@ export function slotModel(game){
  const s=game.slot;
  const config={family:'slot',pay:s.pay,columns:s.columns,rows:s.rows,symbols:s.symbols,scatter:s.scatter,orbs:s.orbs,freeSpins:s.freeSpins,maxWin:s.maxWin,weights:s.weights,buy:s.buy||null,rng:'HMAC-SHA256 counter'};
  const hash=createHash('sha256').update(canonical(config)).digest('hex');
- return Object.freeze({gameId:game.id,version:`${game.id}-slot-v1`,hash,maxMultiplier:s.maxWin,targetRtp:s.targetRtp,config});
+ return Object.freeze({gameId:game.id,version:`${game.id}-slot-v1-${hash.slice(0,12)}`,hash,maxMultiplier:s.maxWin,targetRtp:s.targetRtp,config});
 }
 
 /** Pay in hundredths of stake for `count` copies of a symbol (0 when below the first band). */

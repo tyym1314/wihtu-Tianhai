@@ -25,7 +25,8 @@ export function arcadeModel(game){
  const maxM=Math.max(...a.targets.map(t=>t.max??t.multiplier));
  // A session can win at most every shot hitting the best targets with the widest weapon.
  const liability=Math.ceil(maxM*Math.max(...a.weapons.map(w=>w.targets/w.cost)));
- return Object.freeze({gameId:game.id,version:`${game.id}-arcade-v1`,hash:sha(canonical(config)),maxMultiplier:liability,targetRtp:a.rtp,config});
+ const hash=sha(canonical(config));
+ return Object.freeze({gameId:game.id,version:`${game.id}-arcade-v1-${hash.slice(0,12)}`,hash,maxMultiplier:liability,targetRtp:a.rtp,config});
 }
 const models=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>g.family==='arcade').map(g=>[g.id,arcadeModel(g)]));
 export const arcadeModels=()=>Object.values(models);

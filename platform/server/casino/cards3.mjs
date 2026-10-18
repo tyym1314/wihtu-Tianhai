@@ -37,7 +37,7 @@ export function cards3Model(game){
  const config={family:'cards3',options:game.options.map(o=>o.id),payout_x100:game.payout_x100,deck:52,cards_per_hand:3,rng:'HMAC-SHA256 counter, Fisher-Yates'};
  const hash=createHash('sha256').update(canonical(config)).digest('hex');
  // Wallet liability uses the integer ceiling of the payout multiplier.
- return Object.freeze({gameId:game.id,version:`${game.id}-cards3-v1`,hash,maxMultiplier:Math.ceil(game.payout_x100/100),targetRtp:game.payout_x100/100/game.options.length,config});
+ return Object.freeze({gameId:game.id,version:`${game.id}-cards3-v1-${hash.slice(0,12)}`,hash,maxMultiplier:Math.ceil(game.payout_x100/100),targetRtp:game.payout_x100/100/game.options.length,config});
 }
 
 export function drawCards3(model,seedHex){

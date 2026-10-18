@@ -71,3 +71,9 @@ test('sphinxlegend: a triggered feature waits for a choice; the base spin is ide
  for(let c=0;c<4;c++){const f=playLinesCycle(m,sd,'10000',{choice:c});assert.deepEqual(f.spins[0],r.spins[0]);assert.equal(f.free_spins,m.config.freeSpins.choices[c].award);assert.equal(f.choice,c);}
  assert.throws(()=>playLinesCycle(m,sd,'10000',{choice:9}),/INVALID_CHOICE/);
 });
+
+test('every casino math version is bound to its config hash, so a config change is a new approved version',async()=>{
+ const {casinoProfiles}=await import('../server/casino/rounds.mjs');
+ const profiles=casinoProfiles();assert.equal(profiles.length,CASINO_IDS.length);
+ for(const m of profiles){assert.match(m.version,/^[A-Za-z0-9_.-]{1,96}$/);assert.ok(m.version.endsWith('-'+m.hash.slice(0,12)),m.gameId);}
+});

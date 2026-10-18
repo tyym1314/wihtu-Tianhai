@@ -9,7 +9,7 @@ class CasinoAudio{
  unlock(){
   if(!this.ctx){try{const C=window.AudioContext||window.webkitAudioContext;this.ctx=new C();this.gain=this.ctx.createGain();this.gain.connect(this.ctx.destination);}catch{return;}}
   if(this.ctx.state==='suspended')this.ctx.resume().catch(()=>{});
-  if(!this.music){this.music=new Audio(url(`music-${this.game}`));this.music.loop=true;this.music.preload='auto';}
+  if(!this.music){this.music=new Audio(url(`music-${this.game}`));this.music.loop=true;this.music.preload='auto';window.__casinoMusic=this.music;}
   this.apply();
  }
  level(){return this.muted||this.host.muted||!this.host.visible?0:this.host.voiceActive?0.25:1;}
