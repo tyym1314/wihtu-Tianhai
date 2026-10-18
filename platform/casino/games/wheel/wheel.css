@@ -1,8 +1,7 @@
 .wg-timer{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:50%;color:#ffe9b6;text-align:center;line-height:1;pointer-events:none}
-.wg-timer small{font-size:22px;font-weight:800;letter-spacing:2px;color:#ffd77a}
-.wg-timer b{font:900 46px Georgia,serif;color:#fff3d0;text-shadow:0 0 12px #ffb300}
+.wg-timer small{font-size:calc(var(--tf) * .45);font-weight:800;letter-spacing:2px;color:#ffd77a}
+.wg-timer b{font:900 var(--tf) Georgia,serif;color:#fff3d0;text-shadow:0 0 12px #ffb300}
 .wg-timer.urgent b{color:#ff6b5b;animation:wg-pulse .5s ease-in-out infinite alternate}
-.wg-fruitparty .wg-timer b{font-size:64px}
 .wg-spin{animation:cs-spin 1s linear infinite;color:#ffd34d!important}
 @keyframes wg-pulse{to{transform:scale(1.18)}}
 .wg-balance{display:flex;align-items:center;justify-content:center;font:900 30px Georgia,serif;color:#fff3d0;text-shadow:0 2px 0 #3a1a00;pointer-events:none}
@@ -49,3 +48,7 @@
 .wg-results img:first-child{box-shadow:0 0 0 3px #ffd84a}
 .wg-sp{height:70%;aspect-ratio:1;display:grid;place-items:center;border-radius:50%;background:linear-gradient(#7dff9c,#159e4c);color:#063b18;font-weight:900;font-size:26px}
 .wg-flychip{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(#ffe37a,#c9861a);border:4px dashed #fff3c4;color:#3d1a00;font-weight:900;font-size:20px}
+.wg-timer.led b{font:900 calc(var(--tf) * 1.5) 'Courier New',monospace;color:#ff3b2f;text-shadow:0 0 18px #ff2a00,0 0 4px #ffb199}
+.wg-timer.led small{color:#ff8a70}
+.wg-timer.clock b{font:900 var(--tf) 'Courier New',monospace;color:#e9fff0;text-shadow:0 0 10px #6dff9c}
+.wg-hot{position:absolute;background:none}

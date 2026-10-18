@@ -249,10 +249,11 @@ test('GreedyKing group bets: SALAD pays x1.25 on any vegetable and PIZZA x4.37 o
 test('FruitParty feeds 2% of each stake into the jackpot and a jackpot draw pays it to the winning bets',async()=>{
  const [alice,bob]=await Promise.all([sessionFor('carol','fruitparty'),sessionFor('dave','fruitparty')]);
  const s0=await casino.casinoState(alice),fruits=['cherry','lemon','orange','plum','bell','watermelon','seven','star'];
+ const seedPool=50000000n;assert.equal(BigInt(s0.jackpot_minor),seedPool,'platform-funded 500,000-coin starting pool');assert.equal(BigInt((await casino.casinoState(bob)).jackpot_minor),seedPool,'seeded only once');
  const before={carol:await partnerBalance('carol'),dave:await partnerBalance('dave')};
  for(const f of fruits)await casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:f,stake_minor:'100000'});
  await casino.placeBet(bob,{request_id:uid('bet'),round_id:s0.round.id,option_id:'star',stake_minor:'100000'});
- const pool0=BigInt((await casino.casinoState(alice)).jackpot_minor);assert.equal(pool0,9n*2000n,'2% of nine 1,000-coin bets');
+ const pool0=BigInt((await casino.casinoState(alice)).jackpot_minor);assert.equal(pool0,seedPool+9n*2000n,'seed plus 2% of nine 1,000-coin bets');
  // Force the close to draw a jackpot bonus by pinning the round seed until one is found.
  const {wheelModel,drawWheel}=await import('../server/casino/wheel.mjs');const {CASINO_GAMES}=await import('../shared/casino-games.mjs');const {seal}=await import('../server/security.mjs');
  const m=wheelModel(CASINO_GAMES.fruitparty);let seed;do seed=randomBytes(32).toString('hex');while(drawWheel(m,seed).bonus.type!=='jackpot');

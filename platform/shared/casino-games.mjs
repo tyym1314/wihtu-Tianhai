@@ -42,8 +42,8 @@ const range=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
 const DICE=[1,2,3,4,5,6].flatMap(a=>[1,2,3,4,5,6].flatMap(b=>[1,2,3,4,5,6].map(c=>[a,b,c]))),sum=d=>d[0]+d[1]+d[2],triple=d=>d[0]===d[1]&&d[1]===d[2];
 const RED=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36],BLACK=range(1,36).filter(n=>!RED.includes(n));
 /** Every option drawn with weights that give each the same RTP (no specials or groups). */
-function plainWheel(id,name,items,{maxOptions,chips=CHIPS2,bonus,round={betMs:25000,drawMs:8000,showMs:5000}}){
- return Object.freeze({id,family:'wheel',reference:name,name,zh:name,ar:name,round:Object.freeze(round),chips,maxOptionsPerRound:maxOptions,maxStakePerRound:coins(1000000),
+function plainWheel(id,name,items,{maxOptions,chips=CHIPS2,bonus,released=false,round={betMs:25000,drawMs:8000,showMs:5000}}){
+ return Object.freeze({id,released,family:'wheel',reference:name,name,zh:name,ar:name,round:Object.freeze(round),chips,maxOptionsPerRound:maxOptions,maxStakePerRound:coins(1000000),
   options:Object.freeze(items.map(([o,m])=>Object.freeze({id:o,multiplier:m}))),...(bonus?{bonus:Object.freeze(bonus)}:{})});
 }
 /** European single-zero roulette with the reference's simplified bet board. */
@@ -117,9 +117,9 @@ export const CASINO_GAMES=Object.freeze({
   groups:[{id:'salad',multiplier:1.25,group:'veg'},{id:'pizza',multiplier:4.37,group:'meat'}],chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(100000),coins(300000)]),round:{betMs:30000,drawMs:7000,showMs:5000}}),
 
  // GreedyForest: herbivores x5; carnivore and herbivore jackpots pay their whole group.
- greedyforest:wheelGame('greedyforest','GreedyForest',{veg:['rabbit','cow','sheep','deer'],meat:[['fox',10],['bear',15],['tiger',25],['lion',45]],specials:['grass','meat'],chips:CHIPS2,round:{betMs:20000,drawMs:7000,showMs:5000}}),
+ greedyforest:wheelGame('greedyforest','GreedyForest',{released:true,veg:['rabbit','cow','sheep','deer'],meat:[['fox',10],['bear',15],['tiger',25],['lion',45]],specials:['grass','meat'],chips:CHIPS2,round:{betMs:20000,drawMs:7000,showMs:5000}}),
  // HeroChest: eight boxes with salad/pizza lucky jackpots; a rare "God" reward opens 4 extra random boxes.
- herochest:wheelGame('herochest','HeroChest',{veg:['tomato','corn','carrot','grape'],meat:[['fish',10],['lobster',15],['beef',25],['chicken',45]],specials:['salad','pizza'],chips:CHIPS2,round:{betMs:25000,drawMs:7000,showMs:5000},
+ herochest:wheelGame('herochest','HeroChest',{released:true,veg:['tomato','corn','carrot','grape'],meat:[['fish',10],['lobster',15],['beef',25],['chicken',45]],specials:['salad','pizza'],chips:CHIPS2,round:{betMs:25000,drawMs:7000,showMs:5000},
   bonus:{liabilityMultiplier:45,table:[{type:'none',weight:9995},{type:'extra',value:4,weight:5}]}}),
  // FruitParty: 8-fruit machine; after each draw a mini reel may add fruits, multiply, or award the jackpot.
  fruitparty:Object.freeze({
@@ -129,7 +129,7 @@ export const CASINO_GAMES=Object.freeze({
   bonus:Object.freeze({liabilityMultiplier:500,
    // Jackpot: 2% of every accepted stake feeds the App's pool; on a jackpot draw each winning bet shares
    // pool x tier% (by the player's winning stake this round) in proportion to its stake.
-   jackpot:Object.freeze({contributionBps:200,tiers:[[0,10],[coins(10000),30],[coins(100000),50],[coins(1000000),70]]}),
+   jackpot:Object.freeze({contributionBps:200,seedMinor:coins(500000),tiers:[[0,10],[coins(10000),30],[coins(100000),50],[coins(1000000),70]]}),
    table:Object.freeze([{type:'none',weight:9780},{type:'extra',value:1,weight:50},{type:'extra',value:2,weight:25},{type:'extra',value:3,weight:10},{type:'multiplier',value:2,weight:60},{type:'multiplier',value:3,weight:30},{type:'jackpot',weight:45}])}),
  }),
 
@@ -208,12 +208,12 @@ export const CASINO_GAMES=Object.freeze({
   collect:{id:'coin',min:5,values:[{x:1,w:50},{x:2,w:25},{x:3,w:13},{x:4,w:8},{x:5,w:4}]},wheel:{id:'wheel',count:3,values:[{x:10,w:50},{x:20,w:25},{x:30,w:13},{x:50,w:8},{x:100,w:4}]},maxWin:3000}),
 
  // ---- Round games on the wheel engine (unreleased until art ships). ----
- crazyfruit:wheelGame('crazyfruit','CrazyFruit',{veg:['orange','lemon','grape','cherry'],meat:[['apple',10],['watermelon',15],['mango',25],['strawberry',45]],specials:['lucky','superlucky'],chips:CHIPS2,round:{betMs:25000,drawMs:7000,showMs:5000}}),
+ crazyfruit:wheelGame('crazyfruit','CrazyFruit',{released:true,veg:['orange','lemon','grape','cherry'],meat:[['apple',10],['watermelon',15],['mango',25],['strawberry',45]],specials:['lucky','superlucky'],chips:CHIPS2,round:{betMs:25000,drawMs:7000,showMs:5000}}),
  magiccard:plainWheel('magiccard','MagicCard',[['leo',100],['aries',4],['libra',4],['scorpio',5],['virgo',50],['taurus',25],['sagittarius',15],['aquarius',5]],{maxOptions:4,chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(30000)])}),
- bountyfootball:plainWheel('bountyfootball','BountyFootball',[['club2',2],['club5',5],['club8',8],['club18',18],['club20',20],['club30',30],['club50',50],['club66',66],['club88',88],['club100',100]],{maxOptions:10,chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(100000),coins(300000)])}),
+ bountyfootball:plainWheel('bountyfootball','BountyFootball',[['club2',2],['club5',5],['club8',8],['club18',18],['club20',20],['club30',30],['club50',50],['club66',66],['club88',88],['club100',100]],{released:true,maxOptions:10,chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(100000),coins(300000)])}),
  // FootballLeague / GloryCup: 8 clubs x40/x40/x12/x12/x6/x6/x4/x4; a rare "god prize" adds 3 extra winning clubs.
- footballleague:plainWheel('footballleague','FootballLeague',[['club1',40],['club2',40],['club3',12],['club4',12],['club5',6],['club6',6],['club7',4],['club8',4]],{maxOptions:8,bonus:{liabilityMultiplier:160,table:[{type:'none',weight:9953},{type:'extra',value:3,weight:47}]}}),
- glorycup:plainWheel('glorycup','GloryCup',[['team1',40],['team2',40],['team3',12],['team4',12],['team5',6],['team6',6],['team7',4],['team8',4]],{maxOptions:8,bonus:{liabilityMultiplier:160,table:[{type:'none',weight:9953},{type:'extra',value:3,weight:47}]}}),
+ footballleague:plainWheel('footballleague','FootballLeague',[['club1',40],['club2',40],['club3',12],['club4',12],['club5',6],['club6',6],['club7',4],['club8',4]],{released:true,maxOptions:8,bonus:{liabilityMultiplier:160,table:[{type:'none',weight:9953},{type:'extra',value:3,weight:47}]}}),
+ glorycup:plainWheel('glorycup','GloryCup',[['team1',40],['team2',40],['team3',12],['team4',12],['team5',6],['team6',6],['team7',4],['team8',4]],{released:true,maxOptions:8,bonus:{liabilityMultiplier:160,table:[{type:'none',weight:9953},{type:'extra',value:3,weight:47}]}}),
  // SolomonMines: three chests, one wins; x2.91 (stake included) -> 97%.
  solomonmines:plainWheel('solomonmines','SolomonMines',[['courage',2.91],['wisdom',2.91],['strength',2.91]],{maxOptions:3,chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(50000)])}),
  roulette:rouletteGame('roulette','roulette',[['zero',36,[0]],['d1',3,range(1,12)],['d2',3,range(13,24)],['d3',3,range(25,36)],['red',2,RED],['black',2,BLACK],['even',2,range(1,36).filter(n=>n%2===0)],['odd',2,range(1,36).filter(n=>n%2)]]),

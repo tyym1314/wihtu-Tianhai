@@ -7,7 +7,7 @@ import './shared/shell.css';
 const GAME=location.pathname.split('/').pop();
 const SCENES={greedylion:lazy(()=>import('./games/greedylion/GreedyLion.jsx')),rocketstar2:lazy(()=>import('./games/rocketstar2/RocketStar2.jsx')),teenpatti:lazy(()=>import('./games/teenpatti/TeenPatti.jsx')),olympus:lazy(()=>import('./games/olympus/Olympus.jsx'))};
 const Wheel=lazy(()=>import('./games/wheel/WheelGame.jsx'));
-for(const id of ['greedycat2','greedyking','greedybrutal','bigeater','fruitparty'])SCENES[id]=Wheel;
+for(const id of ['greedycat2','greedyking','greedybrutal','bigeater','fruitparty','greedyforest','herochest','crazyfruit','footballleague','glorycup','bountyfootball'])SCENES[id]=Wheel;
 
 function App(){
  const [launch,setLaunch]=useState(null),[status,setStatus]=useState('connecting');

@@ -9,6 +9,7 @@ const DICT={
  next:['下一局即将开始','Next round soon','الجولة التالية قريباً'],
  repeat:['重复上局','Repeat','كرر'],
  youWon:['恭喜赢得','You won','ربحت'],
+ godPrize:['神奖','GOD PRIZE','الجائزة الإلهية'],
  noWin:['本局未中奖','No win this round','لا فوز في هذه الجولة'],
  topWinners:['本局赢家','Top winners','الفائزون'],
  history:['开奖记录','History','السجل'],

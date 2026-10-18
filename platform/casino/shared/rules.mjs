@@ -16,10 +16,17 @@ const W={
   reel:'بعد كل سحب قد تضيف بكرة صغيرة 1-3 فائزين أو تضاعف الأرباح ×2/×3 أو تمنح الجائزة الكبرى.',jackpot:'الجائزة الكبرى: 2% من كل رهان تذهب للمجمع؛ عند سحبها يتقاسم الفائزون 10%-70% حسب حجم الرهان.',sep:'، '},
 };
 const NAMES={tomato:['番茄','طماطم'],corn:['玉米','ذرة'],carrot:['胡萝卜','جزر'],lettuce:['生菜','خس'],shrimp:['虾','روبيان'],fish:['鱼','سمك'],steak:['牛排','ستيك'],chicken:['烤鸡','دجاج'],salad:['沙拉','سلطة'],pizza:['披萨','بيتزا'],broccoli:['西兰花','بروكلي'],crab:['螃蟹','سلطعون'],goat:['山羊','ماعز'],horse:['马','حصان'],deer:['鹿','غزال'],bull:['公牛','ثور'],wolf:['狼','ذئب'],leopard:['豹','فهد'],eagle:['鹰','نسر'],tiger:['虎','نمر'],herbivores:['食草动物','آكلات العشب'],carnivores:['食肉动物','آكلات اللحوم'],turnip:['萝卜','لفت'],mushroom:['蘑菇','فطر'],sausage:['香肠','نقانق'],drumstick:['炸鸡腿','فخذ دجاج'],cabbage:['卷心菜','ملفوف'],hotdog:['热狗','هوت دوغ'],kebab:['烤串','كباب'],ham:['火腿','لحم مدخن'],rabbit:['兔子','أرنب'],cow:['奶牛','بقرة'],sheep:['绵羊','خروف'],fox:['狐狸','ثعلب'],bear:['熊','دب'],lion:['狮子','أسد'],grass:['草料大奖','جائزة العشب'],meat:['肉食大奖','جائزة اللحم'],grape:['葡萄','عنب'],lobster:['龙虾','كركند'],beef:['牛肉','لحم بقري'],cherry:['樱桃','كرز'],lemon:['柠檬','ليمون'],orange:['橙子','برتقال'],plum:['李子','برقوق'],bell:['铃铛','جرس'],watermelon:['西瓜','بطيخ'],seven:['幸运 7','سبعة'],star:['星星','نجمة'],apple:['苹果','تفاح'],mango:['芒果','مانجو'],strawberry:['草莓','فراولة'],lucky:['幸运','محظوظ'],superlucky:['超级幸运','محظوظ جداً']};
-const label=id=>{const n=NAMES[id],l=locale();return n&&l!=='en'?n[l==='zh'?0:1]:id.replace(/^\w/,c=>c.toUpperCase());};
+// Game-specific option names [en, zh, ar] where ids are generic.
+const GAME_NAMES={
+ glorycup:{team1:['Morocco','摩洛哥','المغرب'],team2:['Netherlands','荷兰','هولندا'],team3:['Portugal','葡萄牙','البرتغال'],team4:['Germany','德国','ألمانيا'],team5:['Brazil','巴西','البرازيل'],team6:['Argentina','阿根廷','الأرجنتين'],team7:['Spain','西班牙','إسبانيا'],team8:['France','法国','فرنسا']},
+ footballleague:{club1:['Lions','雄狮','الأسود'],club2:['Eagles','雄鹰','النسور'],club3:['Stags','雄鹿','الأيائل'],club4:['Wolves','群狼','الذئاب'],club5:['Tridents','三叉戟','الرماح'],club6:['Tigers','猛虎','النمور'],club7:['Castle','城堡','القلعة'],club8:['Pegasus','飞马','الحصان المجنح']},
+};
+let current=null;
+export const optionName=(id,game=current)=>{const l=locale(),g=GAME_NAMES[game]?.[id];if(g)return g[l==='zh'?1:l==='ar'?2:0];if(/^club\d+$/.test(id)&&game==='bountyfootball')return 'X'+id.slice(4);const n=NAMES[id];return n&&l!=='en'?n[l==='zh'?0:1]:id.replace(/^\w/,c=>c.toUpperCase());};
+const label=id=>optionName(id);
 
 export function wheelRules(game){
- const L=W[locale()]||W.en,drawn=game.options.filter(o=>!o.covers),groups=game.options.filter(o=>o.covers);
+ current=game.id;const L=W[locale()]||W.en,drawn=game.options.filter(o=>!o.covers),groups=game.options.filter(o=>o.covers);
  const lines=[L.pick(game.maxOptionsPerRound),L.time(game.round.betMs/1000),L.pay(drawn.map(o=>`${label(o.id)} ×${o.multiplier}`).join(L.sep))];
  for(const g of groups)lines.push(L.group(label(g.id),g.multiplier,g.covers.map(label).join('/')));
  for(const s of game.specials||[])lines.push(L.special(label(s.id),game.options.filter(o=>o.group===s.covers).map(o=>label(o.id)).join('/')));
