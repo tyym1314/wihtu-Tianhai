@@ -28,7 +28,7 @@ async function database(){
  try{const module=await import('data:text/javascript;base64,'+Buffer.from(raw+'\n// fixture '+fixtureId).toString('base64'));return{module,pools,events,sqlError};}finally{delete globalThis[key];}
 }
 test('borrowed autocommit uses only the held client; all six budgets and standalone queries remain',async()=>{
- const d=await database(),{module:m}=d;assert.deepEqual(d.pools.map(p=>p.config.max),[20,8,16,16,16,2]);assert.equal(d.pools.reduce((n,p)=>n+p.config.max,0),78);
+ const d=await database(),{module:m}=d;assert.deepEqual(d.pools.map(p=>p.config.max),[20,16,16,16,16,2]);assert.equal(d.pools.reduce((n,p)=>n+p.config.max,0),86);
  const result=await m.locked('pvp:roomA',async()=>{const a=await m.pool.query('SELECT own_read', ['appA','userA']);const b=await m.pool.query('UPDATE own_write',['appA','roomA']);assert.equal(a.rows[0].client,b.rows[0].client);return a.rows[0];});assert.equal(result.pool,'pvp');assert.equal(d.events.filter(e=>e.kind==='connect'&&e.pool==='main').length,0);
  const outside=await m.pool.query('SELECT outside',['appB']);assert.equal(outside.rows[0].pool,'main');await m.closePools();assert.equal(d.events.filter(e=>e.kind==='end').length,6);
 });

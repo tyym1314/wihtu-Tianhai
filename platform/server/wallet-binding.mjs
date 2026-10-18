@@ -82,6 +82,9 @@ export async function getWalletStatus(appId){
 
 /** One-time binding for a pristine paused sandbox. No reference balance is read or copied. */
 export async function configureWallet(appId,input,actor){
+  bindingCache.delete(appId);try{return await configureWalletUncached(appId,input,actor);}finally{bindingCache.delete(appId);}
+}
+async function configureWalletUncached(appId,input,actor){
   if(input?.provider==='platform'){
     if(Object.keys(input).some(key=>key!=='provider'))fail(400,'INVALID_REQUEST');
     if(!safeId(appId)||typeof actor!=='string'||!actor||actor.length>128)fail(400,'INVALID_ACTOR');
@@ -170,9 +173,14 @@ export async function signedPartnerRequest(app,binding,method,path,raw,requestId
   return{status,body};
 }
 /** Shared transport for probability, PvP and balance probes. No money retry is performed here. */
+// Bindings change only through configureWallet (which clears this cache); a short TTL bounds other processes.
+const bindingCache=new Map();
+async function bindingFor(appId){const hit=bindingCache.get(appId);if(hit&&hit.until>Date.now())return hit.row;
+ const row=(await pool.query('SELECT * FROM gp_wallet_bindings WHERE app_id=$1',[appId])).rows[0];if(pool===defaultPool)bindingCache.set(appId,{row,until:Date.now()+3000});return row;}
+export const forgetWalletBinding=appId=>bindingCache.delete(appId);
 export async function walletRequest(app,method,path,raw='',requestId=id('walletquery')){
   if(!app||!safeId(app.id)||!['GET','POST'].includes(method)||typeof raw!=='string'||!/^\/wallet\/v1(?:\/[A-Za-z0-9_-]+)+$/.test(path)||!safeId(requestId)||(method==='GET'&&raw))fail(400,'INVALID_WALLET_REQUEST');
-  const binding=(await pool.query('SELECT * FROM gp_wallet_bindings WHERE app_id=$1',[app.id])).rows[0];
+  const binding=await bindingFor(app.id);
   if(binding?.provider==='platform')return platformWalletRequest(pool===defaultPool?walletPool:pool,app,binding,method,path,raw,requestId);
   if(binding?.provider==='simple'){if(app.wallet_url!==binding.wallet_url||scopeFields.some(k=>scopeOf(app)[k]!==binding.scope[k]))fail(503,'WALLET_BINDING_CHANGED');return simpleWalletRequest(pool===defaultPool?walletPool:pool,app,binding,method,path,raw,requestId);}
   if(binding&&(app.wallet_url!==binding.wallet_url||scopeFields.some(k=>scopeOf(app)[k]!==binding.scope[k])))fail(503,'WALLET_BINDING_CHANGED');

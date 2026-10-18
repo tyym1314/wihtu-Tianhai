@@ -1553,7 +1553,7 @@
     "platform/scripts/build-release.mjs": "f9dd24f187f2aa6efefd6bbdc31971eaedf2528393791aaca43182c605e5b963",
     "platform/scripts/retained-assets.mjs": "f5b60cc0142008c74316afcb507cdb3eb386c1c0b4a3f09f2014e88a49372caa",
     "platform/server/admission-status.mjs": "0e9a5b0143dd9a30b4f3d6852137671d2cb11c4a748629baadcad0b3dfcd81f2",
-    "platform/server/casino/arcade.mjs": "3da34f13a77175674974f9c229a1b32373ac2d7c473526a1419584ba10c7230d",
+    "platform/server/casino/arcade.mjs": "d707c3694bb1a6bc863fb19d954ac26400b959e8c301bc17066e757d6417bd12",
     "platform/server/casino/cards3.mjs": "1ede2140d111b4ecb302a5316f26fb3fc9de7130d95d5f1a7ac0c8aa0f033bd1",
     "platform/server/casino/crash.mjs": "4d71ddbec6be658375c0bdb6e75232a3e6e481a8a8a7ea546fde1c6e50969281",
     "platform/server/casino/instant.mjs": "5f38813b115f52e09cb101596c61440a22c5b3ee52f778ad371ac55d181d395a",

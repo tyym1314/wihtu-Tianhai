@@ -27,7 +27,7 @@ async function bounded(p){let timer;try{return await Promise.race([p,new Promise
 const conserved=s=>assert.equal(s.ledger.reduce((n,l)=>n+BigInt(l.delta_available)+BigInt(l.delta_reserved),0n),0n);
 
 test('reference wallet has an independent bounded pool; same-scope waiters leave connections for unrelated work',async()=>{
- assert.notEqual(walletPool,pool);assert.equal(walletPool.options.max,8);assert.equal(pool.options.max,20);
+ assert.notEqual(walletPool,pool);assert.equal(walletPool.options.max,16);assert.equal(pool.options.max,20);
  const f=await fixture(),other=await fixture(),release=await heldScope(f),requests=[];let finished=0;
  try{
   for(let i=0;i<13;i++)requests.push(call(f,balancePath(f)).then(r=>{finished++;return r;}));

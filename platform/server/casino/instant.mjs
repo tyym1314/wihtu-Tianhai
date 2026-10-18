@@ -32,7 +32,9 @@ export async function migrateInstant(db=pool){
  ALTER TABLE casino_spins ADD COLUMN IF NOT EXISTS base_stake_minor bigint;
  ALTER TABLE casino_spins DROP CONSTRAINT IF EXISTS casino_spins_status_check;
  ALTER TABLE casino_spins ADD CONSTRAINT casino_spins_status_check CHECK(status IN ('AUTHORIZING','ACCEPTED','CHOOSING','RESULT_FIXED','SETTLED','REJECTED'));
- CREATE INDEX IF NOT EXISTS casino_spins_open ON casino_spins(status,updated_at) WHERE status NOT IN ('SETTLED','REJECTED');`);
+ CREATE INDEX IF NOT EXISTS casino_spins_open ON casino_spins(status,updated_at) WHERE status NOT IN ('SETTLED','REJECTED');
+  CREATE INDEX IF NOT EXISTS casino_spins_user_open ON casino_spins(app_id,external_user_id) WHERE status NOT IN ('SETTLED','REJECTED');
+  CREATE INDEX IF NOT EXISTS casino_spins_user_recent ON casino_spins(app_id,external_user_id,game_id,created_at DESC);`);
 }
 
 const view=s=>({id:s.id,request_id:s.request_id,status:s.status,mode:s.mode||'normal',stake_minor:String(s.stake_minor),base_stake_minor:String(s.base_stake_minor??s.stake_minor),

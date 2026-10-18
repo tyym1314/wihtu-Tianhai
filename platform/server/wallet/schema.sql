@@ -23,3 +23,11 @@ CREATE TABLE IF NOT EXISTS wallet_operation_ids (partner_id text NOT NULL, app_i
 
 -- Bounded nonredeemable coin issuer account; existing 47-table structure remains.
 ALTER TABLE wallet_scopes ADD COLUMN IF NOT EXISTS internal_coin_issued bigint NOT NULL DEFAULT 0 CHECK(internal_coin_issued>=0);
+
+-- Hot-path aggregates: per-player wallet operations add their App-level deltas to one of
+-- 16 shard rows instead of locking wallet_scopes. Logical totals = wallet_scopes + SUM(shards);
+-- a background fold moves shard deltas back into wallet_scopes.
+CREATE TABLE IF NOT EXISTS wallet_scope_shards (scope_id text NOT NULL REFERENCES wallet_scopes, shard integer NOT NULL CHECK(shard>=0 AND shard<16),
+ treasury_available bigint NOT NULL DEFAULT 0, treasury_reserved bigint NOT NULL DEFAULT 0, treasury_inbound bigint NOT NULL DEFAULT 0,
+ fee_available bigint NOT NULL DEFAULT 0, fee_pending bigint NOT NULL DEFAULT 0, ledger_version bigint NOT NULL DEFAULT 0, PRIMARY KEY(scope_id,shard));
+CREATE INDEX IF NOT EXISTS wallet_probability_user_expiry ON wallet_probability(scope_id,external_user_id,expires_at) WHERE state='AUTHORIZED';

@@ -52,7 +52,7 @@ export async function createSimpleWalletScope(db,app){
 }
 
 async function internal(db,app,method,path,raw,requestId){
- try{return(await ledgerRequest(db,{scope:scopeOf(app),method,path,raw,requestId})).body;}
+ try{return(await ledgerRequest(db,{scope:scopeOf(app),method,path,raw,requestId,fast:true})).body;}
  catch(error){if(error instanceof WalletError)fail(error.status,error.code,error.message);throw error;}
 }
 
@@ -79,7 +79,7 @@ async function attemptDebit(db,app,binding,leg){
   const current=(await t.db.query('SELECT state FROM gp_simple_wallet_legs WHERE id=$1 FOR UPDATE',[leg.id])).rows[0];if(current?.state!=='PENDING')return;
   await t.hold(leg.external_user_id,'IN',String(leg.amount_minor));await t.finish(leg.external_user_id,'IN',String(leg.amount_minor),true,CLEARING);
   await t.db.query("UPDATE gp_simple_wallet_legs SET state='APPLIED',updated_at=now() WHERE id=$1",[leg.id]);
- });
+ },{player:leg.external_user_id});
  return{...leg,state:'APPLIED'};
 }
 
@@ -91,7 +91,7 @@ async function attemptCredit(db,app,binding,leg){
   const current=(await t.db.query('SELECT state FROM gp_simple_wallet_legs WHERE id=$1 FOR UPDATE',[leg.id])).rows[0];if(current?.state!=='HELD')return;
   await t.finish(leg.external_user_id,'OUT',String(leg.amount_minor),true,CLEARING);
   await t.db.query("UPDATE gp_simple_wallet_legs SET state='DONE',updated_at=now() WHERE id=$1",[leg.id]);
- });
+ },{player:leg.external_user_id});
  return true;
 }
 
@@ -102,12 +102,13 @@ export async function sweepUser(db,app,binding,user,{reason='payout',reference=n
  const legId='out_'+randomUUID().replaceAll('-','');let held=null;
  try{
   await withTransferLedger(db,scopeOf(app),legId,async t=>{
-   const row=(await t.db.query('SELECT available FROM wallet_users WHERE scope_id=$1 AND external_user_id=$2',[scopeId(app),user])).rows[0];
+   const row=await t.account(user).catch(e=>{if(e.code==='NOT_FOUND')return null;throw e;});
    if(!row||BigInt(row.available)<=0n)return;
-   await t.hold(user,'OUT',String(row.available));
-   await t.db.query("INSERT INTO gp_simple_wallet_legs(id,app_id,direction,external_user_id,amount_minor,reason,reference_id,game_id,state) VALUES($1,$2,'out',$3,$4,$5,$6,$7,'HELD')",[legId,app.id,user,String(row.available),reason,reference,game]);
-   held={id:legId,app_id:app.id,external_user_id:user,amount_minor:String(row.available),reason,reference_id:reference,game_id:game,attempts:0};
-  });
+   const amount=String(row.available);
+   await t.hold(user,'OUT',amount);
+   await t.db.query("INSERT INTO gp_simple_wallet_legs(id,app_id,direction,external_user_id,amount_minor,reason,reference_id,game_id,state) VALUES($1,$2,'out',$3,$4,$5,$6,$7,'HELD')",[legId,app.id,user,amount,reason,reference,game]);
+   held={id:legId,app_id:app.id,external_user_id:user,amount_minor:amount,reason,reference_id:reference,game_id:game,attempts:0};
+  },{player:user});
  }catch(error){if(error.code==='INSUFFICIENT_FUNDS')return null;throw error;}
  if(held)await attemptCredit(db,app,binding,held);
  return held;

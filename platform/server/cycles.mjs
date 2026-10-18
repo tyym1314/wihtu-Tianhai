@@ -20,8 +20,9 @@ const recoveryCandidates=`SELECT c.id FROM gp_cycles c
     AND COALESCE((c.error->>'next_attempt_at')::timestamptz,c.updated_at)<=now()
     AND (o.id IS NULL OR o.state<>'PENDING' OR o.next_attempt_at<=now())`;
 export async function command(app,cycleId,path,body){
-  const raw=JSON.stringify(body);await pool.query('INSERT INTO gp_operations(id,app_id,aggregate_id,path,raw_body) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO NOTHING',[body.request_id,app.id,cycleId,path,raw]);
-  let op=(await pool.query('SELECT * FROM gp_operations WHERE id=$1',[body.request_id])).rows[0];
+  const raw=JSON.stringify(body);
+  let op=(await pool.query('INSERT INTO gp_operations(id,app_id,aggregate_id,path,raw_body) VALUES($1,$2,$3,$4,$5) ON CONFLICT(id) DO NOTHING RETURNING *',[body.request_id,app.id,cycleId,path,raw])).rows[0]
+    ||(await pool.query('SELECT * FROM gp_operations WHERE id=$1',[body.request_id])).rows[0];
   if(op.path!==path)fail(409,'IDEMPOTENCY_CONFLICT');
   // Always reuse persisted bytes, including the original authorization expiry.
   if(op.state==='SUCCEEDED')return op.response;

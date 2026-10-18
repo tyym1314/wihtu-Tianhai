@@ -2,7 +2,7 @@
 // usage: node scripts/casino-load-provision.mjs 320 && node scripts/casino-load.mjs <players> <seconds>  (local sandbox only)
 import {readFileSync} from 'node:fs';
 import {randomUUID} from 'node:crypto';
-const [N=300,SECS=180]=process.argv.slice(2).map(Number);
+const [N=300,SECS=180]=process.argv.slice(2).map(Number),OFFSET=Number(process.env.LOAD_OFFSET||0);
 const base='http://127.0.0.1:8797',origin='http://127.0.0.1:8795',creds=JSON.parse(readFileSync(new URL('../.local/development-credentials.json',import.meta.url)));
 let cookie='';const rid=()=>randomUUID().replaceAll('-','');
 async function admin(path,body){const r=await fetch(base+path,{method:body?'POST':'GET',headers:{'content-type':'application/json',origin,cookie},body:body&&JSON.stringify(body)});const s=r.headers.get('set-cookie');if(s)cookie=s.split(';')[0];return r.json();}
@@ -14,8 +14,8 @@ const app=(await admin('/api/admin/apps')).apps.find(a=>a.environment==='sandbox
 // Mix: shared-round wheel 40%, crash 20%, line slot 20%, tumble slot 10%, arcade 10%.
 const plan=i=>{const r=i%10;return r<4?['greedylion','greedycat2','fruitparty','roulette'][i%4]:r<6?['rocketstar2','crash'][i%2]:r<8?['oceanslot','mahjongslot','sphinxlegend'][i%3]:r<9?'olympus':'monster';};
 async function session(i){const game=plan(i);
- const l=await admin(`/api/admin/apps/${app.id}/launch`,{game_id:game,external_user_id:`lt_${i}`});
- const t=performance.now();const r=await fetch(base+'/v1/launch/exchange',{method:'POST',headers:{'content-type':'application/json',origin},body:JSON.stringify({launch_code:l.launch_code,client_instance_id:`lt${i}`,host_origin:origin,game_id:game})});
+ const l=await admin(`/api/admin/apps/${app.id}/launch`,{game_id:game,external_user_id:`lt_${i+OFFSET}`});
+ const t=performance.now();const r=await fetch(base+'/v1/launch/exchange',{method:'POST',headers:{'content-type':'application/json',origin},body:JSON.stringify({launch_code:l.launch_code,client_instance_id:`lt${i+OFFSET}`,host_origin:origin,game_id:game})});
  const d=await r.json();rec('exchange',performance.now()-t,r.ok,d.error?.code||d.code);return {game,token:d.access_token};}
 const end=Date.now()+SECS*1000;
 async function player(i){

@@ -62,3 +62,6 @@ ALTER TABLE gp_apps ADD CONSTRAINT gp_apps_environment_check CHECK(environment I
 -- Explicit internal nonredeemable coins are separate from the old zero-ledger profile.
 ALTER TABLE gp_production_admission DROP CONSTRAINT IF EXISTS gp_production_admission_profile_check;
 ALTER TABLE gp_production_admission ADD CONSTRAINT gp_production_admission_profile_check CHECK(profile IN ('firstparty-free-v1','firstparty-internal-games-v1'));
+-- Lookups by business aggregate (round void/refund, cycle recovery) and pending-by-App (health) must not scan the table.
+CREATE INDEX IF NOT EXISTS gp_operations_aggregate ON gp_operations(aggregate_id);
+CREATE INDEX IF NOT EXISTS gp_operations_pending ON gp_operations(app_id) WHERE state='PENDING';

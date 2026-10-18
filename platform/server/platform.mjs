@@ -83,9 +83,10 @@ export async function createSession(app,b,raw,{playerId=null}={}){
       const player=(await c.query('SELECT id FROM gp_players WHERE id=$1 AND active FOR SHARE',[playerId])).rows[0];
       if(!player)fail(401,'LOGIN_REQUIRED');
     }
-    // Configuration binding and session admission share this lock. A stale
-    // authenticated App object cannot route a new session to an old wallet.
-    app=(await c.query('SELECT * FROM gp_apps WHERE id=$1 FOR UPDATE',[app.id])).rows[0];if(!app)fail(404,'NOT_FOUND');
+    // Configuration changes take this row FOR UPDATE; admission takes it FOR SHARE, so a stale
+    // authenticated App object cannot route a new session to an old wallet, while concurrent
+    // launches of the same App do not serialize behind each other.
+    app=(await c.query('SELECT * FROM gp_apps WHERE id=$1 FOR SHARE',[app.id])).rows[0];if(!app)fail(404,'NOT_FOUND');
     const externalUserId=hosted?await appPlayerId(c,app.id,playerId):b.external_user_id;
     if(hosted&&b.external_user_id!==undefined&&b.external_user_id!==externalUserId)fail(403,'SCOPE_FORBIDDEN');
     const request=hosted?{...b,external_user_id:externalUserId}:b;

@@ -202,8 +202,8 @@ test('internal issuer is a real conserved account and all legacy integrity keys 
 });
 
 
-test('old FREE11 migration uses complete original CAS, keeps all 47 tables and starts closed without issued coins',()=>{
- assert.equal(seamEvidence.tables.length,47);assert.equal(seamEvidence.before.app.game_ids.length,11);assert.equal(seamEvidence.after.app.game_ids.length,13);
+test('old FREE11 migration uses complete original CAS, keeps all 48 tables (47 + wallet_scope_shards) and starts closed without issued coins',()=>{
+ assert.equal(seamEvidence.tables.length,48);assert.equal(seamEvidence.before.app.game_ids.length,11);assert.equal(seamEvidence.after.app.game_ids.length,13);
  const allowed=new Set(['game_ids']);for(const key of Object.keys(seamEvidence.before.app))if(!allowed.has(key))assert.deepEqual(seamEvidence.after.app[key],seamEvidence.before.app[key],key);
  assert.deepEqual(seamEvidence.after.binding,seamEvidence.before.binding);assert.deepEqual(seamEvidence.after.wallet_scope,{...seamEvidence.before.wallet_scope,internal_coin_issued:0});
 });

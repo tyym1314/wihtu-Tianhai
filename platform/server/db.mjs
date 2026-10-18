@@ -1,7 +1,9 @@
 import pg from 'pg';
 import {AsyncLocalStorage} from 'node:async_hooks';
 const connectionString=process.env.OASIS_DATABASE_URL || 'postgres://oasis_local@127.0.0.1:5487/oasis_platform';
-export const pool = new pg.Pool({connectionString,max:20});
+// Pool budgets per process; in cluster mode lower them so all workers fit max_connections.
+const budget=(name,fallback)=>Number(process.env[name]||fallback);
+export const pool = new pg.Pool({connectionString,max:budget('OASIS_DB_POOL_MAX',20)});
 // Queries inside an already-owned gameplay lock need no second checkout.
 // Keep transactions and explicit connect() on their original independent pool;
 // only promise text queries use this private, lifetime-bounded autocommit lease.
@@ -27,14 +29,15 @@ pool.query=function(...args){
 };
 // The optional reference wallet has its own bounded connection budget. Its
 // scope transactions must not occupy the gameplay/authentication SQL pool.
-export const walletPool = new pg.Pool({connectionString,max:8});
+// Per-player wallet transactions run in parallel; size with OASIS_WALLET_POOL_MAX.
+export const walletPool = new pg.Pool({connectionString,max:Number(process.env.OASIS_WALLET_POOL_MAX||16)});
 // Waiting for an advisory lock must never exhaust connections needed by the
 // holder to write a result or ask the independent wallet for a receipt.
-const sessionLocks=new pg.Pool({connectionString,max:16});
-const cycleLocks=new pg.Pool({connectionString,max:16});
+const sessionLocks=new pg.Pool({connectionString,max:budget('OASIS_DB_LOCK_POOL_MAX',16)});
+const cycleLocks=new pg.Pool({connectionString,max:budget('OASIS_DB_LOCK_POOL_MAX',16)});
 // Physics can hold a room lock for hundreds of milliseconds. Keep those
 // connections separate from probability settlement/recovery locks.
-const pvpLocks=new pg.Pool({connectionString,max:16});
+const pvpLocks=new pg.Pool({connectionString,max:budget('OASIS_DB_LOCK_POOL_MAX',16)});
 // Check runners call back into normal gameplay over HTTP. They must never hold
 // connections from the gameplay lock pool while waiting for that work.
 const integrationLocks=new pg.Pool({connectionString,max:2});

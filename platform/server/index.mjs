@@ -3,7 +3,7 @@ import {createServer} from 'node:http';
 import {serveGameAsset as serveLegacy} from './game-assets.mjs';
 import {pool,walletPool,tx,closePools} from './db.mjs';
 import {id,hash,unseal,readBody,send,fail,ApiError} from './security.mjs';
-import {migrateWallet,createWalletServer} from './wallet/index.mjs';
+import {migrateWallet,createWalletServer,expireProbabilityHolds,foldScopeShards} from './wallet/index.mjs';
 import {migratePlatform,seedPlatform,origin,login,adminUser,appById,createApp,audit,authenticatePartner,createSession,exchange,playSession,gamesFor,scope,upgradeArenaSandbox} from './platform.mjs';
 import {publicSession,spin,acknowledge,recoverPending,walletRequest,walletBalance} from './cycles.mjs';
 import {migratePvp,routePvp,tickPvp,readPvpMatch} from './pvp/index.mjs';
@@ -184,7 +184,9 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
   }
   fail(404,'NOT_FOUND');
 }catch(e){if(res.headersSent||res.destroyed)return;const status=e.status||500;if(status===429)res.setHeader('retry-after',String(e.retryAfterSeconds||60));if(status>=500&&!(e instanceof ApiError))console.error('[platform]',e.code||e.message);const message=(e.status?e.message:'服务暂时不可用，请保留原请求重试').slice(0,512);if((req.url||'').startsWith('/v1/')){const allowed=['INVALID_REQUEST','AMOUNT_MISMATCH','SIGNATURE_INVALID','TIMESTAMP_EXPIRED','NONCE_REPLAY','LAUNCH_CODE_INVALID','SCOPE_FORBIDDEN','GAME_DISABLED','NOT_FOUND','IDEMPOTENCY_CONFLICT','INVALID_STATE','RATE_LIMITED','INTERNAL_ERROR'];const code=(allowed.includes(e.code)||TRANSFER_PUBLIC_CODES.includes(e.code))?e.code:status>=500?'INTERNAL_ERROR':status===403?'SCOPE_FORBIDDEN':status===409?'INVALID_STATE':'INVALID_REQUEST';send(res,status,{code,message,trace_id:id('trace'),retryable:status>=500||status===429});}else send(res,status,{error:{code:e.code||'INTERNAL_ERROR',message}});}});}
-await preflightRuntime(pool);await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateSimpleWallet(pool);await migrateCasino(pool);await migrateInstant(pool);await migrateArcade(pool);
+// Cluster mode: the leader worker migrates and runs background jobs; followers only serve HTTP.
+const LEADER=process.env.OASIS_WORKER_ROLE!=='follower';
+await preflightRuntime(pool);if(LEADER){await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateSimpleWallet(pool);await migrateCasino(pool);await migrateInstant(pool);await migrateArcade(pool);
 // Drop game ids that no longer exist (renamed casino pilots) so App game lists stay valid.
 await pool.query(`UPDATE gp_apps SET game_ids=(SELECT COALESCE(jsonb_agg(g),'[]'::jsonb) FROM jsonb_array_elements_text(game_ids) g WHERE g=ANY($1::text[]))
  WHERE EXISTS (SELECT 1 FROM jsonb_array_elements_text(game_ids) g WHERE NOT g=ANY($1::text[]))`,[ALL_GAME_IDS]);
@@ -192,30 +194,36 @@ if(runtime.production&&runtime.partnerAdmission){
  // Partner Apps get newly released casino games; the first-party App keeps its reviewed catalogue.
  for(const app of (await pool.query("SELECT * FROM gp_apps WHERE environment='production'")).rows)
   if(isPartnerApp(runtime,app)){const missing=CASINO_IDS.filter(g=>!app.game_ids.includes(g));if(missing.length)await pool.query('UPDATE gp_apps SET game_ids=game_ids||$2::jsonb WHERE id=$1',[app.id,JSON.stringify(missing)]);}
-}for(const {scope_id} of (await walletPool.query('SELECT scope_id FROM wallet_scopes')).rows)await registerCasinoProfiles(walletPool,scope_id);await migrateIntegrationChecks();await upgradeArenaSandbox();await migrateTransfers(pool);
+}for(const {scope_id} of (await walletPool.query('SELECT scope_id FROM wallet_scopes')).rows)await registerCasinoProfiles(walletPool,scope_id);await migrateIntegrationChecks();await upgradeArenaSandbox();await migrateTransfers(pool);}
 // Fail before listening if persisted credentials cannot be decrypted with this instance key.
 for(const key of (await pool.query('SELECT secret_enc FROM gp_keys')).rows)unseal(key.secret_enc);
-const wallet=process.env.OASIS_START_WALLET==='0'?null:createWalletServer(walletPool);if(wallet)await new Promise(r=>wallet.listen(WALLET_PORT,'127.0.0.1',r));
-roomTimingSink=await startRequestTimingSink().catch(()=>null);
+const wallet=process.env.OASIS_START_WALLET==='0'||(!LEADER&&process.env.OASIS_REFERENCE_WALLET_ALL_WORKERS!=='1')?null:createWalletServer(walletPool);if(wallet)await new Promise(r=>wallet.listen(WALLET_PORT,'127.0.0.1',r));
+roomTimingSink=LEADER?await startRequestTimingSink().catch(()=>null):null;
 roomTimingSink?.closed.then(result=>console.log(JSON.stringify({event:'oasis.room_timing.closed',boot_id:result.boot_id,pid:result.pid,
  state:result.state,reason:result.reason,incomplete:result.incomplete,confirmed_written_records:result.confirmed_written_records,
  confirmed_written_bytes:result.confirmed_written_bytes,dropped:result.dropped}))).catch(()=>{});
 const server=createPlatformServer();await new Promise(r=>server.listen(PORT,'127.0.0.1',r));
-const timer=setInterval(()=>recoverPending().catch(e=>console.error('[recovery]',e.code||e.message)),3000);timer.unref();
-const arcadeTimer=setInterval(()=>recoverArcade().catch(e=>console.error('[casino arcade]',e.code||e.message)),5000);arcadeTimer.unref();
-const instantTimer=setInterval(()=>recoverInstant().catch(e=>console.error('[casino spins]',e.code||e.message)),3000);instantTimer.unref();
-let casinoTicking=false;const casinoTimer=setInterval(()=>{if(casinoTicking)return;casinoTicking=true;tickCasino().catch(e=>console.error('[casino rounds]',e.code||e.message)).finally(()=>{casinoTicking=false;});},250);casinoTimer.unref();
-const pvpTimer=setInterval(()=>tickPvp().catch(e=>console.error('[arena recovery]',e.code||e.message)),250);pvpTimer.unref();
-const integrationTimer=setInterval(()=>recoverIntegrationChecks().catch(e=>console.error('[integration recovery]',e.code||e.message)),3000);integrationTimer.unref();
+// Background jobs run only on the leader worker; stop() clears them on shutdown.
+let timer,arcadeTimer,instantTimer,casinoTimer,pvpTimer,integrationTimer,simpleTimer,walletTimer,transferTimer;
+if(LEADER){
+timer=setInterval(()=>recoverPending().catch(e=>console.error('[recovery]',e.code||e.message)),3000);timer.unref();
+arcadeTimer=setInterval(()=>recoverArcade().catch(e=>console.error('[casino arcade]',e.code||e.message)),5000);arcadeTimer.unref();
+instantTimer=setInterval(()=>recoverInstant().catch(e=>console.error('[casino spins]',e.code||e.message)),3000);instantTimer.unref();
+let casinoTicking=false;casinoTimer=setInterval(()=>{if(casinoTicking)return;casinoTicking=true;tickCasino().catch(e=>console.error('[casino rounds]',e.code||e.message)).finally(()=>{casinoTicking=false;});},250);casinoTimer.unref();
+pvpTimer=setInterval(()=>tickPvp().catch(e=>console.error('[arena recovery]',e.code||e.message)),250);pvpTimer.unref();
+integrationTimer=setInterval(()=>recoverIntegrationChecks().catch(e=>console.error('[integration recovery]',e.code||e.message)),3000);integrationTimer.unref();
 const simpleBinding=async appId=>{const app=(await pool.query('SELECT * FROM gp_apps WHERE id=$1',[appId])).rows[0];const binding=(await pool.query("SELECT * FROM gp_wallet_bindings WHERE app_id=$1 AND provider='simple'",[appId])).rows[0];return app&&binding?{app,binding}:null;};
-let simpleRecovering=false;const simpleTimer=setInterval(()=>{if(simpleRecovering)return;simpleRecovering=true;recoverSimpleWallets(walletPool,simpleBinding).catch(e=>console.error('[simple wallet recovery]',e.code||e.message)).finally(()=>{simpleRecovering=false;});},3000);simpleTimer.unref();
-const transferTimer=setInterval(()=>transfers.recoverPending().catch(e=>console.error('[transfer recovery]',e.code||e.name)),3000);transferTimer.unref();
+let simpleRecovering=false;simpleTimer=setInterval(()=>{if(simpleRecovering)return;simpleRecovering=true;recoverSimpleWallets(walletPool,simpleBinding).catch(e=>console.error('[simple wallet recovery]',e.code||e.message)).finally(()=>{simpleRecovering=false;});},3000);simpleTimer.unref();
+let walletMaintaining=false,walletFoldAt=0;walletTimer=setInterval(()=>{if(walletMaintaining)return;walletMaintaining=true;(async()=>{await expireProbabilityHolds(walletPool);if(Date.now()>=walletFoldAt){walletFoldAt=Date.now()+10000;await foldScopeShards(walletPool);}})().catch(e=>console.error('[wallet maintenance]',e.code||e.message)).finally(()=>{walletMaintaining=false;});},3000);walletTimer.unref();
+transferTimer=setInterval(()=>transfers.recoverPending().catch(e=>console.error('[transfer recovery]',e.code||e.name)),3000);transferTimer.unref();
+}
+process.send?.({type:'oasis-ready',leader:LEADER});
 console.log(`OASIS ${runtime.environment} API http://127.0.0.1:${PORT}; reference wallet http://127.0.0.1:${WALLET_PORT}`);
 console.log('Local admin credentials: platform/.local/development-credentials.json');
 let stopping=false;
 async function stop(){
  if(stopping)return;stopping=true;
- clearInterval(timer);clearInterval(pvpTimer);clearInterval(integrationTimer);clearInterval(transferTimer);
+ for(const t of [timer,arcadeTimer,instantTimer,casinoTimer,pvpTimer,integrationTimer,simpleTimer,walletTimer,transferTimer])if(t)clearInterval(t);
  await Promise.all([new Promise(r=>server.close(r)),wallet?new Promise(r=>wallet.close(r)):Promise.resolve()]);
  await roomTimingSink?.close({reason:'shutdown'}).catch(()=>{});
  await transfers.close();await closeEnginePool();await closePools();process.exit(0);

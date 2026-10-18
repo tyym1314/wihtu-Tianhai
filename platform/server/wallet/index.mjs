@@ -37,30 +37,76 @@ async function scopeTransaction(pool,id,fn){
  finally{release();state.depth--;q.total--;if(!state.depth)q.scopes.delete(id);}
 }
 export const walletQueueStats=pool=>{const q=scopeQueues.get(pool);return{scopes:q?.scopes.size||0,admitted:q?.total||0,peak:q?.peak||0,rejected:q?.rejected||0,max_per_scope:64,max_total:2048};};
-async function withScope(pool,id,fn,{expire=true}={}){
+const AGG=['treasury_available','treasury_reserved','treasury_inbound','fee_available','fee_pending','ledger_version'];
+const SHARDS=16;
+function shardOf(key){let h=2166136261;for(let i=0;i<key.length;i++){h^=key.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0)%SHARDS;}
+/** Logical App totals = wallet_scopes row + SUM(shard deltas). The base row is locked only on the strict path. */
+async function loadScope(db,id,lock){
+ const s=(await db.query(`SELECT * FROM wallet_scopes WHERE scope_id=$1${lock?' FOR UPDATE':''}`,[id])).rows[0];if(!s)fail('NOT_FOUND','Scope not provisioned',404);
+ const sum=(await db.query(`SELECT ${AGG.map(k=>`COALESCE(SUM(${k}),0)::text AS ${k}`).join(',')} FROM wallet_scope_shards WHERE scope_id=$1`,[id])).rows[0];
+ for(const k of AGG)s[k]=(BigInt(s[k])+BigInt(sum[k])).toString();return s;
+}
+const newContext=(db,s,id,fast)=>({db,s,id,fast,users:new Map(),transactionId:'wl_'+randomUUID().replaceAll('-',''),operationId:'system',delta:{},shardKey:null,ledgerRows:[],aggLoaded:!fast});
+/** Persist this transaction's App-level deltas: strict path into wallet_scopes, hot path into one shard row. */
+async function flushDeltas(c){
+ await flushLedger(c);
+ const d=AGG.map(k=>c.delta[k]||0n);if(d.every(x=>x===0n))return;
+ if(!c.fast)await c.db.query(`UPDATE wallet_scopes SET ${AGG.map((k,i)=>`${k}=${k}+$${i+2}`).join(',')} WHERE scope_id=$1`,[c.id,...d.map(String)]);
+ else await c.db.query(`INSERT INTO wallet_scope_shards(scope_id,shard,${AGG.join(',')}) VALUES($1,$2,${AGG.map((_,i)=>`$${i+3}`).join(',')})
+  ON CONFLICT(scope_id,shard) DO UPDATE SET ${AGG.map(k=>`${k}=wallet_scope_shards.${k}+EXCLUDED.${k}`).join(',')}`,[c.id,shardOf(c.shardKey||c.operationId),...d.map(String)]);
+}
+function scopeChange(c,key,delta){if(c.aggLoaded)change(c.s,key,delta);c.delta[key]=(c.delta[key]||0n)+delta;}
+const scopeMeta=new Map();
+/** Hot path: immutable App identity from cache; App totals are loaded only when a check needs them. */
+async function scopeIdentity(db,id){let m=scopeMeta.get(id);if(!m){const row=(await db.query('SELECT * FROM wallet_scopes WHERE scope_id=$1',[id])).rows[0];if(!row)fail('NOT_FOUND','Scope not provisioned',404);m=Object.freeze({...row});scopeMeta.set(id,m);}return {...m,...Object.fromEntries(AGG.map(k=>[k,'0']))};}
+async function ensureTotals(c){if(c.aggLoaded)return;const t=await loadScope(c.db,c.id,false);for(const k of AGG)c.s[k]=(BigInt(t[k])+(c.delta[k]||0n)).toString();c.aggLoaded=true;}
+/** Strict path: the whole App serializes (PvP matches, provisioning, events, gifts, low-margin treasuries). */
+async function withScope(pool,id,fn,{expire=true,probabilityExpiry=true}={}){
  return scopeTransaction(pool,id,async db=>{
   await db.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[id]);
-  const s=(await db.query('SELECT * FROM wallet_scopes WHERE scope_id=$1 FOR UPDATE',[id])).rows[0];if(!s)fail('NOT_FOUND','Scope not provisioned',404);
-  const ctx={db,s,id,users:new Map(),transactionId:'wl_'+randomUUID().replaceAll('-',''),operationId:'system',dirty:false};
-  if(expire)await expireHolds(ctx);
+  const ctx=newContext(db,await loadScope(db,id,true),id,false);
+  // Hot-path Apps expire probability holds per player (same lock order as their spending), never here.
+  if(expire)await expireHolds(ctx,{probability:probabilityExpiry});
   const result=await fn(ctx);
-  if(ctx.dirty)await db.query('UPDATE wallet_scopes SET treasury_available=$2,treasury_reserved=$3,treasury_inbound=$4,fee_available=$5,fee_pending=$6,ledger_version=$7 WHERE scope_id=$1',[id,s.treasury_available,s.treasury_reserved,s.treasury_inbound,s.fee_available,s.fee_pending,s.ledger_version]);
+  await flushDeltas(ctx);
   return result;
  });
 }
-async function user(c,id){if(c.users.has(id))return c.users.get(id);const u=(await c.db.query('SELECT * FROM wallet_users WHERE scope_id=$1 AND external_user_id=$2',[c.id,id])).rows[0];if(!u)fail('NOT_FOUND','Wallet user does not exist',404);c.users.set(id,u);return u;}
+class FastPathUnavailable extends Error{}
+/**
+ * Hot path: no App-wide lock. Locks the business operation id and the player row(s), releases that player's
+ * expired probability holds, and writes App-level deltas to a shard. Different players run in parallel.
+ */
+async function withPlayer(pool,id,userId,fn,{expire=false}={}){
+ return transaction(pool,async db=>{
+  // The player row lock serializes every operation (and every duplicate) of this player.
+  const ctx=newContext(db,await scopeIdentity(db,id),id,true);ctx.shardKey=userId;
+  // An unknown player is rejected inside the command (as a recorded operation), not here.
+  if(userId){let found=true;try{await user(ctx,userId);}catch(e){if(e.code!=='NOT_FOUND')throw e;found=false;}if(found&&expire)await expireUserProbability(ctx,userId);}
+  const result=await fn(ctx);
+  await flushDeltas(ctx);
+  return result;
+ });
+}
+async function user(c,id){if(c.users.has(id))return c.users.get(id);const u=(await c.db.query('SELECT * FROM wallet_users WHERE scope_id=$1 AND external_user_id=$2 FOR UPDATE',[c.id,id])).rows[0];if(u&&!c.shardKey)c.shardKey=id;if(!u)fail('NOT_FOUND','Wallet user does not exist',404);c.users.set(id,u);return u;}
 async function saveUser(c,u){for(const k of ['available','reserved','credit_pending'])capacity(BigInt(u[k]));await c.db.query('UPDATE wallet_users SET available=$3,reserved=$4,credit_pending=$5 WHERE scope_id=$1 AND external_user_id=$2',[c.id,u.external_user_id,u.available,u.reserved,u.credit_pending]);}
 function change(row,key,delta){row[key]=(BigInt(row[key])+delta).toString();capacity(BigInt(row[key]));}
 function creditRoom(u,extra){capacity(BigInt(u.available)+BigInt(u.reserved)+BigInt(u.credit_pending)+extra);}
 async function ledger(c,account,available=0n,reserved=0n,meta={},operationId=c.operationId){
- await c.db.query('INSERT INTO wallet_ledger(scope_id,operation_id,transaction_id,account,delta_available,delta_reserved,meta) VALUES($1,$2,$3,$4,$5,$6,$7)',[c.id,operationId,c.transactionId,account,available.toString(),reserved.toString(),JSON.stringify(meta)]);
- change(c.s,'ledger_version',1n);c.dirty=true;
+ // Buffered; written in one statement before commit (ledger ids keep insertion order).
+ c.ledgerRows.push([operationId,account,available.toString(),reserved.toString(),JSON.stringify(meta)]);
+ scopeChange(c,'ledger_version',1n);
+}
+async function flushLedger(c){
+ if(!c.ledgerRows.length)return;const r=c.ledgerRows;c.ledgerRows=[];
+ await c.db.query('INSERT INTO wallet_ledger(scope_id,operation_id,transaction_id,account,delta_available,delta_reserved,meta) SELECT $1,o,$2,a,da,dr,m::jsonb FROM unnest($3::text[],$4::text[],$5::bigint[],$6::bigint[],$7::text[]) WITH ORDINALITY AS t(o,a,da,dr,m,n) ORDER BY n',
+  [c.id,c.transactionId,r.map(x=>x[0]),r.map(x=>x[1]),r.map(x=>x[2]),r.map(x=>x[3]),r.map(x=>x[4])]);
 }
 /** Internal transfer adapter only. Uses the very same lock and transaction as
  * game spending; it is never exposed as a generic HTTP balance mutation. */
-export async function withTransferLedger(pool,scope,operationId,fn){
+export async function withTransferLedger(pool,scope,operationId,fn,{player=null}={}){
  for(const field of fields)if(typeof scope?.[field]!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(scope[field]))fail('INVALID_REQUEST','Invalid transfer scope',400);
- return withScope(pool,scopeId(scope),async c=>{
+ const body=async c=>{
   c.operationId=operationId;
   return fn({db:c.db,scope:c.s,scopeId:c.id,transactionId:c.transactionId,
    async hold(userId,direction,value){
@@ -76,26 +122,56 @@ export async function withTransferLedger(pool,scope,operationId,fn){
     else if(direction==='OUT'){change(u,'reserved',-n);if(!succeeded)change(u,'available',n);await ledger(c,'user:'+userId,succeeded?0n:n,-n,{kind:succeeded?'transfer_out':'transfer_rejected'});if(succeeded)await ledger(c,clearingAccount,n,0n,{kind:'transfer_out'});}
     else fail('INVALID_REQUEST','Invalid transfer direction',400);
     await saveUser(c,u);
-   }
+   },
+   /** The locked player row (hot path) for read-then-hold decisions. */
+   async account(userId){return user(c,userId);}
   });
- },{expire:false});
+ };
+ if(player)return withPlayer(pool,scopeId(scope),player,c=>{c.operationId=operationId;return body(c);});
+ return withScope(pool,scopeId(scope),body,{expire:false});
+}
+/** Background: release expired probability holds player by player (no App-wide lock). */
+export async function expireProbabilityHolds(pool,limit=200){
+ const rows=(await pool.query("SELECT DISTINCT scope_id,external_user_id FROM wallet_probability WHERE state='AUTHORIZED' AND expires_at<=clock_timestamp() AND scope_id IN (SELECT DISTINCT scope_id FROM wallet_scope_shards) LIMIT $1",[limit])).rows;
+ for(const r of rows){try{await withPlayer(pool,r.scope_id,r.external_user_id,async()=>{},{expire:true});}catch{}}
+ return rows.length;
+}
+/** Background: fold shard deltas back into wallet_scopes so audits read compact totals. */
+export async function foldScopeShards(pool,limit=50){
+ const scopes=(await pool.query(`SELECT scope_id FROM wallet_scope_shards GROUP BY scope_id HAVING ${AGG.map(k=>`bool_or(${k}<>0)`).join(' OR ')} LIMIT $1`,[limit])).rows;
+ for(const {scope_id} of scopes)await scopeTransaction(pool,scope_id,async db=>{
+  await db.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[scope_id]);
+  await db.query('SELECT 1 FROM wallet_scopes WHERE scope_id=$1 FOR UPDATE',[scope_id]);
+  const sum=(await db.query(`SELECT ${AGG.map(k=>`COALESCE(SUM(${k}),0)::text AS ${k}`).join(',')} FROM (SELECT * FROM wallet_scope_shards WHERE scope_id=$1 ORDER BY shard FOR UPDATE) s`,[scope_id])).rows[0];
+  await db.query(`UPDATE wallet_scopes SET ${AGG.map((k,i)=>`${k}=${k}+$${i+2}`).join(',')} WHERE scope_id=$1`,[scope_id,...AGG.map(k=>sum[k])]);
+  await db.query(`UPDATE wallet_scope_shards SET ${AGG.map(k=>`${k}=0`).join(',')} WHERE scope_id=$1`,[scope_id]);
+ });
+ return scopes.length;
 }
 async function match(c,id){return (await c.db.query('SELECT * FROM wallet_matches WHERE scope_id=$1 AND match_id=$2',[c.id,id])).rows[0];}
-async function auth(c,id){return (await c.db.query('SELECT * FROM wallet_probability WHERE scope_id=$1 AND authorization_id=$2',[c.id,id])).rows[0];}
+async function auth(c,id){return (await c.db.query(`SELECT * FROM wallet_probability WHERE scope_id=$1 AND authorization_id=$2${c.fast?' FOR UPDATE':''}`,[c.id,id])).rows[0];}
 function reservationResource(s,r){return {...scopeOf(s),reservation_id:r.reservation_id,match_id:r.match_id,external_user_id:r.external_user_id,seat_index:r.seat_index,amount_minor:r.amount_minor,terms:r.terms,state:r.state,expires_at:iso(r.expires_at),updated_at:iso(r.updated_at)};}
 function matchResource(s,m){const r={...scopeOf(s),match_id:m.match_id,state:m.state,captured_minor:m.captured_minor,fee_minor:m.fee_minor,updated_at:iso(m.updated_at)};for(const k of ['terms','participants','payouts','result_hash','capture_operation_id','settlement_operation_id'])if(m[k]!==null&&m[k]!==undefined)r[k]=m[k];return r;}
 function authResource(s,a){const r={...scopeOf(s),authorization_id:a.authorization_id,cycle_id:a.cycle_id,state:a.state,updated_at:iso(a.updated_at)};for(const k of ['external_user_id','game_id','math_version','math_config_hash','stake_minor','max_payout_minor','gross_payout_minor','expires_at','accepted_at','result_hash'])if(a[k]!==null&&a[k]!==undefined)r[k]=iso(a[k]);return r;}
 const receipt=(c,resource_type,resource)=>({resource_type,resource,ledger_transaction_id:c.transactionId,committed_at:now()});
-async function expireHolds(c){
+async function expireHolds(c,{probability=true}={}){
  const holds=(await c.db.query("SELECT * FROM wallet_reservations WHERE scope_id=$1 AND state='RESERVED' AND expires_at<=clock_timestamp()",[c.id])).rows;
  for(const r of holds){const u=await user(c,r.external_user_id),n=BigInt(r.amount_minor);change(u,'available',n);change(u,'reserved',-n);await saveUser(c,u);await c.db.query("UPDATE wallet_reservations SET state='EXPIRED',updated_at=now() WHERE scope_id=$1 AND reservation_id=$2",[c.id,r.reservation_id]);await ledger(c,'user:'+u.external_user_id,n,-n,{reason:'reservation_expired'},'expire_'+r.reservation_id);}
+ if(probability)await expireScopeProbability(c);
+}
+async function expireScopeProbability(c){
  const expired=(await c.db.query("SELECT * FROM wallet_probability WHERE scope_id=$1 AND state='AUTHORIZED' AND expires_at<=clock_timestamp()",[c.id])).rows;
+ for(const a of expired)await releaseAuthorization(c,a,'EXPIRED','expire_'+a.authorization_id);
+}
+/** Release one player's expired probability holds (the player row is already locked by this transaction). */
+async function expireUserProbability(c,userId){
+ const expired=(await c.db.query("SELECT * FROM wallet_probability WHERE scope_id=$1 AND external_user_id=$2 AND state='AUTHORIZED' AND expires_at<=clock_timestamp() FOR UPDATE",[c.id,userId])).rows;
  for(const a of expired)await releaseAuthorization(c,a,'EXPIRED','expire_'+a.authorization_id);
 }
 async function releaseAuthorization(c,a,state,operationId=c.operationId){
  const u=await user(c,a.external_user_id),stake=BigInt(a.stake_minor),max=BigInt(a.max_payout_minor);
  change(u,'available',stake);change(u,'reserved',-stake);change(u,'credit_pending',-max);await saveUser(c,u);
- change(c.s,'treasury_available',max);change(c.s,'treasury_reserved',-max);change(c.s,'treasury_inbound',-stake);
+ scopeChange(c,'treasury_available',max);scopeChange(c,'treasury_reserved',-max);scopeChange(c,'treasury_inbound',-stake);
  await ledger(c,'user:'+u.external_user_id,stake,-stake,{reason:state},operationId);await ledger(c,'treasury',max,-max,{reason:state},operationId);
  await c.db.query('UPDATE wallet_probability SET state=$3,updated_at=now() WHERE scope_id=$1 AND authorization_id=$2',[c.id,a.authorization_id,state]);
 }
@@ -136,7 +212,7 @@ async function capture(c,b){
  capacity(total);const fee=total*BigInt(b.terms.fee_bps)/10000n,prize=total-fee;capacity(BigInt(c.s.fee_available)+BigInt(c.s.fee_pending)+fee);
  for(const p of ps)creditRoom(await user(c,p.external_user_id),prize);
  for(const p of ps){const u=await user(c,p.external_user_id);change(u,'reserved',-BigInt(p.entry_minor));change(u,'credit_pending',prize);await saveUser(c,u);await ledger(c,'user:'+u.external_user_id,0n,-BigInt(p.entry_minor),{match_id:b.match_id});const marked=await c.db.query("UPDATE wallet_reservations SET state='CAPTURED',updated_at=now() WHERE scope_id=$1 AND reservation_id=$2 AND state='RESERVED' AND expires_at>clock_timestamp() RETURNING reservation_id",[c.id,p.reservation_id]);if(!marked.rowCount)fail('RESERVATION_EXPIRED','Reservation expired before atomic capture');}
- change(c.s,'fee_pending',fee);await ledger(c,'match:'+b.match_id,total,0n);
+ scopeChange(c,'fee_pending',fee);await ledger(c,'match:'+b.match_id,total,0n);
  const row=(await c.db.query("UPDATE wallet_matches SET state='CAPTURED',participants=$3,captured_minor=$4,pool_minor=$4,expected_fee=$5,payout_capacity=$6,capture_operation_id=$7,updated_at=now() WHERE scope_id=$1 AND match_id=$2 RETURNING *",[c.id,b.match_id,JSON.stringify(ps),total.toString(),fee.toString(),prize.toString(),b.request_id])).rows[0];return receipt(c,'match',matchResource(c.s,row));
 }
 async function release(c,b){
@@ -159,16 +235,16 @@ async function settle(c,b){
   for(const p of ps){const i=winners.indexOf(p),expected=i<0?0n:share+(i<remainder?1n:0n);if(BigInt(p.payout_minor)!==expected)fail('AMOUNT_MISMATCH','Winner/tie split differs from published template',400);}
  }
  for(const p of ps){const u=await user(c,p.external_user_id);change(u,'credit_pending',-BigInt(m.payout_capacity));change(u,'available',BigInt(p.payout_minor));await saveUser(c,u);await ledger(c,'user:'+u.external_user_id,BigInt(p.payout_minor),0n,{match_id:b.match_id,resolution:b.resolution});}
- change(c.s,'fee_pending',-BigInt(m.expected_fee));change(c.s,'fee_available',fee);await ledger(c,'match:'+b.match_id,-total,0n);await ledger(c,'fee',fee,0n);
+ scopeChange(c,'fee_pending',-BigInt(m.expected_fee));scopeChange(c,'fee_available',fee);await ledger(c,'match:'+b.match_id,-total,0n);await ledger(c,'fee',fee,0n);
  const row=(await c.db.query('UPDATE wallet_matches SET state=$3,pool_minor=0,fee_minor=$4,payouts=$5,result_hash=$6,settlement_operation_id=$7,updated_at=now() WHERE scope_id=$1 AND match_id=$2 RETURNING *',[c.id,b.match_id,b.resolution==='void'?'VOIDED':'SETTLED',b.fee_minor,JSON.stringify(ps),b.result_hash,b.request_id])).rows[0];return receipt(c,'match',matchResource(c.s,row));
 }
 async function authorize(c,b){
  expiresWithin(b.expires_at,60);const old=(await c.db.query('SELECT * FROM wallet_probability WHERE scope_id=$1 AND (authorization_id=$2 OR cycle_id=$3)',[c.id,b.authorization_id,b.cycle_id])).rows[0];if(old?.state==='CANCELLED')fail('CANCELLED_TOMBSTONE','Cycle already cancelled');if(old)fail('INVALID_STATE','Cycle/authorization already exists');
  const profile=(await c.db.query('SELECT * FROM wallet_math_profiles WHERE scope_id=$1 AND game_id=$2 AND math_version=$3',[c.id,b.game_id,b.math_version])).rows[0];if(!profile||profile.math_config_hash!==b.math_config_hash)fail('GAME_DISABLED','Unapproved math profile/hash',403);
  const stake=amount(b.stake_minor,true),max=amount(b.max_payout_minor);if(stake*BigInt(profile.max_payout_multiplier)!==max)fail('AMOUNT_MISMATCH','Full-cycle maximum must equal approved profile cap',400);
- const u=await user(c,b.external_user_id);if(BigInt(u.available)<stake)fail('INSUFFICIENT_FUNDS','Insufficient stake',422);if(BigInt(c.s.treasury_available)<max)fail('LIABILITY_CAPACITY_EXCEEDED','Full-cycle liability unavailable before acceptance',422);
+ const u=await user(c,b.external_user_id);if(c.fast&&BigInt(u.available)<stake)await expireUserProbability(c,b.external_user_id);if(BigInt(u.available)<stake)fail('INSUFFICIENT_FUNDS','Insufficient stake',422);await ensureTotals(c);if(c.fast&&BigInt(c.s.treasury_available)<max*4096n)throw new FastPathUnavailable();if(BigInt(c.s.treasury_available)<max)fail('LIABILITY_CAPACITY_EXCEEDED','Full-cycle liability unavailable before acceptance',422);
  creditRoom(u,max);capacity(BigInt(c.s.treasury_available)+BigInt(c.s.treasury_reserved)+BigInt(c.s.treasury_inbound)+stake);
- change(u,'available',-stake);change(u,'reserved',stake);change(u,'credit_pending',max);await saveUser(c,u);change(c.s,'treasury_available',-max);change(c.s,'treasury_reserved',max);change(c.s,'treasury_inbound',stake);
+ change(u,'available',-stake);change(u,'reserved',stake);change(u,'credit_pending',max);await saveUser(c,u);scopeChange(c,'treasury_available',-max);scopeChange(c,'treasury_reserved',max);scopeChange(c,'treasury_inbound',stake);
  await ledger(c,'user:'+u.external_user_id,-stake,stake,{cycle_id:b.cycle_id});await ledger(c,'treasury',-max,max,{cycle_id:b.cycle_id});
  const row=(await c.db.query("INSERT INTO wallet_probability(scope_id,authorization_id,cycle_id,state,external_user_id,game_id,math_version,math_config_hash,stake_minor,max_payout_minor,expires_at) VALUES($1,$2,$3,'AUTHORIZED',$4,$5,$6,$7,$8,$9,$10) RETURNING *",[c.id,b.authorization_id,b.cycle_id,b.external_user_id,b.game_id,b.math_version,b.math_config_hash,b.stake_minor,b.max_payout_minor,b.expires_at])).rows[0];return receipt(c,'probability_authorization',authResource(c.s,row));
 }
@@ -188,7 +264,7 @@ async function settleProbability(c,b){
  for(const k of ['cycle_id','game_id','math_version','math_config_hash','stake_minor'])if(a[k]!==b[k])fail('AMOUNT_MISMATCH','Accepted cycle terms are immutable',400);
  const payout=amount(b.gross_payout_minor),stake=BigInt(a.stake_minor),max=BigInt(a.max_payout_minor);if(payout>max)fail('AMOUNT_MISMATCH','Payout exceeds authorized full-cycle cap',400);
  const u=await user(c,a.external_user_id);change(u,'credit_pending',-max);change(u,'reserved',-stake);change(u,'available',payout);await saveUser(c,u);
- change(c.s,'treasury_reserved',-max);change(c.s,'treasury_inbound',-stake);change(c.s,'treasury_available',max-payout+stake);
+ scopeChange(c,'treasury_reserved',-max);scopeChange(c,'treasury_inbound',-stake);scopeChange(c,'treasury_available',max-payout+stake);
  await ledger(c,'user:'+u.external_user_id,payout,-stake,{cycle_id:b.cycle_id});await ledger(c,'treasury',max-payout+stake,-max,{cycle_id:b.cycle_id});
  const row=(await c.db.query("UPDATE wallet_probability SET state='SETTLED',gross_payout_minor=$3,result_hash=$4,updated_at=now() WHERE scope_id=$1 AND authorization_id=$2 RETURNING *",[c.id,b.authorization_id,b.gross_payout_minor,b.result_hash])).rows[0];return receipt(c,'probability_authorization',authResource(c.s,row));
 }
@@ -203,35 +279,50 @@ const commands={
  '/wallet/v1/probability/settle':['settle_probability','SettleProbabilityRequest',settleProbability]
 };
 const errorBody=(e,operation_id)=>({code:e instanceof WalletError?e.code:'INTERNAL_ERROR',message:e instanceof WalletError?e.message.slice(0,512):'Reference wallet temporarily unavailable',trace_id:'tr_'+randomUUID().replaceAll('-',''),...(operation_id?{operation_id}:{}),retryable:!(e instanceof WalletError)||e.status>=500});
-async function execute(pool,key,path,raw,body){
+const FAST=new Set(['/wallet/v1/probability/authorize','/wallet/v1/probability/accept','/wallet/v1/probability/settle','/wallet/v1/probability/cancel']);
+/** The player whose row a probability command touches, or null when it must take the strict path. */
+async function playerOf(pool,scope,path,body){
+ if(!FAST.has(path))return null;
+ if(path==='/wallet/v1/probability/authorize')return typeof body.external_user_id==='string'?body.external_user_id:null;
+ return (await pool.query('SELECT external_user_id FROM wallet_probability WHERE scope_id=$1 AND authorization_id=$2',[scope,body.authorization_id])).rows[0]?.external_user_id||null;
+}
+async function execute(pool,key,path,raw,body,{fast=false}={}){
  const [kind,schema,fn]=commands[path];validate(schema,body);checkScope(body,key.row);if(body.request_id!==key.request_id)fail('INVALID_REQUEST','Header/body request_id differ',400);
  const hash=sha256(raw);
- return withScope(pool,key.row.scope_id,async c=>{
+ const run=async c=>{
   c.operationId=body.request_id;
-  await c.db.query('INSERT INTO wallet_operation_ids(partner_id,app_id,environment,operation_id,scope_id) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING',[c.s.partner_id,c.s.app_id,c.s.environment,c.operationId,c.id]);
-  const registry=(await c.db.query('SELECT scope_id FROM wallet_operation_ids WHERE partner_id=$1 AND app_id=$2 AND environment=$3 AND operation_id=$4',[c.s.partner_id,c.s.app_id,c.s.environment,c.operationId])).rows[0];if(registry.scope_id!==c.id)fail('IDEMPOTENCY_CONFLICT','Business ID is already used in another wallet scope');
-  const old=(await c.db.query('SELECT * FROM wallet_operations WHERE scope_id=$1 AND operation_id=$2',[c.id,c.operationId])).rows[0];
-  if(old){if(old.method!=='POST'||old.path!==path||old.body_sha256!==hash)fail('IDEMPOTENCY_CONFLICT','Business ID method/path/body differ');return {status:old.response_status,body:old.response_body};}
-  const created=(await c.db.query("INSERT INTO wallet_operations(scope_id,operation_id,kind,method,path,body_sha256,state) VALUES($1,$2,$3,'POST',$4,$5,'PENDING') RETURNING created_at",[c.id,c.operationId,kind,path,hash])).rows[0].created_at;
-  await c.db.query('SAVEPOINT wallet_business');const before={s:structuredClone(c.s),users:structuredClone([...c.users]),dirty:c.dirty};let state,status,response,operation;
+  const registered=(await c.db.query('INSERT INTO wallet_operation_ids(partner_id,app_id,environment,operation_id,scope_id) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING RETURNING scope_id',[c.s.partner_id,c.s.app_id,c.s.environment,c.operationId,c.id])).rows[0]
+   ||(await c.db.query('SELECT scope_id FROM wallet_operation_ids WHERE partner_id=$1 AND app_id=$2 AND environment=$3 AND operation_id=$4',[c.s.partner_id,c.s.app_id,c.s.environment,c.operationId])).rows[0];
+  if(registered.scope_id!==c.id)fail('IDEMPOTENCY_CONFLICT','Business ID is already used in another wallet scope');
+  const fresh=(await c.db.query("INSERT INTO wallet_operations(scope_id,operation_id,kind,method,path,body_sha256,state) VALUES($1,$2,$3,'POST',$4,$5,'PENDING') ON CONFLICT DO NOTHING RETURNING created_at",[c.id,c.operationId,kind,path,hash])).rows[0];
+  if(!fresh){const old=(await c.db.query('SELECT * FROM wallet_operations WHERE scope_id=$1 AND operation_id=$2',[c.id,c.operationId])).rows[0];
+   if(old.method!=='POST'||old.path!==path||old.body_sha256!==hash)fail('IDEMPOTENCY_CONFLICT','Business ID method/path/body differ');return {status:old.response_status,body:old.response_body};}
+  const created=fresh.created_at;
+  await c.db.query('SAVEPOINT wallet_business');const before={s:structuredClone(c.s),users:structuredClone([...c.users]),delta:{...c.delta},ledger:c.ledgerRows.length,agg:c.aggLoaded};let state,status,response,operation;
   try{const r=await fn(c,body);state='SUCCEEDED';status=200;operation={...scopeOf(c.s),operation_id:c.operationId,kind,state,body_sha256:hash,receipt:r,created_at:iso(created),updated_at:now()};response=operation;}
-  catch(e){if(!(e instanceof WalletError))throw e;await c.db.query('ROLLBACK TO SAVEPOINT wallet_business');Object.assign(c.s,before.s);c.users=new Map(before.users);c.dirty=before.dirty;state='REJECTED';status=200;const rejection=errorBody(e,c.operationId);operation={...scopeOf(c.s),operation_id:c.operationId,kind,state,body_sha256:hash,rejection,created_at:iso(created),updated_at:now()};response=operation;}
+  catch(e){if(!(e instanceof WalletError))throw e;await c.db.query('ROLLBACK TO SAVEPOINT wallet_business');Object.assign(c.s,before.s);c.users=new Map(before.users);c.delta=before.delta;c.ledgerRows.length=before.ledger;c.aggLoaded=before.agg;state='REJECTED';status=200;const rejection=errorBody(e,c.operationId);operation={...scopeOf(c.s),operation_id:c.operationId,kind,state,body_sha256:hash,rejection,created_at:iso(created),updated_at:now()};response=operation;}
   await c.db.query('UPDATE wallet_operations SET state=$3,response_status=$4,response_body=$5,operation=$6,updated_at=now() WHERE scope_id=$1 AND operation_id=$2',[c.id,c.operationId,state,status,JSON.stringify(response),JSON.stringify(operation)]);
   return {status,body:response};
- });
+ };
+ const player=fast?await playerOf(pool,key.row.scope_id,path,body):null;
+ if(player){try{return await withPlayer(pool,key.row.scope_id,player,run);}catch(e){if(!(e instanceof FastPathUnavailable))throw e;}}
+ return withScope(pool,key.row.scope_id,run,{probabilityExpiry:!fast});
 }
-async function query(pool,key,path){
+async function query(pool,key,path,{fast=false}={}){
  const op=path.match(/^\/wallet\/v1\/operations\/([A-Za-z0-9_-]{1,128})$/);if(op){const row=(await pool.query('SELECT operation FROM wallet_operations WHERE scope_id=$1 AND operation_id=$2',[key.row.scope_id,op[1]])).rows[0];if(!row)fail('NOT_FOUND','No visible operation record',404);return row.operation;}
- const m=path.match(/^\/wallet\/v1\/matches\/([A-Za-z0-9_-]{1,128})$/);if(m)return withScope(pool,key.row.scope_id,async c=>{const v=await match(c,m[1]);if(!v)fail('NOT_FOUND','No visible match',404);return matchResource(c.s,v);});
- const a=path.match(/^\/wallet\/v1\/probability\/authorizations\/([A-Za-z0-9_-]{1,128})$/);if(a)return withScope(pool,key.row.scope_id,async c=>{const v=await auth(c,a[1]);if(!v)fail('NOT_FOUND','No visible authorization',404);return authResource(c.s,v);});
- const b=path.match(/^\/wallet\/v1\/scopes\/([A-Za-z0-9_-]{1,128})\/currencies\/([A-Za-z0-9_-]{1,128})\/users\/([A-Za-z0-9_-]{1,128})\/balance$/);if(b){if(b[1]!==key.row.wallet_scope_id||b[2]!==key.row.currency_id)fail('SCOPE_FORBIDDEN','Credential scope/currency differs',403);return withScope(pool,key.row.scope_id,async c=>{const u=await user(c,b[3]);return {...scopeOf(c.s),balance:{external_user_id:u.external_user_id,available_minor:u.available,reserved_minor:u.reserved,currency_scale:c.s.currency_scale,ledger_version:c.s.ledger_version},as_of:now()};});}
+ // Strict Apps read under the App lock (which also releases expired holds); hot-path Apps read lock-free.
+ const read=async fn=>fast?fn(newContext(pool,await loadScope(pool,key.row.scope_id,false),key.row.scope_id,false)):withScope(pool,key.row.scope_id,fn);
+ const m=path.match(/^\/wallet\/v1\/matches\/([A-Za-z0-9_-]{1,128})$/);if(m)return read(async c=>{const v=await match(c,m[1]);if(!v)fail('NOT_FOUND','No visible match',404);return matchResource(c.s,v);});
+ const a=path.match(/^\/wallet\/v1\/probability\/authorizations\/([A-Za-z0-9_-]{1,128})$/);if(a)return read(async c=>{const v=await auth(c,a[1]);if(!v)fail('NOT_FOUND','No visible authorization',404);return authResource(c.s,v);});
+ const b=path.match(/^\/wallet\/v1\/scopes\/([A-Za-z0-9_-]{1,128})\/currencies\/([A-Za-z0-9_-]{1,128})\/users\/([A-Za-z0-9_-]{1,128})\/balance$/);if(b){if(b[1]!==key.row.wallet_scope_id||b[2]!==key.row.currency_id)fail('SCOPE_FORBIDDEN','Credential scope/currency differs',403);return read(async c=>{const u=fast?(await pool.query('SELECT * FROM wallet_users WHERE scope_id=$1 AND external_user_id=$2',[c.id,b[3]])).rows[0]:await user(c,b[3]);if(!u)fail('NOT_FOUND','Wallet user does not exist',404);return {...scopeOf(c.s),balance:{external_user_id:u.external_user_id,available_minor:u.available,reserved_minor:u.reserved,currency_scale:c.s.currency_scale,ledger_version:c.s.ledger_version},as_of:now()};});}
  fail('NOT_FOUND','Unknown wallet endpoint',404);
 }
-export async function ledgerRequest(pool,{scope,method,path,raw='',requestId}){
+/** fast: per-player hot path for probability commands (simple-v1 Apps); otherwise the App-wide strict path. */
+export async function ledgerRequest(pool,{scope,method,path,raw='',requestId,fast=false}){
  for(const field of fields)if(typeof scope?.[field]!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(scope[field]))fail('INVALID_REQUEST','Invalid ledger scope',400);
  if(!['GET','POST'].includes(method)||!/^\/wallet\/v1(?:\/[A-Za-z0-9_-]+)+$/.test(path)||typeof raw!=='string'||Buffer.byteLength(raw)>65536||!/^[A-Za-z0-9_-]{1,128}$/.test(requestId)||(method==='GET'&&raw))fail('INVALID_REQUEST','Invalid ledger request',400);
  const key={row:{...scope,scope_id:scopeId(scope)},request_id:requestId};
- if(method==='GET')return{status:200,body:await query(pool,key,path)};
+ if(method==='GET')return{status:200,body:await query(pool,key,path,{fast})};
  const body=parseRaw(Buffer.from(raw));
  if(path==='/wallet/v1/events'){
   validate('PartnerEvent',body);checkScope(body.scope,key.row);if(body.request_id!==requestId||body.request_id!==body.event_id)fail('INVALID_REQUEST','Event/request IDs must match',400);
@@ -242,8 +333,10 @@ export async function ledgerRequest(pool,{scope,method,path,raw='',requestId}){
   },{expire:false});return{status:204,body:null};
  }
  if(!commands[path])fail('NOT_FOUND','Unknown wallet endpoint',404);
- return execute(pool,key,path,raw,body);
+ return execute(pool,key,path,raw,body,{fast});
 }
+// Local load testing only: run the sandbox reference wallet on the per-player hot path like simple-v1 Apps.
+const REFERENCE_FAST=process.env.OASIS_REFERENCE_WALLET_FAST==='1';
 export function createWalletServer(pool){
  return http.createServer(async(req,res)=>{
   res.setHeader('content-type','application/json; charset=utf-8');res.setHeader('cache-control','no-store');res.setHeader('x-content-type-options','nosniff');
@@ -255,14 +348,14 @@ export function createWalletServer(pool){
    const chunks=[];let bytes=0;for await(const chunk of req){bytes+=chunk.length;if(bytes>65536)fail('INVALID_REQUEST','Body too large',400);chunks.push(chunk);}const raw=Buffer.concat(chunks);
    if(req.method==='GET'&&raw.length)fail('INVALID_REQUEST','GET body forbidden',400);
    const key=await verifyWalletRequest(pool,req,raw);
-   if(req.method==='GET'){reply(200,await query(pool,key,req.url));return;}
+   if(req.method==='GET'){reply(200,await query(pool,key,req.url,{fast:REFERENCE_FAST}));return;}
    const body=parseRaw(raw);
    if(req.url==='/wallet/v1/events'){
     validate('PartnerEvent',body);checkScope(body.scope,key.row);if(body.request_id!==key.request_id||body.request_id!==body.event_id)fail('INVALID_REQUEST','Event/request IDs must match',400);
     await withScope(pool,key.row.scope_id,async c=>{const old=(await c.db.query('SELECT body_sha256 FROM wallet_events WHERE scope_id=$1 AND event_id=$2',[c.id,body.event_id])).rows[0];const hash=sha256(raw);if(old&&old.body_sha256!==hash)fail('IDEMPOTENCY_CONFLICT','Event reused with another body');await c.db.query('INSERT INTO wallet_events(scope_id,event_id,body_sha256,payload) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING',[c.id,body.event_id,hash,JSON.stringify(body)]);},{expire:false});reply(204);return;
    }
    if(!commands[req.url])fail('NOT_FOUND','Unknown wallet endpoint',404);
-   const result=await execute(pool,key,req.url,raw,body);reply(result.status,result.body);
+   const result=await execute(pool,key,req.url,raw,body,{fast:REFERENCE_FAST});reply(result.status,result.body);
   }catch(e){const id=/^[A-Za-z0-9_-]{1,128}$/.test(req.headers['x-gp-request-id']||'')?req.headers['x-gp-request-id']:undefined;if(!(e instanceof WalletError))console.error('[reference-wallet]',e.code||e.name,e.message);reply(e instanceof WalletError?e.status:503,errorBody(e,id));}
  });
 }

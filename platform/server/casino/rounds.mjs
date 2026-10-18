@@ -50,6 +50,8 @@ export async function migrateCasino(db=pool){
  ALTER TABLE casino_bets ADD COLUMN IF NOT EXISTS auto_x100 integer;
  ALTER TABLE casino_bets ADD COLUMN IF NOT EXISTS cashout_x100 integer;
  ALTER TABLE casino_bets ADD COLUMN IF NOT EXISTS jackpot_minor bigint;
+ CREATE INDEX IF NOT EXISTS casino_bets_round_user ON casino_bets(round_id,external_user_id);
+ CREATE INDEX IF NOT EXISTS casino_bets_app_wins ON casino_bets(app_id,created_at) WHERE status='SETTLED' AND payout_minor>0;
  CREATE TABLE IF NOT EXISTS casino_jackpots (app_id text NOT NULL REFERENCES gp_apps(id), game_id text NOT NULL, pool_minor bigint NOT NULL DEFAULT 0 CHECK(pool_minor>=0), updated_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(app_id,game_id));
 ALTER TABLE casino_jackpots ADD COLUMN IF NOT EXISTS seeded_minor bigint NOT NULL DEFAULT 0;
  CREATE INDEX IF NOT EXISTS casino_bets_round ON casino_bets(round_id,status);
@@ -96,30 +98,52 @@ function view(r,now){
 const betView=b=>({id:b.id,request_id:b.request_id,option_id:b.option_id,stake_minor:String(b.stake_minor),status:b.status,payout_minor:b.payout_minor===null?null:String(b.payout_minor),jackpot_minor:b.jackpot_minor?String(b.jackpot_minor):null,
  auto_x100:b.auto_x100??null,cashout_x100:b.cashout_x100??null,error:b.error||null});
 
+// Shared per App/game state, recomputed at most every SNAPSHOT_MS (single flight) for all pollers.
+const SNAPSHOT_MS=Number(process.env.OASIS_CASINO_SNAPSHOT_MS??400),TODAY_MS=SNAPSHOT_MS?5000:0,APP_MS=SNAPSHOT_MS?2000:0;
+const snapshots=new Map(),todays=new Map(),apps=new Map();
+async function cachedApp(appId){const hit=apps.get(appId);if(hit&&hit.until>Date.now())return hit.app;const app=await appById(appId);apps.set(appId,{app,until:Date.now()+APP_MS});return app;}
+function sharedSnapshot(app,gameId,now){
+ if(!SNAPSHOT_MS)return buildSnapshot(app,gameId,now);
+ const key=app.id+':'+gameId,hit=snapshots.get(key);
+ if(hit&&(hit.pending||(now-hit.at<(CASINO_GAMES[gameId].family==='crash'?200:SNAPSHOT_MS)&&hit.value.round.ends_at>now)))return hit.pending||hit.value;
+ const pending=buildSnapshot(app,gameId,now).then(value=>{snapshots.set(key,{at:now,value});return value;},e=>{snapshots.delete(key);throw e;});
+ snapshots.set(key,{...(hit||{}),pending});return pending;
+}
+async function buildSnapshot(app,gameId,now){
+ const round=await currentRound(app,gameId,now),game=CASINO_GAMES[gameId];
+ const [totals,history,winners,today]=await Promise.all([
+  pool.query("SELECT option_id,sum(stake_minor)::text total,count(DISTINCT external_user_id)::int players FROM casino_bets WHERE round_id=$1 AND status IN ('ACCEPTED','SETTLING','SETTLED') GROUP BY option_id",[round.id]),
+  pool.query("SELECT seq,result->>'outcome' outcome FROM casino_rounds WHERE app_id=$1 AND game_id=$2 AND result IS NOT NULL AND reveal_at<=$3 AND status<>'betting' ORDER BY seq DESC LIMIT $4",[app.id,gameId,now,HISTORY]),
+  pool.query(`SELECT b.external_user_id,sum(b.payout_minor)::text payout FROM casino_bets b JOIN casino_rounds r ON r.id=b.round_id
+   WHERE r.app_id=$1 AND r.game_id=$2 AND r.seq=$3 AND b.status='SETTLED' AND b.payout_minor>0 GROUP BY 1 ORDER BY sum(b.payout_minor) DESC LIMIT 3`,[app.id,gameId,round.status==='betting'?round.seq-1:round.seq]),
+  todayWinners(app.id,gameId,now),
+ ]);
+ return {round,totals:Object.fromEntries(totals.rows.map(t=>[t.option_id,{stake_minor:t.total,players:t.players}])),
+  history:history.rows.map(h=>({seq:Number(h.seq),outcome:h.outcome})),winners:winners.rows.map(w=>({external_user_id:w.external_user_id,payout_minor:w.payout})),today,
+  cashouts:game.family==='crash'?(await pool.query('SELECT external_user_id,stake_minor::text stake_minor,cashout_x100 FROM casino_bets WHERE round_id=$1 AND cashout_x100 IS NOT NULL ORDER BY cashout_x100 LIMIT 30',[round.id])).rows:undefined,
+  jackpot:game.bonus?.jackpot?await seedJackpot(app.id,gameId):undefined};
+}
+// Today's (UTC) biggest winners in this App and game, by total payout of revealed rounds.
+async function todayWinners(appId,gameId,now){
+ const key=appId+':'+gameId,hit=todays.get(key);if(hit&&now-hit.at<TODAY_MS)return hit.value;
+ const rows=(await pool.query(`SELECT b.external_user_id,sum(b.payout_minor)::text payout FROM casino_bets b JOIN casino_rounds r ON r.id=b.round_id
+   WHERE b.app_id=$1 AND r.app_id=$1 AND r.game_id=$2 AND b.status='SETTLED' AND b.payout_minor>0 AND r.reveal_at<=$3 AND b.created_at>=date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
+   GROUP BY 1 ORDER BY sum(b.payout_minor) DESC LIMIT 3`,[appId,gameId,now])).rows.map(w=>({external_user_id:w.external_user_id,payout_minor:w.payout}));
+ todays.set(key,{at:now,value:rows});return rows;
+}
+
 export async function casinoState(session,{balance=false}={}){
  if(!isCasinoGame(session.game_id))fail(403,'GAME_SESSION_REQUIRED');
  if(isInstantGame(session.game_id))return instantState(session,{balance});
  if(isArcadeGame(session.game_id))return arcadeState(session,{balance});
- const app=await appById(session.app_id),now=Date.now(),round=await currentRound(app,session.game_id,now);
- const [totals,mine,history,winners,today]=await Promise.all([
-  pool.query("SELECT option_id,sum(stake_minor)::text total,count(DISTINCT external_user_id)::int players FROM casino_bets WHERE round_id=$1 AND status IN ('ACCEPTED','SETTLING','SETTLED') GROUP BY option_id",[round.id]),
-  pool.query('SELECT * FROM casino_bets WHERE round_id=$1 AND app_id=$2 AND external_user_id=$3 ORDER BY created_at',[round.id,app.id,session.external_user_id]),
-  pool.query("SELECT seq,result->>'outcome' outcome FROM casino_rounds WHERE app_id=$1 AND game_id=$2 AND result IS NOT NULL AND reveal_at<=$3 AND status<>'betting' ORDER BY seq DESC LIMIT $4",[app.id,session.game_id,now,HISTORY]),
-  pool.query(`SELECT b.external_user_id,sum(b.payout_minor)::text payout FROM casino_bets b JOIN casino_rounds r ON r.id=b.round_id
-   WHERE r.app_id=$1 AND r.game_id=$2 AND r.seq=$3 AND b.status='SETTLED' AND b.payout_minor>0 GROUP BY 1 ORDER BY sum(b.payout_minor) DESC LIMIT 3`,[app.id,session.game_id,round.status==='betting'?round.seq-1:round.seq]),
-  // Today's (UTC) biggest winners in this App and game, by total payout of revealed rounds.
-  pool.query(`SELECT b.external_user_id,sum(b.payout_minor)::text payout FROM casino_bets b JOIN casino_rounds r ON r.id=b.round_id
-   WHERE r.app_id=$1 AND r.game_id=$2 AND b.status='SETTLED' AND b.payout_minor>0 AND r.reveal_at<=$3 AND b.created_at>=date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
-   GROUP BY 1 ORDER BY sum(b.payout_minor) DESC LIMIT 3`,[app.id,session.game_id,now]),
- ]);
+ const app=await cachedApp(session.app_id),now=Date.now(),snap=await sharedSnapshot(app,session.game_id,now),round=snap.round;
+ // Only the player's own bets are read per request; everything shared comes from the App/game snapshot.
+ const mine=await pool.query('SELECT * FROM casino_bets WHERE round_id=$1 AND app_id=$2 AND external_user_id=$3 ORDER BY created_at',[round.id,app.id,session.external_user_id]);
  const out={game_id:session.game_id,server_now:now,me:session.external_user_id,round:view(round,now),
-  totals:Object.fromEntries(totals.rows.map(t=>[t.option_id,{stake_minor:t.total,players:t.players}])),
-  my_bets:mine.rows.map(betView),history:history.rows.map(h=>({seq:Number(h.seq),outcome:h.outcome})),
-  cashouts:CASINO_GAMES[session.game_id].family==='crash'?(await pool.query('SELECT external_user_id,stake_minor::text stake_minor,cashout_x100 FROM casino_bets WHERE round_id=$1 AND cashout_x100 IS NOT NULL ORDER BY cashout_x100 LIMIT 30',[round.id])).rows:undefined,
+  totals:snap.totals,my_bets:mine.rows.map(betView),history:snap.history,cashouts:snap.cashouts,
   // Last finished round's top winners are only shown once its reveal has played.
-  top_winners:round.status==='betting'||now>=round.reveal_at?winners.rows.map(w=>({external_user_id:w.external_user_id,payout_minor:w.payout})):[],
-  today_winners:today.rows.map(w=>({external_user_id:w.external_user_id,payout_minor:w.payout})),
-  ...(CASINO_GAMES[session.game_id].bonus?.jackpot?{jackpot_minor:await seedJackpot(app.id,session.game_id)}:{})};
+  top_winners:round.status==='betting'||now>=round.reveal_at?snap.winners:[],
+  today_winners:snap.today,...(snap.jackpot!==undefined?{jackpot_minor:snap.jackpot}:{})};
  if(balance){try{out.balance=(await walletBalance(app,session.external_user_id)).balance;}catch{out.balance=null;}}
  return out;
 }
@@ -243,7 +267,10 @@ async function resolveAccepted(c,game,result,roundId){
  const bets=(await c.query("SELECT * FROM casino_bets WHERE round_id=$1 AND status='ACCEPTED' FOR UPDATE",[roundId])).rows;
  const base=new Map(bets.map(b=>[b.id,families[game.family].payout(game,result,b)]));
  const shares=result.bonus?.type==='jackpot'&&game.bonus?.jackpot?await jackpotShares(c,game,roundId,bets.filter(b=>base.get(b.id)>0n)):new Map();
- for(const b of bets){const j=shares.get(b.id)||0n;await c.query("UPDATE casino_bets SET status='SETTLING',payout_minor=$2,jackpot_minor=$3,updated_at=now() WHERE id=$1",[b.id,String(base.get(b.id)+j),j?String(j):null]);}
+ // One statement for the whole round (thousands of bets) instead of one round trip per bet.
+ if(!bets.length)return;
+ const ids=bets.map(b=>b.id),pay=bets.map(b=>String(base.get(b.id)+(shares.get(b.id)||0n))),jack=bets.map(b=>shares.get(b.id)?String(shares.get(b.id)):null);
+ await c.query("UPDATE casino_bets b SET status='SETTLING',payout_minor=v.pay,jackpot_minor=v.jack,updated_at=now() FROM unnest($1::text[],$2::bigint[],$3::bigint[]) AS v(id,pay,jack) WHERE b.id=v.id",[ids,pay,jack]);
 }
 
 /**
@@ -286,11 +313,16 @@ export async function cashOut(session,body){
  return betView(bet);
 }
 
+/** Run fn over items with at most n in flight. */
+async function mapLimit(items,n,fn){let i=0;await Promise.all(Array.from({length:Math.min(n,items.length)},async()=>{while(i<items.length)await fn(items[i++]);}));}
+const SETTLE_CONCURRENCY=Number(process.env.OASIS_CASINO_SETTLE_CONCURRENCY||12);
 async function settleOpenBets(){
- const open=(await pool.query("SELECT b.*,r.game_id,r.result FROM casino_bets b JOIN casino_rounds r ON r.id=b.round_id WHERE b.status IN ('SETTLING','VOIDING') ORDER BY b.updated_at LIMIT 200")).rows;
+ const open=(await pool.query("SELECT b.*,r.game_id,r.result FROM casino_bets b JOIN casino_rounds r ON r.id=b.round_id WHERE b.status IN ('SETTLING','VOIDING') AND (b.error IS NULL OR b.error='BETTING_CLOSED' OR b.updated_at<now()-interval '3 seconds') ORDER BY b.updated_at LIMIT 2000")).rows;
  const apps=new Map();
- for(const b of open){
-  const app=apps.get(b.app_id)||await appById(b.app_id);apps.set(b.app_id,app);
+ for(const b of open)if(!apps.has(b.app_id))apps.set(b.app_id,await appById(b.app_id));
+ // Each bet is its own wallet cycle on a different player row, so settlements run in parallel.
+ await mapLimit(open,SETTLE_CONCURRENCY,async b=>{
+  const app=apps.get(b.app_id);
   const model=models[b.game_id],base=walletBase(app,b);
   try{
    if(b.status==='SETTLING'){
@@ -300,8 +332,13 @@ async function settleOpenBets(){
    }else{
     // Refund a bet that missed the close: cancel before accept, or settle the stake back after accept.
     const ops=(await pool.query("SELECT id,state FROM gp_operations WHERE aggregate_id=$1",[b.id])).rows,state=Object.fromEntries(ops.map(o=>[o.id.split('_')[0],o.state]));
-    if(state.accept==='SUCCEEDED')await command(app,b.id,'/wallet/v1/probability/settle',{...base,request_id:'settle_'+b.id,game_id:model.gameId,math_version:model.version,math_config_hash:model.hash,stake_minor:String(b.stake_minor),gross_payout_minor:String(b.stake_minor),result_hash:sha('void:'+b.id)});
-    else if(state.authorize&&state.authorize!=='REJECTED')await command(app,b.id,'/wallet/v1/probability/cancel',{...base,request_id:'cancel_'+b.id,reason:'authorization_timeout'});
+    const refund=()=>command(app,b.id,'/wallet/v1/probability/settle',{...base,request_id:'settle_'+b.id,game_id:model.gameId,math_version:model.version,math_config_hash:model.hash,stake_minor:String(b.stake_minor),gross_payout_minor:String(b.stake_minor),result_hash:sha('void:'+b.id)});
+    if(state.accept==='SUCCEEDED')await refund();
+    else if(state.authorize&&state.authorize!=='REJECTED'){
+     // The wallet may have accepted even though our accept response was lost: then refund the stake by settlement.
+     try{await command(app,b.id,'/wallet/v1/probability/cancel',{...base,request_id:'cancel_'+b.id,reason:'authorization_timeout'});}
+     catch(e){if(e.code!=='ALREADY_ACCEPTED')throw e;await refund();}
+    }
     await pool.query("UPDATE casino_bets SET status='VOIDED',updated_at=now() WHERE id=$1 AND status='VOIDING'",[b.id]);
    }
   }catch(e){
@@ -309,5 +346,5 @@ async function settleOpenBets(){
    if(e.code==='CANCELLED_TOMBSTONE'&&b.status==='VOIDING')await pool.query("UPDATE casino_bets SET status='VOIDED',updated_at=now() WHERE id=$1 AND status='VOIDING'",[b.id]);
    else await pool.query('UPDATE casino_bets SET error=$2,updated_at=now() WHERE id=$1',[b.id,String(e.code||e.message).slice(0,80)]);
   }
- }
+ });
 }

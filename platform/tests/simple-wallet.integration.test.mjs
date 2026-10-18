@@ -10,7 +10,7 @@ import {dropOwnedTestDatabase} from './database-cleanup.mjs';
 import {migrateSimpleDemoWallet,seedSimpleDemoUsers,simpleBalance,handleSimpleWallet} from '../examples/partner-demo/simple-wallet.mjs';
 
 // Unreleased casino definitions are playable in this test (OASIS_CASINO_PREVIEW=test).
-process.env.OASIS_CASINO_PREVIEW='test';
+process.env.OASIS_CASINO_PREVIEW='test';process.env.OASIS_CASINO_SNAPSHOT_MS='0';
 const {ALL_GAME_IDS:RELEASED_IDS}=await import('../shared/games.mjs');
 
 // A partner App on the simple-v1 protocol: only balance/debit/credit at the partner,
@@ -58,7 +58,7 @@ before(async()=>{
 });
 after(async()=>{
  binding?.setWalletTransportForTests(null);if(partnerServer?.listening)await new Promise(r=>partnerServer.close(r));
- try{await closeEnginePool?.();}finally{try{await closePools?.();}finally{if(created)await dropOwnedTestDatabase(admin,name,{created});await admin?.end();if(dir)await rm(dir,{recursive:true,force:true});delete process.env.OASIS_CASINO_PREVIEW;for(const k of Object.keys(process.env))if(!(k in previous))delete process.env[k];Object.assign(process.env,previous);}}
+ try{await closeEnginePool?.();}finally{try{await closePools?.();}finally{if(created)await dropOwnedTestDatabase(admin,name,{created});await admin?.end();if(dir)await rm(dir,{recursive:true,force:true});delete process.env.OASIS_CASINO_PREVIEW;delete process.env.OASIS_CASINO_SNAPSHOT_MS;for(const k of Object.keys(process.env))if(!(k in previous))delete process.env[k];Object.assign(process.env,previous);}}
 });
 
 test('a new partner App starts paused and cannot launch before its wallet is bound',async()=>{
@@ -303,6 +303,19 @@ test('casino history lists the player\'s revealed rounds and spins with stake an
  assert.equal(r.stake_minor,'300000');assert.equal(r.payout_minor,String(r.bets.reduce((a,b)=>a+BigInt(b.payout_minor),0n)));
  const spins=await casino.casinoHistory(await sessionFor('carol','oceanslot'));assert.equal(spins.kind,'instant');assert.equal(spins.records[0].stake_minor,'1000');
  const other=await casino.casinoHistory(await sessionFor('dave','sicbo'));assert.equal(other.records.length,0,'never another player\'s records');
+});
+
+test('a void after a lost accept response refunds the stake by settlement instead of retrying cancel forever',async()=>{
+ const carol=await sessionFor('carol','greedycat2'),before=await partnerBalance('carol');
+ const st=await casino.casinoState(carol);
+ const bet=await casino.placeBet(carol,{request_id:uid('bet'),round_id:st.round.id,option_id:'tomato',stake_minor:'100000'});
+ assert.equal(await partnerBalance('carol'),before-100000n);
+ // The wallet accepted, but the platform never saw the response, and the bet missed the close.
+ await pool.query("UPDATE gp_operations SET state='PENDING',response=NULL WHERE id=$1",['accept_'+bet.id]);
+ await pool.query("UPDATE casino_bets SET status='VOIDING',error='BETTING_CLOSED' WHERE id=$1",[bet.id]);
+ await casino.tickCasino();await casino.tickCasino();await recover();
+ const row=(await pool.query('SELECT status FROM casino_bets WHERE id=$1',[bet.id])).rows[0];assert.equal(row.status,'VOIDED');
+ assert.equal(await partnerBalance('carol'),before,'the stake is refunded in full');assert.equal(await transit(),'0');
 });
 
 test('an arcade session (Monster) debits its ammo once, resolves shots on the server and settles wins plus unused ammo',async()=>{
