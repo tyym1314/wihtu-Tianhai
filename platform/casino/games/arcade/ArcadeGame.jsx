@@ -82,6 +82,7 @@ export default function ArcadeGame({initial}){
     m.hold=false;m.until=performance.now()+(m.hit==='ko'?700:250);}
   }
  }
+ useEffect(()=>{if(A.toast?.key==='insufficient')setAuto(false);},[A.toast]);
  // Auto: shoots the nearest target every 0.7 s.
  useEffect(()=>{if(!auto)return;const tm=setInterval(()=>{
   if(isMonster){const c=M.ref.current.filter(m=>!m.dead&&!m.locked&&m.y>L.field.top+40&&m.y<L.field.bottom-120);if(c.length)fire(c[Math.floor(Math.random()*c.length)]);}
