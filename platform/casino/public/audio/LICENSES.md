@@ -20,6 +20,8 @@ All files are CC0 1.0 (public domain).
 - music-sicbo.mp3: Sitarian (OpenGameArt, CC0)
 - music-crash.mp3: Happy Clappy Loop (OpenGameArt, CC0)
 - music-crashstar.mp3: Space Adventure (OpenGameArt, CC0)
+- music-monster.mp3: Greek boss battle by Spring Spring (OpenGameArt, CC0)
+- music-molestar.mp3: Amusement park Stage by MintoDog (OpenGameArt, CC0)
 - music-bountyfootball.mp3: Space Adventure (OpenGameArt, CC0)
 - music-bigeater.mp3: Banana Track by skrjablin (OpenGameArt, CC0)
 - music-greedybrutal.mp3: Greek boss battle by Spring Spring (OpenGameArt, CC0)

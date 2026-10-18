@@ -224,12 +224,12 @@ export const CASINO_GAMES=Object.freeze({
   draw:Object.freeze(DICE.map(d=>Object.freeze({id:'d'+d.join(''),weight:1}))),
   options:Object.freeze([['big',2,d=>sum(d)>=11&&!triple(d)],['triple',35,triple],['small',2,d=>sum(d)<=10&&!triple(d)]].map(([o,m,f])=>Object.freeze({id:o,multiplier:m,covers:DICE.filter(f).map(d=>'d'+d.join(''))})))}),
  // ---- Arcade shooters: every shot returns rtp of its cost; targets only change variance. ----
- monster:Object.freeze({id:'monster',family:'arcade',kind:'arcade',reference:'Monster',name:'Monster',zh:'Monster',ar:'Monster',
+ monster:Object.freeze({id:'monster',released:true,family:'arcade',kind:'arcade',reference:'Monster',name:'Monster',zh:'Monster',ar:'Monster',
   arcade:Object.freeze({rtp:0.97,bets:Object.freeze([coins(1),coins(5),coins(10),coins(50),coins(100)]),
    targets:Object.freeze([{id:'bat',multiplier:2},{id:'slime',multiplier:3},{id:'goblin',multiplier:5},{id:'wolf',multiplier:8},{id:'orc',multiplier:12},{id:'troll',multiplier:20},{id:'golem',multiplier:30},{id:'dragon',multiplier:50},{id:'chest',min:10,max:100}].map(Object.freeze)),
    // Normal arrow (1 bet, 1 target), triple arrow (3 bets, 3 targets), lightning (5 bets, chains up to 5 targets).
    weapons:Object.freeze([{id:'arrow',cost:1,targets:1},{id:'triple',cost:3,targets:3},{id:'lightning',cost:5,targets:5}].map(Object.freeze))})}),
- molestar:Object.freeze({id:'molestar',family:'arcade',kind:'arcade',reference:'MoleStar',name:'MoleStar',zh:'MoleStar',ar:'MoleStar',
+ molestar:Object.freeze({id:'molestar',released:true,family:'arcade',kind:'arcade',reference:'MoleStar',name:'MoleStar',zh:'MoleStar',ar:'MoleStar',
   arcade:Object.freeze({rtp:0.97,bets:Object.freeze([coins(1),coins(5),coins(10),coins(50),coins(100)]),
    targets:Object.freeze([{id:'mole',multiplier:2},{id:'helmet',multiplier:3},{id:'miner',multiplier:5},{id:'ninja',multiplier:10},{id:'king',multiplier:20},{id:'golden',multiplier:50},{id:'star',multiplier:100}].map(Object.freeze)),
    weapons:Object.freeze([{id:'hammer',cost:1,targets:1},{id:'bomb',cost:5,targets:5}].map(Object.freeze))})}),
