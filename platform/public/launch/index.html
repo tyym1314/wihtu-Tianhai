@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="color-scheme" content="dark">
 <meta name="referrer" content="no-referrer">
-<title>OASIS</title>
+<title>Game</title>
 <style>
 html,body{margin:0;height:100%;background:#120b24;color:#f6ecd2;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC",sans-serif;overflow:hidden;overscroll-behavior:none}
 #game{position:fixed;inset:0}
@@ -48,15 +48,17 @@ let sdk=null,closed=false,launchUsed=false;
 function show(state,title,message){const s=$('status');s.hidden=false;s.dataset.state=state;$('title').textContent=title;$('message').textContent=message;$('back').hidden=state!=='error';}
 function notifyApp(type,detail={}){
  const payload=JSON.stringify({type,game_id:gameId,...detail});
- try{if(window.OasisApp&&typeof window.OasisApp.postMessage==='function'){window.OasisApp.postMessage(payload);return true;}}catch{}
- try{if(window.webkit?.messageHandlers?.oasis){window.webkit.messageHandlers.oasis.postMessage(payload);return true;}}catch{}
+ // Native bridges: TianhaiApp (Android) / webkit "tianhai" (iOS); the older Oasis names keep working.
+ for(const bridge of [window.TianhaiApp,window.OasisApp])try{if(bridge&&typeof bridge.postMessage==='function'){bridge.postMessage(payload);return true;}}catch{}
+ for(const handler of [window.webkit?.messageHandlers?.tianhai,window.webkit?.messageHandlers?.oasis])try{if(handler){handler.postMessage(payload);return true;}}catch{}
  try{if(window.ReactNativeWebView){window.ReactNativeWebView.postMessage(payload);return true;}}catch{}
  if(window.parent!==window){window.parent.postMessage({type:'oasis.'+type,game_id:gameId,...detail},'*');return true;}
  return false;
 }
 function close(detail={}){if(closed)return;closed=true;sdk?.destroy();if(!notifyApp('close',detail)&&history.length>1)history.back();}
 function requestBack(){if(closed)return true;if(sdk?.loaded&&!sdk.closed){$('status').hidden=true;sdk.requestBack();}else close({reason:'user'});return true;}
-Object.defineProperty(window,'OasisLauncher',{value:Object.freeze({requestBack,setHostState:state=>sdk?.setHostState(state)}),configurable:false});
+const launcher=Object.freeze({requestBack,setHostState:state=>sdk?.setHostState(state)});
+for(const name of ['TianhaiLauncher','OasisLauncher'])Object.defineProperty(window,name,{value:launcher,configurable:false});
 $('back').addEventListener('click',()=>close({reason:'error'}));
 if(!GAMES.includes(gameId)||!code||code.length<8||!sessionId){show('error',T.badTitle,T.badMsg);}
 else{

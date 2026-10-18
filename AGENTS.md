@@ -2,6 +2,9 @@
 
 ## 产品与线上形态（2026-10-15）
 
+- 平台名称：**Tianhai 游戏平台**（管理台、合作方工作台、接入文档）。游戏内不显示任何平台或 App 品牌（通用中性设计，竞技大厅为 “PLAY TOGETHER”；绿洲高尔夫改名“迷你高尔夫 / MINI GOLF”）。对外桥接名：Android `TianhaiApp`、iOS `tianhai`、返回 `window.TianhaiLauncher.requestBack()`、H5 SDK `/sdk/tianhai-h5.mjs`（`TianhaiHost`）；旧名 `OasisApp`/`oasis`/`OasisLauncher`/`oasis-h5.mjs` 仍兼容。内部代码、环境变量、服务名中的 oasis 不改。
+- 发布时被 `retained-assets.lock.json` 锁定的未带版本号的旧资源（如 `public/assets/*.png`）不能原地替换，新图要用新文件名。
+
 - 正式入口：`https://game.tianyahuyu.com`（管理台/合作方工作台 `/`，游戏 `/play/<id>`，原生启动页 `/launch/`，H5 SDK `/sdk/oasis-h5.mjs`，文档 `/specs/*.md`）。
 - 旧域名 `oasis-player.43.98.202.236.sslip.io`、`oasis.43.98.202.236.sslip.io` 均 301 到正式入口。
 - 第三方 App 接入模式：**接入方账号 + 接入方自有钱包**。接入方后端 HMAC 调 `POST /v1/sessions`，客户端打开 `/launch/?game=<id>&lang=..#code=..&session=..`。钱包只有一种协议 **simple-v1**：接入方实现 查余额 / 扣款 / 加款 3 个接口（按 request_id 幂等）。指南：`platform/specs/partner-integration-production.md`。

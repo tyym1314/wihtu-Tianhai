@@ -51,8 +51,8 @@
     },
     {
       "id": "golf",
-      "name": "绿洲高尔夫",
-      "nameEn": "Oasis Golf",
+      "name": "迷你高尔夫",
+      "nameEn": "Mini Golf",
       "category": "competitive",
       "players": [
         2,

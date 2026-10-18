@@ -1,4 +1,4 @@
-# OASIS 游戏平台 · 第三方 App 正式接入指南
+# Tianhai 游戏平台 · 第三方 App 正式接入指南
 
 平台入口：`https://game.tianyahuyu.com`　|　协议版本：`gp-api-v1`　|　机器契约：[openapi.json](openapi.json)
 
@@ -144,8 +144,8 @@ WebView 设置：开启 JavaScript 与 DOM Storage；允许媒体自动播放（
 
 | 平台 | 接收方式 |
 |---|---|
-| Android | `webView.addJavascriptInterface(obj, "OasisApp")`，实现 `@JavascriptInterface void postMessage(String json)` |
-| iOS | `WKUserContentController.add(handler, name: "oasis")` |
+| Android | `webView.addJavascriptInterface(obj, "TianhaiApp")`，实现 `@JavascriptInterface void postMessage(String json)` |
+| iOS | `WKUserContentController.add(handler, name: "tianhai")` |
 | React Native | `onMessage`（`window.ReactNativeWebView.postMessage`） |
 
 | type | 含义 | App 处理 |
@@ -155,7 +155,7 @@ WebView 设置：开启 JavaScript 与 DOM Storage；允许媒体自动播放（
 | `reauth_required` | 长时间对局令牌过期 | 后端用 `resume_session_id=<session_id>` 再次调用 `/v1/sessions`，用新启动码重新打开启动页 |
 | `error` | 启动失败（启动码过期等） | 提示用户并允许重新进入 |
 
-**系统返回键**：调用 `webView.evaluateJavascript("window.OasisLauncher&&window.OasisLauncher.requestBack()", null)`。游戏会自行处理“对局中离开”的确认，确认后再发送 `close`。不要在对局中直接销毁 WebView（服务端对局仍会继续计时，断线 30 秒判弃权）。
+**系统返回键**：调用 `webView.evaluateJavascript("window.TianhaiLauncher&&window.TianhaiLauncher.requestBack()", null)`。游戏会自行处理“对局中离开”的确认，确认后再发送 `close`。不要在对局中直接销毁 WebView（服务端对局仍会继续计时，断线 30 秒判弃权）。
 
 **切后台**：WebView 暂停即可；回到前台游戏会从服务端恢复状态。
 
@@ -164,8 +164,8 @@ WebView 设置：开启 JavaScript 与 DOM Storage；允许媒体自动播放（
 在你自己的网页中使用 [H5 SDK](/sdk/oasis-h5.mjs)：
 
 ```js
-import { OasisHost } from 'https://game.tianyahuyu.com/sdk/oasis-h5.mjs';
-const game = new OasisHost({
+import { TianhaiHost } from 'https://game.tianyahuyu.com/sdk/tianhai-h5.mjs';
+const game = new TianhaiHost({
   platformOrigin: 'https://game.tianyahuyu.com',
   gameId: 'match',
   requestLaunch: ({ gameId, resumeSessionId }) => yourBackend.launch(gameId, resumeSessionId), // 返回 /v1/sessions 的结果

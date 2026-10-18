@@ -23,7 +23,7 @@ const definitions=[
  ['canal-crossing',2,'运河交错','Canal Crossing',['cross','water','weave','cross','rhythm','water','cross','arches']],
  ['red-beam-rhythm',2,'红梁节奏','Red Beam Rhythm',['rhythm','cross','rhythm','water','rhythm','stepping','rhythm','cross']],
  ['rapid-bridges',3,'急流连桥','Rapid Bridges',['pulse','zigzag','water','pulse','rhythm','pulse','zigzag','pulse']],
- ['oasis-switchbacks',3,'绿洲折返','Oasis Switchbacks',['zigzag','pulse','zigzag','cross','zigzag','rhythm','pulse','zigzag']],
+ ['oasis-switchbacks',3,'沙丘折返','Dune Switchbacks',['zigzag','pulse','zigzag','cross','zigzag','rhythm','pulse','zigzag']],
 ];
 const deepFreeze=value=>{if(value&&typeof value==='object'){Object.values(value).forEach(deepFreeze);Object.freeze(value);}return value;};
 function build([id,difficulty,titleZh,titleEn,segments]){
@@ -44,7 +44,7 @@ export const RUN_COURSES_V21=deepFreeze(RUN_COURSES.map(course=>({
  obstacles:course.obstacles.filter(obstacle=>obstacle.z>=SAFE_INTRO_METERS),
  gaps:course.gaps.filter(gap=>gap.start>=SAFE_INTRO_METERS),
 })));
-const original=deepFreeze({id:'golden-causeway-v1',contentVersion:legacy.LEVEL_VERSION,levelVersion:legacy.LEVEL_VERSION,physicsVersion:legacy.PHYSICS_VERSION,trackLength:legacy.TRACK_LENGTH,difficulty:1,title:{zh:'金色绿洲长桥',en:'Oasis Crossing',ar:'جسر الواحة'},obstacles:legacy.OBSTACLES,gaps:legacy.GAPS,items:legacy.ITEMS,checkpoints:legacy.CHECKPOINTS,guide:[]});
+const original=deepFreeze({id:'golden-causeway-v1',contentVersion:legacy.LEVEL_VERSION,levelVersion:legacy.LEVEL_VERSION,physicsVersion:legacy.PHYSICS_VERSION,trackLength:legacy.TRACK_LENGTH,difficulty:1,title:{zh:'金色沙丘长桥',en:'Dune Crossing',ar:'جسر الكثبان'},obstacles:legacy.OBSTACLES,gaps:legacy.GAPS,items:legacy.ITEMS,checkpoints:legacy.CHECKPOINTS,guide:[]});
 export function selectRunCourse(seed,ruleVersion='pvp-run-v2.0.0'){const courses=runRequiresSceneReady(ruleVersion)?RUN_COURSES_V21:RUN_COURSES;return courses[Number.parseInt(seed.slice(0,8),16)%courses.length];}
 export function resolveRunCourse(state){
  if((state?.ruleVersion==='pvp-run-v2.0.0'||runRequiresSceneReady(state?.ruleVersion))&&!state.courseId)throw new Error('Missing pinned Dune Dash course');

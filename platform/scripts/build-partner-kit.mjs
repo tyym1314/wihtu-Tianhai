@@ -35,7 +35,7 @@ const allowed=[
  'specs/examples/sdk-node.mjs','specs/examples/signature-vector.json',
  'specs/examples/partner-host/server.mjs','specs/examples/partner-host/README.md',
  'specs/examples/partner-host/public/index.html','specs/examples/partner-host/public/host.mjs','specs/examples/partner-host/public/host.css',
- 'public/sdk/oasis-h5.mjs','specs/openapi.json','specs/wallet-protocol.md','specs/integration-guide.md','specs/phase-f-self-integration.md','specs/production-handoff.md','specs/rate-limits.md','specs/android-webview-integration.md','specs/towerlink-v2-integration.md',
+ 'public/sdk/oasis-h5.mjs','public/sdk/tianhai-h5.mjs','specs/openapi.json','specs/wallet-protocol.md','specs/integration-guide.md','specs/phase-f-self-integration.md','specs/production-handoff.md','specs/rate-limits.md','specs/android-webview-integration.md','specs/towerlink-v2-integration.md',
 ];
 for(const name of allowed)put(name,await readFile(resolve(root,name)));
 const profiles=JSON.parse(execFileSync(process.execPath,['--import','tsx','--input-type=module','-e',"import {getProfile} from './server/math/index.ts';console.log(JSON.stringify(['thunder','tiger'].flatMap(game_id=>['98','99'].map(profile=>{const p=getProfile(game_id,profile);return {game_id,profile,math_version:p.version,math_config_hash:p.hash,max_payout_multiplier:String(p.maxMultiplier)};}))))"],{cwd:root,encoding:'utf8'}));

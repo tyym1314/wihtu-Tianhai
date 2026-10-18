@@ -1,4 +1,4 @@
-/** OASIS H5 host SDK v1. No HMAC secret, access token, wallet or scoring API belongs here. */
+/** Tianhai H5 host SDK v1 (also served as /sdk/tianhai-h5.mjs). No HMAC secret, access token, wallet or scoring API belongs here. */
 export const VERSION='1.0.0';
 const id=()=>crypto.randomUUID().replaceAll('-','');
 const object=v=>v&&typeof v==='object'&&!Array.isArray(v);
@@ -26,4 +26,5 @@ export class OasisHost {
  fail(code,message){if(!this.closed)this.emit('error',{code,message:String(message||'Launch failed').slice(0,300)});}
  destroy(){if(this.closed)return;this.closed=true;this.code='';clearTimeout(this.timer);clearInterval(this.closeTimer);window.removeEventListener('message',this.receive);document.removeEventListener('visibilitychange',this.visibility);this.frame?.remove();if(this.popup&&!this.popup.closed)this.popup.close();this.target=null;this.emit('destroyed');}
 }
+export {OasisHost as TianhaiHost};
 export default OasisHost;

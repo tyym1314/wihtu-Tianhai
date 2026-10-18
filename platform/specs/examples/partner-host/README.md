@@ -61,8 +61,8 @@ node specs/examples/partner-host/server.mjs --config /absolute/private/partner-h
 ## 宿主 SDK 用法
 
 ```js
-import { OasisHost } from '/sdk/oasis-h5.mjs';
-const game = new OasisHost({
+import { TianhaiHost } from '/sdk/tianhai-h5.mjs';
+const game = new TianhaiHost({
   platformOrigin: 'http://127.0.0.1:8795',
   gameId: 'match',
   requestLaunch: async ({ gameId, resumeSessionId }) => {
