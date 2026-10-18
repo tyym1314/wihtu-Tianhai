@@ -202,7 +202,8 @@ roomTimingSink=LEADER?await startRequestTimingSink().catch(()=>null):null;
 roomTimingSink?.closed.then(result=>console.log(JSON.stringify({event:'oasis.room_timing.closed',boot_id:result.boot_id,pid:result.pid,
  state:result.state,reason:result.reason,incomplete:result.incomplete,confirmed_written_records:result.confirmed_written_records,
  confirmed_written_bytes:result.confirmed_written_bytes,dropped:result.dropped}))).catch(()=>{});
-const server=createPlatformServer();await new Promise(r=>server.listen(PORT,'127.0.0.1',r));
+// OASIS_LEADER_HTTP=0: in cluster mode the leader only runs background jobs, so settlement bursts never delay requests.
+const server=createPlatformServer();if(!LEADER||process.env.OASIS_LEADER_HTTP!=='0')await new Promise(r=>server.listen(PORT,'127.0.0.1',r));
 // Background jobs run only on the leader worker; stop() clears them on shutdown.
 let timer,arcadeTimer,instantTimer,casinoTimer,pvpTimer,integrationTimer,simpleTimer,walletTimer,transferTimer;
 if(LEADER){
@@ -224,7 +225,7 @@ let stopping=false;
 async function stop(){
  if(stopping)return;stopping=true;
  for(const t of [timer,arcadeTimer,instantTimer,casinoTimer,pvpTimer,integrationTimer,simpleTimer,walletTimer,transferTimer])if(t)clearInterval(t);
- await Promise.all([new Promise(r=>server.close(r)),wallet?new Promise(r=>wallet.close(r)):Promise.resolve()]);
+ await Promise.all([server.listening?new Promise(r=>server.close(r)):Promise.resolve(),wallet?new Promise(r=>wallet.close(r)):Promise.resolve()]);
  await roomTimingSink?.close({reason:'shutdown'}).catch(()=>{});
  await transfers.close();await closeEnginePool();await closePools();process.exit(0);
 }process.on('SIGTERM',stop);process.on('SIGINT',stop);
