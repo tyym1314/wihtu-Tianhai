@@ -11,6 +11,6 @@ test('production requires explicit HTTPS, database, private directory and disabl
  assert.throws(()=>runtimeConfiguration({OASIS_ENVIRONMENT:'prod'}));
 });
 test('sandbox process cannot admit a production app even if someone changes its status',async()=>{
- await assert.rejects(assertProductionAppReady({query:()=>{throw Error('unreachable');}},{environment:'production'}),{code:'PRODUCTION_ACCEPTANCE_REQUIRED'});
+ await assert.rejects(assertProductionAppReady({query:()=>{throw Error('unreachable');}},{environment:'production'}),{code:'PARTNER_APP_REQUIRED'});
  await assertProductionAppReady(null,{environment:'sandbox'});
 });

@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
-import {probabilityCoinsToMinor} from '../scripts/android-player-acceptance-checks.mjs';
+function probabilityCoinsToMinor(value,scale){
+ assert.ok(Number.isFinite(value)&&value>=0&&Number.isInteger(scale)&&scale>=0&&scale<=6,'PROBABILITY_COIN_AMOUNT_INVALID');const text=String(value),match=/^(0|[1-9][0-9]*)(?:\.([0-9]+))?$/.exec(text);assert.ok(match&&(match[2]?.length??0)<=scale,'PROBABILITY_COIN_PRECISION_INVALID');const minor=BigInt(match[1])*10n**BigInt(scale)+BigInt((match[2]??'').padEnd(scale,'0')||'0');assert.ok(minor<=9223372036854775807n,'PROBABILITY_COIN_CAPACITY_INVALID');return minor.toString();
+}
 
 let fixtureSequence=0;
 const clone=value=>structuredClone(value);
@@ -23,7 +25,7 @@ async function loadFixture(options={}){
   './platform.mjs':prefix+'export const appById=id=>f.appById(id);export const scope=app=>f.scope(app);export const audit=(...args)=>f.audit(...args);export const validate=(...args)=>f.validate(...args);',
   './math/index.ts':prefix+'export const getProfile=(...args)=>f.getProfile(...args);export const playCycle=(...args)=>f.playCycle(...args);',
   './wallet-binding.mjs':prefix+'export const walletRequest=(...args)=>f.walletRequest(...args);export const validatedWalletBalance=(...args)=>f.validatedWalletBalance(...args);',
-  './production-admission.mjs':prefix+'export const FIRSTPARTY_FREE_PROFILE="firstparty-free-v1";export const FIRSTPARTY_INTERNAL_PROFILE="firstparty-internal-games-v1";export const partnerProfile=profile=>profile==="partner-external-v1";export const unitsPerCoin=scale=>{if(!Number.isInteger(scale)||scale<0||scale>6)throw Error("INTERNAL_COIN_PRECISION_INVALID");return 10**scale;};export const assertNewFinancialAdmission=(...args)=>f.assertNewFinancialAdmission(...args);export const publicAdmissionCapability=info=>f.publicAdmissionCapability(info);',
+  './production-admission.mjs':prefix+'export const partnerProfile=profile=>profile==="partner-external-v1";export const unitsPerCoin=scale=>{if(!Number.isInteger(scale)||scale<0||scale>6)throw Error("INTERNAL_COIN_PRECISION_INVALID");return 10**scale;};export const assertNewFinancialAdmission=(...args)=>f.assertNewFinancialAdmission(...args);export const publicAdmissionCapability=info=>f.publicAdmissionCapability(info);',
  };
  const rewritten=bytes.toString().replace(/from '(\.\/[^']+)'/g,(_match,specifier)=>{assert.ok(dependencies[specifier],'UNEXPECTED_RELATIVE_IMPORT');return `from '${data(dependencies[specifier])}'`;});
  try{return{module:await import(data(rewritten)),fixture:f,dispose(){delete globalThis[key];}};}catch(error){delete globalThis[key];throw error;}

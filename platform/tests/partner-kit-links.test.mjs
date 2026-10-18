@@ -43,16 +43,6 @@ test('existing external and section links remain intact',()=>{
  assert.equal(rewriteKitLinks('specs/android.md',text,new Map(),new Set()),text);
 });
 
-test('the Android document describes verification only and links to the actual source module',async()=>{
- const text=await readFile(join(root,'specs/android-webview-integration.md'),'utf8');
- assert.match(text,/仅用于验证游戏是否可上线/);
- assert.doesNotMatch(text,/\/downloads\//);
- for(const {target}of markdownLinks(text)){
-  if(target.startsWith('#'))continue;
-  const path=resolve(root,'specs',target),info=await lstat(path);
-  assert.ok(info.isFile()&&!info.isSymbolicLink());
- }
-});
 
 // Read the actual central directory rather than importing the writer's entry map.
 function zipEntries(bytes){
@@ -101,7 +91,7 @@ test('the built ZIP has valid hashes and working local links without inventing A
   }
   assert.equal(externalApkLinks,0);assert.ok(localLinks>5);
   const android=files.get('specs/android-webview-integration.md').toString();
-  assert.match(android,/仅用于验证游戏是否可上线/);
+  assert.match(android,/平台不提供 APK/);
   assert.doesNotMatch(android,/\/downloads\//);
   const phaseF=files.get('specs/phase-f-self-integration.md').toString();
   assert.doesNotMatch(phaseF,/\/downloads\/oasis-partner-sandbox-kit\.zip/);

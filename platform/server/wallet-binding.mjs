@@ -7,7 +7,6 @@ import Ajv from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import {pool as defaultPool,walletPool} from './db.mjs';
 import {id,seal,unseal,sign,fail,ApiError} from './security.mjs';
-import {createPlatformWallet,platformWalletRequest} from './platform-wallet.mjs';
 import {SIMPLE_PROTOCOL,createSimpleWalletScope,simpleWalletRequest} from './simple-wallet.mjs';
 
 let pool=defaultPool;
@@ -85,18 +84,6 @@ export async function configureWallet(appId,input,actor){
   bindingCache.delete(appId);try{return await configureWalletUncached(appId,input,actor);}finally{bindingCache.delete(appId);}
 }
 async function configureWalletUncached(appId,input,actor){
-  if(input?.provider==='platform'){
-    if(Object.keys(input).some(key=>key!=='provider'))fail(400,'INVALID_REQUEST');
-    if(!safeId(appId)||typeof actor!=='string'||!actor||actor.length>128)fail(400,'INVALID_ACTOR');
-    const db=await pool.connect();try{
-      await db.query('BEGIN');
-      const app=(await db.query('SELECT * FROM gp_apps WHERE id=$1 FOR UPDATE',[appId])).rows[0];if(!app)fail(404,'NOT_FOUND');
-      if((await db.query('SELECT 1 FROM gp_wallet_bindings WHERE app_id=$1',[appId])).rowCount)fail(409,'WALLET_ALREADY_BOUND');
-      if(await hasActivity(db,appId))fail(409,'WALLET_BINDING_HAS_ACTIVITY');
-      const binding=await createPlatformWallet(db,app,actor);
-      await db.query('COMMIT');return publicBinding(app,binding,false,null);
-    }catch(error){await db.query('ROLLBACK');throw error;}finally{db.release();}
-  }
   if(!input||Object.keys(input).some(k=>!['wallet_url','wallet_key_id','wallet_secret_base64'].includes(k)))fail(400,'INVALID_REQUEST');
   const wallet_url=validateWalletOrigin(input.wallet_url,{external:true}),wallet_key_id=input.wallet_key_id,secret=input.wallet_secret_base64;
   if(!safeId(appId)||!safeId(wallet_key_id)||typeof secret!=='string'||!/^[A-Za-z0-9+/]+={0,2}$/.test(secret))fail(400,'INVALID_WALLET_KEY');
@@ -186,7 +173,6 @@ export async function mergedProbability(app){
 export async function walletRequest(app,method,path,raw='',requestId=id('walletquery')){
   if(!app||!safeId(app.id)||!['GET','POST'].includes(method)||typeof raw!=='string'||!/^\/wallet\/v1(?:\/[A-Za-z0-9_-]+)+$/.test(path)||!safeId(requestId)||(method==='GET'&&raw))fail(400,'INVALID_WALLET_REQUEST');
   const binding=await bindingFor(app.id);
-  if(binding?.provider==='platform')return platformWalletRequest(pool===defaultPool?walletPool:pool,app,binding,method,path,raw,requestId);
   if(binding?.provider==='simple'){if(app.wallet_url!==binding.wallet_url||scopeFields.some(k=>scopeOf(app)[k]!==binding.scope[k]))fail(503,'WALLET_BINDING_CHANGED');return simpleWalletRequest(pool===defaultPool?walletPool:pool,app,binding,method,path,raw,requestId);}
   if(binding&&(app.wallet_url!==binding.wallet_url||scopeFields.some(k=>scopeOf(app)[k]!==binding.scope[k])))fail(503,'WALLET_BINDING_CHANGED');
   if(app.environment==='production'&&(!binding||!binding.wallet_url.startsWith('https://')))fail(503,'PRODUCTION_EXTERNAL_WALLET_REQUIRED');

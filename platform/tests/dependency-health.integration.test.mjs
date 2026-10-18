@@ -49,15 +49,9 @@ test('real production startup without Apps does not require the healthy referenc
  const health=await api('/api/admin/health');assert.equal(health.status,200);assert.equal(health.body.wallet,'ok');assert.equal(health.body.production_enabled,false);assert.equal(health.body.wallet_dependencies.reference_required,false);
  const probes=createProbes(config());assert.deepEqual(await probes.api(),{reachable:true});assert.equal((await probes.wallet()).status,'ok');assert.equal(Number((await probes.database()).cycles_pending),0);assert.equal(referenceCalls,0);
 });
-test('real persistent platform wallet is healthy at zero balance without starting/fetching reference wallet',async()=>{
+test('mixed production external App cannot be hidden by healthy platform or reference wallet',async()=>{
  const account=await api('/api/admin/partner-accounts',{name:'Health fixture',username:'provider_health',password:'Provider-health-fixture-2026!'});assert.equal(account.status,201);
  const login=await api('/api/partner/login',{username:'provider_health',password:'Provider-health-fixture-2026!'},null);assert.equal(login.status,200);partnerCookie=login.cookie;
- const created=await api('/api/partner/apps',{name:'Platform ledger health'},partnerCookie);assert.equal(created.status,201);platformApp=created.body.app;
- const health=await api('/api/admin/health');assert.equal(health.body.wallet,'ok');assert.equal(health.body.wallet_dependencies.providers.platform,1);
- const actual=(await db.query('SELECT treasury_available,treasury_reserved FROM wallet_scopes WHERE app_id=$1',[platformApp.id])).rows[0];assert.equal(actual.treasury_available,'0');assert.equal(actual.treasury_reserved,'0');
- assert.equal((await db.query('SELECT count(*)::int n FROM wallet_ledger')).rows[0].n,0);assert.equal((await db.query('SELECT count(*)::int n FROM wallet_users')).rows[0].n,0);assert.equal(referenceCalls,0);
-});
-test('mixed production external App cannot be hidden by healthy platform or reference wallet',async()=>{
  const created=await api('/api/partner/apps',{name:'External wallet health',wallet_provider:'external'},partnerCookie);assert.equal(created.status,201);externalApp=created.body.app;
  assert.equal((await api('/api/admin/health')).body.wallet,'ok','paused pristine unconfigured App is not admitted');
  const bound=await api(`/api/partner/apps/${externalApp.id}/integration/wallet`,{wallet_url:externalOrigin,wallet_key_id:'health_fixture_key',wallet_secret_base64:randomBytes(32).toString('base64')},partnerCookie);assert.equal(bound.status,200);
@@ -68,15 +62,6 @@ test('mixed production external App cannot be hidden by healthy platform or refe
   const health=await api('/api/admin/health');assert.equal(health.body.wallet,'unavailable');assert.deepEqual(health.body.wallet_dependencies.codes,['EXTERNAL_WALLET_PROBE_REQUIRED']);
   const probes=createProbes(config());assert.equal((await probes.wallet()).status,'failed');assert.equal(Number((await probes.database()).cycles_pending),0);assert.equal(referenceCalls,0);
  }finally{await db.query("UPDATE gp_apps SET status='paused' WHERE id=$1",[externalApp.id]);}
-});
-test('missing platform scope and altered provider scope fail despite SELECT 1 and healthy reference service',async()=>{
- await db.query('UPDATE wallet_scopes SET currency_scale=currency_scale+1 WHERE app_id=$1',[platformApp.id]);
- try{assert.ok((await api('/api/admin/health')).body.wallet_dependencies.codes.includes('PLATFORM_LEDGER_NOT_READY'));assert.equal((await createProbes(config()).wallet()).status,'failed');}
- finally{await db.query('UPDATE wallet_scopes SET currency_scale=currency_scale-1 WHERE app_id=$1',[platformApp.id]);}
- await db.query("UPDATE gp_wallet_bindings SET scope=jsonb_set(scope,'{app_id}','\"wrong_app\"') WHERE app_id=$1",[platformApp.id]);
- try{assert.ok((await api('/api/admin/health')).body.wallet_dependencies.codes.includes('WALLET_BINDING_CHANGED'));}
- finally{await db.query("UPDATE gp_wallet_bindings SET scope=jsonb_set(scope,'{app_id}',to_jsonb($1::text)) WHERE app_id=$1",[platformApp.id]);}
- assert.equal(referenceCalls,0);
 });
 test('wrong real DB environment or missing ledger schema cannot be masked by production API liveness',async()=>{
  await db.query("UPDATE gp_runtime_identity SET environment='sandbox'");

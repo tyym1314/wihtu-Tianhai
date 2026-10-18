@@ -4,7 +4,7 @@ import {id,hash,seal,unseal,fail} from './security.mjs';
 import {appById,scope,audit,validate} from './platform.mjs';
 import {getProfile,playCycle} from './math/index.ts';
 import {walletRequest,validatedWalletBalance} from './wallet-binding.mjs';
-import {assertNewFinancialAdmission,FIRSTPARTY_FREE_PROFILE,FIRSTPARTY_INTERNAL_PROFILE,partnerProfile,publicAdmissionCapability,unitsPerCoin} from './production-admission.mjs';
+import {assertNewFinancialAdmission,partnerProfile,publicAdmissionCapability,unitsPerCoin} from './production-admission.mjs';
 export {walletRequest} from './wallet-binding.mjs';
 export const walletBalance=validatedWalletBalance;
 const recoveryBatchSize=20,recoveryLock='recovery:probability';
@@ -97,11 +97,10 @@ export async function publicSession(s){return serializePublicSession(s,await rea
 async function serializePublicSession(s,{app,minor}){
   // Persisted session provenance describes this accepted session. New rooms
   // independently recheck current App and admission policy in their transaction.
-  if(s.admission_profile===FIRSTPARTY_FREE_PROFILE)return{mode:'production',platformMode:'production',sessionId:s.id,epoch:0,stateVersion:s.state.version,balance:Number(minor)/10**app.currency_scale,betChoices:[],mathVersion:null,pendingRound:null,freeSpins:0,freeMultiplier:0,lockedBet:null,admission_profile:s.admission_profile,admission_revision:String(s.admission_revision),...publicAdmissionCapability({profile:s.admission_profile,game_ids:[]})};
   let pending=null,remaining=0,freeMultiplier=0,lockedBet=null,mathVersion=getProfile(s.game_id,app.math_profile).version;
   if(s.state.pendingPlay)pending=(await pool.query('SELECT payload FROM gp_plays WHERE id=$1',[s.state.pendingPlay])).rows[0]?.payload||null;
   if(s.state.cycleId){const cycle=(await pool.query('SELECT * FROM gp_cycles WHERE id=$1',[s.state.cycleId])).rows[0];if(cycle?.result){if(s.state.pendingPlay||s.state.nextIndex<cycle.result.rounds.length)mathVersion=cycle.math_version;remaining=cycle.result.rounds[Math.max(0,s.state.nextIndex-1)]?.freeSpinsAfter||0;freeMultiplier=cycle.result.rounds[Math.max(0,s.state.nextIndex-1)]?.nextFreeMultiplier||0;lockedBet=remaining?Number(cycle.stake_minor)/unitsPerCoin(app.currency_scale):null;}}
-  const live=s.admission_profile===FIRSTPARTY_INTERNAL_PROFILE||partnerProfile(s.admission_profile);
+  const live=partnerProfile(s.admission_profile);
   return {mode:live?'production':'demo',platformMode:live?'production':'sandbox',sessionId:s.id,epoch:0,stateVersion:s.state.version,balance:Number(minor)/unitsPerCoin(app.currency_scale),unitsPerCoin:unitsPerCoin(app.currency_scale),betChoices:getProfile(s.game_id,app.math_profile).config.stakeMinorChoices.map(value=>value/unitsPerCoin(app.currency_scale)),mathVersion,pendingRound:pending,freeSpins:remaining,freeMultiplier,lockedBet,...(live?publicAdmissionCapability({profile:s.admission_profile,open:true,game_ids:app.game_ids}):{})};
 }
 export async function spin(session,body){
@@ -138,7 +137,7 @@ export async function spin(session,body){
     // One validated, request-local balance snapshot after confirmed settlement.
     // Replays and independent session reads obtain their own fresh snapshot.
     const balance=await readSessionBalance(s);
-    if(s.admission_profile!==FIRSTPARTY_FREE_PROFILE)getProfile(s.game_id,balance.app.math_profile);
+    getProfile(s.game_id,balance.app.math_profile);
     const engine=cycle.result.rounds[index],stateBefore={balance:Number(balance.minor)/unitsPerCoin(balance.app.currency_scale)},roundId=id('round');
     // Reverse the settled cycle in integer minor units before converting once
     // for presentation; subtracting divided coin values introduces extra digits.

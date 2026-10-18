@@ -5,14 +5,14 @@
 - 正式入口：`https://game.tianyahuyu.com`（管理台/合作方工作台 `/`，游戏 `/play/<id>`，原生启动页 `/launch/`，H5 SDK `/sdk/oasis-h5.mjs`，文档 `/specs/*.md`）。
 - 旧域名 `oasis-player.43.98.202.236.sslip.io`、`oasis.43.98.202.236.sslip.io` 均 301 到正式入口。
 - 第三方 App 接入模式：**接入方账号 + 接入方自有钱包**。接入方后端 HMAC 调 `POST /v1/sessions`，客户端打开 `/launch/?game=<id>&lang=..#code=..&session=..`。钱包只有一种协议 **simple-v1**：接入方实现 查余额 / 扣款 / 加款 3 个接口（按 request_id 幂等）。指南：`platform/specs/partner-integration-production.md`。
-- 第一方 App（`app_e091fb5daf135660d39ce89fc23760ab`，平台账号+平台内部金币）仍保留，供 `platform/android-player` 的 APK 使用。
-- 演示合作方已于 2026-10-18 彻底删除（账号、App、数据、演示站、证书、演示钱包库）。线上只有第一方 App；第三方真实接入（WithU）待添加。`platform/examples/partner-demo/` 仅作为接入示例代码保留在仓库。
+- 第一方 App（平台账号、内部金币、`platform/android-player` APK、签名、玩家域名 `oasis-player…sslip.io`、旧转账协议）已于 2026-10-18 全部删除；生产 `OASIS_ADMISSION_PROFILE=closed` + `OASIS_PARTNER_ADMISSION=1`，只服务三方 App。
+- 演示合作方已于 2026-10-18 彻底删除（账号、App、数据、演示站、证书、演示钱包库）。第三方真实接入（WithU）待添加。`platform/examples/partner-demo/` 仅作为接入示例代码保留在仓库。
 - 管理员：`tyym`（另有原 `operator`）。
 
 ## 代码结构要点
 
-- `platform/server/production-admission.mjs`：生产准入。`OASIS_PARTNER_ADMISSION=1` 时，非第一方的生产 App（已绑定 HTTPS 外部钱包且启用）可用 HMAC 会话、付费房与概率游戏（`partner-external-v1`）。第一方 App 走 `firstparty-*` profile。
-- `platform/server/platform.mjs#createSession`：`hosted`（第一方 BFF 玩家）与合作方 HMAC 会话两条路径。
+- `platform/server/production-admission.mjs`：生产准入。只有三方 App（已绑定 HTTPS simple-v1 钱包且启用）可用 HMAC 会话、付费房与概率游戏（`partner-external-v1`）；配置里出现旧的第一方变量会拒绝启动（`FIRSTPARTY_CONFIG_REMOVED`）。
+- `platform/server/platform.mjs#createSession`：只有合作方 HMAC 会话一条路径（平台托管玩家已删除）。
 - `platform/server/wallet-binding.mjs`：外部钱包调用（单次 DNS、只允许公网地址、3s 超时）。测试可用 `setWalletTransportForTests`。生产绑定外部钱包即 `provider='simple'`。
 - `platform/server/simple-wallet.mjs`：simple-v1 适配层。平台内部账本承担冻结/扣款/释放/结算/概率责任；入场或投注先向接入方扣款（in 腿）再进内部账本，退款/派奖从内部账本经接入方加款（out 腿）返还；后台每 3 秒补查不确定的扣款、重试加款、回收滞留中转余额。表 `gp_simple_wallet_legs`。不变量：接入方 App 的内部 `wallet_users` 可用+冻结在对局结束后应归零。
 - 前端：`platform/arena`（11 款竞技，React + Three/Canvas），`src/` + `platform/legacy`（雷霆/虎虎）。管理台 `platform/src`。
@@ -26,7 +26,7 @@
 - 街机射击（Monster、MoleStar）：`server/casino/arcade.mjs`，一次开局 = 一个钱包周期（买弹 → 服务端逐发判定 → 结束时结算赢得 + 退回未用弹药，闲置 2 分钟自动结算）；每发返还率固定，瞄准哪个目标只影响波动。
 - 参考资料补抓：手机游戏页有防截屏，可直接解析 Cocos 资源包的 `text/<语言>` 文本（见 `.local/reference/rules/<游戏>/*.json`）。
 - 服务端：`server/casino/`。`rounds.mjs` 共享回合（每个 App 每款游戏一条连续回合，承诺/揭示种子；每注一个钱包概率周期：下注时 authorize+accept，开奖后 settle）；`instant.mjs` 单人旋转（一次付费旋转含全部免费旋转 = 一个周期）。数学：`wheel.mjs`、`crash.mjs`、`cards3.mjs`、`slots.mjs`。接口：`GET /api/casino/state`、`POST /api/casino/bets|cashout|spin`。
-- 只对三方 App 与沙箱开放（`ALL_GAME_IDS`）；第一方 13 款（`RELEASED_IDS`）不变；生产启动时自动给三方 App 补上新游戏。
+- 只对三方 App 与沙箱开放（`ALL_GAME_IDS`）；生产启动时自动给三方 App 补上新游戏。
 - 命名：游戏名与 ID 沿用参考游戏（如 `greedylion` GreedyLion、`rocketstar2` RocketStar2、`teenpatti` TeenPatti、`olympus` Olympus）；改名后服务启动会自动从各 App 的 `game_ids` 去掉已不存在的 ID。
 - 界面标准（用户要求）：**原样还原效果图**。做法：效果图放 `.local/concepts/`，用 `codex exec "<编辑说明>" -i concept.png` 生成去掉动态内容（数字、头像、卡牌、符号等）的干净底图 `.local/art/<game>-plate/plate.png`（尺寸 941x1672），前端用 `casino/shared/Stage.jsx` 按设计像素把实时数据/热区/动效叠加在底图空位上；需要单独动的元素（火箭等）同样用编辑从效果图里抠出。
 - 转盘类（Greedy 系列）共用 `casino/games/wheel/WheelGame.jsx`：每款只需在 `layouts.mjs` 写底图上的设计像素坐标（下注区、计时、余额、榜单、筹码、记录条等），`node scripts/casino-icons.mjs <game>` 从底图生成 `plate.webp` 与各选项图标，`casino/main.jsx` 注册到 `Wheel`；规则文字由 `casino/shared/rules.mjs` 按游戏定义自动生成（新选项要补 `NAMES` 中/阿译名）。
@@ -44,7 +44,7 @@
 
 - 真机：手机 Chrome 打开三方 App 的游戏页（原用演示合作方），`adb forward tcp:9334 localabstract:chrome_devtools_remote` 后用 Playwright `connectOverCDP` 逐款测加载、iframe 内帧率、背景音乐（`window.__casinoMusic`）。38 款加载 1.7–2.9 秒，游戏中 57–60 fps。
 - 压测：`npx tsx scripts/casino-load-provision.mjs 2100 && node scripts/casino-load.mjs <玩家数> <秒>`（多个进程用 `LOAD_OFFSET` 错开玩家号）。本地按生产方式跑：`OASIS_REFERENCE_WALLET_FAST=1 OASIS_REFERENCE_WALLET_ALL_WORKERS=1 OASIS_WORKERS=4 OASIS_LEADER_HTTP=0 OASIS_RATE_EXCHANGE_IP_PER_MINUTE=100000 node --import tsx server/cluster.mjs`（本地 PG 已设 `max_connections=300`、开 `pg_stat_statements`）。钱包吞吐基准：`.local/load/bench.sh`（simple-v1 + 模拟三方钱包）。
-- 钱包账本两条路径：simple-v1 三方 App 的概率命令走“按玩家并行”热路径（锁玩家行，App 汇总写入 `wallet_scope_shards` 16 个分片，逻辑总额 = `wallet_scopes` + 分片之和，后台每 10 秒折叠回主行，过期冻结按玩家释放）；PvP、第一方内部金币、旧转账协议仍走 App 级串行路径。审计 App 总额时要把分片加上。
+- 钱包账本两条路径：simple-v1 三方 App 的概率命令走“按玩家并行”热路径（锁玩家行，App 汇总写入 `wallet_scope_shards` 16 个分片，逻辑总额 = `wallet_scopes` + 分片之和，后台每 10 秒折叠回主行，过期冻结按玩家释放）；PvP 仍走 App 级串行路径。审计 App 总额时要把分片加上。
 - 资金流程：simple-v1 App 的娱乐场周期用合并命令 `/wallet/v1/probability/authorize-accept` 一步完成授权+确认（操作 id `accept_<周期>`，见 `server/casino/funding.mjs`）；其他钱包和升级前已用两步开始的周期仍走 `authorize_` + `accept_`。作废时先重放未决的合并操作再退款。
 - 进程：生产用 `server/cluster.mjs`（systemd ExecStart），runtime.env 里 `OASIS_WORKERS=3 OASIS_LEADER_HTTP=0`（1 个后台 leader 跑迁移/开奖/恢复，2 个 HTTP 进程），连接预算 `OASIS_DB_POOL_MAX=12 OASIS_WALLET_POOL_MAX=8 OASIS_DB_LOCK_POOL_MAX=5`（3×37≈111，生产 PG `max_connections=128`），`OASIS_CASINO_SETTLE_CONCURRENCY=6`。加机器时按核数加 workers 并同步调大 PG 连接数。
 - 容量（2026-10-18）：优化前单 App 约 150 人；优化后不再有单 App 上限，只受机器限制。现有生产机（4 核共享、PG 限 2 核/1G）估算约 550–600 名高强度在玩玩家稳定（峰值约 850）；本机 14 核测 1000 人 p95 旋转 0.25s / 下注 0.34s，2000 人零错误。
@@ -76,12 +76,10 @@ npm run build:release            # 构建全部前端 + release-build-manifest.j
 
 ## Android 真机测试
 
-- 实体机 `46dcfd25`（Xiaomi，Android 16）。QA 包 `com.tianyahuyu.oasis.player.qa` 可 WebView 调试：
-  `adb forward tcp:9333 localabstract:webview_devtools_remote_$(adb shell pidof com.tianyahuyu.oasis.player.qa)`，再用 CDP `Runtime.evaluate`。游戏在同源 iframe 内（`document.querySelector('iframe').contentDocument`）。
-- 测 iframe 帧率时用 iframe 自己的 `w.performance.now()`（父页面与 iframe 时间原点不同）。
-- 重建 APK：`./platform/android-player/build.sh --variant qa|release --origin https://game.tianyahuyu.com --app-id app_e091fb5daf135660d39ce89fc23760ab`（签名在被 git 忽略的 `.local/signing`，务必保留）。
+- 实体机 `46dcfd25`（Xiaomi）。第一方 APK 已删除，真机验证改在接入方 App（WithU）的 WebView 里做：`adb forward tcp:9333 localabstract:webview_devtools_remote_$(adb shell pidof <包名>)`，再用 CDP `Runtime.evaluate`；测 iframe 帧率用 iframe 自己的 `performance.now()`。
 - Chrome 调试：`adb forward tcp:9334 localabstract:chrome_devtools_remote`。
 
 ## 历史
 
 `HANDOFF.md`、`ENGINE_AUDIT.md` 等为前任的详细证据记录，结论以本文件与线上实测为准。旧的 master 未提交改动保存在 `git stash`（`master-uncommitted-before-launch-20261015`）。
+

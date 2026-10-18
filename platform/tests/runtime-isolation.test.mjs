@@ -97,124 +97,14 @@ test('production rejects HTTP loopback hosts and preserves the deployed four-col
 test('both admin and partner activation stay closed and console launch cannot bypass the production backend',async()=>{
  for(const[role,cookie]of [['admin',productionCookie],['partner',partnerCookie]]){
   const path=`/api/${role}/apps/${item.app.id}`;
-  const activated=await request(production,path,{status:'active'},cookie,'PATCH');assert.equal(activated.status,409);assert.equal(activated.body.error.code,'PRODUCTION_ACCEPTANCE_REQUIRED');
+  const activated=await request(production,path,{status:'active'},cookie,'PATCH');assert.equal(activated.status,409);assert.equal(activated.body.error.code,'PARTNER_APP_REQUIRED');
   const launched=await request(production,path+'/launch',{game_id:'match'},cookie);assert.equal(launched.status,403);assert.equal(launched.body.error.code,'PRODUCTION_LAUNCH_REQUIRES_PARTNER_BACKEND');
  }
  const actual=(await productionDb.query('SELECT status FROM gp_apps WHERE id=$1',[item.app.id])).rows[0];assert.equal(actual.status,'paused');assert.equal(await count(productionDb,'gp_sessions'),0);assert.equal(await count(productionDb,'gp_launch_intents'),0);
  const scope=Object.fromEntries(['partner_id','environment','wallet_scope_id','currency_id'].map(k=>[k,item.app[k]]));
  const body={...scope,app_id:item.app.id,request_id:'runtime_backend_launch',external_user_id:'real_identity_fixture',game_id:'match',locale:'en',host_platform:'web'};
  const headers=signedHeaders({keyId:item.credentials.key_id,secretBase64:item.credentials.secret_base64,method:'POST',path:'/v1/sessions',rawBody:JSON.stringify(body),requestId:body.request_id});
- const signed=await request(production,'/v1/sessions',body,null,'POST',headers);assert.equal(signed.status,403);assert.equal(signed.body.message,'PLAYER_BFF_REQUIRED');assert.equal(await count(productionDb,'gp_sessions'),0);
-});
-
-test('platform player cookie, per-App identity and BFF resume reject forged, cross-App and expired access without test credits',async()=>{
- const appTwo=(await request(production,'/api/partner/apps',{name:'Second production App',wallet_provider:'external'},partnerCookie)).body.app;
- const password='Player-fixture-only-2026!';
- const blockedRegister=await request(production,'/api/player/register',{app_id:item.app.id,username:'new_player',password});
- assert.equal(blockedRegister.status,409);assert.equal(blockedRegister.body.error.code,'PRODUCTION_ACCEPTANCE_REQUIRED');assert.equal(await count(productionDb,'gp_players'),0);
- // These records stand for previously accepted obligations, not accounts
- // created by a closed production admission path.
- const players={};
- for(const username of ['player_alpha','player_bravo','player_unbound']){
-  const playerId='accepted_'+username,salt=randomBytes(16).toString('hex');players[username]=playerId;
-  await productionDb.query('INSERT INTO gp_players(id,username,salt,password_hash) VALUES($1,$2,$3,$4)',[playerId,username,salt,scryptSync(password,salt,64).toString('hex')]);
- }
- const acceptedIds={
-  accepted_alpha_one:'player_'+randomBytes(16).toString('hex'),
-  accepted_alpha_two:'player_'+randomBytes(16).toString('hex'),
-  accepted_bravo_one:'player_'+randomBytes(16).toString('hex'),
-  accepted_bravo_two:'player_'+randomBytes(16).toString('hex')
- };
- for(const [sessionId,appId,playerId] of [
-  ['accepted_alpha_one',item.app.id,players.player_alpha],
-  ['accepted_alpha_two',appTwo.id,players.player_alpha],
-  ['accepted_bravo_one',item.app.id,players.player_bravo],
-  ['accepted_bravo_two',appTwo.id,players.player_bravo]
- ])await productionDb.query('INSERT INTO gp_sessions(id,app_id,external_user_id,game_id,host_origin,player_id) VALUES($1,$2,$3,$4,$5,$6)',[sessionId,appId,acceptedIds[sessionId],'match',publicOrigin,playerId]);
- const storedPlayer=(await productionDb.query("SELECT salt,password_hash FROM gp_players WHERE username='player_alpha'")).rows[0];assert.notEqual(storedPlayer.password_hash,password);assert.match(storedPlayer.password_hash,/^[a-f0-9]{128}$/);
- const playerLogin=async(username,appId)=>request(production,'/api/player/login',{username,password,app_id:appId});
- const unbound=await playerLogin('player_unbound',item.app.id);assert.equal(unbound.status,409);assert.equal(unbound.body.error.code,'PRODUCTION_ACCEPTANCE_REQUIRED');
- assert.equal(await count(productionDb,'gp_player_app_ids'),0);assert.equal(await count(productionDb,'gp_player_sessions'),0);
- const alphaOne=await playerLogin('player_alpha',item.app.id),alphaAgain=await playerLogin('player_alpha',item.app.id),alphaTwo=await playerLogin('player_alpha',appTwo.id),bravoOne=await playerLogin('player_bravo',item.app.id),bravoTwo=await playerLogin('player_bravo',appTwo.id);
- for(const login of [alphaOne,alphaAgain,alphaTwo,bravoOne,bravoTwo]){assert.equal(login.status,200);assert.match(login.headers.get('set-cookie'),/^__Host-oasis_player=[A-Za-z0-9_-]{43}; Path=\/; Secure; HttpOnly; SameSite=Strict;/);assert.match(login.body.external_user_id,/^player_[a-f0-9]{32}$/);assert.equal('token' in login.body,false,'browser JSON must not expose the login bearer');}
- const sessionRead=await request(production,'/api/player/session',undefined,alphaOne.cookie);assert.equal(sessionRead.status,200);assert.equal(sessionRead.body.csrf_token,alphaOne.body.csrf_token);assert.equal('token' in sessionRead.body,false);
- assert.equal(alphaOne.body.external_user_id,alphaAgain.body.external_user_id,'same player/App mapping must be stable');
- assert.notEqual(alphaOne.body.external_user_id,alphaTwo.body.external_user_id,'same player gets different IDs in different Apps');
- assert.notEqual(alphaOne.body.external_user_id,bravoOne.body.external_user_id,'different players get different IDs');
- assert.notEqual(bravoOne.body.external_user_id,bravoTwo.body.external_user_id,'second player also gets a separate ID per App');
- assert.notEqual(alphaTwo.body.external_user_id,bravoTwo.body.external_user_id,'players stay distinct inside the second App');
- assert.equal((await productionDb.query('SELECT count(*)::int n FROM gp_player_app_ids')).rows[0].n,4);
- const rawCookie=alphaOne.cookie.split('=')[1],storedHash=createHash('sha256').update(rawCookie).digest('hex');
- assert.equal((await productionDb.query('SELECT token_hash FROM gp_player_sessions WHERE token_hash=$1',[storedHash])).rows[0].token_hash,storedHash);
- assert.equal(await count(productionDb,'wallet_users'),0);assert.equal(await count(productionDb,'wallet_ledger'),0);
- const launchBody={app_id:item.app.id,request_id:'player_new_closed',game_id:'match',locale:'en',host_platform:'web'};
- const playerLaunch=(body,cookie,csrf,extra={})=>request(production,'/api/player/launch',body,cookie,'POST',{...(csrf?{'x-oasis-csrf':csrf}:{}),...extra});
- const missingCsrf=await playerLaunch(launchBody,alphaOne.cookie);assert.equal(missingCsrf.status,403);assert.equal(missingCsrf.body.error.code,'CSRF_FORBIDDEN');
- const foreignOrigin=await playerLaunch(launchBody,alphaOne.cookie,alphaOne.body.csrf_token,{Origin:'https://foreign.example.invalid'});assert.equal(foreignOrigin.status,403);assert.equal(foreignOrigin.body.error.code,'ORIGIN_FORBIDDEN');
- const forged=await playerLaunch({...launchBody,external_user_id:bravoOne.body.external_user_id},alphaOne.cookie,alphaOne.body.csrf_token);assert.equal(forged.status,400);assert.equal(forged.body.error.code,'INVALID_REQUEST');
- const closed=await playerLaunch(launchBody,alphaOne.cookie,alphaOne.body.csrf_token);assert.equal(closed.status,409);assert.equal(closed.body.error.code,'PRODUCTION_ACCEPTANCE_REQUIRED');assert.equal(await count(productionDb,'gp_sessions'),4);
- const hmacResume={partner_id:item.app.partner_id,app_id:item.app.id,environment:item.app.environment,wallet_scope_id:item.app.wallet_scope_id,currency_id:item.app.currency_id,request_id:'hmac_resume_denied',external_user_id:alphaOne.body.external_user_id,game_id:'match',locale:'en',host_platform:'web',resume_session_id:'accepted_alpha_one'};
- const hmacHeaders=signedHeaders({keyId:item.credentials.key_id,secretBase64:item.credentials.secret_base64,method:'POST',path:'/v1/sessions',rawBody:JSON.stringify(hmacResume),requestId:hmacResume.request_id});
- const hmacDenied=await request(production,'/v1/sessions',hmacResume,null,'POST',hmacHeaders);assert.equal(hmacDenied.status,403);assert.equal(hmacDenied.body.message,'PLAYER_BFF_REQUIRED');
- const resumeOne={...launchBody,request_id:'player_resume_one',resume_session_id:'accepted_alpha_one'};
- const stolen=await playerLaunch(resumeOne,bravoOne.cookie,bravoOne.body.csrf_token);assert.equal(stolen.status,403);assert.equal(stolen.body.error.code,'SCOPE_FORBIDDEN');
- const wrongApp=await playerLaunch({...resumeOne,app_id:appTwo.id,request_id:'player_cross_app'},alphaTwo.cookie,alphaTwo.body.csrf_token);assert.equal(wrongApp.status,403);assert.equal(wrongApp.body.error.code,'SCOPE_FORBIDDEN');
- const resumed=await playerLaunch(resumeOne,alphaOne.cookie,alphaOne.body.csrf_token);assert.equal(resumed.status,201);assert.equal(resumed.body.session_id,'accepted_alpha_one');
- const sameReplay=await playerLaunch(resumeOne,alphaOne.cookie,alphaOne.body.csrf_token);assert.equal(sameReplay.status,201);assert.deepEqual(sameReplay.body,resumed.body);
- const replayByOther=await playerLaunch(resumeOne,bravoOne.cookie,bravoOne.body.csrf_token);assert.equal(replayByOther.status,403);assert.equal(replayByOther.body.error.code,'SCOPE_FORBIDDEN');
- const resumedTwo=await playerLaunch({...resumeOne,app_id:appTwo.id,request_id:'player_resume_two',resume_session_id:'accepted_alpha_two'},alphaTwo.cookie,alphaTwo.body.csrf_token);assert.equal(resumedTwo.status,201);assert.equal(resumedTwo.body.session_id,'accepted_alpha_two');
- const exchanged=await request(production,'/v1/launch/exchange',{launch_code:resumed.body.launch_code,client_instance_id:'player_fixture_client',host_origin:publicOrigin,game_id:'match'});assert.equal(exchanged.status,200);assert.equal(exchanged.body.external_user_id,alphaOne.body.external_user_id);
- await productionDb.query("UPDATE gp_player_sessions SET expires_at=now()-interval '1 minute' WHERE player_id=$1",[alphaOne.body.player.id]);
- const expired=await playerLaunch({...resumeOne,request_id:'player_expired_login'},alphaOne.cookie,alphaOne.body.csrf_token);assert.equal(expired.status,401);assert.equal(expired.body.error.code,'LOGIN_REQUIRED');
- const logoutMissingCsrf=await request(production,'/api/player/logout',{},bravoTwo.cookie);assert.equal(logoutMissingCsrf.status,403);
- const logout=await request(production,'/api/player/logout',{},bravoTwo.cookie,'POST',{'x-oasis-csrf':bravoTwo.body.csrf_token});assert.equal(logout.status,200);assert.match(logout.headers.get('set-cookie'),/Max-Age=0/);
- assert.equal((await request(production,'/api/player/session',undefined,bravoTwo.cookie)).status,401);
- assert.equal((await request(production,'/api/player/session',undefined,bravoOne.cookie)).status,200,'another session remains valid');
- await stop(production);production=await launch(names[0],'production',join(dir,'production'),{},false);assert.equal((await ready(production)).environment,'production');
- const afterRestart=await playerLogin('player_alpha',item.app.id);assert.equal(afterRestart.status,200);assert.equal(afterRestart.body.external_user_id,alphaOne.body.external_user_id,'mapping survives a server restart');
- assert.equal(await count(productionDb,'wallet_users'),0);assert.equal(await count(productionDb,'wallet_ledger'),0);assert.equal(walletRequests,0);
-});
-
-test('concurrent player login and accepted-session launch use player-before-App lock order',async()=>{
- const player=(await productionDb.query("SELECT id FROM gp_players WHERE username='player_alpha'")).rows[0];
- const password='Player-fixture-only-2026!';
- const loginBody={username:'player_alpha',password,app_id:item.app.id};
- const existing=await request(production,'/api/player/login',loginBody);assert.equal(existing.status,200);
- const blocker=await productionDb.connect();let resumePromise,observedWait=false,appAvailable=false;
- try{
-  await blocker.query('BEGIN');
-  await blocker.query('SELECT id FROM gp_players WHERE id=$1 FOR UPDATE',[player.id]);
-  const resumeBody={app_id:item.app.id,request_id:'player_lock_order_resume',game_id:'match',locale:'en',host_platform:'web',resume_session_id:'accepted_alpha_one'};
-  resumePromise=request(production,'/api/player/launch',resumeBody,existing.cookie,'POST',{'x-oasis-csrf':existing.body.csrf_token}).catch(error=>({error}));
-  for(let attempt=0;attempt<100;attempt++){
-   const waiting=await productionDb.query("SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%gp_players%' AND query LIKE '%FOR SHARE%' LIMIT 1");
-   if(waiting.rowCount){observedWait=true;break;}await sleep(20);
-  }
-  const observer=await productionDb.connect();
-  try{
-   await observer.query('BEGIN');
-   await observer.query('SELECT id FROM gp_apps WHERE id=$1 FOR UPDATE NOWAIT',[item.app.id]);
-   appAvailable=true;
-  }catch(error){if(error.code!=='55P03')throw error;}
-  finally{await observer.query('ROLLBACK');observer.release();}
-  const concurrentLogin=request(production,'/api/player/login',loginBody).catch(error=>({error}));
-  await sleep(30);
-  await blocker.query('COMMIT');
-  const [resumed,loggedIn]=await Promise.all([resumePromise,concurrentLogin]);
-  assert.equal(resumed.status,201,JSON.stringify(resumed));assert.equal(resumed.body.session_id,'accepted_alpha_one');
-  assert.equal(loggedIn.status,200,JSON.stringify(loggedIn));
- }finally{await blocker.query('ROLLBACK').catch(()=>{});blocker.release();if(resumePromise)await resumePromise;}
- assert.equal(observedWait,true,'launch must reach the player row lock while it is held');
- assert.equal(appAvailable,true,'launch must not hold the App row while waiting for the player');
-});
-
-test('production refuses a stored HTTP loopback host even for an accepted-session resume',async()=>{
- const login=await request(production,'/api/player/login',{username:'player_alpha',password:'Player-fixture-only-2026!',app_id:item.app.id});assert.equal(login.status,200);
- await productionDb.query('UPDATE gp_apps SET allowed_origins=$2 WHERE id=$1',[item.app.id,JSON.stringify(['http://127.0.0.1:8800'])]);
- try{
-  const result=await request(production,'/api/player/launch',{app_id:item.app.id,request_id:'production_loopback_resume',game_id:'match',locale:'en',host_platform:'web',host_origin:'http://127.0.0.1:8800',resume_session_id:'accepted_alpha_one'},login.cookie,'POST',{'x-oasis-csrf':login.body.csrf_token});
-  assert.equal(result.status,400);assert.equal(result.body.error.code,'INVALID_ORIGIN');
- }finally{await productionDb.query('UPDATE gp_apps SET allowed_origins=$2 WHERE id=$1',[item.app.id,'[]']);}
+ const signed=await request(production,'/v1/sessions',body,null,'POST',headers);assert.equal(signed.status,403);assert.equal(signed.body.message,'PARTNER_APP_REQUIRED');assert.equal(await count(productionDb,'gp_sessions'),0);
 });
 
 test('production rejects even allowlisted loopback HTTP wallet without persisting credentials or binding',async()=>{
@@ -241,9 +131,9 @@ test('generic production env approval is rejected before boot and external Apps 
  for(const status of ['paused','active']){
   await productionDb.query('UPDATE gp_apps SET status=$2 WHERE id=$1',[newApp.id,status]);
   const registration=await request(production,'/api/player/register',{app_id:newApp.id,username:'wallet_player',password:'Wallet-player-fixture-2026!'});
-  assert.equal(registration.status,409);assert.equal(registration.body.error.code,'PRODUCTION_ACCEPTANCE_REQUIRED');
+  assert.equal(registration.status,404,'the platform-hosted player account flow no longer exists');
   const login=await request(production,'/api/player/login',{app_id:newApp.id,username:'player_alpha',password:'Player-fixture-only-2026!'});
-  assert.equal(login.status,409);assert.equal(login.body.error.code,'PRODUCTION_ACCEPTANCE_REQUIRED');
+  assert.equal(login.status,404);
  }
  assert.equal((await productionDb.query('SELECT count(*)::int n FROM gp_player_app_ids WHERE app_id=$1',[newApp.id])).rows[0].n,0);
  assert.equal((await productionDb.query('SELECT count(*)::int n FROM gp_sessions WHERE app_id=$1',[newApp.id])).rows[0].n,0);
@@ -288,5 +178,5 @@ test('production missing its pre-provisioned master key fails without inventing 
  const original=await readFile(join(production.folder,'master.key')),folder=join(dir,'missing-master');
  const wrong=await launch(names[0],'production',folder,{},false);await rejectBoot(wrong,/PRODUCTION_MASTER_KEY_MISSING/);
  await assert.rejects(readFile(join(folder,'master.key')),e=>e.code==='ENOENT');assert.deepEqual(await readFile(join(production.folder,'master.key')),original);
- assert.equal((await productionDb.query('SELECT environment FROM gp_runtime_identity')).rows[0].environment,'production');assert.equal(await count(productionDb,'gp_apps'),3);
+ assert.equal((await productionDb.query('SELECT environment FROM gp_runtime_identity')).rows[0].environment,'production');assert.equal(await count(productionDb,'gp_apps'),2);
 });

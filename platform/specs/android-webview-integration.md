@@ -1,12 +1,6 @@
-# Android 验证入口与全屏游戏
+# Android 宿主接入与全屏游戏
 
-当前 APK 仅用于验证游戏是否可上线，不作为对外分发产物。最简宿主源码位于 `platform/android-player`；账号、余额、13 款游戏目录、操作和结算均通过实际部署的平台接口取得。
-
-## 验证包与构建
-
-执行 `npm run build:android -- --variant qa --origin "$OASIS_PLAYER_ORIGIN" --app-id "$OASIS_PLAYER_APP_ID"`，须显式填写实际 HTTPS origin 和公开 App ID。签名、产物、配置及导航规则见 [Android 模块说明](../android-player/README.md)。
-
-网页的 `build:release` 只构建和记录游戏资源，不生成、复制或发布 APK 和旧沙箱接入包。历史 mock APK 与下载元数据已从当前公开资源移除，历史验收报告不作为当前版本验收结果。
+接入方 App 在自己的原生页面里用 WebView（Android）或 WKWebView（iOS）打开游戏启动页（见接入指南第 4 节）。账号、余额和结算都在接入方自己的后端与钱包完成，平台不提供 APK。
 
 ## 宿主实现要点
 

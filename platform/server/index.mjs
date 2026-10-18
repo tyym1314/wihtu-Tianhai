@@ -22,26 +22,22 @@ import {isCasinoGame,CASINO_IDS} from '../shared/casino-games.mjs';
 import {routeIntegration} from './integration-routes.mjs';
 import {migrateIntegrationChecks,recoverIntegrationChecks} from './integration-checks.mjs';
 import {operationsStatus} from './operations-status.mjs';
-import {unitsPerCoin,firstpartyProfile,partnerProfile,publicAdmissionCapability,assertExternalFinancialRouteAllowed,isPartnerApp} from './production-admission.mjs';
+import {unitsPerCoin,partnerProfile,publicAdmissionCapability,assertExternalFinancialRouteAllowed,isPartnerApp} from './production-admission.mjs';
 import {publicAdmissionStatus} from './admission-status.mjs';
 import {enginePoolStats,closeEnginePool} from './pvp/engine-pool.mjs';
 import {runtime,preflightRuntime,migrateRuntime,assertProductionAppReady} from './runtime-mode.mjs';
 import {migrateCredentials,routeCredentials} from './credentials.mjs';
-import {routePlayer} from './player-routes.mjs';
 import {ApiRateLimits} from './rate-limit.mjs';
 import {activityTimeZone,migrateOverviewActivity,overviewActivity} from './overview-activity.mjs';
 import {clientAddress,adminSessionCookie} from './proxy-context.mjs';
 import {beginRoomReadTiming,beginGameEntryTiming} from './request-timing.mjs';
 import {startRequestTimingSink} from './request-timing-sink.mjs';
 import {checkWalletDependencies} from './dependency-health.mjs';
-import {createTransferService,migrateTransfers,TRANSFER_PUBLIC_CODES} from './transfers/index.mjs';
-import {routeTransfers} from './transfers/routes.mjs';
-import {routeTransferOperations} from './transfer-operations.mjs';
+import {migrateTransfers} from './transfers/index.mjs';
 const PORT=Number(process.env.OASIS_API_PORT||8797),WALLET_PORT=Number(process.env.OASIS_WALLET_PORT||8798);
 const limiter=new ApiRateLimits();
 // No third-party financial protocol is registered until independently configured
 // and reviewed. Ordinary App HMAC cannot enable or manufacture an adapter.
-const transfers=createTransferService({pool:walletPool,environment:runtime.environment});
 let roomTimingSink=null;
 function rate(req,key,limit){limiter.ip(clientAddress(req),key,limit);}
 const authenticated=(req,fn)=>limiter.authenticate(clientAddress(req),fn);
@@ -51,7 +47,6 @@ async function adminRoutes(req,res,path,b){
   if(path==='/api/admin/login'&&req.method==='POST'){checkOrigin(req);rate(req,'login',12);const r=await login(b.username,b.password);res.setHeader('set-cookie',adminSessionCookie(r.token,origin));return send(res,200,{user:r.user});}
   const user=await adminUser(req);
   if(path==='/api/admin/session'&&req.method==='GET')return send(res,200,{user,environment:runtime.environment});if(!user)fail(401,'LOGIN_REQUIRED');
-  if(await routeTransferOperations(req,res,path,user,{pool,environment:runtime.environment}))return;
   if(req.method!=='GET')checkOrigin(req);
   if(path==='/api/admin/logout'&&req.method==='POST'){const token=req.headers.cookie?.split(';').map(x=>x.trim()).find(x=>x.startsWith('oasis_admin='))?.split('=')[1];if(token)await pool.query('DELETE FROM gp_admin_sessions WHERE token_hash=$1',[hash(token)]);res.setHeader('set-cookie',adminSessionCookie('',origin,0));return send(res,200,{ok:true});}
   if(path==='/api/admin/operations-status'&&req.method==='GET')return send(res,200,await operationsStatus());
@@ -103,7 +98,6 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
   if(path==='/health'&&req.method==='GET')return send(res,200,{status:'ok',environment:runtime.environment});
   if(path.startsWith('/legacy/')||path.startsWith('/arena/')||path.startsWith('/casino/')||path.startsWith('/play/'))return await serveLegacy(req,res,path);
   const {raw,body}=await readBody(req);
-  if(await routePlayer(req,res,path,body,raw))return;
   if(path.startsWith('/api/admin/')||path.startsWith('/api/partner/')){
     if(path.endsWith('/login'))rate(req,'portal-login',12);
     if(path.includes('/integration/')&&req.method==='POST')rate(req,'integration-write',30);
@@ -115,7 +109,6 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
   if(path==='/v1/launch/exchange'&&req.method==='POST'){checkOrigin(req);rate(req,'exchange',limiter.config.EXCHANGE_IP);return send(res,200,await authenticated(req,()=>exchange(body)));}
   if(path.startsWith('/v1/')){
     const app=await authenticated(req,()=>authenticatePartner(req,raw,body));limiter.partner(app,req.method);
-    const transfer=await routeTransfers(transfers,app,req,path,{raw});if(transfer)return send(res,transfer.status,transfer.body);
     if(path==='/v1/sessions'&&req.method==='POST')return send(res,201,await createSession(app,body,raw));
     if(path==='/v1/games'&&req.method==='GET')return send(res,200,gamesFor(app));
     const matchQuery=path.match(/^\/v1\/matches\/([A-Za-z0-9_-]+)$/);
@@ -164,7 +157,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
     const active=activeId==null?undefined:{id:activeId,game_id:activeGame};
     let balance=null,balance_error=null;try{balance=await walletBalance(app,s.external_user_id);}catch(e){balance_error='BALANCE_UNAVAILABLE';}
     return send(res,200,{session_id:s.id,external_user_id:s.external_user_id,game_id:s.game_id,locale:s.locale||null,scope:scope(app),balance,balance_error,competitive_fee_bps:app.competitive_fee_bps,
-      ...(firstpartyProfile(s.admission_profile)||partnerProfile(s.admission_profile)?{...publicAdmissionCapability({profile:s.admission_profile,open:true,game_ids:app.game_ids}),admission_revision:String(s.admission_revision)}:{}),
+      ...(partnerProfile(s.admission_profile)?{...publicAdmissionCapability({profile:s.admission_profile,open:true,game_ids:app.game_ids}),admission_revision:String(s.admission_revision)}:{}),
       ...(s.game_id==='run'?{run_practice_input_protocol:RUN_PRACTICE_INPUT_PROTOCOL,run_practice_input_profiles:runPracticeProfileCapability(),run_practice_courses:runPracticeCourseCapability()}:{}),
       active_room_id:active?.game_id===s.game_id?active.id:null,other_active_game:active&&active.game_id!==s.game_id?active.game_id:null});
   }
@@ -183,7 +176,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
     fail(405,'METHOD_NOT_ALLOWED');
   }
   fail(404,'NOT_FOUND');
-}catch(e){if(res.headersSent||res.destroyed)return;const status=e.status||500;if(status===429)res.setHeader('retry-after',String(e.retryAfterSeconds||60));if(status>=500&&!(e instanceof ApiError))console.error('[platform]',e.code||e.message);const message=(e.status?e.message:'服务暂时不可用，请保留原请求重试').slice(0,512);if((req.url||'').startsWith('/v1/')){const allowed=['INVALID_REQUEST','AMOUNT_MISMATCH','SIGNATURE_INVALID','TIMESTAMP_EXPIRED','NONCE_REPLAY','LAUNCH_CODE_INVALID','SCOPE_FORBIDDEN','GAME_DISABLED','NOT_FOUND','IDEMPOTENCY_CONFLICT','INVALID_STATE','RATE_LIMITED','INTERNAL_ERROR'];const code=(allowed.includes(e.code)||TRANSFER_PUBLIC_CODES.includes(e.code))?e.code:status>=500?'INTERNAL_ERROR':status===403?'SCOPE_FORBIDDEN':status===409?'INVALID_STATE':'INVALID_REQUEST';send(res,status,{code,message,trace_id:id('trace'),retryable:status>=500||status===429});}else send(res,status,{error:{code:e.code||'INTERNAL_ERROR',message}});}});}
+}catch(e){if(res.headersSent||res.destroyed)return;const status=e.status||500;if(status===429)res.setHeader('retry-after',String(e.retryAfterSeconds||60));if(status>=500&&!(e instanceof ApiError))console.error('[platform]',e.code||e.message);const message=(e.status?e.message:'服务暂时不可用，请保留原请求重试').slice(0,512);if((req.url||'').startsWith('/v1/')){const allowed=['INVALID_REQUEST','AMOUNT_MISMATCH','SIGNATURE_INVALID','TIMESTAMP_EXPIRED','NONCE_REPLAY','LAUNCH_CODE_INVALID','SCOPE_FORBIDDEN','GAME_DISABLED','NOT_FOUND','IDEMPOTENCY_CONFLICT','INVALID_STATE','RATE_LIMITED','INTERNAL_ERROR'];const code=(allowed.includes(e.code))?e.code:status>=500?'INTERNAL_ERROR':status===403?'SCOPE_FORBIDDEN':status===409?'INVALID_STATE':'INVALID_REQUEST';send(res,status,{code,message,trace_id:id('trace'),retryable:status>=500||status===429});}else send(res,status,{error:{code:e.code||'INTERNAL_ERROR',message}});}});}
 // Cluster mode: the leader worker migrates and runs background jobs; followers only serve HTTP.
 const LEADER=process.env.OASIS_WORKER_ROLE!=='follower';
 await preflightRuntime(pool);if(LEADER){await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateSimpleWallet(pool);await migrateCasino(pool);await migrateInstant(pool);await migrateArcade(pool);
@@ -205,7 +198,7 @@ roomTimingSink?.closed.then(result=>console.log(JSON.stringify({event:'oasis.roo
 // OASIS_LEADER_HTTP=0: in cluster mode the leader only runs background jobs, so settlement bursts never delay requests.
 const server=createPlatformServer();if(!LEADER||process.env.OASIS_LEADER_HTTP!=='0')await new Promise(r=>server.listen(PORT,'127.0.0.1',r));
 // Background jobs run only on the leader worker; stop() clears them on shutdown.
-let timer,arcadeTimer,instantTimer,casinoTimer,pvpTimer,integrationTimer,simpleTimer,walletTimer,transferTimer;
+let timer,arcadeTimer,instantTimer,casinoTimer,pvpTimer,integrationTimer,simpleTimer,walletTimer;
 if(LEADER){
 timer=setInterval(()=>recoverPending().catch(e=>console.error('[recovery]',e.code||e.message)),3000);timer.unref();
 arcadeTimer=setInterval(()=>recoverArcade().catch(e=>console.error('[casino arcade]',e.code||e.message)),5000);arcadeTimer.unref();
@@ -216,7 +209,6 @@ integrationTimer=setInterval(()=>recoverIntegrationChecks().catch(e=>console.err
 const simpleBinding=async appId=>{const app=(await pool.query('SELECT * FROM gp_apps WHERE id=$1',[appId])).rows[0];const binding=(await pool.query("SELECT * FROM gp_wallet_bindings WHERE app_id=$1 AND provider='simple'",[appId])).rows[0];return app&&binding?{app,binding}:null;};
 let simpleRecovering=false;simpleTimer=setInterval(()=>{if(simpleRecovering)return;simpleRecovering=true;recoverSimpleWallets(walletPool,simpleBinding).catch(e=>console.error('[simple wallet recovery]',e.code||e.message)).finally(()=>{simpleRecovering=false;});},3000);simpleTimer.unref();
 let walletMaintaining=false,walletFoldAt=0;walletTimer=setInterval(()=>{if(walletMaintaining)return;walletMaintaining=true;(async()=>{await expireProbabilityHolds(walletPool);if(Date.now()>=walletFoldAt){walletFoldAt=Date.now()+10000;await foldScopeShards(walletPool);}})().catch(e=>console.error('[wallet maintenance]',e.code||e.message)).finally(()=>{walletMaintaining=false;});},3000);walletTimer.unref();
-transferTimer=setInterval(()=>transfers.recoverPending().catch(e=>console.error('[transfer recovery]',e.code||e.name)),3000);transferTimer.unref();
 }
 process.send?.({type:'oasis-ready',leader:LEADER});
 console.log(`OASIS ${runtime.environment} API http://127.0.0.1:${PORT}; reference wallet http://127.0.0.1:${WALLET_PORT}`);
@@ -224,8 +216,8 @@ console.log('Local admin credentials: platform/.local/development-credentials.js
 let stopping=false;
 async function stop(){
  if(stopping)return;stopping=true;
- for(const t of [timer,arcadeTimer,instantTimer,casinoTimer,pvpTimer,integrationTimer,simpleTimer,walletTimer,transferTimer])if(t)clearInterval(t);
+ for(const t of [timer,arcadeTimer,instantTimer,casinoTimer,pvpTimer,integrationTimer,simpleTimer,walletTimer])if(t)clearInterval(t);
  await Promise.all([server.listening?new Promise(r=>server.close(r)):Promise.resolve(),wallet?new Promise(r=>wallet.close(r)):Promise.resolve()]);
  await roomTimingSink?.close({reason:'shutdown'}).catch(()=>{});
- await transfers.close();await closeEnginePool();await closePools();process.exit(0);
+ await closeEnginePool();await closePools();process.exit(0);
 }process.on('SIGTERM',stop);process.on('SIGINT',stop);

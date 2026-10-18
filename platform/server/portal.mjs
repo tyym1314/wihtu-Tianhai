@@ -8,7 +8,6 @@ import {ALL_GAME_IDS,RELEASED_IDS} from '../shared/games.mjs';
 import {loginCredential} from './credentials.mjs';
 import {clientAddress} from './proxy-context.mjs';
 import {activityTimeZone,overviewActivity} from './overview-activity.mjs';
-import {routeTransferOperations} from './transfer-operations.mjs';
 
 const derive=promisify(scrypt),COOKIE='oasis_partner';
 const appFields=['id','name','partner_id','environment','wallet_scope_id','currency_id','currency_scale','status','game_ids','math_profile','competitive_fee_bps','wallet_url','created_at'];
@@ -70,7 +69,6 @@ export async function routePortal(req,res,path,body){
  const user=await partnerUser(req);
  if(path==='/api/partner/session'&&req.method==='GET'){send(res,200,{user,environment:runtime.environment});return true;}
  identity(user);
- if(await routeTransferOperations(req,res,path,user,{pool,environment:runtime.environment}))return true;
  if(req.method!=='GET')checkOrigin(req);
  if(path==='/api/partner/logout'&&req.method==='POST'){await pool.query('DELETE FROM gp_partner_sessions WHERE token_hash=$1',[hash(cookieToken(req))]);setCookie(res,'',0);send(res,200,{ok:true});return true;}
  if(path==='/api/partner/apps'&&req.method==='GET'){const apps=(await pool.query("SELECT * FROM gp_apps WHERE partner_id=$1 ORDER BY created_at",[user.partner_id])).rows;send(res,200,{apps:apps.map(publicApp)});return true;}

@@ -13,8 +13,7 @@ function Stat({icon:Icon,label,value,unit,foot,tone='green'}){return <div classN
 
 export { default as Overview } from './LiveOverview.jsx';
 import LiveLedger from './LiveLedger.jsx';
-import TransferOperations from '../components/TransferOperations.jsx';
-export function Ledger(props){return <><LiveLedger {...props}/><TransferOperations key={`${props.user?.id}:${props.user?.role}:${props.appScope}`} {...props}/></>;}
+export function Ledger(props){return <LiveLedger {...props}/>;}
 
 export function Games({navigate,notify}) {
   const [category,setCategory]=useState('all'),[query,setQuery]=useState(''),[layout,setLayout]=useState('grid'),[selected,setSelected]=useState(()=>{const id=sessionStorage.getItem('oasis-game-focus');sessionStorage.removeItem('oasis-game-focus');return games.find(g=>g.id===id)||null;});

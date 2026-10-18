@@ -8,12 +8,10 @@ import {id,hash,seal,unseal,localDir,fail,verifySignature} from './security.mjs'
 import {provisionWallet} from './wallet/index.mjs';
 import {getProfile} from './math/index.ts';
 import {ALL_GAME_IDS,ARENA_IDS,RELEASED_IDS} from '../shared/games.mjs';
-import {FIRSTPARTY_FREE_PROFILE,FIRSTPARTY_INTERNAL_PROFILE,PARTNER_EXTERNAL_PROFILE,isPartnerApp} from './production-admission.mjs';
+import {PARTNER_EXTERNAL_PROFILE,isPartnerApp} from './production-admission.mjs';
 import {runtime,assertProductionAppReady} from './runtime-mode.mjs';
 import {resolveHostOrigin,assertExchangeOrigin} from './launch-policy.mjs';
 import {loginCredential} from './credentials.mjs';
-import {appPlayerId} from './player-records.mjs';
-import {createPlatformWallet} from './platform-wallet.mjs';
 const spec=JSON.parse(readFileSync(new URL('../specs/openapi.json',import.meta.url),'utf8'));
 const catalog=[...JSON.parse(readFileSync(new URL('../specs/game-catalog.json',import.meta.url),'utf8')).games,
  ...Object.values(CASINO_GAMES).filter(g=>CASINO_IDS.includes(g.id)).map(g=>({id:g.id,name:g.zh,nameEn:g.name,category:'probability',family:g.family,status:'casino-shared-round',reference:g.reference}))];
@@ -27,8 +25,7 @@ export async function appById(appId){const r=await pool.query('SELECT * FROM gp_
 export async function createApp(name,options='partner_oasis_demo') {
   const partner=typeof options==='string'?options:options.partnerId||'partner_oasis_demo',actor=typeof options==='object'?options.actor||'admin':'admin';
   // Third-party production Apps always settle through their own wallet.
-  const walletProvider=typeof options==='object'&&options.walletProvider!==undefined?options.walletProvider:runtime.partnerAdmission?'external':undefined;
-  if(walletProvider!==undefined&&(!runtime.production||!['platform','external'].includes(walletProvider)||runtime.partnerAdmission&&walletProvider!=='external'))fail(400,'INVALID_WALLET_PROVIDER');
+  if(typeof options==='object'&&options.walletProvider!==undefined&&options.walletProvider!=='external')fail(400,'INVALID_WALLET_PROVIDER');
   if(typeof partner!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(partner))fail(400,'INVALID_PARTNER');
   if(typeof name!=='string'||name.trim().length<2||name.length>60)fail(400,'INVALID_NAME','应用名称需要 2–60 个字符');
   if(runtime.production&&partner==='partner_oasis_demo')fail(400,'PRODUCTION_PARTNER_REQUIRED');
@@ -40,7 +37,6 @@ export async function createApp(name,options='partner_oasis_demo') {
   if(!runtime.production)await provisionWallet(pool,{scope:scope(app),...walletKey,users:[{external_user_id:'demo_player',balance_minor:'1200000'},{external_user_id:'demo_player_2',balance_minor:'1200000'},{external_user_id:'demo_player_3',balance_minor:'1200000'},{external_user_id:'demo_player_4',balance_minor:'1200000'}],treasury_minor:'1000000000000',math_profiles:['thunder','tiger'].flatMap(game=>['98','99'].map(p=>{const m=getProfile(game,p);return {game_id:game,math_version:m.version,math_config_hash:m.hash,max_payout_multiplier:String(m.maxMultiplier)};}))});
   await tx(async c=>{
     await c.query('INSERT INTO gp_apps(id,name,partner_id,environment,wallet_scope_id,wallet_url,game_ids,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',[app.id,app.name,partner,app.environment,app.wallet_scope_id,app.wallet_url,JSON.stringify(app.game_ids),app.status]);
-    if(runtime.production&&walletProvider!=='external')await createPlatformWallet(c,app,actor);
     for(const [direction,key]of (runtime.production?[['partner-to-platform',credentials]]:[['partner-to-platform',credentials],['platform-to-wallet',walletKey]]))await c.query('INSERT INTO gp_keys(id,app_id,direction,secret_enc) VALUES($1,$2,$3,$4)',[key.key_id,app.id,direction,seal(key.secret_base64)]);
     await audit(actor,'app.created',app.id,{name:app.name},c);
   });
@@ -67,30 +63,17 @@ export async function login(username,password){
   return {token,user:{id:account.id,name:'平台管理员',role:'platform_admin'}};
 }
 export async function adminUser(req){const token=req.headers.cookie?.split(';').map(x=>x.trim()).find(x=>x.startsWith('oasis_admin='))?.split('=')[1];if(!token)return null;const r=await pool.query('SELECT a.id FROM gp_admin_sessions s JOIN gp_admins a ON a.id=s.admin_id WHERE token_hash=$1 AND expires_at>now()',[hash(token)]);return r.rowCount?{id:r.rows[0].id,name:'平台管理员',role:'platform_admin'}:null;}
-export async function createSession(app,b,raw,{playerId=null}={}){
-  // A first-party production player comes only from the platform BFF session.
-  // A third-party production App authenticates its own users with its HMAC key
+export async function createSession(app,b,raw){
+  // A production App is a third-party App: it authenticates its own users with its HMAC key
   // and settles through its own bound wallet.
-  const hosted=runtime.production&&!!playerId;
-  if(runtime.production&&!playerId&&!isPartnerApp(runtime,app))fail(403,'PLAYER_BFF_REQUIRED');
-  if(hosted&&isPartnerApp(runtime,app))fail(403,'PLAYER_BFF_NOT_AVAILABLE');
-  if(!hosted){validate('CreateSessionRequest',b);for(const[k,v]of Object.entries(scope(app)))if(b[k]!==v)fail(403,'SCOPE_FORBIDDEN');}
+  if(runtime.production&&!isPartnerApp(runtime,app))fail(403,'PARTNER_APP_REQUIRED');
+  validate('CreateSessionRequest',b);for(const[k,v]of Object.entries(scope(app)))if(b[k]!==v)fail(403,'SCOPE_FORBIDDEN');
   return tx(async c=>{
-    // Login takes the player row before the App row. Keep the same order here:
-    // taking App FOR UPDATE first would deadlock with a concurrent login that
-    // holds player FOR UPDATE and then checks App FOR SHARE.
-    if(hosted){
-      const player=(await c.query('SELECT id FROM gp_players WHERE id=$1 AND active FOR SHARE',[playerId])).rows[0];
-      if(!player)fail(401,'LOGIN_REQUIRED');
-    }
     // Configuration changes take this row FOR UPDATE; admission takes it FOR SHARE, so a stale
     // authenticated App object cannot route a new session to an old wallet, while concurrent
     // launches of the same App do not serialize behind each other.
     app=(await c.query('SELECT * FROM gp_apps WHERE id=$1 FOR SHARE',[app.id])).rows[0];if(!app)fail(404,'NOT_FOUND');
-    const externalUserId=hosted?await appPlayerId(c,app.id,playerId):b.external_user_id;
-    if(hosted&&b.external_user_id!==undefined&&b.external_user_id!==externalUserId)fail(403,'SCOPE_FORBIDDEN');
-    const request=hosted?{...b,external_user_id:externalUserId}:b;
-    validate('CreateSessionRequest',request);
+    const request=b,externalUserId=b.external_user_id;
     for(const[k,v]of Object.entries(scope(app)))if(request[k]!==v)fail(403,'SCOPE_FORBIDDEN');
     await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',['launch:'+app.id+':'+request.request_id]);
     const prior=(await c.query('SELECT * FROM gp_launch_intents WHERE app_id=$1 AND request_id=$2',[app.id,request.request_id])).rows[0];
@@ -98,8 +81,8 @@ export async function createSession(app,b,raw,{playerId=null}={}){
       if(prior.digest!==hash(raw))fail(409,'IDEMPOTENCY_CONFLICT');
       const response=unseal(prior.response_enc);
       if(runtime.production){
-        const owner=(await c.query('SELECT app_id,player_id,external_user_id FROM gp_sessions WHERE id=$1',[response.session_id])).rows[0];
-        if(!owner||owner.app_id!==app.id||owner.player_id!==playerId||owner.external_user_id!==externalUserId)fail(403,'SCOPE_FORBIDDEN');
+        const owner=(await c.query('SELECT app_id,external_user_id FROM gp_sessions WHERE id=$1',[response.session_id])).rows[0];
+        if(!owner||owner.app_id!==app.id||owner.external_user_id!==externalUserId)fail(403,'SCOPE_FORBIDDEN');
       }
       return response;
     }
@@ -107,19 +90,14 @@ export async function createSession(app,b,raw,{playerId=null}={}){
     const hostOrigin=resolveHostOrigin(request.host_origin,app.allowed_origins,origin);
     const game=request.game_id||'lobby';let sid=request.resume_session_id;
     if(game==='lobby')fail(409,'GAME_NOT_RELEASED','大厅尚未开放，请指定已开放的 game_id');
-    if(sid){const old=(await c.query('SELECT * FROM gp_sessions WHERE id=$1 FOR UPDATE',[sid])).rows[0];if(!old||old.app_id!==app.id||old.external_user_id!==externalUserId||old.game_id!==game||(runtime.production&&old.player_id!==playerId))fail(403,'SCOPE_FORBIDDEN');}
+    if(sid){const old=(await c.query('SELECT * FROM gp_sessions WHERE id=$1 FOR UPDATE',[sid])).rows[0];if(!old||old.app_id!==app.id||old.external_user_id!==externalUserId||old.game_id!==game)fail(403,'SCOPE_FORBIDDEN');}
     else {
       const admission=await assertProductionAppReady(c,app,{intent:'session',gameId:game});
       if(app.status!=='active')fail(403,'APP_PAUSED');if(game!=='lobby'&&!app.game_ids.includes(game))fail(403,'GAME_DISABLED');if(!ALL_GAME_IDS.includes(game))fail(409,'GAME_NOT_RELEASED','此竞技游戏尚未发布');
-      if(runtime.production&&admission.profile===FIRSTPARTY_FREE_PROFILE){
-        const account=(await c.query('SELECT available,reserved,credit_pending FROM wallet_users WHERE scope_id=$1 AND external_user_id=$2',[Object.values(scope(app)).join(':'),externalUserId])).rows[0];
-        if(!account)fail(409,'PLAYER_WALLET_NOT_READY');
-        if(['available','reserved','credit_pending'].some(key=>account[key]!=='0'))fail(409,'FIRSTPARTY_FINANCIAL_STATE_NOT_EMPTY');
-      }
-      sid=id('ses');await c.query('INSERT INTO gp_sessions(id,app_id,external_user_id,game_id,host_origin,player_id,admission_profile,admission_revision,locale) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',[sid,app.id,externalUserId,game,hostOrigin,playerId,admission?.profile||null,admission?.revision||null,sessionLocale(request.locale)]);
+      sid=id('ses');await c.query('INSERT INTO gp_sessions(id,app_id,external_user_id,game_id,host_origin,player_id,admission_profile,admission_revision,locale) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',[sid,app.id,externalUserId,game,hostOrigin,null,admission?.profile||null,admission?.revision||null,sessionLocale(request.locale)]);
     }
     const code=randomBytes(32).toString('base64url'),expires=new Date(Date.now()+60000).toISOString();const response={session_id:sid,launch_code:code,expires_in:60,expires_at:expires,entry_url:origin+'/play/'+game};
-    await c.query('INSERT INTO gp_launch_codes(code_hash,session_id,expires_at,consumed_at,host_origin) VALUES($1,$2,$3,NULL,$4)',[hash(code),sid,expires,hostOrigin]);await c.query('INSERT INTO gp_launch_intents VALUES($1,$2,$3,$4)',[app.id,request.request_id,hash(raw),seal(response)]);await audit(playerId?'player':'partner','session.created',app.id,{session_id:sid,game_id:game,host_origin:hostOrigin},c);return response;
+    await c.query('INSERT INTO gp_launch_codes(code_hash,session_id,expires_at,consumed_at,host_origin) VALUES($1,$2,$3,NULL,$4)',[hash(code),sid,expires,hostOrigin]);await c.query('INSERT INTO gp_launch_intents VALUES($1,$2,$3,$4)',[app.id,request.request_id,hash(raw),seal(response)]);await audit('partner','session.created',app.id,{session_id:sid,game_id:game,host_origin:hostOrigin},c);return response;
   });
 }
 const sessionLocale=value=>value==='zh-CN'||value==='zh'?'zh':value==='ar'?'ar':value==='en'?'en':null;

@@ -142,9 +142,8 @@ test('quick match pairs strangers with identical terms and a leaver only frees t
  await tickUntil(first.id,['settled','voided']);await recover();assert.equal(await transit(),'0');
 });
 
-test('pausing the App blocks new sessions and the hosted platform account flow is unavailable',async()=>{
+test('pausing the App blocks new sessions',async()=>{
  await assert.rejects(tx(db=>runtimeMode.assertProductionAppReady(db,app,{intent:'register'})),{code:'PLAYER_BFF_NOT_AVAILABLE'});
- await assert.rejects(platform.createSession(app,{},'{}',{playerId:'player_x'}),{code:'PLAYER_BFF_NOT_AVAILABLE'});
  await pool.query("UPDATE gp_apps SET status='paused' WHERE id=$1",[app.id]);app=await platform.appById(app.id);
  const body={...platform.scope(app),request_id:uid('launch'),external_user_id:'alice',game_id:'match',locale:'en',host_platform:'web'};
  await assert.rejects(platform.createSession(app,body,JSON.stringify(body)),{code:'APP_PAUSED'});

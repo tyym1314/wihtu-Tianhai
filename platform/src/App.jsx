@@ -9,7 +9,6 @@ import { games } from './data.js';
 import { api, useApi, getApiMode } from './api.js';
 import ApiState from './components/ApiState.jsx';
 import Login from './pages/Login.jsx';
-import Player from './pages/Player.jsx';
 import './phase-b.css';
 
 const navigation = [
@@ -22,7 +21,7 @@ const normalize = value => ({developer:'docs',partner:'partners',applications:'p
 const getRoute = () => { const value=normalize(location.hash.replace(/^#\/?/,'').split('?')[0]); return titles[value] ? value : 'overview'; };
 
 export default function App() {
-  return /^\/player\/?$/.test(location.pathname) ? <Player/> : <AdminApp/>;
+  return <AdminApp/>;
 }
 
 function AdminApp() {
