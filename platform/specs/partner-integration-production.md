@@ -22,6 +22,49 @@
 | `thunder` | 雷霆 | 概率 | 1 |
 | `tiger` | 虎虎生财 | 概率 | 1 |
 
+娱乐场游戏（38 款，均支持中文 / 英文 / 阿语，含背景音乐、音效、规则说明与“我的记录”）：
+
+| game_id | 名称 | 玩法 |
+|---|---|---|
+| `greedylion` | GreedyLion | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `rocketstar2` | RocketStar2 | 共享回合（爆点，随时提现） |
+| `teenpatti` | TeenPatti | 共享回合（三家比牌） |
+| `olympus` | Olympus | 单人（老虎机） |
+| `greedycat2` | GreedyCat2 | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `greedybrutal` | GreedyBrutal | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `bigeater` | BigEater | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `greedyking` | GreedyKing | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `greedyforest` | GreedyForest | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `herochest` | HeroChest | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `fruitparty` | FruitParty | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `oceanslot` | OceanSlot | 单人（老虎机） |
+| `mahjongslot` | MahjongSlot | 单人（老虎机） |
+| `cleopatraslot` | CleopatraSlot | 单人（老虎机） |
+| `crazygems` | CrazyGems | 单人（老虎机） |
+| `slot777` | Slot777 | 单人（老虎机） |
+| `djlive` | DJlive | 单人（老虎机） |
+| `jackpotslots` | jackpotSlots | 单人（老虎机） |
+| `yummy` | Yummy | 单人（老虎机） |
+| `worldgoal` | WorldGoal | 单人（老虎机） |
+| `chillislot` | ChilliSlot | 单人（老虎机） |
+| `sphinxlegend` | sphinxlegend | 单人（老虎机） |
+| `nights1001` | 1001Nights | 单人（老虎机） |
+| `pyramidslots` | PyramidSlots | 单人（老虎机） |
+| `magicslot` | MagicSlot | 单人（老虎机） |
+| `crazyfruit` | CrazyFruit | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `magiccard` | MagicCard | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `bountyfootball` | BountyFootball | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `footballleague` | FootballLeague | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `glorycup` | GloryCup | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `solomonmines` | SolomonMines | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `roulette` | roulette | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `roulettepro` | RoulettePro | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `sicbo` | SicBo | 共享回合（转盘 / 押注 / 轮盘 / 骰宝） |
+| `monster` | Monster | 单人（街机射击） |
+| `molestar` | MoleStar | 单人（街机射击） |
+| `crash` | Crash | 共享回合（爆点，随时提现） |
+| `crashstar` | CrashStar | 共享回合（爆点，随时提现） |
+
 竞技游戏：入场 10/50/100/200 币，满员且全员就绪后冻结并扣除入场费，冠军（或胜队）分得奖池，平台按 App 配置的服务费率（默认 5%）收取服务费。所有判定都在平台服务端完成，客户端不能提交分数。三种开局方式：
 
 - **快速匹配**：自动撮合**同一 App 内**选择相同游戏、人数和入场费的真人玩家，满员后自动开局；最长等待 120 秒，未匹配到不收费。
@@ -31,6 +74,13 @@
 **语言**：所有游戏支持简体中文、英文、阿拉伯语（阿语界面为从右到左；棋盘与赛道方向不镜像）。
 
 概率游戏：每次投注是一个完整周期（含免费转），开奖前先在你的钱包冻结投注与最高派彩责任；数学模型为 1000 万周期仿真验证的 RTP 98%/99% 两档，未经第三方认证。
+
+娱乐场游戏的扣款与派奖（都走第 5 节的同一套钱包接口）：
+
+- **共享回合**：同一 App 内所有玩家共用一条连续回合（开奖前公布种子承诺，开奖后公开种子）。每一注下注时扣款一次，开奖后按结果加款；错过截止或无法确认的下注全额退回。爆点类在飞行中可手动或自动提现。
+- **单人老虎机**：一次付费旋转（含其触发的全部免费旋转与特色玩法）扣款一次、派奖一次。
+- **街机射击**：首发时按每发押注一次性购买 50 发弹药（扣款一次）；结束、换押注或离开时结算一次，赢得与未用弹药一起加款返还；闲置 2 分钟自动结算。
+- 游戏列表以 `GET /v1/games` 返回为准；新建 App 默认开放全部游戏，可在应用设置中勾选。
 
 ## 2. 开通流程
 
