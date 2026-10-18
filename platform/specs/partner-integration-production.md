@@ -188,10 +188,12 @@ await game.mount(document.querySelector('#game'));
 | POST | `/wallet/simple/v1/debit` | 扣款（入场费、投注） |
 | POST | `/wallet/simple/v1/credit` | 加款（派奖、退款、中奖） |
 
+所有金额都是整数，单位就是你 App 自己的币（`currency_scale` 固定为 0）：传 `125000` 就是 125000 个币，不做换算。
+
 **余额**响应：
 
 ```json
-{ "external_user_id": "u_10086", "available_minor": "125000", "currency_scale": 2 }
+{ "external_user_id": "u_10086", "available_minor": "125000", "currency_scale": 0 }
 ```
 
 **扣款 / 加款**请求体：

@@ -110,8 +110,8 @@ test('launch is atomic one-use, expires, and reauthorization invalidates old tok
 test('both existing game render contracts settle once across twenty-four concurrent retries',async()=>{
   for(const game of ['tiger','thunder']){
     const l=await launch(apps[0],game),before=(await play(l,game,'session')).data;assert.equal(typeof before.balance,'number');
-    const body={requestId:id('spin'),bet:10,expectedVersion:0};const responses=await Promise.all(Array.from({length:24},()=>play(l,game,'spin',body)));for(const r of responses)assert.equal(r.status,200,JSON.stringify(r.data));assert.equal(new Set(responses.map(r=>r.data.round.id)).size,1);
-    const cycle=(await db.query('SELECT * FROM gp_cycles WHERE session_id=$1',[l.session_id])).rows[0];assert.equal(cycle.status,'SETTLED');assert.equal(Math.round(responses[0].data.session.balance*100),Math.round(before.balance*100)-1000+Number(cycle.payout_minor));
+    const body={requestId:id('spin'),bet:1000,expectedVersion:0};const responses=await Promise.all(Array.from({length:24},()=>play(l,game,'spin',body)));for(const r of responses)assert.equal(r.status,200,JSON.stringify(r.data));assert.equal(new Set(responses.map(r=>r.data.round.id)).size,1);
+    const cycle=(await db.query('SELECT * FROM gp_cycles WHERE session_id=$1',[l.session_id])).rows[0];assert.equal(cycle.status,'SETTLED');assert.equal(responses[0].data.session.balance,before.balance-1000+Number(cycle.payout_minor));
     assert.equal((await db.query('SELECT count(*)::int n FROM gp_operations WHERE aggregate_id=$1',[cycle.id])).rows[0].n,3);
     assert.equal((await play(l,game,'spin',{...body,bet:50})).status,409);
     await play(l,game,'ack',{roundId:responses[0].data.round.id});await play(l,game,'ack',{roundId:responses[0].data.round.id});
@@ -121,7 +121,7 @@ test('both existing game render contracts settle once across twenty-four concurr
   completed.push('Thunder/Tiger 24 concurrent retries, exactly 3 wallet effects, App isolation, ack without money');
 });
 test('committed settlement with lost response survives process restart and restores same fixed result',async()=>{
-  const l=await launch(apps[1]),body={requestId:id('lost'),bet:10,expectedVersion:0};await db.query('UPDATE gp_apps SET wallet_url=$1 WHERE id=$2',[proxyURL,apps[1].app.id]);dropSettles=true;
+  const l=await launch(apps[1]),body={requestId:id('lost'),bet:1000,expectedVersion:0};await db.query('UPDATE gp_apps SET wallet_url=$1 WHERE id=$2',[proxyURL,apps[1].app.id]);dropSettles=true;
   const result=await play(l,'tiger','spin',body);assert.equal(result.status,503);
   const prior=(await db.query('SELECT * FROM gp_cycles WHERE session_id=$1',[l.session_id])).rows[0];assert.equal(prior.status,'RESULT_FIXED');assert.ok(prior.result_hash);
   const actual=(await db.query('SELECT state FROM wallet_probability WHERE cycle_id=$1',[prior.id])).rows[0];assert.equal(actual.state,'SETTLED');
@@ -132,7 +132,7 @@ test('committed settlement with lost response survives process restart and resto
   assert.equal((await db.query('SELECT count(*)::int n FROM wallet_operations WHERE operation_id=$1',['settle_'+prior.id])).rows[0].n,1);completed.push('wallet commit + response loss + process SIGKILL/restart: same result, same receipt, one payout');
 });
 test('insufficient treasury refuses before RNG; paused App cannot start new cycles',async()=>{
-  const l=await launch(apps[1]);await db.query('UPDATE wallet_scopes SET treasury_available=0 WHERE app_id=$1',[apps[1].app.id]);const r=await play(l,'tiger','spin',{requestId:id('capacity'),bet:10,expectedVersion:0});assert.equal(r.status,409,JSON.stringify(r.data));
+  const l=await launch(apps[1]);await db.query('UPDATE wallet_scopes SET treasury_available=0 WHERE app_id=$1',[apps[1].app.id]);const r=await play(l,'tiger','spin',{requestId:id('capacity'),bet:1000,expectedVersion:0});assert.equal(r.status,409,JSON.stringify(r.data));
   const cycle=(await db.query('SELECT * FROM gp_cycles WHERE session_id=$1',[l.session_id])).rows[0];assert.equal(cycle.status,'REJECTED');assert.equal(cycle.seed_enc,null);assert.equal(cycle.result,null);
   await db.query("UPDATE gp_apps SET status='paused' WHERE id=$1",[apps[0].app.id]);const rejected=await partner(apps[0],'/v1/sessions',{...s(apps[0].app),request_id:id('paused'),external_user_id:'demo_player',game_id:'tiger',locale:'en',host_platform:'web'});assert.equal(rejected.status,403);completed.push('capacity rejected before RNG; paused App blocks new sessions');
 });

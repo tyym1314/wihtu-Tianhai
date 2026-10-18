@@ -42,7 +42,7 @@ export async function handleSimpleWallet(pool,{keyId,secretBase64},req,res,raw){
   const now=Date.now();for(const [k,t] of nonces)if(t<now-610000)nonces.delete(k);
   if(nonces.has(nonce))return send(401,{code:'NONCE_REPLAY'}),true;nonces.set(nonce,now);
   const balance=path.match(/^\/wallet\/simple\/v1\/users\/([A-Za-z0-9_-]{1,128})\/balance$/);
-  if(req.method==='GET'&&balance){const b=await simpleBalance(pool,balance[1]);if(b===null)return send(404,{code:'USER_NOT_FOUND'}),true;return send(200,{external_user_id:balance[1],available_minor:String(b),currency_scale:2}),true;}
+  if(req.method==='GET'&&balance){const b=await simpleBalance(pool,balance[1]);if(b===null)return send(404,{code:'USER_NOT_FOUND'}),true;return send(200,{external_user_id:balance[1],available_minor:String(b),currency_scale:0}),true;}
   const kind={'/wallet/simple/v1/debit':'debit','/wallet/simple/v1/credit':'credit'}[path];
   if(req.method!=='POST'||!kind)return send(404,{code:'NOT_FOUND'}),true;
   const b=JSON.parse(raw);

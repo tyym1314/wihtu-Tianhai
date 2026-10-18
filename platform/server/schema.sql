@@ -65,3 +65,5 @@ ALTER TABLE gp_production_admission ADD CONSTRAINT gp_production_admission_profi
 -- Lookups by business aggregate (round void/refund, cycle recovery) and pending-by-App (health) must not scan the table.
 CREATE INDEX IF NOT EXISTS gp_operations_aggregate ON gp_operations(aggregate_id);
 CREATE INDEX IF NOT EXISTS gp_operations_pending ON gp_operations(app_id) WHERE state='PENDING';
+-- Integer coins: an App's amounts are its own whole coins (no fractional unit).
+ALTER TABLE gp_apps ALTER COLUMN currency_scale SET DEFAULT 0;

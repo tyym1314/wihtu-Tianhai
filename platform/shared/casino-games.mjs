@@ -2,7 +2,8 @@
  * Casino games (shared round & instant probability games). Shared by server and client.
  * Amounts are minor units (scale 2: 100 minor = 1 coin).
  */
-const coins=n=>String(n*100);
+// Whole coins: every amount is an integer number of the App's own coins (currency scale 0).
+const coins=n=>String(n);
 const CHIPS=Object.freeze([coins(100),coins(1000),coins(10000),coins(50000),coins(100000)]);
 
 const CHIPS2=Object.freeze([coins(1000),coins(5000),coins(10000),coins(50000),coins(100000)]);

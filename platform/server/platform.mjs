@@ -29,14 +29,14 @@ export async function createApp(name,options='partner_oasis_demo') {
   if(typeof partner!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(partner))fail(400,'INVALID_PARTNER');
   if(typeof name!=='string'||name.trim().length<2||name.length>60)fail(400,'INVALID_NAME','应用名称需要 2–60 个字符');
   if(runtime.production&&partner==='partner_oasis_demo')fail(400,'PRODUCTION_PARTNER_REQUIRED');
-  const app={id:id('app'),name:name.trim(),partner_id:partner,environment:runtime.environment,wallet_scope_id:id('wallet'),currency_id:'COIN',currency_scale:2,status:'active',game_ids:[...RELEASED_IDS],competitive_fee_bps:500,wallet_url:process.env.OASIS_REFERENCE_WALLET_URL||'http://127.0.0.1:8798',math_profile:'99'};
+  const app={id:id('app'),name:name.trim(),partner_id:partner,environment:runtime.environment,wallet_scope_id:id('wallet'),currency_id:'COIN',currency_scale:0,status:'active',game_ids:[...RELEASED_IDS],competitive_fee_bps:500,wallet_url:process.env.OASIS_REFERENCE_WALLET_URL||'http://127.0.0.1:8798',math_profile:'99'};
   if(runtime.production){app.status='paused';app.game_ids=runtime.partnerAdmission?[...ALL_GAME_IDS]:[...ARENA_IDS];app.wallet_url='';}
   const credentials={key_id:id('pk'),secret_base64:randomBytes(32).toString('base64')};
   const walletKey={key_id:id('wk'),secret_base64:randomBytes(32).toString('base64')};
   // Idempotent reference-wallet provisioning precedes visibility of this new App.
   if(!runtime.production)await provisionWallet(pool,{scope:scope(app),...walletKey,users:[{external_user_id:'demo_player',balance_minor:'1200000'},{external_user_id:'demo_player_2',balance_minor:'1200000'},{external_user_id:'demo_player_3',balance_minor:'1200000'},{external_user_id:'demo_player_4',balance_minor:'1200000'}],treasury_minor:'1000000000000',math_profiles:['thunder','tiger'].flatMap(game=>['98','99'].map(p=>{const m=getProfile(game,p);return {game_id:game,math_version:m.version,math_config_hash:m.hash,max_payout_multiplier:String(m.maxMultiplier)};}))});
   await tx(async c=>{
-    await c.query('INSERT INTO gp_apps(id,name,partner_id,environment,wallet_scope_id,wallet_url,game_ids,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',[app.id,app.name,partner,app.environment,app.wallet_scope_id,app.wallet_url,JSON.stringify(app.game_ids),app.status]);
+    await c.query('INSERT INTO gp_apps(id,name,partner_id,environment,wallet_scope_id,wallet_url,game_ids,status,currency_scale) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',[app.id,app.name,partner,app.environment,app.wallet_scope_id,app.wallet_url,JSON.stringify(app.game_ids),app.status,app.currency_scale]);
     for(const [direction,key]of (runtime.production?[['partner-to-platform',credentials]]:[['partner-to-platform',credentials],['platform-to-wallet',walletKey]]))await c.query('INSERT INTO gp_keys(id,app_id,direction,secret_enc) VALUES($1,$2,$3,$4)',[key.key_id,app.id,direction,seal(key.secret_base64)]);
     await audit(actor,'app.created',app.id,{name:app.name},c);
   });

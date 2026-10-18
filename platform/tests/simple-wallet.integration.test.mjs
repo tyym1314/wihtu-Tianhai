@@ -120,7 +120,7 @@ test('a lost debit response is replayed by request_id and charged exactly once',
 test('a probability cycle debits the stake and credits the complete-cycle win',async()=>{
  const s=await sessionFor('alice','thunder'),before=await partnerBalance('alice');
  const view=await cycles.publicSession(s);assert.equal(view.mode,'production');
- const {round}=await cycles.spin(s,{requestId:uid('spin'),bet:10,expectedVersion:view.stateVersion});
+ const {round}=await cycles.spin(s,{requestId:uid('spin'),bet:1000,expectedVersion:view.stateVersion});
  const cycle=(await pool.query('SELECT * FROM gp_cycles WHERE id=$1',[round.cycleId])).rows[0];assert.equal(cycle.status,'SETTLED');
  await recover();
  assert.equal(await partnerBalance('alice'),before-1000n+BigInt(cycle.payout_minor));assert.equal(await transit(),'0');
@@ -237,22 +237,22 @@ test('buying the Olympus free spins debits base x 10.2 and plays the feature dir
 
 test('GreedyKing group bets: SALAD pays x1.25 on any vegetable and PIZZA x4.37 on any meat',async()=>{
  const alice=await sessionFor('carol','greedyking'),s0=await casino.casinoState(alice),before=await partnerBalance('carol');
- await casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:'salad',stake_minor:'100000'});
- await assert.rejects(casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:'pizza',stake_minor:'10000'}),{code:'INVALID_STAKE'});
+ await casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:'salad',stake_minor:'1000'});
+ await assert.rejects(casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:'pizza',stake_minor:'12345'}),{code:'INVALID_STAKE'});
  await pool.query('UPDATE casino_rounds SET bet_until=$2 WHERE id=$1',[s0.round.id,Date.now()-1]);await casino.tickCasino();await casino.tickCasino();await recover();
  const r=(await pool.query('SELECT result FROM casino_rounds WHERE id=$1',[s0.round.id])).rows[0].result;
  const veg=['carrot','cabbage','corn','tomato'].some(v=>r.winners.includes(v));
- assert.equal(await partnerBalance('carol'),before-100000n+(veg?125000n:0n));assert.equal(await transit(),'0');
+ assert.equal(await partnerBalance('carol'),before-1000n+(veg?1250n:0n));assert.equal(await transit(),'0');
 });
 
 test('FruitParty feeds 2% of each stake into the jackpot and a jackpot draw pays it to the winning bets',async()=>{
  const [alice,bob]=await Promise.all([sessionFor('carol','fruitparty'),sessionFor('dave','fruitparty')]);
  const s0=await casino.casinoState(alice),fruits=['cherry','lemon','orange','plum','bell','watermelon','seven','star'];
- const seedPool=50000000n;assert.equal(BigInt(s0.jackpot_minor),seedPool,'platform-funded 500,000-coin starting pool');assert.equal(BigInt((await casino.casinoState(bob)).jackpot_minor),seedPool,'seeded only once');
+ const seedPool=500000n;assert.equal(BigInt(s0.jackpot_minor),seedPool,'platform-funded 500,000-coin starting pool');assert.equal(BigInt((await casino.casinoState(bob)).jackpot_minor),seedPool,'seeded only once');
  const before={carol:await partnerBalance('carol'),dave:await partnerBalance('dave')};
- for(const f of fruits)await casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:f,stake_minor:'100000'});
- await casino.placeBet(bob,{request_id:uid('bet'),round_id:s0.round.id,option_id:'star',stake_minor:'100000'});
- const pool0=BigInt((await casino.casinoState(alice)).jackpot_minor);assert.equal(pool0,seedPool+9n*2000n,'seed plus 2% of nine 1,000-coin bets');
+ for(const f of fruits)await casino.placeBet(alice,{request_id:uid('bet'),round_id:s0.round.id,option_id:f,stake_minor:'1000'});
+ await casino.placeBet(bob,{request_id:uid('bet'),round_id:s0.round.id,option_id:'star',stake_minor:'1000'});
+ const pool0=BigInt((await casino.casinoState(alice)).jackpot_minor);assert.equal(pool0,seedPool+9n*20n,'seed plus 2% of nine 1,000-coin bets');
  // Force the close to draw a jackpot bonus by pinning the round seed until one is found.
  const {wheelModel,drawWheel}=await import('../server/casino/wheel.mjs');const {CASINO_GAMES}=await import('../shared/casino-games.mjs');const {seal}=await import('../server/security.mjs');
  const m=wheelModel(CASINO_GAMES.fruitparty);let seed;do seed=randomBytes(32).toString('hex');while(drawWheel(m,seed).bonus.type!=='jackpot');
@@ -264,7 +264,7 @@ test('FruitParty feeds 2% of each stake into the jackpot and a jackpot draw pays
  const jack=bets.reduce((a,b)=>a+BigInt(b.jackpot_minor||0),0n);assert.equal(String(jack),r.jackpot.paid_minor);assert.ok(jack>0n);
  assert.equal(BigInt((await casino.casinoState(alice)).jackpot_minor),pool0-jack);
  const paid=u=>bets.filter(b=>b.external_user_id===u).reduce((a,b)=>a+BigInt(b.payout_minor),0n);
- assert.equal(await partnerBalance('carol'),before.carol-800000n+paid('carol'));assert.equal(await partnerBalance('dave'),before.dave-100000n+paid('dave'));
+ assert.equal(await partnerBalance('carol'),before.carol-8000n+paid('carol'));assert.equal(await partnerBalance('dave'),before.dave-1000n+paid('dave'));
  assert.equal(await transit(),'0');
 });
 
@@ -283,14 +283,14 @@ test('lines and ways slots (OceanSlot, MahjongSlot) settle one complete cycle pe
 test('SicBo and roulette settle every board bet against the drawn dice or number',async()=>{
  for(const [game,options] of [['sicbo',['big','small','triple']],['roulette',['zero','d1','red','odd']]]){
   const carol=await sessionFor('carol',game),s0=await casino.casinoState(carol),before=await partnerBalance('carol');
-  for(const o of options)await casino.placeBet(carol,{request_id:uid('bet'),round_id:s0.round.id,option_id:o,stake_minor:'100000'});
+  for(const o of options)await casino.placeBet(carol,{request_id:uid('bet'),round_id:s0.round.id,option_id:o,stake_minor:'1000'});
   await pool.query('UPDATE casino_rounds SET bet_until=$2 WHERE id=$1',[s0.round.id,Date.now()-1]);await casino.tickCasino();await casino.tickCasino();await recover();
   const r=(await pool.query('SELECT result FROM casino_rounds WHERE id=$1',[s0.round.id])).rows[0].result;
   const bets=(await pool.query('SELECT option_id,payout_minor FROM casino_bets WHERE round_id=$1',[s0.round.id])).rows;
   if(game==='sicbo'){const d=r.outcome.slice(1).split('').map(Number),t=d[0]===d[1]&&d[1]===d[2],s=d[0]+d[1]+d[2];
-   assert.equal(bets.find(b=>b.option_id==='big').payout_minor,!t&&s>=11?'200000':'0');assert.equal(bets.find(b=>b.option_id==='triple').payout_minor,t?'3500000':'0');}
+   assert.equal(bets.find(b=>b.option_id==='big').payout_minor,!t&&s>=11?'2000':'0');assert.equal(bets.find(b=>b.option_id==='triple').payout_minor,t?'35000':'0');}
   const paid=bets.reduce((a,b)=>a+BigInt(b.payout_minor),0n);
-  assert.equal(await partnerBalance('carol'),before-BigInt(options.length)*100000n+paid,game);
+  assert.equal(await partnerBalance('carol'),before-BigInt(options.length)*1000n+paid,game);
  }
  assert.equal(await transit(),'0');
 });
@@ -299,7 +299,7 @@ test('casino history lists the player\'s revealed rounds and spins with stake an
  await pool.query("UPDATE casino_rounds SET reveal_at=$1 WHERE game_id='sicbo' AND status='settled'",[Date.now()-1]);
  const carol=await sessionFor('carol','sicbo'),h=await casino.casinoHistory(carol);
  assert.equal(h.kind,'round');assert.ok(h.records.length>=1);const r=h.records[0];assert.equal(r.bets.length,3);
- assert.equal(r.stake_minor,'300000');assert.equal(r.payout_minor,String(r.bets.reduce((a,b)=>a+BigInt(b.payout_minor),0n)));
+ assert.equal(r.stake_minor,'3000');assert.equal(r.payout_minor,String(r.bets.reduce((a,b)=>a+BigInt(b.payout_minor),0n)));
  const spins=await casino.casinoHistory(await sessionFor('carol','oceanslot'));assert.equal(spins.kind,'instant');assert.equal(spins.records[0].stake_minor,'1000');
  const other=await casino.casinoHistory(await sessionFor('dave','sicbo'));assert.equal(other.records.length,0,'never another player\'s records');
 });
@@ -307,8 +307,8 @@ test('casino history lists the player\'s revealed rounds and spins with stake an
 test('a void after a lost accept response refunds the stake by settlement instead of retrying cancel forever',async()=>{
  const carol=await sessionFor('carol','greedycat2'),before=await partnerBalance('carol');
  const st=await casino.casinoState(carol);
- const bet=await casino.placeBet(carol,{request_id:uid('bet'),round_id:st.round.id,option_id:'tomato',stake_minor:'100000'});
- assert.equal(await partnerBalance('carol'),before-100000n);
+ const bet=await casino.placeBet(carol,{request_id:uid('bet'),round_id:st.round.id,option_id:'tomato',stake_minor:'1000'});
+ assert.equal(await partnerBalance('carol'),before-1000n);
  // The wallet accepted, but the platform never saw the response, and the bet missed the close.
  await pool.query("UPDATE gp_operations SET state='PENDING',response=NULL WHERE id=$1",['accept_'+bet.id]);
  await pool.query("UPDATE casino_bets SET status='VOIDING',error='BETTING_CLOSED' WHERE id=$1",[bet.id]);
@@ -376,9 +376,9 @@ test('a spin started with the two-step protocol before the upgrade completes wit
 test('an arcade session (Monster) debits its ammo once, resolves shots on the server and settles wins plus unused ammo',async()=>{
  const arcade=await import('../server/casino/arcade.mjs');
  const carol=await sessionFor('carol','monster'),before=await partnerBalance('carol');
- const open=await arcade.openArcade(carol,{request_id:uid('arc'),bet_minor:'1000',shots:20});
- assert.equal(open.status,'OPEN');assert.equal(await partnerBalance('carol'),before-20000n);
- await assert.rejects(arcade.openArcade(carol,{request_id:uid('arc'),bet_minor:'1000',shots:20}),{code:'ARCADE_OPEN'});
+ const open=await arcade.openArcade(carol,{request_id:uid('arc'),bet_minor:'10',shots:20});
+ assert.equal(open.status,'OPEN');assert.equal(await partnerBalance('carol'),before-200n);
+ await assert.rejects(arcade.openArcade(carol,{request_id:uid('arc'),bet_minor:'10',shots:20}),{code:'ARCADE_OPEN'});
  let seq=0,last;
  for(let i=0;i<5;i++)last=await arcade.shoot(carol,{arcade_id:open.id,seq:++seq,weapon:'arrow',targets:['dragon']});
  const again=await arcade.shoot(carol,{arcade_id:open.id,seq,weapon:'arrow',targets:['dragon']});assert.deepEqual(again.hits,last.hits,'a replayed shot returns its stored result');
@@ -387,20 +387,20 @@ test('an arcade session (Monster) debits its ammo once, resolves shots on the se
  await assert.rejects(arcade.shoot(carol,{arcade_id:open.id,seq:++seq,weapon:'triple',targets:['bat','slime','goblin','wolf']}),{code:'INVALID_TARGETS'});
  const closed=await arcade.closeArcade(carol,{arcade_id:open.id});assert.equal(closed.status,'SETTLED');assert.equal(closed.used,10);assert.ok(closed.seed);
  await recover();
- assert.equal(await partnerBalance('carol'),before-20000n+BigInt(closed.win_minor)+10000n);assert.equal(await transit(),'0');
+ assert.equal(await partnerBalance('carol'),before-200n+BigInt(closed.win_minor)+100n);assert.equal(await transit(),'0');
 });
 
 test('an arcade ammo purchase whose wallet response is lost is recovered in the background instead of blocking the player',async()=>{
  const arcade=await import('../server/casino/arcade.mjs');
  const dave=await sessionFor('dave','monster'),before=await partnerBalance('dave');
  faults.dropNextDebitResponse=true;
- await assert.rejects(arcade.openArcade(dave,{request_id:uid('arc'),bet_minor:'1000',shots:10}),{code:'WALLET_PENDING'});
+ await assert.rejects(arcade.openArcade(dave,{request_id:uid('arc'),bet_minor:'10',shots:10}),{code:'WALLET_PENDING'});
  const stuck=(await pool.query("SELECT * FROM casino_arcade WHERE external_user_id='dave' AND status='AUTHORIZING'")).rows[0];assert.ok(stuck);
  await pool.query("UPDATE casino_arcade SET updated_at=now()-interval '10 seconds' WHERE id=$1",[stuck.id]);
  await recover();await arcade.recoverArcade();
  const row=(await pool.query('SELECT status FROM casino_arcade WHERE id=$1',[stuck.id])).rows[0];assert.equal(row.status,'OPEN','the retried purchase opens the session');
- assert.equal(await partnerBalance('dave'),before-10000n,'ammo is debited exactly once');
+ assert.equal(await partnerBalance('dave'),before-100n,'ammo is debited exactly once');
  const closed=await arcade.closeArcade(dave,{arcade_id:stuck.id});assert.equal(closed.status,'SETTLED');
  await recover();assert.equal(await partnerBalance('dave'),before,'unused ammo is refunded in full');assert.equal(await transit(),'0');
- const next=await arcade.openArcade(dave,{request_id:uid('arc'),bet_minor:'1000',shots:5});assert.equal(next.status,'OPEN');await arcade.closeArcade(dave,{arcade_id:next.id});await recover();
+ const next=await arcade.openArcade(dave,{request_id:uid('arc'),bet_minor:'10',shots:5});assert.equal(next.status,'OPEN');await arcade.closeArcade(dave,{arcade_id:next.id});await recover();
 });

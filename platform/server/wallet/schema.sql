@@ -31,3 +31,5 @@ CREATE TABLE IF NOT EXISTS wallet_scope_shards (scope_id text NOT NULL REFERENCE
  treasury_available bigint NOT NULL DEFAULT 0, treasury_reserved bigint NOT NULL DEFAULT 0, treasury_inbound bigint NOT NULL DEFAULT 0,
  fee_available bigint NOT NULL DEFAULT 0, fee_pending bigint NOT NULL DEFAULT 0, ledger_version bigint NOT NULL DEFAULT 0, PRIMARY KEY(scope_id,shard));
 CREATE INDEX IF NOT EXISTS wallet_probability_user_expiry ON wallet_probability(scope_id,external_user_id,expires_at) WHERE state='AUTHORIZED';
+-- Integer coins (see gp_apps.currency_scale).
+ALTER TABLE wallet_scopes ALTER COLUMN currency_scale SET DEFAULT 0;

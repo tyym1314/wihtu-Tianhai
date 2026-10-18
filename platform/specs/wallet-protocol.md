@@ -13,7 +13,7 @@
 
 ## 2. 金额、费用与守恒
 
-所有金额为**非负整数最小单位的十进制字符串**，格式 `0|[1-9][0-9]*`，最大 9223372036854775807；拒绝负数、浮点数、指数、前导零。每个币种固定 `currency_scale`，V1 示例为 2，即 `10000` 表示 100.00 币。API 中不得用 JavaScript Number 计算金额；使用 BigInt 或数据库整数/十进制。
+所有金额为**非负整数最小单位的十进制字符串**，格式 `0|[1-9][0-9]*`，最大 9223372036854775807；拒绝负数、浮点数、指数、前导零。所有 App 都是**整数币**：`currency_scale` 固定为 0，金额就是 App 自己的币数（例如 `10000` 就是 10000 个钻石），平台和钱包之间不做任何换算。API 中不得用 JavaScript Number 计算金额；使用 BigInt 或数据库整数/十进制。
 
 费率用整数基点 `fee_bps`，5% = 500。`fee_minor = floor(total_entry_minor * fee_bps / 10000)`；`prize_pool_minor = total_entry_minor - fee_minor`。只做一次总奖池向下取整。进入前锁定 fee_bps、entry_minor、rule_version、payout_template_version 和参赛座位；赛中不得变更。
 

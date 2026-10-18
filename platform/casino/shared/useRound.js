@@ -49,5 +49,5 @@ export function useRound(initial,game){
  const myWin=phase==='result'?state.my_bets.reduce((a,b)=>a+BigInt(b.payout_minor||0),0n):0n;
  return {state,round,phase,now,balance,mine,myStake,myWin,toast,offline,bet,repeat,canRepeat:lastBets.current.length>0,exit:()=>requestExit()};
 }
-export const full=minor=>new Intl.NumberFormat('en-US').format(Math.floor(Number(minor||0)/100));
-export const short=minor=>{const v=Number(minor||0)/100;const f=(n,s)=>`${Number.isInteger(n)?n:n.toFixed(1)}${s}`;return v>=1e6?f(v/1e6,'M'):v>=1e3?f(v/1e3,'K'):String(Math.floor(v));};
+export const full=minor=>new Intl.NumberFormat('en-US').format(Math.floor(Number(minor||0)));
+export const short=minor=>{const v=Number(minor||0);const f=(n,s)=>`${Number.isInteger(n)?n:n.toFixed(1)}${s}`;return v>=1e6?f(v/1e6,'M'):v>=1e3?f(v/1e3,'K'):String(Math.floor(v));};
