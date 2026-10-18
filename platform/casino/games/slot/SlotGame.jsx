@@ -68,7 +68,7 @@ export default function SlotGame({initial}){
    if(L.multReel)setReelMult('spin');
    await land(sp.initial,{free:sp.free});
    if(sp.random_wilds){setFeature({kind:'magic'});audio.play('orb');await wait(900);setFeature(null);}
-   if(sp.expanded?.length){setExpanded(sp.expanded);audio.play('thunder');await wait(900);}
+   if(sp.expanded?.length){setExpanded(sp.expanded);setFeature({kind:'mega'});audio.play('thunder');await wait(900);setFeature(null);}
    let g=sp.initial;
    for(const [i,st] of sp.steps.entries()){
     if(S.cascade)setLadder(i);
@@ -147,12 +147,12 @@ export default function SlotGame({initial}){
   {L.jackpot&&<Box x={L.jackpot[0]} y={L.jackpot[1]} w={L.jackpot[2]} h={L.jackpot[3]} className="sg-jackpot"><CountUp value={Number(BigInt(stake)*BigInt(S.maxWin))} format={v=>full(Math.round(v))}/></Box>}
   {pops.map(p=><span key={p.id} className="ol-pop" style={{left:p.x,top:p.y}}>+{full(p.v)}</span>)}
   {feature?.kind==='magic'&&<div className="sg-banner magic"><b>MAGIC WILDS</b></div>}
-  {expanded.length>0&&<div className="sg-banner mega"><b>MEGA WILD</b></div>}
+  {feature?.kind==='mega'&&<div className="sg-banner mega"><b>MEGA WILD</b></div>}
   {feature?.kind==='bonus'&&<div className="sg-banner bonus"><b>BONUS</b><em>×{feature.x}</em></div>}
   {feature?.kind==='collect'&&<div className="sg-banner collect"><b>COLLECT</b><em>×{feature.total}</em></div>}
   {feature?.kind==='scatter'&&<div className="sg-banner scatter"><b>{t('freeSpins')}</b></div>}
   {feature?.kind==='wheel'&&<Wheel values={S.wheel.values.map(v=>v.x)} x={feature.x} stake={stake}/>}
-  {collected&&<Box x={rx} y={ry-64} w={rw} h={56} className="sg-collected"><img src={img(S.freeSpins.boards.collect)} alt=""/><b>{collected.n}</b>{S.freeSpins.boards.steps.map(s=><span key={s.at} className={collected.n>=s.at?'on':''}>{s.at}</span>)}</Box>}
+  {collected&&<Box x={rx+rw*.15} y={ry-124} w={rw*.7} h={52} className="sg-collected"><img src={img(S.freeSpins.boards.collect)} alt=""/><b>{collected.n}</b>{S.freeSpins.boards.steps.map(s=><span key={s.at} className={collected.n>=s.at?'on':''}>{s.at}</span>)}</Box>}
   {free&&<Box x={rx} y={L.freebar||ry-64} w={rw} h={56} className="sg-freebar"><b>{t('freeLeft',[free.n||0,free.of||0])}</b><span>{full(free.total||0n)}</span></Box>}
   {fountain>0&&<div key={fountain} className="ol-fountain">{Array.from({length:big?46:18},(_,i)=><span key={i} className="ol-coinf" style={{left:470+(i%2?1:-1)*(i*7%160),'--dx':`${(i%2?1:-1)*(80+i*17%420)}px`,'--h':`${-500-(i*37%500)}px`,animationDelay:`${i*35}ms`}}/>)}</div>}
   <Box x={L.win[0]} y={L.win[1]} w={L.win[2]} h={L.win[3]} className="sg-win">{win>0n?<CountUp value={Number(win)} format={v=>full(Math.round(v))} ms={500}/>:<span>{busy?'':'GOOD LUCK'}</span>}</Box>

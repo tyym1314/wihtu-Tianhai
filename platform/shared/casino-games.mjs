@@ -25,7 +25,7 @@ const LINES_20=[...LINES_12,[0,1,0,1,0],[2,1,2,1,2],[1,0,1,0,1],[1,2,1,2,1],[0,0
 const LINES_20x4=[[0,0,0,0,0],[1,1,1,1,1],[2,2,2,2,2],[3,3,3,3,3],[0,1,2,1,0],[3,2,1,2,3],[1,2,3,2,1],[2,1,0,1,2],[0,1,0,1,0],[3,2,3,2,3],[1,0,1,0,1],[2,3,2,3,2],[0,0,1,2,3],[3,3,2,1,0],[1,1,2,3,3],[2,2,1,0,0],[0,1,1,1,0],[3,2,2,2,3],[1,2,2,2,1],[2,1,1,1,2]];
 /** A paylines slot from a compact description; payScale is calibrated by scripts/casino-lines-sim.mjs. */
 // Slots whose reference-faithful front-end is finished.
-const RELEASED_SLOTS=new Set(['oceanslot','mahjongslot','cleopatraslot','crazygems','slot777','djlive','jackpotslots']);
+const RELEASED_SLOTS=new Set(['oceanslot','mahjongslot','cleopatraslot','crazygems','slot777','djlive','jackpotslots','yummy','worldgoal','chillislot','sphinxlegend','nights1001','pyramidslots','magicslot']);
 function linesSlot(id,name,{columns=5,rows=3,lines,counts=[3,4,5],symbols,weights,freeWeights,wild,scatter,freeSpins,maxWin=2000,payScale=1,multiplierReel,bonus,collect,wheel,randomWilds,expandingWild}){
  return Object.freeze({id,released:RELEASED_SLOTS.has(id),family:'slot',kind:'instant',reference:name,name,zh:name,ar:name,stakes:SLOT_STAKES,
   slot:Object.freeze({pay:'lines',columns,rows,targetRtp:0.97,maxWin,payScale,lines,wild,symbols:symN(counts,symbols),scatter,freeSpins,multiplierReel,bonus,collect,wheel,randomWilds,expandingWild,weights:{base:weights,...(freeWeights?{free:freeWeights}:{})}})});
