@@ -227,7 +227,6 @@ await game.mount(document.querySelector('#game'));
 
 资金时序：对局满员就绪后，平台对每位玩家扣入场费；有人扣款失败则整局取消并把已扣的加回；结束后给胜者加奖池（总入场 − 服务费），服务费即你扣入与加回的差额。概率游戏每转扣投注、开奖后加中奖额（未中奖不加款）。
 
-参考实现（PostgreSQL，含验签与幂等）：`platform/examples/partner-demo/simple-wallet.mjs`。
 
 ## 6. 查单与对账
 
@@ -235,11 +234,7 @@ await game.mount(document.querySelector('#game'));
 - `GET /v1/operations/{operation_id}`：平台侧资金操作的镜像与对账状态。
 - 宿主消息（`loaded` / `close`）只是展示层信号，不代表扣款或派奖；余额以你的钱包账本为准。
 
-## 7. 演示合作方
-
-`https://partner-demo.43.98.202.236.sslip.io` 是一个完整运行的示例第三方：它拥有独立数据库的钱包（演示币），后端签名创建会话并通过启动页打开游戏。源码见 `platform/examples/partner-demo/server.mjs`。在手机浏览器中打开即可体验与真实接入完全相同的流程。
-
-## 8. 上线前检查
+## 7. 上线前检查
 
 - [ ] 签名向量自测通过；密钥只在后端，App 包与网页中没有任何 secret。
 - [ ] 钱包：同一 request_id 并发重复只记一次账；扣款不透支；加款始终成功。

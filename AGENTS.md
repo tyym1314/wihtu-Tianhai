@@ -6,7 +6,7 @@
 - 旧域名 `oasis-player.43.98.202.236.sslip.io`、`oasis.43.98.202.236.sslip.io` 均 301 到正式入口。
 - 第三方 App 接入模式：**接入方账号 + 接入方自有钱包**。接入方后端 HMAC 调 `POST /v1/sessions`，客户端打开 `/launch/?game=<id>&lang=..#code=..&session=..`。钱包只有一种协议 **simple-v1**：接入方实现 查余额 / 扣款 / 加款 3 个接口（按 request_id 幂等）。指南：`platform/specs/partner-integration-production.md`。
 - 第一方 App（`app_e091fb5daf135660d39ce89fc23760ab`，平台账号+平台内部金币）仍保留，供 `platform/android-player` 的 APK 使用。
-- 演示合作方：`https://partner-demo.43.98.202.236.sslip.io`（`platform/examples/partner-demo/server.mjs` + `simple-wallet.mjs`：simple-v1 参考钱包 + 签名后端，独立数据库 `oasis_demo_partner_wallet`）。合作方账号 `demo.partner`，当前 App `app_5728f902c7950b3460706f9971141217`（旧的完整协议 App 已停用）；凭据在被忽略的 `platform/.local/demo-partner/`。
+- 演示合作方已于 2026-10-18 彻底删除（账号、App、数据、演示站、证书、演示钱包库）。线上只有第一方 App；第三方真实接入（WithU）待添加。`platform/examples/partner-demo/` 仅作为接入示例代码保留在仓库。
 - 管理员：`tyym`（另有原 `operator`）。
 
 ## 代码结构要点
@@ -18,7 +18,7 @@
 - 前端：`platform/arena`（11 款竞技，React + Three/Canvas），`src/` + `platform/legacy`（雷霆/虎虎）。管理台 `platform/src`。
 - 多语言（zh/en/ar）：竞技游戏界面文案以中文为源，用 `$t('中文')`（`arena/shared/i18n.mjs`）翻译，词典 `arena/shared/i18n-dict.mjs`（[英文, 阿语]）。新增中文文案后运行 `node scripts/i18n-codemod.mjs --write` 自动包裹、补词典，再跑 `node scripts/i18n-check.mjs`（防止局部变量遮蔽 `$t`）。语言来源：`/v1/sessions` 的 `locale` → 会话 → 游戏；`/launch/?lang=` 写入 `localStorage.oasis-locale`。阿语只对大厅/结果/弹窗设 RTL。雷霆/虎虎沿用各自词典，换码后按会话语言写入其偏好。
 - 快速匹配：`POST /api/pvp/matchmaking`（同 App/游戏/人数/入场费撮合，`pvp_rooms.matchmaking`，等待 120 秒）；匹配房客户端自动就绪，未满员离开只释放座位。
-- 线上冒烟：`node platform/scripts/i18n-smoke.mjs all zh,en,ar`（经演示合作方开每款免费练习，检查报错与残留中文）。
+- 线上冒烟：`node platform/scripts/i18n-smoke.mjs all zh,en,ar`（原经演示合作方；现需先有一个已接入的三方 App）。
 
 ## 娱乐场游戏（复刻百顺/小游的概率游戏）
 
@@ -42,13 +42,12 @@
 
 ## 真机与压测（2026-10-18）
 
-- 真机：手机 Chrome 打开演示合作方，`adb forward tcp:9334 localabstract:chrome_devtools_remote` 后用 Playwright `connectOverCDP` 逐款测加载、iframe 内帧率、背景音乐（`window.__casinoMusic`）。38 款加载 1.7–2.9 秒，游戏中 57–60 fps。
+- 真机：手机 Chrome 打开三方 App 的游戏页（原用演示合作方），`adb forward tcp:9334 localabstract:chrome_devtools_remote` 后用 Playwright `connectOverCDP` 逐款测加载、iframe 内帧率、背景音乐（`window.__casinoMusic`）。38 款加载 1.7–2.9 秒，游戏中 57–60 fps。
 - 压测：`npx tsx scripts/casino-load-provision.mjs 2100 && node scripts/casino-load.mjs <玩家数> <秒>`（多个进程用 `LOAD_OFFSET` 错开玩家号）。本地按生产方式跑：`OASIS_REFERENCE_WALLET_FAST=1 OASIS_REFERENCE_WALLET_ALL_WORKERS=1 OASIS_WORKERS=4 OASIS_LEADER_HTTP=0 OASIS_RATE_EXCHANGE_IP_PER_MINUTE=100000 node --import tsx server/cluster.mjs`（本地 PG 已设 `max_connections=300`、开 `pg_stat_statements`）。钱包吞吐基准：`.local/load/bench.sh`（simple-v1 + 模拟三方钱包）。
 - 钱包账本两条路径：simple-v1 三方 App 的概率命令走“按玩家并行”热路径（锁玩家行，App 汇总写入 `wallet_scope_shards` 16 个分片，逻辑总额 = `wallet_scopes` + 分片之和，后台每 10 秒折叠回主行，过期冻结按玩家释放）；PvP、第一方内部金币、旧转账协议仍走 App 级串行路径。审计 App 总额时要把分片加上。
 - 资金流程：simple-v1 App 的娱乐场周期用合并命令 `/wallet/v1/probability/authorize-accept` 一步完成授权+确认（操作 id `accept_<周期>`，见 `server/casino/funding.mjs`）；其他钱包和升级前已用两步开始的周期仍走 `authorize_` + `accept_`。作废时先重放未决的合并操作再退款。
 - 进程：生产用 `server/cluster.mjs`（systemd ExecStart），runtime.env 里 `OASIS_WORKERS=3 OASIS_LEADER_HTTP=0`（1 个后台 leader 跑迁移/开奖/恢复，2 个 HTTP 进程），连接预算 `OASIS_DB_POOL_MAX=12 OASIS_WALLET_POOL_MAX=8 OASIS_DB_LOCK_POOL_MAX=5`（3×37≈111，生产 PG `max_connections=128`），`OASIS_CASINO_SETTLE_CONCURRENCY=6`。加机器时按核数加 workers 并同步调大 PG 连接数。
 - 容量（2026-10-18）：优化前单 App 约 150 人；优化后不再有单 App 上限，只受机器限制。现有生产机（4 核共享、PG 限 2 核/1G）估算约 550–600 名高强度在玩玩家稳定（峰值约 850）；本机 14 核测 1000 人 p95 旋转 0.25s / 下注 0.34s，2000 人零错误。
-- 演示钱包测试账户余额可在 `oasis_demo_partner_wallet.demo_simple_accounts` 调整（记 `MANUAL_TOPUP` 交易），只影响演示合作方。
 
 ## 本地开发与验证
 
@@ -66,14 +65,14 @@ npm run build:release            # 构建全部前端 + release-build-manifest.j
 
 1. 本地 `npm run build:release`，提交代码。
 2. 服务器新建版本目录：`cp -a /opt/oasis/releases/<当前> /opt/oasis/releases/<YYYYMMDD-NN>`，再从本地 rsync `platform/{server,shared}`（--delete）以及 `legacy dist public specs scripts deploy examples casino` 与根 `src/`；`arena` 只同步 `dist/` 和代码文件（`--delete --delete-excluded --include 'dist/***' --include '*/' --include '*.mjs' --include '*.js' --include '*.jsx' --include '*.json' --exclude '*' --prune-empty-dirs`，原始美术约 650MB 不上线，否则磁盘告警）；部署后删除自己更早的版本，只保留上一版回滚；`chmod -R u=rwX,go=rX`。
-3. 切换：改 `/etc/systemd/system/oasis-production-api.service` 的 `WorkingDirectory`，`ln -sfn` 更新 `/opt/oasis/production-current`，`systemctl daemon-reload && systemctl restart oasis-production-api oasis-partner-demo`。
+3. 切换：改 `/etc/systemd/system/oasis-production-api.service` 的 `WorkingDirectory`，`ln -sfn` 更新 `/opt/oasis/production-current`，`systemctl daemon-reload && systemctl restart oasis-production-api`。
 4. 验证：`curl https://game.tianyahuyu.com/health`；`systemctl start oasis-production-instance-monitor` 后查看 `/opt/oasis/production-instance-private/monitor/status.json` 全部 ok。
 5. 回滚：WorkingDirectory/软链指回上一版本目录并重启。
 
 - 私有配置：`/opt/oasis/production-instance-private/runtime.env`（含 `OASIS_PUBLIC_ORIGIN`、`OASIS_PARTNER_ADMISSION=1`）。数据库容器 `oasis-production-postgres`（127.0.0.1:18893）。
 - nginx/systemd 线上配置副本：`platform/deploy/production-game/`。改线上配置后同步回该目录。
 - 备份：`/opt/oasis/production-backup.sh`（每日 timer，输出 `/opt/oasis/production-backups/<UTC>`；恢复需同时用 `database.dump` 和私有归档中的 `master.key`）。
-- 证书：`oasis-certificate.timer` 运行 certbot renew（覆盖 `oasis-game`、`oasis-partner-demo`、`oasis-production-player` 等；原 `oasis-production-player-certificate.timer` 已停用）。partner-demo 的 80 端口 ACME 规则在共享容器 `proxy-nginx` 内（`/etc/nginx/conf.d/oasis-partner-demo-acme.conf`），容器重建后需从 `platform/deploy/production-game/proxy-nginx-oasis-partner-demo-acme.conf` 恢复。
+- 证书：`oasis-certificate.timer` 运行 certbot renew（覆盖 `oasis-game`、`oasis-production-player` 等；原 `oasis-production-player-certificate.timer` 已停用）。
 
 ## Android 真机测试
 
