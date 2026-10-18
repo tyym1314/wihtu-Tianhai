@@ -318,6 +318,62 @@ test('a void after a lost accept response refunds the stake by settlement instea
  assert.equal(await partnerBalance('carol'),before,'the stake is refunded in full');assert.equal(await transit(),'0');
 });
 
+test('simple-v1 funds a cycle with one merged authorize+accept wallet operation',async()=>{
+ const instant=await import('../server/casino/instant.mjs');const {CASINO_GAMES}=await import('../shared/casino-games.mjs');
+ const dave=await sessionFor('dave','oceanslot');
+ const r=await instant.spin(dave,{request_id:uid('sp'),stake_minor:CASINO_GAMES.oceanslot.stakes[0]});assert.equal(r.status,'SETTLED');
+ const ops=(await pool.query('SELECT id,path,state FROM gp_operations WHERE aggregate_id=$1 ORDER BY created_at',[r.id])).rows;
+ assert.deepEqual(ops.map(o=>[o.id.split('_')[0],o.path,o.state]),[['accept','/wallet/v1/probability/authorize-accept','SUCCEEDED'],['settle','/wallet/v1/probability/settle','SUCCEEDED']]);
+ assert.equal((await pool.query("SELECT state FROM wallet_probability WHERE cycle_id=$1",[r.id])).rows[0].state,'SETTLED');
+ await recover();assert.equal(await transit(),'0');
+});
+
+test('a merged funding whose debit response is lost, then misses the close, is charged once and refunded once',async()=>{
+ const dave=await sessionFor('dave','greedybrutal'),before=await partnerBalance('dave');
+ const st=await casino.casinoState(dave);
+ faults.dropNextDebitResponse=true;
+ const bet=await casino.placeBet(dave,{request_id:uid('bet'),round_id:st.round.id,option_id:'tiger',stake_minor:'100000'});
+ assert.equal(bet.status,'PENDING','unknown wallet outcome keeps the bet pending');
+ assert.equal(await partnerBalance('dave'),before-100000n,'the partner did debit');
+ await pool.query("UPDATE casino_rounds SET bet_until=$2 WHERE id=$1",[st.round.id,Date.now()-1]);
+ await casino.tickCasino();await casino.tickCasino();await recover();
+ assert.equal((await pool.query('SELECT status FROM casino_bets WHERE id=$1',[bet.id])).rows[0].status,'VOIDED');
+ assert.equal(await partnerBalance('dave'),before,'charged once, refunded once');assert.equal(await transit(),'0');
+});
+
+test('concurrent duplicates of one merged funding charge the player once',async()=>{
+ const {openProbability}=await import('../server/casino/funding.mjs');const {casinoProfiles}=await import('../server/casino/rounds.mjs');
+ const m=casinoProfiles().find(x=>x.gameId==='oceanslot'),before=await partnerBalance('dave'),cycle='cy'+uid('c');
+ const body={...platform.scope(app),authorization_id:'auth_'+cycle,cycle_id:cycle,external_user_id:'dave',game_id:'oceanslot',math_version:m.version,math_config_hash:m.hash,
+  stake_minor:'1000',max_payout_minor:String(1000n*BigInt(m.maxMultiplier)),expires_at:new Date(Date.now()+60000).toISOString()};
+ const results=await Promise.allSettled([openProbability(app,cycle,body),openProbability(app,cycle,body),openProbability(app,cycle,body)]);
+ assert.ok(results.some(r=>r.status==='fulfilled'),'at least one caller sees the accepted cycle');
+ await openProbability(app,cycle,body);
+ assert.equal(await partnerBalance('dave'),before-1000n,'debited exactly once');
+ assert.equal((await pool.query("SELECT count(*)::int n FROM wallet_probability WHERE cycle_id=$1 AND state='ACCEPTED'",[cycle])).rows[0].n,1);
+ const {command}=await import('../server/cycles.mjs');
+ await command(app,cycle,'/wallet/v1/probability/settle',{...platform.scope(app),authorization_id:'auth_'+cycle,cycle_id:cycle,request_id:'settle_'+cycle,game_id:'oceanslot',math_version:m.version,math_config_hash:m.hash,stake_minor:'1000',gross_payout_minor:'1000',result_hash:'0'.repeat(64)});
+ await recover();assert.equal(await partnerBalance('dave'),before);assert.equal(await transit(),'0');
+});
+
+test('a spin started with the two-step protocol before the upgrade completes with the two-step protocol',async()=>{
+ const instant=await import('../server/casino/instant.mjs');const {command}=await import('../server/cycles.mjs');const {CASINO_GAMES}=await import('../shared/casino-games.mjs');
+ const {casinoProfiles}=await import('../server/casino/rounds.mjs');
+ const dave=await sessionFor('dave','mahjongslot'),before=await partnerBalance('dave'),stake=CASINO_GAMES.mahjongslot.stakes[0],m=casinoProfiles().find(x=>x.gameId==='mahjongslot');
+ // What an older release persisted mid-spin: the spin row in AUTHORIZING and a completed old-style authorize.
+ const id='spin_'+uid('legacy');
+ await pool.query("INSERT INTO casino_spins(id,app_id,session_id,external_user_id,request_id,game_id,stake_minor,math_version,math_hash,status,mode,base_stake_minor) VALUES($1,$2,$3,'dave',$4,'mahjongslot',$5,$6,$7,'AUTHORIZING','normal',$5)",[id,app.id,dave.id,uid('rq'),stake,m.version,m.hash]);
+ await command(app,id,'/wallet/v1/probability/authorize',{...platform.scope(app),authorization_id:'auth_'+id,cycle_id:id,request_id:'authorize_'+id,external_user_id:'dave',game_id:'mahjongslot',math_version:m.version,math_config_hash:m.hash,
+  stake_minor:stake,max_payout_minor:String(BigInt(stake)*BigInt(m.maxMultiplier)),expires_at:new Date(Date.now()+60000).toISOString()});
+ await pool.query("UPDATE casino_spins SET updated_at=now()-interval '10 seconds' WHERE id=$1",[id]);
+ await instant.recoverInstant();await recover();
+ assert.equal((await pool.query('SELECT status FROM casino_spins WHERE id=$1',[id])).rows[0].status,'SETTLED');
+ assert.deepEqual((await pool.query('SELECT id FROM gp_operations WHERE aggregate_id=$1 ORDER BY created_at',[id])).rows.map(o=>o.id.split('_')[0]),['authorize','accept','settle']);
+ await recover();assert.equal(await transit(),'0');
+ const spin=(await pool.query('SELECT payout_minor FROM casino_spins WHERE id=$1',[id])).rows[0];
+ assert.equal(await partnerBalance('dave'),before-BigInt(stake)+BigInt(spin.payout_minor),'charged once and paid once');
+});
+
 test('an arcade session (Monster) debits its ammo once, resolves shots on the server and settles wins plus unused ammo',async()=>{
  const arcade=await import('../server/casino/arcade.mjs');
  const carol=await sessionFor('carol','monster'),before=await partnerBalance('carol');

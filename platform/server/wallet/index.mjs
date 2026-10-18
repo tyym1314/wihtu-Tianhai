@@ -252,6 +252,12 @@ async function accept(c,b){
  const a=await auth(c,b.authorization_id);if(a?.state==='CANCELLED')fail('CANCELLED_TOMBSTONE','Authorization cancelled');if(a?.state==='EXPIRED')fail('AUTHORIZATION_EXPIRED','Authorization expired');if(!a||a.cycle_id!==b.cycle_id||a.state!=='AUTHORIZED')fail('INVALID_STATE','Authorization not available to accept');
  const row=(await c.db.query("UPDATE wallet_probability SET state='ACCEPTED',accepted_at=now(),updated_at=now() WHERE scope_id=$1 AND authorization_id=$2 AND state='AUTHORIZED' AND expires_at>clock_timestamp() RETURNING *",[c.id,b.authorization_id])).rows[0];if(!row)fail('AUTHORIZATION_EXPIRED','Authorization expired before atomic acceptance');return receipt(c,'probability_authorization',authResource(c.s,row));
 }
+/** Internal (simple-v1): authorize and accept in one transaction. Recorded as an accept; no window to cancel. */
+async function authorizeAccept(c,b){
+ await authorize(c,b);
+ const row=(await c.db.query("UPDATE wallet_probability SET state='ACCEPTED',accepted_at=now(),updated_at=now() WHERE scope_id=$1 AND authorization_id=$2 AND state='AUTHORIZED' RETURNING *",[c.id,b.authorization_id])).rows[0];
+ return receipt(c,'probability_authorization',authResource(c.s,row));
+}
 async function cancelProbability(c,b){
  const a=(await c.db.query('SELECT * FROM wallet_probability WHERE scope_id=$1 AND (authorization_id=$2 OR cycle_id=$3)',[c.id,b.authorization_id,b.cycle_id])).rows[0];if(a&&(a.authorization_id!==b.authorization_id||a.cycle_id!==b.cycle_id))fail('INVALID_STATE','Authorization/cycle mismatch');if(a&&['ACCEPTED','SETTLED'].includes(a.state))fail('ALREADY_ACCEPTED','Accepted payout liability cannot be cancelled');
  if(a?.state==='AUTHORIZED')await releaseAuthorization(c,a,'CANCELLED');
@@ -275,15 +281,16 @@ const commands={
  '/wallet/v1/matches/settle':['settle_match','SettleMatchRequest',settle],
  '/wallet/v1/probability/authorize':['authorize_probability','AuthorizeProbabilityRequest',authorize],
  '/wallet/v1/probability/accept':['accept_probability','AcceptProbabilityRequest',accept],
+ '/wallet/v1/probability/authorize-accept':['accept_probability','AuthorizeProbabilityRequest',authorizeAccept],
  '/wallet/v1/probability/cancel':['cancel_probability','CancelProbabilityRequest',cancelProbability],
  '/wallet/v1/probability/settle':['settle_probability','SettleProbabilityRequest',settleProbability]
 };
 const errorBody=(e,operation_id)=>({code:e instanceof WalletError?e.code:'INTERNAL_ERROR',message:e instanceof WalletError?e.message.slice(0,512):'Reference wallet temporarily unavailable',trace_id:'tr_'+randomUUID().replaceAll('-',''),...(operation_id?{operation_id}:{}),retryable:!(e instanceof WalletError)||e.status>=500});
-const FAST=new Set(['/wallet/v1/probability/authorize','/wallet/v1/probability/accept','/wallet/v1/probability/settle','/wallet/v1/probability/cancel']);
+const FAST=new Set(['/wallet/v1/probability/authorize','/wallet/v1/probability/authorize-accept','/wallet/v1/probability/accept','/wallet/v1/probability/settle','/wallet/v1/probability/cancel']);
 /** The player whose row a probability command touches, or null when it must take the strict path. */
 async function playerOf(pool,scope,path,body){
  if(!FAST.has(path))return null;
- if(path==='/wallet/v1/probability/authorize')return typeof body.external_user_id==='string'?body.external_user_id:null;
+ if(path==='/wallet/v1/probability/authorize'||path==='/wallet/v1/probability/authorize-accept')return typeof body.external_user_id==='string'?body.external_user_id:null;
  return (await pool.query('SELECT external_user_id FROM wallet_probability WHERE scope_id=$1 AND authorization_id=$2',[scope,body.authorization_id])).rows[0]?.external_user_id||null;
 }
 async function execute(pool,key,path,raw,body,{fast=false}={}){

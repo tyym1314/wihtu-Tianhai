@@ -115,7 +115,8 @@ export async function sweepUser(db,app,binding,user,{reason='payout',reference=n
 }
 
 const DEBITS={'/wallet/v1/reservations':b=>({amount:b.amount_minor,reason:'match_entry',reference:b.match_id,game:b.terms?.game_id}),
- '/wallet/v1/probability/authorize':b=>({amount:b.stake_minor,reason:'spin_bet',reference:b.cycle_id,game:b.game_id})};
+ '/wallet/v1/probability/authorize':b=>({amount:b.stake_minor,reason:'spin_bet',reference:b.cycle_id,game:b.game_id}),
+ '/wallet/v1/probability/authorize-accept':b=>({amount:b.stake_minor,reason:'spin_bet',reference:b.cycle_id,game:b.game_id})};
 const CREDIT_REASON={'/wallet/v1/matches/release':'match_refund','/wallet/v1/matches/settle':'match_payout','/wallet/v1/probability/settle':'spin_win','/wallet/v1/probability/cancel':'spin_refund'};
 
 /** The rich command protocol, served by the internal ledger and funded through simple-v1. */

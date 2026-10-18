@@ -12,6 +12,7 @@ import {pool,tx} from '../db.mjs';
 import {id,seal,unseal,fail} from '../security.mjs';
 import {appById,scope} from '../platform.mjs';
 import {command} from '../cycles.mjs';
+import {openProbability} from './funding.mjs';
 import {assertNewFinancialAdmission} from '../production-admission.mjs';
 import {CASINO_GAMES} from '../../shared/casino-games.mjs';
 import {createRng} from './rng.mjs';
@@ -66,9 +67,8 @@ async function authorize(app,a){
  const model=models[a.game_id];if(model.version!==a.math_version||model.hash!==a.math_hash)fail(503,'PINNED_MATH_UNAVAILABLE');
  const stake=BigInt(a.bet_minor)*BigInt(a.shots);
  try{
-  await command(app,a.id,'/wallet/v1/probability/authorize',{...base(app,a),request_id:'authorize_'+a.id,external_user_id:a.external_user_id,game_id:a.game_id,math_version:model.version,math_config_hash:model.hash,
+  await openProbability(app,a.id,{...base(app,a),external_user_id:a.external_user_id,game_id:a.game_id,math_version:model.version,math_config_hash:model.hash,
    stake_minor:String(stake),max_payout_minor:String(stake*BigInt(model.maxMultiplier)),expires_at:new Date(Date.now()+60000).toISOString()});
-  await command(app,a.id,'/wallet/v1/probability/accept',{...base(app,a),request_id:'accept_'+a.id});
   return (await pool.query("UPDATE casino_arcade SET status='OPEN',last_shot_at=now(),updated_at=now() WHERE id=$1 AND status='AUTHORIZING' RETURNING *",[a.id])).rows[0]||(await pool.query('SELECT * FROM casino_arcade WHERE id=$1',[a.id])).rows[0];
  }catch(e){
   if(e.status===409)return (await pool.query("UPDATE casino_arcade SET status='REJECTED',error=$2,updated_at=now() WHERE id=$1 AND status='AUTHORIZING' RETURNING *",[a.id,e.code||'WALLET_REJECTED'])).rows[0]||(await pool.query('SELECT * FROM casino_arcade WHERE id=$1',[a.id])).rows[0];

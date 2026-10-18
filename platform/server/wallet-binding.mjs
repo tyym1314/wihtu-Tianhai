@@ -178,6 +178,11 @@ const bindingCache=new Map();
 async function bindingFor(appId){const hit=bindingCache.get(appId);if(hit&&hit.until>Date.now())return hit.row;
  const row=(await pool.query('SELECT * FROM gp_wallet_bindings WHERE app_id=$1',[appId])).rows[0];if(pool===defaultPool)bindingCache.set(appId,{row,until:Date.now()+3000});return row;}
 export const forgetWalletBinding=appId=>bindingCache.delete(appId);
+/** Apps whose wallet is the internal simple-v1 ledger (or the local reference wallet in load tests) take the merged authorize+accept. */
+export async function mergedProbability(app){
+ const binding=await bindingFor(app.id);
+ return binding?.provider==='simple'||(process.env.OASIS_REFERENCE_WALLET_FAST==='1'&&app.environment!=='production'&&!binding?.provider);
+}
 export async function walletRequest(app,method,path,raw='',requestId=id('walletquery')){
   if(!app||!safeId(app.id)||!['GET','POST'].includes(method)||typeof raw!=='string'||!/^\/wallet\/v1(?:\/[A-Za-z0-9_-]+)+$/.test(path)||!safeId(requestId)||(method==='GET'&&raw))fail(400,'INVALID_WALLET_REQUEST');
   const binding=await bindingFor(app.id);

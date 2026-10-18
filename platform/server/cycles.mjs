@@ -38,7 +38,7 @@ export async function command(app,cycleId,path,body){
       const frozen=JSON.parse(op.raw_body),resource=result.receipt?.resource;
       if(!resource||result.receipt.resource_type!=='probability_authorization')fail(503,'WALLET_INVALID_RECEIPT');
       for(const k of ['cycle_id','authorization_id','game_id','math_version','math_config_hash','stake_minor','gross_payout_minor','result_hash'])if(frozen[k]!==undefined&&resource[k]!==frozen[k])fail(503,'WALLET_INVALID_RECEIPT');
-      const expected={authorize:'AUTHORIZED',accept:'ACCEPTED',settle:'SETTLED',cancel:'CANCELLED'}[op.path.split('/').pop()];
+      const expected={authorize:'AUTHORIZED',accept:'ACCEPTED','authorize-accept':'ACCEPTED',settle:'SETTLED',cancel:'CANCELLED'}[op.path.split('/').pop()];
       if(resource.state!==expected)fail(503,'WALLET_INVALID_RECEIPT');
     }
     await pool.query("UPDATE gp_operations SET state=$1,response=$2,attempts=attempts+1,updated_at=now(),next_attempt_at=now()+$4::int*interval '1 millisecond' WHERE id=$3",[result.state,result,op.id,result.state==='PENDING'?recoveryDelayMs(op.attempts+1):0]);

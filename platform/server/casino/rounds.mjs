@@ -9,6 +9,7 @@ import {pool,tx} from '../db.mjs';
 import {id,seal,unseal,fail} from '../security.mjs';
 import {appById,scope} from '../platform.mjs';
 import {command,walletBalance} from '../cycles.mjs';
+import {openProbability,MERGED_PROBABILITY} from './funding.mjs';
 import {assertNewFinancialAdmission} from '../production-admission.mjs';
 import {CASINO_GAMES,isCasinoGame} from '../../shared/casino-games.mjs';
 import {wheelModel,drawWheel,wheelPayout} from './wheel.mjs';
@@ -220,9 +221,8 @@ export async function placeBet(session,body){
 async function fundBet(app,model,bet){
  const base=walletBase(app,bet);
  try{
-  await command(app,bet.id,'/wallet/v1/probability/authorize',{...base,request_id:'authorize_'+bet.id,external_user_id:bet.external_user_id,game_id:model.gameId,math_version:model.version,math_config_hash:model.hash,
+  await openProbability(app,bet.id,{...base,external_user_id:bet.external_user_id,game_id:model.gameId,math_version:model.version,math_config_hash:model.hash,
    stake_minor:String(bet.stake_minor),max_payout_minor:String(BigInt(bet.stake_minor)*BigInt(model.maxMultiplier)),expires_at:new Date(Date.now()+60000).toISOString()});
-  await command(app,bet.id,'/wallet/v1/probability/accept',{...base,request_id:'accept_'+bet.id});
   // Acceptance may race the close of betting; only a still-open round takes the bet.
   const accepted=(await pool.query("UPDATE casino_bets b SET status='ACCEPTED',updated_at=now() FROM casino_rounds r WHERE b.id=$1 AND b.status='PENDING' AND r.id=b.round_id AND r.status='betting' RETURNING b.*",[bet.id])).rows[0];
   const jp=CASINO_GAMES[model.gameId].bonus?.jackpot;
@@ -331,7 +331,15 @@ async function settleOpenBets(){
     await pool.query("UPDATE casino_bets SET status='SETTLED',updated_at=now() WHERE id=$1 AND status='SETTLING'",[b.id]);
    }else{
     // Refund a bet that missed the close: cancel before accept, or settle the stake back after accept.
-    const ops=(await pool.query("SELECT id,state FROM gp_operations WHERE aggregate_id=$1",[b.id])).rows,state=Object.fromEntries(ops.map(o=>[o.id.split('_')[0],o.state]));
+    let ops=(await pool.query("SELECT id,state,path,raw_body FROM gp_operations WHERE aggregate_id=$1",[b.id])).rows;
+    // A merged authorize+accept with an unknown outcome is replayed (idempotently) before deciding:
+    // it either succeeded (the stake is held: refund it) or was rejected (nothing to refund).
+    const merged=ops.find(o=>o.path===MERGED_PROBABILITY);
+    if(merged&&!['SUCCEEDED','REJECTED'].includes(merged.state)){
+     try{await command(app,b.id,MERGED_PROBABILITY,JSON.parse(merged.raw_body));}catch(e){if(e.status!==409)throw e;}
+     ops=(await pool.query("SELECT id,state,path FROM gp_operations WHERE aggregate_id=$1",[b.id])).rows;
+    }
+    const state=Object.fromEntries(ops.map(o=>[o.id.split('_')[0],o.state]));
     const refund=()=>command(app,b.id,'/wallet/v1/probability/settle',{...base,request_id:'settle_'+b.id,game_id:model.gameId,math_version:model.version,math_config_hash:model.hash,stake_minor:String(b.stake_minor),gross_payout_minor:String(b.stake_minor),result_hash:sha('void:'+b.id)});
     if(state.accept==='SUCCEEDED')await refund();
     else if(state.authorize&&state.authorize!=='REJECTED'){
