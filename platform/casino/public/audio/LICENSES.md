@@ -18,6 +18,8 @@ All files are CC0 1.0 (public domain).
 - music-roulette.mp3: Medieval: King's Feast by RandomMind (OpenGameArt, CC0)
 - music-roulettepro.mp3: Space City (OpenGameArt, CC0)
 - music-sicbo.mp3: Sitarian (OpenGameArt, CC0)
+- music-crash.mp3: Happy Clappy Loop (OpenGameArt, CC0)
+- music-crashstar.mp3: Space Adventure (OpenGameArt, CC0)
 - music-bountyfootball.mp3: Space Adventure (OpenGameArt, CC0)
 - music-bigeater.mp3: Banana Track by skrjablin (OpenGameArt, CC0)
 - music-greedybrutal.mp3: Greek boss battle by Spring Spring (OpenGameArt, CC0)

@@ -53,7 +53,7 @@ function rouletteGame(id,name,bets){
   options:Object.freeze(bets.map(([o,m,nums])=>Object.freeze({id:o,multiplier:m,covers:nums.map(n=>'n'+n)})))});
 }
 function crashGame(id,name){
- return Object.freeze({id,family:'crash',reference:name,name,zh:name,ar:name,round:Object.freeze({betMs:8000,showMs:3500}),chips:CHIPS2,maxOptionsPerRound:2,maxStakePerRound:coins(200000),
+ return Object.freeze({id,released:true,family:'crash',reference:name,name,zh:name,ar:name,round:Object.freeze({betMs:8000,showMs:3500}),chips:CHIPS2,maxOptionsPerRound:2,maxStakePerRound:coins(200000),
   options:Object.freeze([{id:'a'},{id:'b'}].map(Object.freeze)),rtp:0.97,maxMultiplier:1000,autoCashout:Object.freeze({min_x100:101,max_x100:100000})});
 }
 export const CASINO_GAMES=Object.freeze({

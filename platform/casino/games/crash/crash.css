@@ -1,0 +1,46 @@
+.cg-canvas{position:absolute;pointer-events:none}
+.cg-ship{position:absolute;left:0;top:0;object-fit:contain;pointer-events:none;will-change:transform;filter:drop-shadow(0 0 18px #ffb84d88)}
+.cg-badge{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;padding:6px 18px;border-radius:14px;background:linear-gradient(#2fd07a,#0d7a3a);border:3px solid #b8ffd2;box-shadow:0 6px 16px #000a;pointer-events:none;z-index:4}
+.cg-badge b{font:900 40px Georgia,serif;color:#fff;text-shadow:0 2px 0 #054}
+.cg-badge small{font-size:18px;color:#e5ffef}
+.cg-badge.crashed{background:linear-gradient(#ff4d6a,#a0102a);border-color:#ffc2cc}
+.cg-praise{display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;z-index:3;text-align:center}
+.cg-praise b{font:italic 900 120px 'Arial Black',sans-serif;color:#5dff5d;-webkit-text-stroke:3px #0a4a0a;text-shadow:0 0 30px #3dff6a,0 6px 0 #063806;animation:wg-pop .4s cubic-bezier(.2,1.6,.4,1)}
+.cg-praise span{font:italic 900 96px 'Arial Black',sans-serif;color:#7dff7d;-webkit-text-stroke:2px #0a4a0a;text-shadow:0 0 24px #3dff6a}
+.cg-praise.t2 b,.cg-praise.t2 span{color:#ffe14d;text-shadow:0 0 30px #ffb300}
+.cg-praise.t3 b,.cg-praise.t3 span,.cg-praise.t4 b,.cg-praise.t4 span{color:#ff7af5;text-shadow:0 0 34px #c03cff}
+.cg-praise.crashed b,.cg-praise.crashed span{color:#ff5a6e;-webkit-text-stroke:3px #4a0010;text-shadow:0 0 30px #ff2a4a}
+.cg-praise .cg-count{font-size:150px;color:#fff;-webkit-text-stroke:0;text-shadow:0 0 30px #6ad1ff}
+.cg-praise small{font-size:32px;color:#cfe8ff}
+.cg-pill{display:grid;place-items:center;border-radius:12px;font:800 22px sans-serif;color:#fff;border:2px solid #ffffff55;box-shadow:inset 0 -3px 0 #0004;pointer-events:none}
+.cg-pill.red{background:linear-gradient(#ff5a6e,#c0142e)}.cg-pill.green{background:linear-gradient(#46e07a,#12923c)}.cg-pill.gold{background:linear-gradient(#ffd34d,#d18a00)}
+.cg-crashstar .cg-pill.red{background:linear-gradient(#e0203c,#7a0a1c)}
+.cg-pill:first-child{box-shadow:0 0 0 3px #ffe37a}
+.cg-best{display:flex;align-items:center;justify-content:center;font:900 32px Georgia,serif;color:#ffe37a;text-shadow:0 0 12px #ffb300;pointer-events:none}
+.cg-players{display:flex;flex-direction:column;gap:14px;pointer-events:none}
+.cg-players div{display:flex;align-items:center;gap:12px}
+.cg-players em{flex:none;width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:900;font-size:26px;color:#0a1a3a;background:linear-gradient(#bfe6ff,#4a8de0);border:3px solid #9fd8ff}
+.cg-players span{display:flex;flex-direction:column;color:#fff}
+.cg-players b{font-size:24px}.cg-players small{font-size:22px;color:#ffd84a}
+.cg-chip{position:absolute;background:none;transition:transform .15s,filter .15s}
+.cg-chip:active{transform:scale(.94)}
+.cg-chip:disabled{filter:brightness(.6) saturate(.6)}
+.cg-chip.on{filter:none;box-shadow:0 0 0 6px #ffe37a,0 0 30px 10px #ffd34d99;border-radius:24px}
+.cg-take{position:absolute;background:none;border-radius:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:transparent}
+.cg-take b,.cg-take small{color:#fff;text-shadow:0 3px 0 #0007}
+.cg-take b{font:900 70px 'Arial Black',sans-serif}
+.cg-take b.cg-small{font-size:38px}
+.cg-take small{font-size:30px;font-weight:800}
+.cg-take:disabled{filter:saturate(.35) brightness(.75)}
+.cg-take.cash{filter:none;animation:cg-pulse .6s ease-in-out infinite alternate}
+.cg-crash .cg-take{background:linear-gradient(#36c95f,#16903a);border:5px solid #b8ffc8}
+.cg-crashstar .cg-take{background:linear-gradient(#ffe14d,#f0a400);border:5px solid #fff3b0}
+.cg-crashstar .cg-take b,.cg-crashstar .cg-take small{color:#4a2400;text-shadow:0 2px 0 #fff6}
+@keyframes cg-pulse{to{transform:scale(1.04);box-shadow:0 0 40px #fff8}}
+.cg-take.done{filter:none}
+.cg-check{position:absolute;display:grid;place-items:center;color:#7dff9c;font:900 34px sans-serif;pointer-events:none}
+.cg-switch{position:absolute;pointer-events:none;background:#000a;transition:background .2s}
+.cg-switch.on{background:none}
+.cg-auto{display:grid;place-items:center;font:900 30px sans-serif;color:#fff;pointer-events:none}
+.cg-auto.off{color:#ffffff88}
+.cg-bal{font-size:32px}

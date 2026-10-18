@@ -9,6 +9,7 @@ const DICT={
  next:['下一局即将开始','Next round soon','الجولة التالية قريباً'],
  repeat:['重复上局','Repeat','كرر'],
  youWon:['恭喜赢得','You won','ربحت'],
+ crashRules:['1. 每局开始前有 8 秒下注时间：点击一个筹码即按该金额下注，每局一注。\n2. 起飞后倍数从 1.00x 开始上涨，飞走前点击 TAKE，按当前倍数赢得 押注×倍数。\n3. 飞走前没有 TAKE 的押注不中奖。\n4. 勾选自动 TAKE 并设置倍数，下注后达到该倍数时自动 TAKE。\n5. 最高 1000 倍；每局飞走的倍数在下注截止前已由承诺值锁定，结束后可校验。','1. Each round has 8 seconds of betting: tap a chip to bet that amount (one bet per round).\n2. After lift-off the multiplier rises from 1.00x; tap TAKE before it flies away to win stake × multiplier.\n3. A bet not taken before the fly-away loses.\n4. Turn on Auto Take and set a multiplier to take automatically when it is reached.\n5. Up to 1000x; the fly-away point is locked by the published commitment before betting closes and can be verified afterwards.','1. لكل جولة 8 ثوانٍ للرهان: انقر رقاقة للرهان بقيمتها (رهان واحد لكل جولة).\n2. بعد الإقلاع يرتفع المضاعف من 1.00x؛ انقر TAKE قبل أن يطير لتربح الرهان × المضاعف.\n3. الرهان الذي لم يُسحب قبل الطيران يخسر.\n4. فعّل السحب التلقائي واضبط مضاعفاً ليتم السحب تلقائياً عند بلوغه.\n5. حتى 1000x؛ نقطة الطيران مثبتة بالالتزام المنشور قبل إغلاق الرهان ويمكن التحقق منها لاحقاً.'],
  godPrize:['神奖','GOD PRIZE','الجائزة الإلهية'],
  noWin:['本局未中奖','No win this round','لا فوز في هذه الجولة'],
  topWinners:['本局赢家','Top winners','الفائزون'],

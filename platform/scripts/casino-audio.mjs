@@ -21,6 +21,8 @@ const MUSIC={
  roulette:['music/medieval-kings-feast--Kings_Feast.mp3',"Medieval: King's Feast by RandomMind (OpenGameArt, CC0)"],
  roulettepro:['music/space-city--space_city_bpm115_0.ogg','Space City (OpenGameArt, CC0)'],
  sicbo:['music/sitarian--sitarian_0.mp3','Sitarian (OpenGameArt, CC0)'],
+ crash:['music/happy-clappy-loop--HappyClappyLoop.mp3','Happy Clappy Loop (OpenGameArt, CC0)'],
+ crashstar:['music/space-adventure--space_adventure_bpm140.mp3','Space Adventure (OpenGameArt, CC0)'],
  bountyfootball:['music/space-adventure--space_adventure_bpm140.mp3','Space Adventure (OpenGameArt, CC0)'],
  bigeater:['music/banana-track--banana_track.ogg','Banana Track by skrjablin (OpenGameArt, CC0)'],
  greedybrutal:['music/experimenting-with-greek-instrument-samples--greek%20boss%20battle_0.ogg','Greek boss battle by Spring Spring (OpenGameArt, CC0)'],

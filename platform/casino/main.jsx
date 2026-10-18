@@ -10,6 +10,8 @@ const Wheel=lazy(()=>import('./games/wheel/WheelGame.jsx'));
 for(const id of ['greedycat2','greedyking','greedybrutal','bigeater','fruitparty','greedyforest','herochest','crazyfruit','footballleague','glorycup','bountyfootball','magiccard','solomonmines'])SCENES[id]=Wheel;
 const Table=lazy(()=>import('./games/table/TableGame.jsx'));
 for(const id of ['roulette','roulettepro','sicbo'])SCENES[id]=Table;
+const Crash=lazy(()=>import('./games/crash/CrashGame.jsx'));
+for(const id of ['crash','crashstar'])SCENES[id]=Crash;
 
 function App(){
  const [launch,setLaunch]=useState(null),[status,setStatus]=useState('connecting');
