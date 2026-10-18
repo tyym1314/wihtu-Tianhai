@@ -48,7 +48,7 @@ function plainWheel(id,name,items,{maxOptions,chips=CHIPS2,bonus,released=false,
 }
 /** European single-zero roulette with the reference's simplified bet board. */
 function rouletteGame(id,name,bets){
- return Object.freeze({id,family:'wheel',reference:name,name,zh:name,ar:name,round:Object.freeze({betMs:20000,drawMs:9000,showMs:5000}),chips:CHIPS2,maxOptionsPerRound:8,maxStakePerRound:coins(1000000),
+ return Object.freeze({id,released:true,family:'wheel',reference:name,name,zh:name,ar:name,round:Object.freeze({betMs:20000,drawMs:9000,showMs:5000}),chips:CHIPS2,maxOptionsPerRound:8,maxStakePerRound:coins(1000000),
   draw:Object.freeze(range(0,36).map(n=>Object.freeze({id:'n'+n,weight:1}))),
   options:Object.freeze(bets.map(([o,m,nums])=>Object.freeze({id:o,multiplier:m,covers:nums.map(n=>'n'+n)})))});
 }
@@ -209,17 +209,17 @@ export const CASINO_GAMES=Object.freeze({
 
  // ---- Round games on the wheel engine (unreleased until art ships). ----
  crazyfruit:wheelGame('crazyfruit','CrazyFruit',{released:true,veg:['orange','lemon','grape','cherry'],meat:[['apple',10],['watermelon',15],['mango',25],['strawberry',45]],specials:['lucky','superlucky'],chips:CHIPS2,round:{betMs:25000,drawMs:7000,showMs:5000}}),
- magiccard:plainWheel('magiccard','MagicCard',[['leo',100],['aries',4],['libra',4],['scorpio',5],['virgo',50],['taurus',25],['sagittarius',15],['aquarius',5]],{maxOptions:4,chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(30000)])}),
+ magiccard:plainWheel('magiccard','MagicCard',[['leo',100],['aries',4],['libra',4],['scorpio',5],['virgo',50],['taurus',25],['sagittarius',15],['aquarius',5]],{released:true,maxOptions:4,chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(30000)])}),
  bountyfootball:plainWheel('bountyfootball','BountyFootball',[['club2',2],['club5',5],['club8',8],['club18',18],['club20',20],['club30',30],['club50',50],['club66',66],['club88',88],['club100',100]],{released:true,maxOptions:10,chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(100000),coins(300000)])}),
  // FootballLeague / GloryCup: 8 clubs x40/x40/x12/x12/x6/x6/x4/x4; a rare "god prize" adds 3 extra winning clubs.
  footballleague:plainWheel('footballleague','FootballLeague',[['club1',40],['club2',40],['club3',12],['club4',12],['club5',6],['club6',6],['club7',4],['club8',4]],{released:true,maxOptions:8,bonus:{liabilityMultiplier:160,table:[{type:'none',weight:9953},{type:'extra',value:3,weight:47}]}}),
  glorycup:plainWheel('glorycup','GloryCup',[['team1',40],['team2',40],['team3',12],['team4',12],['team5',6],['team6',6],['team7',4],['team8',4]],{released:true,maxOptions:8,bonus:{liabilityMultiplier:160,table:[{type:'none',weight:9953},{type:'extra',value:3,weight:47}]}}),
  // SolomonMines: three chests, one wins; x2.91 (stake included) -> 97%.
- solomonmines:plainWheel('solomonmines','SolomonMines',[['courage',2.91],['wisdom',2.91],['strength',2.91]],{maxOptions:3,chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(50000)])}),
+ solomonmines:plainWheel('solomonmines','SolomonMines',[['courage',2.91],['wisdom',2.91],['strength',2.91]],{released:true,maxOptions:3,chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(50000)])}),
  roulette:rouletteGame('roulette','roulette',[['zero',36,[0]],['d1',3,range(1,12)],['d2',3,range(13,24)],['d3',3,range(25,36)],['red',2,RED],['black',2,BLACK],['even',2,range(1,36).filter(n=>n%2===0)],['odd',2,range(1,36).filter(n=>n%2)]]),
  roulettepro:rouletteGame('roulettepro','RoulettePro',[['zero',36,[0]],['d1',3,range(1,12)],['d2',3,range(13,24)],['d3',3,range(25,36)],['red',2,RED],['black',2,BLACK],['single',2,range(1,36).filter(n=>n%2)],['double',2,range(1,36).filter(n=>n%2===0)]]),
  // SicBo: three dice (216 equally likely); BIG 11-17 / SMALL 4-10 lose on any triple; ANY TRIPLE x35.
- sicbo:Object.freeze({id:'sicbo',family:'wheel',reference:'SicBo',name:'SicBo',zh:'SicBo',ar:'SicBo',round:Object.freeze({betMs:15000,drawMs:6000,showMs:5000}),
+ sicbo:Object.freeze({id:'sicbo',released:true,family:'wheel',reference:'SicBo',name:'SicBo',zh:'SicBo',ar:'SicBo',round:Object.freeze({betMs:15000,drawMs:6000,showMs:5000}),
   chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(50000)]),maxOptionsPerRound:3,maxStakePerRound:coins(1000000),
   draw:Object.freeze(DICE.map(d=>Object.freeze({id:'d'+d.join(''),weight:1}))),
   options:Object.freeze([['big',2,d=>sum(d)>=11&&!triple(d)],['triple',35,triple],['small',2,d=>sum(d)<=10&&!triple(d)]].map(([o,m,f])=>Object.freeze({id:o,multiplier:m,covers:DICE.filter(f).map(d=>'d'+d.join(''))})))}),
