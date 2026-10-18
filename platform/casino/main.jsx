@@ -14,6 +14,8 @@ const Crash=lazy(()=>import('./games/crash/CrashGame.jsx'));
 for(const id of ['crash','crashstar'])SCENES[id]=Crash;
 const Arcade=lazy(()=>import('./games/arcade/ArcadeGame.jsx'));
 for(const id of ['monster','molestar'])SCENES[id]=Arcade;
+const Slot=lazy(()=>import('./games/slot/SlotGame.jsx'));
+for(const id of ['oceanslot','mahjongslot','cleopatraslot','crazygems','slot777','djlive','jackpotslots','yummy','worldgoal','chillislot','sphinxlegend','nights1001','pyramidslots','magicslot'])SCENES[id]=Slot;
 
 function App(){
  const [launch,setLaunch]=useState(null),[status,setStatus]=useState('connecting');

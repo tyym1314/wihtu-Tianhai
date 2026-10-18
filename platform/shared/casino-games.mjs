@@ -24,14 +24,16 @@ const LINES_3x3=[[1,1,1],[0,0,0],[2,2,2],[0,1,2],[2,1,0]];
 const LINES_20=[...LINES_12,[0,1,0,1,0],[2,1,2,1,2],[1,0,1,0,1],[1,2,1,2,1],[0,0,2,0,0],[2,2,0,2,2],[0,2,0,2,0],[2,0,2,0,2]];
 const LINES_20x4=[[0,0,0,0,0],[1,1,1,1,1],[2,2,2,2,2],[3,3,3,3,3],[0,1,2,1,0],[3,2,1,2,3],[1,2,3,2,1],[2,1,0,1,2],[0,1,0,1,0],[3,2,3,2,3],[1,0,1,0,1],[2,3,2,3,2],[0,0,1,2,3],[3,3,2,1,0],[1,1,2,3,3],[2,2,1,0,0],[0,1,1,1,0],[3,2,2,2,3],[1,2,2,2,1],[2,1,1,1,2]];
 /** A paylines slot from a compact description; payScale is calibrated by scripts/casino-lines-sim.mjs. */
+// Slots whose reference-faithful front-end is finished.
+const RELEASED_SLOTS=new Set(['oceanslot','mahjongslot','cleopatraslot','crazygems','slot777','djlive','jackpotslots']);
 function linesSlot(id,name,{columns=5,rows=3,lines,counts=[3,4,5],symbols,weights,freeWeights,wild,scatter,freeSpins,maxWin=2000,payScale=1,multiplierReel,bonus,collect,wheel,randomWilds,expandingWild}){
- return Object.freeze({id,family:'slot',kind:'instant',reference:name,name,zh:name,ar:name,stakes:SLOT_STAKES,
+ return Object.freeze({id,released:RELEASED_SLOTS.has(id),family:'slot',kind:'instant',reference:name,name,zh:name,ar:name,stakes:SLOT_STAKES,
   slot:Object.freeze({pay:'lines',columns,rows,targetRtp:0.97,maxWin,payScale,lines,wild,symbols:symN(counts,symbols),scatter,freeSpins,multiplierReel,bonus,collect,wheel,randomWilds,expandingWild,weights:{base:weights,...(freeWeights?{free:freeWeights}:{})}})});
 }
 /** 2000-ways cascading slot (4-5-5-5-4): golden symbols on reels 2-4 turn wild when they win; cascades raise the multiplier. */
 function waysSlot(id,name,scatter,symbols){
  const w={};symbols.forEach(([s],i)=>{w[s]=[10,14,18,24,30,36,44,52][i];});
- return Object.freeze({id,family:'slot',kind:'instant',reference:name,name,zh:name,ar:name,stakes:SLOT_STAKES,
+ return Object.freeze({id,released:RELEASED_SLOTS.has(id),family:'slot',kind:'instant',reference:name,name,zh:name,ar:name,stakes:SLOT_STAKES,
   slot:Object.freeze({pay:'ways',columns:5,rows:[4,5,5,5,4],waysDivisor:20,targetRtp:0.97,maxWin:5000,payScale:0.0552,
    wild:{id:'wild',reels:[1,2,3],maxPerReel:2},golden:{reels:[1,2,3],chanceBp:900},
    symbols:sym(symbols),scatter:{id:scatter,pays:[]},
@@ -134,7 +136,7 @@ export const CASINO_GAMES=Object.freeze({
  }),
 
  // ---- Slots on the lines/ways engine (unreleased until art ships). Pays: hundredths of line bet (lines) or of total bet per way / waysDivisor (ways).
- oceanslot:Object.freeze({id:'oceanslot',family:'slot',kind:'instant',reference:'OceanSlot',name:'OceanSlot',zh:'OceanSlot',ar:'OceanSlot',stakes:SLOT_STAKES,
+ oceanslot:Object.freeze({id:'oceanslot',released:RELEASED_SLOTS.has('oceanslot'),family:'slot',kind:'instant',reference:'OceanSlot',name:'OceanSlot',zh:'OceanSlot',ar:'OceanSlot',stakes:SLOT_STAKES,
   slot:Object.freeze({pay:'lines',columns:5,rows:3,targetRtp:0.97,maxWin:2000,payScale:44.3,
    lines:LINES_12,wild:{id:'wild',reels:[1,2,3,4],maxPerReel:1},
    symbols:sym([['pearl',[300,1500,5000]],['shell',[200,800,3000]],['starfish',[150,600,2000]],['seahorse',[120,500,1500]],['turtle',[100,400,1200]],['A',[60,200,600]],['K',[50,160,500]],['Q',[40,120,400]],['J',[30,100,300]],['ten',[20,80,250]]]),
@@ -168,7 +170,7 @@ export const CASINO_GAMES=Object.freeze({
   weights:{jackpot:5,cake:14,donut:18,icecream:22,cookie:26,candy:32,lollipop:44,jelly:52,wild:[0,12,12,12,12],clover:8,bonus:9},wild:{id:'wild',reels:[1,2,3,4]},
   scatter:{id:'clover',pays:[]},freeSpins:{trigger:3,award:8,perExtra:2,retrigger:8,multiplier:1,maxPlayed:60},bonus:{id:'bonus',count:3,multiplier:3},maxWin:5000}),
  // WorldGoal: 3x3, 27 ways; every spin draws a multiplier (x1-x10) for its wins.
- worldgoal:Object.freeze({id:'worldgoal',family:'slot',kind:'instant',reference:'WorldGoal',name:'WorldGoal',zh:'WorldGoal',ar:'WorldGoal',stakes:SLOT_STAKES,
+ worldgoal:Object.freeze({id:'worldgoal',released:RELEASED_SLOTS.has('worldgoal'),family:'slot',kind:'instant',reference:'WorldGoal',name:'WorldGoal',zh:'WorldGoal',ar:'WorldGoal',stakes:SLOT_STAKES,
   slot:Object.freeze({pay:'ways',columns:3,rows:3,waysDivisor:1,targetRtp:0.97,maxWin:1000,payScale:0.066,
    symbols:symN([3],[['trophy',[2000]],['ball',[1000]],['boot',[600]],['whistle',[400]],['flag',[250]],['card',[150]]]),
    wild:{id:'wild',reels:[1],maxPerReel:1},cascade:{base:[1],free:[1]},
