@@ -45,8 +45,9 @@
 - 真机：手机 Chrome 打开演示合作方，`adb forward tcp:9334 localabstract:chrome_devtools_remote` 后用 Playwright `connectOverCDP` 逐款测加载、iframe 内帧率、背景音乐（`window.__casinoMusic`）。38 款加载 1.7–2.9 秒，游戏中 57–60 fps。
 - 压测：`npx tsx scripts/casino-load-provision.mjs 2100 && node scripts/casino-load.mjs <玩家数> <秒>`（多个进程用 `LOAD_OFFSET` 错开玩家号）。本地按生产方式跑：`OASIS_REFERENCE_WALLET_FAST=1 OASIS_REFERENCE_WALLET_ALL_WORKERS=1 OASIS_WORKERS=4 OASIS_LEADER_HTTP=0 OASIS_RATE_EXCHANGE_IP_PER_MINUTE=100000 node --import tsx server/cluster.mjs`（本地 PG 已设 `max_connections=300`、开 `pg_stat_statements`）。钱包吞吐基准：`.local/load/bench.sh`（simple-v1 + 模拟三方钱包）。
 - 钱包账本两条路径：simple-v1 三方 App 的概率命令走“按玩家并行”热路径（锁玩家行，App 汇总写入 `wallet_scope_shards` 16 个分片，逻辑总额 = `wallet_scopes` + 分片之和，后台每 10 秒折叠回主行，过期冻结按玩家释放）；PvP、第一方内部金币、旧转账协议仍走 App 级串行路径。审计 App 总额时要把分片加上。
+- 资金流程：simple-v1 App 的娱乐场周期用合并命令 `/wallet/v1/probability/authorize-accept` 一步完成授权+确认（操作 id `accept_<周期>`，见 `server/casino/funding.mjs`）；其他钱包和升级前已用两步开始的周期仍走 `authorize_` + `accept_`。作废时先重放未决的合并操作再退款。
 - 进程：生产用 `server/cluster.mjs`（systemd ExecStart），runtime.env 里 `OASIS_WORKERS=3 OASIS_LEADER_HTTP=0`（1 个后台 leader 跑迁移/开奖/恢复，2 个 HTTP 进程），连接预算 `OASIS_DB_POOL_MAX=12 OASIS_WALLET_POOL_MAX=8 OASIS_DB_LOCK_POOL_MAX=5`（3×37≈111，生产 PG `max_connections=128`），`OASIS_CASINO_SETTLE_CONCURRENCY=6`。加机器时按核数加 workers 并同步调大 PG 连接数。
-- 容量（2026-10-18）：优化前单 App 约 150 人；优化后不再有单 App 上限，只受机器限制。现有生产机（4 核共享、PG 限 2 核/1G）估算约 500 名高强度在玩玩家稳定（峰值约 800）；本机 14 核测 1000 人 p95 旋转 0.25s / 下注 0.34s，2000 人零错误。
+- 容量（2026-10-18）：优化前单 App 约 150 人；优化后不再有单 App 上限，只受机器限制。现有生产机（4 核共享、PG 限 2 核/1G）估算约 550–600 名高强度在玩玩家稳定（峰值约 850）；本机 14 核测 1000 人 p95 旋转 0.25s / 下注 0.34s，2000 人零错误。
 - 演示钱包测试账户余额可在 `oasis_demo_partner_wallet.demo_simple_accounts` 调整（记 `MANUAL_TOPUP` 交易），只影响演示合作方。
 
 ## 本地开发与验证
