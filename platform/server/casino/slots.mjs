@@ -13,7 +13,7 @@ const MAX_TUMBLES=40;
 
 export function slotModel(game){
  const s=game.slot;
- const config={family:'slot',pay:s.pay,columns:s.columns,rows:s.rows,symbols:s.symbols,scatter:s.scatter,orbs:s.orbs,freeSpins:s.freeSpins,maxWin:s.maxWin,weights:s.weights,buy:s.buy||null,rng:'HMAC-SHA256 counter'};
+ const config={family:'slot',pay:s.pay,columns:s.columns,rows:s.rows,symbols:s.symbols,scatter:s.scatter,orbs:s.orbs,freeSpins:s.freeSpins,maxWin:s.maxWin,weights:s.weights,buy:s.buy||null,rng:'HMAC-SHA256 counter',...(s.payScale&&s.payScale!==1?{payScale:s.payScale}:{})};
  const hash=createHash('sha256').update(canonical(config)).digest('hex');
  return Object.freeze({gameId:game.id,version:`${game.id}-slot-v1-${hash.slice(0,12)}`,hash,maxMultiplier:s.maxWin,targetRtp:s.targetRtp,config});
 }
@@ -28,12 +28,14 @@ export function playSlotCycle(model,seedHex,stakeMinor,{buy=false}={}){
  const freePool=[...c.symbols.map(s=>({id:s.id,w:c.weights.free[s.id]??c.weights.base[s.id]})),{id:'scatter',w:c.weights.free.scatter},{id:'orb',w:c.weights.free.orb}];
  const draw=(p,free)=>{const sym=p[rng.weighted(p.map(x=>x.w))].id;if(sym!=='orb')return{s:sym};const orbs=free?c.orbs.free:c.orbs.base;return{s:'orb',m:orbs[rng.weighted(orbs.map(o=>o.w))].x};};
  const capX100=c.maxWin*100;let totalX100=0,capped=false;
+ // Return-rate tiers scale every pay (rounded to whole hundredths of the stake, unbiased).
+ const scaled=x=>c.payScale?Math.round(x*c.payScale):x;
  function spin(free,totalMult){
   const p=free?freePool:pool;let grid=Array.from({length:size},()=>draw(p,free));
   const initial=grid.map(x=>({...x})),tumbles=[];let winX100=0;
   for(let n=0;n<MAX_TUMBLES;n++){
    const counts={};grid.forEach((x,i)=>{(counts[x.s]||=[]).push(i);});
-   const wins=c.symbols.map(s=>({symbol:s.id,cells:counts[s.id]||[],pay:bandPay(s,(counts[s.id]||[]).length)})).filter(w=>w.pay>0);
+   const wins=c.symbols.map(s=>({symbol:s.id,cells:counts[s.id]||[],pay:scaled(bandPay(s,(counts[s.id]||[]).length))})).filter(w=>w.pay>0);
    if(!wins.length)break;
    const removed=new Set(wins.flatMap(w=>w.cells));winX100+=wins.reduce((a,w)=>a+w.pay,0);
    // Columns collapse downward (index = row*columns+col, row 0 at the top); new symbols fill from the top.
@@ -50,7 +52,7 @@ export function playSlotCycle(model,seedHex,stakeMinor,{buy=false}={}){
   if(free){if(orbSum>0)nextTotal=totalMult+orbSum;if(winX100>0&&nextTotal>0)mult=nextTotal;}
   else if(orbSum>0)mult=orbSum;
   let spinX100=winX100*mult;
-  const scatterPay=free?0:bandPay({bands:c.scatter.bands},scatters);spinX100+=scatterPay;
+  const scatterPay=free?0:scaled(bandPay({bands:c.scatter.bands},scatters));spinX100+=scatterPay;
   if(totalX100+spinX100>=capX100){spinX100=capX100-totalX100;capped=true;}
   totalX100+=spinX100;
   return {free,initial,tumbles,scatters,orb_sum:orbSum,multiplier:mult,total_multiplier:nextTotal,scatter_pay_x100:scatterPay,win_x100:spinX100};

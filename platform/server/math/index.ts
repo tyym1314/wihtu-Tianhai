@@ -4,7 +4,8 @@ import { generateTigerRound, TIGER_CONFIG } from '../../../src/tiger/math.js';
 import type { TigerRoundResult } from '../../../src/tiger/types.js';
 
 export type ProbabilityGame = 'thunder' | 'tiger';
-export type ProfileName = '98' | '99';
+export type ProfileName = '96' | '97' | '98' | '99';
+export const PROFILE_NAMES: readonly ProfileName[] = ['96', '97', '98', '99'];
 export interface MathProfile {
   gameId: ProbabilityGame; profile: ProfileName; version: string; hash: string;
   targetRtp: number; maxMultiplier: number; config: Record<string, unknown>;
@@ -21,7 +22,7 @@ export interface CycleResult {
   freeSpinsPlayed: number; cycleWinCapReached: boolean; cycleFreeSpinLimitReached: boolean;
   maxPayoutMinor: number; seedHash: string; resultHash: string;
 }
-const scales = { '99': { numerator: 1, denominator: 1 }, '98': { numerator: 98, denominator: 99 } } as const;
+const scales = { '99': { numerator: 1, denominator: 1 }, '98': { numerator: 98, denominator: 99 }, '97': { numerator: 97, denominator: 99 }, '96': { numerator: 96, denominator: 99 } } as const;
 const MAX_FREE_SPINS = 100;
 const THUNDER_CYCLE_CAP = 10_000;
 const BETS = [1_000, 5_000, 10_000, 20_000, 50_000];
@@ -54,13 +55,11 @@ function defineProfile(gameId: ProbabilityGame, profile: ProfileName): MathProfi
   }));
   return freeze({ gameId, profile, version, hash: hash(config), targetRtp: Number(profile) / 100, maxMultiplier, config });
 }
-const profiles = {
-  thunder: { '98': defineProfile('thunder','98'), '99': defineProfile('thunder','99') },
-  tiger: { '98': defineProfile('tiger','98'), '99': defineProfile('tiger','99') },
-};
+const tiers = (game: ProbabilityGame) => Object.fromEntries(PROFILE_NAMES.map(p => [p, defineProfile(game, p)])) as Record<ProfileName, MathProfile>;
+const profiles = { thunder: tiers('thunder'), tiger: tiers('tiger') };
 export function getProfile(gameId: string, profile = '99'): MathProfile {
   if (gameId !== 'thunder' && gameId !== 'tiger') throw new RangeError('Unknown probability game');
-  if (profile !== '98' && profile !== '99') throw new RangeError('Unknown math profile');
+  if (!(PROFILE_NAMES as readonly string[]).includes(profile)) throw new RangeError('Unknown math profile');
   return profiles[gameId][profile];
 }
 /** Deterministic cryptographic stream for a server-generated 256-bit seed. Never use 32-bit simulation seeds in production. */

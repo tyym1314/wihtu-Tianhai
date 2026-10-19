@@ -15,6 +15,8 @@ import {CASINO_GAMES,isCasinoGame} from '../../shared/casino-games.mjs';
 import {wheelModel,drawWheel,wheelPayout} from './wheel.mjs';
 import {crashModel,drawCrash,crashPayout,multiplierAt,timeToReach} from './crash.mjs';
 import {cards3Model,drawCards3,cards3Payout} from './cards3.mjs';
+import {getProfile,PROFILE_NAMES} from '../math/index.ts';
+import {RTP_TIERS,tierGame} from './rtp.mjs';
 import {instantModels,instantState,isInstantGame} from './instant.mjs';
 import {arcadeModels,isArcadeGame} from './arcade.mjs';
 
@@ -28,8 +30,15 @@ const families={
   timing:(game,result,r)=>{const reveal=r.bet_until+timeToReach(result.crash_x100);return{reveal_at:reveal,ends_at:reveal+game.round.showMs};}},
 };
 const models=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>!g.kind).map(g=>[g.id,families[g.family].model(g)]));
-export const casinoProfile=gameId=>models[gameId];
-export const casinoProfiles=()=>[...Object.values(models),...instantModels(),...arcadeModels()];
+// Return-rate tiers: one extra pinned model per (game, tier) where the family allows it.
+const tierModels=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>!g.kind).flatMap(g=>RTP_TIERS.map(t=>{const v=tierGame(g,t);return v?[[`${g.id}:${t}`,families[g.family].model(v)]]:[];}).flat()));
+const byVersion=new Map([...Object.values(models),...Object.values(tierModels)].map(m=>[m.version,m]));
+/** Model for new rounds of this App (its tier when the game supports it, else the default). */
+export const roundModelFor=(gameId,tier)=>tierModels[`${gameId}:${tier}`]||models[gameId];
+/** The pinned model of an existing round. */
+function pinned(version,hash){const m=byVersion.get(version);if(!m||(hash&&m.hash!==hash))throw Object.assign(new Error('pinned casino math unavailable'),{status:503,code:'PINNED_MATH_UNAVAILABLE'});return m;}
+export const casinoProfile=(gameId,tier)=>roundModelFor(gameId,tier);
+export const casinoProfiles=()=>[...byVersion.values(),...instantModels(),...arcadeModels()];
 const ACTIVE_MS=60000,HISTORY=20,CLOSE_GUARD_MS=300;
 const watchers=new Map();
 
@@ -56,16 +65,18 @@ export async function migrateCasino(db=pool){
  CREATE TABLE IF NOT EXISTS casino_jackpots (app_id text NOT NULL REFERENCES gp_apps(id), game_id text NOT NULL, pool_minor bigint NOT NULL DEFAULT 0 CHECK(pool_minor>=0), updated_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(app_id,game_id));
 ALTER TABLE casino_jackpots ADD COLUMN IF NOT EXISTS seeded_minor bigint NOT NULL DEFAULT 0;
  CREATE INDEX IF NOT EXISTS casino_bets_round ON casino_bets(round_id,status);
+ CREATE INDEX IF NOT EXISTS casino_bets_app_created ON casino_bets(app_id,created_at);
  CREATE INDEX IF NOT EXISTS casino_bets_open ON casino_bets(status,updated_at) WHERE status IN ('PENDING','VOIDING','SETTLING');`);
 }
 
 /** Register each casino math profile in a wallet ledger scope (platform/simple escrow ledgers). */
 export async function registerCasinoProfiles(db,scopeId){
- for(const m of casinoProfiles())await db.query('INSERT INTO wallet_math_profiles(scope_id,game_id,math_version,math_config_hash,max_payout_multiplier) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING',[scopeId,m.gameId,m.version,m.hash,String(m.maxMultiplier)]);
+ const legacy=['thunder','tiger'].flatMap(g=>PROFILE_NAMES.map(p=>getProfile(g,p)));
+ for(const m of [...casinoProfiles(),...legacy])await db.query('INSERT INTO wallet_math_profiles(scope_id,game_id,math_version,math_config_hash,max_payout_multiplier) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING',[scopeId,m.gameId,m.version,m.hash,String(m.maxMultiplier)]);
 }
 
 function newRound(app,game,seq,start){
- const seed=randomBytes(32).toString('hex'),m=models[game.id],r=game.round,draw=r.drawMs||0;
+ const seed=randomBytes(32).toString('hex'),m=roundModelFor(game.id,app.math_profile),r=game.round,draw=r.drawMs||0;
  // Crash rounds get their real reveal/end times when betting closes; these are placeholders.
  return {id:id('rnd'),app_id:app.id,game_id:game.id,seq,status:'betting',math_version:m.version,math_hash:m.hash,commitment:sha(seed),seed_enc:seal(seed),
   starts_at:start,bet_until:start+r.betMs,reveal_at:start+r.betMs+draw,ends_at:start+r.betMs+draw+r.showMs};
@@ -187,7 +198,7 @@ function walletBase(app,bet){return {...scope(app),authorization_id:'auth_'+bet.
 
 export async function placeBet(session,body){
  if(!isCasinoGame(session.game_id)||isInstantGame(session.game_id)||isArcadeGame(session.game_id))fail(403,'GAME_SESSION_REQUIRED');
- const game=CASINO_GAMES[session.game_id],model=models[game.id];
+ const game=CASINO_GAMES[session.game_id];
  if(!/^[A-Za-z0-9_-]{8,128}$/.test(body.request_id||'')||typeof body.round_id!=='string'||typeof body.option_id!=='string'||typeof body.stake_minor!=='string')fail(400,'INVALID_REQUEST');
  if(!game.options.some(o=>o.id===body.option_id))fail(400,'INVALID_OPTION');
  if(!game.chips.includes(body.stake_minor))fail(400,'INVALID_STAKE');
@@ -213,7 +224,7 @@ export async function placeBet(session,body){
     [id('bet'),round.id,app.id,session.id,session.external_user_id,body.request_id,body.option_id,body.stake_minor,auto])).rows[0];
   });
  }
- if(bet.status==='PENDING')bet=await fundBet(app,model,bet);
+ if(bet.status==='PENDING'){const r=(await pool.query('SELECT math_version,math_hash FROM casino_rounds WHERE id=$1',[bet.round_id])).rows[0];bet=await fundBet(app,pinned(r.math_version,r.math_hash),bet);}
  if(bet.status==='REJECTED')fail(409,bet.error||'WALLET_REJECTED');
  return betView(bet);
 }
@@ -242,8 +253,7 @@ export async function tickCasino(now=Date.now()){
  for(const {id:roundId} of closing){
   await tx(async c=>{
    const r=num((await c.query("SELECT * FROM casino_rounds WHERE id=$1 AND status='betting' FOR UPDATE",[roundId])).rows[0]);if(!r)return;
-   const game=CASINO_GAMES[r.game_id],model=models[r.game_id];
-   if(model.version!==r.math_version||model.hash!==r.math_hash)throw new Error('pinned casino math unavailable');
+   const game=CASINO_GAMES[r.game_id],model=pinned(r.math_version,r.math_hash);
    const family=families[game.family],result=family.draw(model,unseal(r.seed_enc)),timing=family.timing?.(game,result,r)||{reveal_at:r.reveal_at,ends_at:r.ends_at};
    await c.query("UPDATE casino_rounds SET status='drawing',result=$2,reveal_at=$3,ends_at=$4 WHERE id=$1",[r.id,result,timing.reveal_at,timing.ends_at]);
    await c.query("UPDATE casino_bets SET status='VOIDING',error='BETTING_CLOSED',updated_at=now() WHERE round_id=$1 AND status='PENDING'",[r.id]);
@@ -317,13 +327,13 @@ export async function cashOut(session,body){
 async function mapLimit(items,n,fn){let i=0;await Promise.all(Array.from({length:Math.min(n,items.length)},async()=>{while(i<items.length)await fn(items[i++]);}));}
 const SETTLE_CONCURRENCY=Number(process.env.OASIS_CASINO_SETTLE_CONCURRENCY||12);
 async function settleOpenBets(){
- const open=(await pool.query("SELECT b.*,r.game_id,r.result FROM casino_bets b JOIN casino_rounds r ON r.id=b.round_id WHERE b.status IN ('SETTLING','VOIDING') AND (b.error IS NULL OR b.error='BETTING_CLOSED' OR b.updated_at<now()-interval '3 seconds') ORDER BY b.updated_at LIMIT 2000")).rows;
+ const open=(await pool.query("SELECT b.*,r.game_id,r.result,r.math_version,r.math_hash FROM casino_bets b JOIN casino_rounds r ON r.id=b.round_id WHERE b.status IN ('SETTLING','VOIDING') AND (b.error IS NULL OR b.error='BETTING_CLOSED' OR b.updated_at<now()-interval '3 seconds') ORDER BY b.updated_at LIMIT 2000")).rows;
  const apps=new Map();
  for(const b of open)if(!apps.has(b.app_id))apps.set(b.app_id,await appById(b.app_id));
  // Each bet is its own wallet cycle on a different player row, so settlements run in parallel.
  await mapLimit(open,SETTLE_CONCURRENCY,async b=>{
   const app=apps.get(b.app_id);
-  const model=models[b.game_id],base=walletBase(app,b);
+  const model=pinned(b.math_version,b.math_hash),base=walletBase(app,b);
   try{
    if(b.status==='SETTLING'){
     const resultHash=sha(JSON.stringify({round_id:b.round_id,result:b.result,bet_id:b.id,option_id:b.option_id}));

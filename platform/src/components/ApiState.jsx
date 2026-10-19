@@ -5,4 +5,3 @@ export default function ApiState({ loading, error, refresh, children, empty = fa
   if (empty) return <div className="panel api-state"><strong>{message}</strong><p>后台尚未产生对应记录。</p></div>;
   return children;
 }
-export function ProductionLocked() { return <section className="panel api-state production-locked"><ShieldAlert size={34}/><span className="eyebrow">PRODUCTION IS LOCKED</span><h1>生产环境尚未开放</h1><p>当前只运行本地沙箱。生产启动、密钥签发与发布由服务端锁定；请切回沙箱查看实际数据。</p><span className="badge badge-amber">未部署 · 未完成正式验收</span></section>; }

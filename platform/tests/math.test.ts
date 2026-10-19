@@ -71,5 +71,6 @@ test('Thunder perpetual retrigger fixture terminates after exactly 100 free spin
   assert.equal(result.freeSpinsPlayed,100);assert.equal(result.rounds.length,101);assert.equal(result.rounds.at(-1)!.freeSpinsAfter,0);assert(result.cycleFreeSpinLimitReached);
 });
 test('unsupported stake and profile are rejected before RNG is used',()=>{
-  assert.throws(()=>playCycle('thunder',100,'99',seed(1)));assert.throws(()=>playCycle('tiger',10000,'97',seed(1)));
+  assert.throws(()=>playCycle('thunder',100,'99',seed(1)));assert.throws(()=>playCycle('tiger',10000,'95',seed(1)));
+  assert.doesNotThrow(()=>playCycle('tiger',10000,'96',seed(1)));
 });

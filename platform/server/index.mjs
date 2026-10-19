@@ -2,6 +2,8 @@ import {runPracticeProfileCapability} from '../shared/run-practice-profiles.mjs'
 import {createServer} from 'node:http';
 import {serveGameAsset as serveLegacy} from './game-assets.mjs';
 import {pool,walletPool,tx,closePools} from './db.mjs';
+import {reconciliation} from './reconciliation.mjs';
+import {rtpTiers} from './rtp-tiers.mjs';
 import {id,hash,unseal,readBody,send,fail,ApiError} from './security.mjs';
 import {migrateWallet,createWalletServer,expireProbabilityHolds,foldScopeShards} from './wallet/index.mjs';
 import {migratePlatform,seedPlatform,origin,login,adminUser,appById,createApp,audit,authenticatePartner,createSession,exchange,playSession,gamesFor,scope,upgradeArenaSandbox} from './platform.mjs';
@@ -10,7 +12,7 @@ import {migratePvp,routePvp,tickPvp,readPvpMatch} from './pvp/index.mjs';
 import {compactRoomSnapshot} from './pvp/snapshot-transfer.mjs';
 import {runPracticeCourseCapability} from './pvp/run-course-policy.mjs';
 import {RUN_PRACTICE_INPUT_PROTOCOL} from './pvp/run-practice-protocol.mjs';
-import {getProfile} from './math/index.ts';
+import {getProfile,PROFILE_NAMES} from './math/index.ts';
 import {ALL_GAME_IDS,ARENA_IDS,RELEASED_IDS} from '../shared/games.mjs';
 import {migratePortal,routePortal} from './portal.mjs';
 import {migrateWalletBindings} from './wallet-binding.mjs';
@@ -70,7 +72,7 @@ async function adminRoutes(req,res,path,b){
       if(b.name!==undefined&&(typeof b.name!=='string'||b.name.trim().length<2||b.name.length>60))fail(400,'INVALID_NAME');
       if(b.status!==undefined&&!['active','paused'].includes(b.status))fail(400,'INVALID_STATUS');
       if(b.game_ids!==undefined&&(!Array.isArray(b.game_ids)||b.game_ids.some(g=>!ALL_GAME_IDS.includes(g))||new Set(b.game_ids).size!==b.game_ids.length))fail(400,'INVALID_GAMES');
-      if(b.math_profile!==undefined&&!['98','99'].includes(b.math_profile))fail(400,'INVALID_PROFILE');
+      if(b.math_profile!==undefined&&!PROFILE_NAMES.includes(b.math_profile))fail(400,'INVALID_PROFILE');
       if(b.competitive_fee_bps!==undefined&&![300,500,800,1000].includes(b.competitive_fee_bps))fail(400,'INVALID_FEE');
       const updated=await tx(async c=>{const locked=(await c.query('SELECT * FROM gp_apps WHERE id=$1 FOR UPDATE',[app.id])).rows[0];if(b.status==='active'||(locked.status==='active'&&(b.game_ids||b.math_profile)))await assertProductionAppReady(c,{...locked,...b},{intent:'activate'});const changed=(await c.query('UPDATE gp_apps SET name=$1,status=$2,game_ids=$3,math_profile=$4,competitive_fee_bps=$6 WHERE id=$5 RETURNING *',[b.name?.trim()||locked.name,b.status||locked.status,JSON.stringify(b.game_ids||locked.game_ids),b.math_profile||locked.math_profile,app.id,b.competitive_fee_bps??locked.competitive_fee_bps])).rows[0];await audit(user.id,'app.configured',app.id,b,c);return changed;});return send(res,200,{app:updated});
     }
@@ -82,6 +84,7 @@ async function adminRoutes(req,res,path,b){
     return send(res,200,{apps_count:a,games_count:RELEASED_IDS.length,cycles_count:c.n+p.n,pending_count:c.pending+p.pending,fee_minor:p.fee,environment:runtime.environment,wallet_status:'app_scoped',released_games:RELEASED_IDS.length});
   }
   if(path==='/api/admin/overview-activity'&&req.method==='GET')return send(res,200,await overviewActivity(activityTimeZone(req)));
+  if(path.split('?')[0]==='/api/admin/reconciliation'&&req.method==='GET')return send(res,200,await reconciliation(new URL(req.url,'http://x').searchParams));
   if(path==='/api/admin/rounds'&&req.method==='GET')return send(res,200,{rounds:(await pool.query(`
     SELECT id,app_id,game_id,external_user_id,status,stake_minor,payout_minor,math_version,created_at,result_hash,'settle_'||id operation_id,'probability' category,false practice FROM gp_cycles
     UNION ALL SELECT id,app_id,game_id,(SELECT string_agg(p->>'external_user_id',', ') FROM jsonb_array_elements(players) p),upper(status),entry_minor,
@@ -89,7 +92,8 @@ async function adminRoutes(req,res,path,b){
     ORDER BY created_at DESC LIMIT 200`)).rows});
   if(path==='/api/admin/operations'&&req.method==='GET')return send(res,200,{operations:(await pool.query(`SELECT id,app_id,aggregate_id,path,state,attempts,response,created_at,updated_at FROM gp_operations UNION ALL SELECT id,app_id,room_id,path,state,attempts,response,created_at,updated_at FROM pvp_operations ORDER BY created_at DESC LIMIT 200`)).rows});
   if(path==='/api/admin/audit'&&req.method==='GET')return send(res,200,{events:(await pool.query('SELECT * FROM gp_audit ORDER BY id DESC LIMIT 100')).rows});
-  if(path==='/api/admin/profiles'&&req.method==='GET')return send(res,200,{profiles:['thunder','tiger'].flatMap(g=>['98','99'].map(p=>getProfile(g,p)))});
+  if(path==='/api/admin/rtp-tiers'&&req.method==='GET')return send(res,200,rtpTiers());
+  if(path==='/api/admin/profiles'&&req.method==='GET')return send(res,200,{profiles:['thunder','tiger'].flatMap(g=>PROFILE_NAMES.map(p=>getProfile(g,p)))});
   fail(404,'NOT_FOUND');
 }
 export function createPlatformServer(){return createServer(async(req,res)=>{beginRoomReadTiming(req,res,{sink:roomTimingSink});beginGameEntryTiming(req,res);try{

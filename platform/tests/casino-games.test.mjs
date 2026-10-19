@@ -74,6 +74,16 @@ test('sphinxlegend: a triggered feature waits for a choice; the base spin is ide
 
 test('every casino math version is bound to its config hash, so a config change is a new approved version',async()=>{
  const {casinoProfiles}=await import('../server/casino/rounds.mjs');
- const profiles=casinoProfiles();assert.equal(profiles.length,CASINO_IDS.length);
+ const profiles=casinoProfiles(),games=new Set(profiles.map(m=>m.gameId));
+ // Default model per game plus one per adjustable return-rate tier (96–99), each its own version.
+ assert.deepEqual([...games].sort(),[...CASINO_IDS].sort());assert.equal(new Set(profiles.map(m=>m.version)).size,profiles.length);
  for(const m of profiles){assert.match(m.version,/^[A-Za-z0-9_.-]{1,96}$/);assert.ok(m.version.endsWith('-'+m.hash.slice(0,12)),m.gameId);}
+});
+
+test('return-rate tiers: adjustable families reach the tier, fixed ones keep their default model',async()=>{
+ const {rtpTiers}=await import('../server/rtp-tiers.mjs');const {games}=rtpTiers();const by=Object.fromEntries(games.map(g=>[g.game_id,g]));
+ for(const id of ['thunder','tiger','crash','monster','olympus','oceanslot'])for(const t of ['96','97','98','99'])assert.equal(by[id].tiers[t],Number(t),id+' '+t);
+ // Greedy wheels: specials lift the return above the printed-multiplier floor (97.19%), never below it.
+ assert.equal(by.greedylion.tiers['99'],99);assert.equal(by.greedylion.tiers['96'],by.greedylion.default);
+ for(const id of ['roulette','sicbo','teenpatti','fruitparty'])assert.equal(by[id].adjustable,false,id);
 });

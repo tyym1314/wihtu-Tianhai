@@ -18,8 +18,13 @@ const sha=v=>createHash('sha256').update(v).digest('hex');
 // Slot pay types: 'anywhere' tumbles (slots.mjs); 'lines' and 'ways' (slot-lines.mjs).
 const engines={anywhere:{model:slotModel,play:playSlotCycle},lines:{model:linesModel,play:playLinesCycle},ways:{model:linesModel,play:playLinesCycle}};
 const engineOf=g=>engines[g.slot.pay];
+import {RTP_TIERS,tierGame} from './rtp.mjs';
 const models=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>g.kind==='instant').map(g=>[g.id,engineOf(g).model(g)]));
-export const instantModels=()=>Object.values(models);
+// Return-rate tiers (see rtp.mjs): extra pinned models per (game, tier).
+const tierModels=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>g.kind==='instant').flatMap(g=>RTP_TIERS.map(t=>{const v=tierGame(g,t);return v?[[`${g.id}:${t}`,engineOf(g).model(v)]]:[];}).flat()));
+const byVersion=new Map([...Object.values(models),...Object.values(tierModels)].map(m=>[m.version,m]));
+export const instantModelFor=(gameId,tier)=>tierModels[`${gameId}:${tier}`]||models[gameId];
+export const instantModels=()=>[...byVersion.values()];
 export const isInstantGame=gameId=>CASINO_GAMES[gameId]?.kind==='instant';
 
 export async function migrateInstant(db=pool){
@@ -35,7 +40,8 @@ export async function migrateInstant(db=pool){
  ALTER TABLE casino_spins ADD CONSTRAINT casino_spins_status_check CHECK(status IN ('AUTHORIZING','ACCEPTED','CHOOSING','RESULT_FIXED','SETTLED','REJECTED'));
  CREATE INDEX IF NOT EXISTS casino_spins_open ON casino_spins(status,updated_at) WHERE status NOT IN ('SETTLED','REJECTED');
   CREATE INDEX IF NOT EXISTS casino_spins_user_open ON casino_spins(app_id,external_user_id) WHERE status NOT IN ('SETTLED','REJECTED');
-  CREATE INDEX IF NOT EXISTS casino_spins_user_recent ON casino_spins(app_id,external_user_id,game_id,created_at DESC);`);
+  CREATE INDEX IF NOT EXISTS casino_spins_user_recent ON casino_spins(app_id,external_user_id,game_id,created_at DESC);
+  CREATE INDEX IF NOT EXISTS casino_spins_app_created ON casino_spins(app_id,created_at);`);
 }
 
 const view=s=>({id:s.id,request_id:s.request_id,status:s.status,mode:s.mode||'normal',stake_minor:String(s.stake_minor),base_stake_minor:String(s.base_stake_minor??s.stake_minor),
@@ -56,7 +62,7 @@ export async function spin(session,body){
  if(body.buy!==undefined&&(body.buy!==true||!game.slot?.buy))fail(400,'INVALID_REQUEST');
  // stake_minor is the base stake; a feature buy debits base x price.
  const mode=body.buy?'buy':'normal',walletStake=mode==='buy'?BigInt(body.stake_minor)*BigInt(game.slot.buy.price_x100)/100n:BigInt(body.stake_minor);
- const app=await appById(session.app_id),model=models[game.id];
+ const app=await appById(session.app_id),model=instantModelFor(game.id,app.math_profile);
  let s=(await pool.query('SELECT * FROM casino_spins WHERE app_id=$1 AND external_user_id=$2 AND request_id=$3',[app.id,session.external_user_id,body.request_id])).rows[0];
  if(s&&(s.game_id!==game.id||String(s.base_stake_minor??s.stake_minor)!==body.stake_minor||(s.mode||'normal')!==mode))fail(409,'IDEMPOTENCY_CONFLICT');
  if(!s){
@@ -73,7 +79,7 @@ export async function spin(session,body){
 }
 
 async function advance(app,s){
- const model=models[s.game_id];if(!model||model.version!==s.math_version||model.hash!==s.math_hash)fail(503,'PINNED_MATH_UNAVAILABLE');
+ const model=byVersion.get(s.math_version);if(!model||model.hash!==s.math_hash)fail(503,'PINNED_MATH_UNAVAILABLE');
  const base={...scope(app),authorization_id:'auth_'+s.id,cycle_id:s.id};
  try{
   if(s.status==='AUTHORIZING'){
@@ -108,7 +114,7 @@ export async function choose(session,body){
  return view(await decide(s,body.choice));
 }
 async function decide(s,choice){
- const model=models[s.game_id],result=engineOf(CASINO_GAMES[s.game_id]).play(model,unseal(s.seed_enc),String(s.base_stake_minor??s.stake_minor),{choice});
+ const model=byVersion.get(s.math_version),result=engineOf(CASINO_GAMES[s.game_id]).play(model,unseal(s.seed_enc),String(s.base_stake_minor??s.stake_minor),{choice});
  if(BigInt(result.gross_payout_minor)>BigInt(s.stake_minor)*BigInt(model.maxMultiplier))throw new Error('casino liability invariant');
  const fixed=(await pool.query("UPDATE casino_spins SET status='RESULT_FIXED',result=$2,payout_minor=$3,updated_at=now() WHERE id=$1 AND status='CHOOSING' RETURNING *",[s.id,result,result.gross_payout_minor])).rows[0]||(await pool.query('SELECT * FROM casino_spins WHERE id=$1',[s.id])).rows[0];
  return advance(await appById(fixed.app_id),fixed);

@@ -48,7 +48,7 @@ export const LAYOUTS={
   glows:[[90,20,90],[850,20,90],[40,300,60],[900,300,60]],accent:'#ffe066'},
  footballleague:{banner:[296,1000,350],order:['club1','club2','club4','club6','club8','club7','club5','club3'],
   items:{club1:[261,531,86],club2:[680,531,86],club3:[247,729,86],club4:[697,729,86],club5:[239,927,86],club6:[702,927,86],club7:[234,1134,86],club8:[707,1134,86]},
-  timer:[472,810,110],timerStyle:'plain',balance:[378,1296,297,44],winners:null,center:null,menuY:20,rulesBtn:[778,374,34],backBtn:[158,374,34],
+  timer:[472,810,110],timerStyle:'plain',balance:[378,1296,297,44],winners:null,center:null,menuY:20,rulesBtn:[778,374,34],
   chips:{xs:[90,230,373,513,653],y:1435,r:61},repeat:[738,1390,180,90],results:[144,1530,774,99],
   glows:[[60,60,90],[180,120,70],[760,120,70],[880,60,90]],accent:'#ffffff'},
  glorycup:{iconCrop:[.8,.4,-.24],bannerY:430,totalAt:[0,227],order:['team7','team5','team3','team1','team2','team4','team6','team8'],

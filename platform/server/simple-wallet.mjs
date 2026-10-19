@@ -14,7 +14,7 @@ import {randomUUID} from 'node:crypto';
 import {ledgerRequest,withTransferLedger} from './wallet/index.mjs';
 import {WalletError} from './wallet/security.mjs';
 import {fail} from './security.mjs';
-import {getProfile} from './math/index.ts';
+import {getProfile,PROFILE_NAMES} from './math/index.ts';
 import {signedPartnerRequest} from './wallet-binding.mjs';
 import {registerCasinoProfiles} from './casino/rounds.mjs';
 
@@ -46,7 +46,7 @@ export async function migrateSimpleWallet(db){
 export async function createSimpleWalletScope(db,app){
  await db.query(`INSERT INTO wallet_scopes(scope_id,partner_id,app_id,environment,wallet_scope_id,currency_id,currency_scale,treasury_available)
   VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING`,[scopeId(app),app.partner_id,app.id,app.environment,app.wallet_scope_id,app.currency_id,app.currency_scale,INTERNAL_TREASURY]);
- for(const game of ['thunder','tiger'])for(const tier of ['98','99']){const m=getProfile(game,tier);
+ for(const game of ['thunder','tiger'])for(const tier of PROFILE_NAMES){const m=getProfile(game,tier);
   await db.query('INSERT INTO wallet_math_profiles(scope_id,game_id,math_version,math_config_hash,max_payout_multiplier) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING',[scopeId(app),game,m.version,m.hash,String(m.maxMultiplier)]);}
  await registerCasinoProfiles(db,scopeId(app));
 }

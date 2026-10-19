@@ -40,7 +40,8 @@ export function useArcade(initial,game){
   const run=async()=>{
    try{const a=await ensureOpen(cost);const r=await api('/api/casino/arcade/shoot',{arcade_id:a.id,seq:++seq.current,weapon,targets});
     const next={...ref.current,used:r.used,win_minor:r.win_minor};sync(next);if(BigInt(r.win_minor_shot||0)>0n)setSessionWin(v=>v+BigInt(r.win_minor_shot));
-    if(next.used>=next.shots)close();return r;}
+    // Settle inside the queue: the next queued tap must not buy a new magazine while this one is still open.
+    if(next.used>=next.shots)await close();return r;}
    catch(e){say(ERR[e.code]||'failed');if(e.code==='SHOT_OUT_OF_ORDER'||e.code==='ARCADE_CLOSED')await close();return null;}
   };
   const p=queue.current.then(run);queue.current=p.catch(()=>{});return p;

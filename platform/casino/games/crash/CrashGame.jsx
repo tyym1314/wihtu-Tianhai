@@ -143,7 +143,6 @@ export default function CrashGame({initial}){
   <button className="wg-hot" style={circ(L.minus)} onClick={()=>{audio.play('click');setAutoIdx(i=>Math.max(0,i-1));}} aria-label="-"/>
   <button className="wg-hot" style={circ(L.plus)} onClick={()=>{audio.play('click');setAutoIdx(i=>Math.min(AUTO.length-1,i+1));}} aria-label="+"/>
   <Box x={L.autoValue[0]} y={L.autoValue[1]} w={L.autoValue[2]} h={L.autoValue[3]} className={`cg-auto ${autoOn?'':'off'}`}>{fx(AUTO[autoIdx])}X</Box>
-  <button className="wg-hot" style={circ(L.back)} onClick={()=>requestExit()} aria-label="exit"/>
   {L.sound&&<button className="wg-hot" style={circ(L.sound)} onClick={audio.toggle} aria-label={t('sound')}/>}
   {L.help&&<button className="wg-hot" style={circ(L.help)} onClick={()=>setRules(true)} aria-label={t('rules')}/>}
   {L.list&&<button className="wg-hot" style={circ(L.list)} onClick={()=>setRecords(true)} aria-label={t('records')}/>}

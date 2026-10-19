@@ -114,7 +114,6 @@ export default function ArcadeGame({initial}){
   <button className="wg-hot" style={circ(L.minus)} onClick={()=>stepBet(-1)} aria-label="-"/>
   <button className="wg-hot" style={circ(L.plus)} onClick={()=>stepBet(1)} aria-label="+"/>
   <Box x={L.betBox[0]} y={L.betBox[1]} w={L.betBox[2]} h={L.betBox[3]} className="ag-bet">{short(A.bet)}</Box>
-  <button className="wg-hot" style={circ(L.back)} onClick={A.exit} aria-label="exit"/>
   <button className="wg-hot" style={circ(L.menu)} onClick={()=>setMenu(m=>!m)} aria-label="menu"/>
   {menu&&<div className="cs-menu" style={{right:22,top:L.menu[1]+L.menu[2]+14}}>
    <button className="cs-icon-btn" onClick={()=>{setRules(true);setMenu(false);}}>?</button>

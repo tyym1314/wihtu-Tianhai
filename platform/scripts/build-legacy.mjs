@@ -35,10 +35,10 @@ for(const [game,relative] of [['thunder','src/style.css'],['tiger','src/tiger/st
  // button and demo badge go; HOW TO PLAY stays), music starts with the first tap (no TAP FOR MUSIC
  // badge), demo previews/reset/sound-test and the platform footer are hidden, and the balance shows
  // a "+" that opens the App's top-up.
- const plus='.th-plus{display:inline-grid;place-items:center;width:18px;height:18px;margin-inline-start:6px;border-radius:50%;font:700 15px/1 system-ui;vertical-align:middle;cursor:pointer}';
+ const plus='.th-plus{position:absolute;top:6px;inset-inline-end:6px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;font:800 16px/1 system-ui;cursor:pointer}';
  const inset=game==='thunder'
-  ?'\n.game-shell{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n.demo-badge,.info-button,.audio-status-badge,.game-footer,.audio-test-button,.setting-section:has(.preview-actions){display:none!important}\n'+plus+'.th-plus{background:linear-gradient(#ffe7a3,#d39a33);color:#3a2207;box-shadow:0 1px 3px #0008}\n'
-  :'\n.tiger-game{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n.demo-pill,.music-status,.tiger-game footer,[data-action=sound-test],[data-action=reset],[data-action=reset-confirm],.preview-buttons,.preview-buttons+.muted-note,h3:has(+.preview-buttons){display:none!important}\n'+plus+'.th-plus{background:linear-gradient(#ffdf8a,#c9871f);color:#5a1d00;box-shadow:0 1px 3px #0006}\n';
+  ?'\n.game-shell{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n.topbar{justify-content:flex-end!important}\n.stat{position:relative}\n.demo-badge,.info-button,.audio-status-badge,.game-footer,.audio-test-button,.setting-section:has(.preview-actions){display:none!important}\n'+plus+'.th-plus{background:linear-gradient(#ffe7a3,#d39a33);color:#3a2207;box-shadow:0 1px 3px #0008}\n'
+  :'\n.tiger-game{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n.wallet-cell{position:relative}\n.demo-pill,.music-status,.tiger-game footer,[data-action=sound-test],[data-action=reset],[data-action=reset-confirm],.preview-buttons,.preview-buttons+.muted-note,h3:has(+.preview-buttons){display:none!important}\n'+plus+'.th-plus{background:linear-gradient(#ffdf8a,#c9871f);color:#5a1d00;box-shadow:0 1px 3px #0006}\n';
  await writeFile(file,localizeLegacyFonts(await readFile(file,'utf8'),game)+inset);
 }
 await cp(path.join(platform,'legacy/bridge.ts'),path.join(stage,'bridge.ts'));
