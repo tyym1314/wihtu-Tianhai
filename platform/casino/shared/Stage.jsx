@@ -12,8 +12,11 @@ const insets=()=>{const css=getComputedStyle(document.documentElement);const px=
 export function Stage({plate,width=941,height=1672,className='',dir,children}){
  const [fit,setFit]=useState({scale:1,cy:0});
  useEffect(()=>{
+  // Centre on the screen so the extended plate covers it top to bottom; only move the design area when it
+  // would otherwise reach under the status bar or the navigation bar.
   const update=()=>{const {top,bottom}=insets(),w=window.innerWidth,h=window.innerHeight,avail=Math.max(1,h-top-bottom);
-   setFit({scale:Math.min(w/width,avail/height),cy:top+avail/2});};
+   const scale=Math.min(w/width,avail/height),half=height*scale/2;
+   setFit({scale,cy:Math.min(Math.max(h/2,top+half),h-bottom-half)});};
   update();window.addEventListener('resize',update);window.addEventListener('oasis:host-state',update);
   return()=>{window.removeEventListener('resize',update);window.removeEventListener('oasis:host-state',update);};
  },[width,height]);
