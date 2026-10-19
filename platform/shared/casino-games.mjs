@@ -156,12 +156,12 @@ export const CASINO_GAMES=Object.freeze({
   symbols:[['seven',[200,5000]],['bar3',[100,2000]],['bar2',[60,1200]],['bar',[40,800]],['bell',[30,500]],['cherry',[20,300]]],
   weights:{seven:6,bar3:9,bar2:12,bar:15,bell:18,cherry:22,wild:4},wild:{id:'wild',reels:[1,2]},maxWin:1000}),
  // DJlive: 5x4, 20 lines, scatter free spins x2.
- djlive:linesSlot('djlive','DJlive',{columns:5,rows:4,lines:LINES_20x4,payScale:22.82,
+ djlive:linesSlot('djlive','DJLive',{columns:5,rows:4,lines:LINES_20x4,payScale:22.82,
   symbols:[['dj',[500,2000,10000]],['speaker',[300,1200,5000]],['mic',[200,800,3000]],['headphones',[150,600,2000]],['vinyl',[100,400,1500]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
   weights:{dj:10,speaker:14,mic:18,headphones:22,vinyl:26,A:40,K:44,Q:48,J:52,wild:[0,14,14,14,14],disc:8},wild:{id:'wild',reels:[1,2,3,4]},
   scatter:{id:'disc',pays:[[3,200],[4,1000],[5,5000]]},freeSpins:{trigger:3,award:10,perExtra:5,retrigger:5,multiplier:2,maxPlayed:60}}),
  // jackpotSlots: 5x3, 20 lines; five jackpot symbols on a line pay 1000x line; 3 scatters give 10 free spins.
- jackpotslots:linesSlot('jackpotslots','jackpotSlots',{lines:LINES_20,payScale:26.6,
+ jackpotslots:linesSlot('jackpotslots','JackpotSlots',{lines:LINES_20,payScale:26.6,
   symbols:[['jackpot',[2000,10000,100000]],['crown',[500,2000,8000]],['gold',[300,1200,5000]],['diamond',[200,800,3000]],['bell',[150,600,2000]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
   weights:{jackpot:5,crown:12,gold:16,diamond:20,bell:24,A:40,K:44,Q:48,J:52,wild:[0,12,12,12,12],star:8},wild:{id:'wild',reels:[1,2,3,4]},
   scatter:{id:'star',pays:[[3,200],[4,800],[5,4000]]},freeSpins:{trigger:3,award:10,perExtra:0,retrigger:10,multiplier:1,maxPlayed:60},maxWin:5000}),
@@ -187,7 +187,7 @@ export const CASINO_GAMES=Object.freeze({
   wild:{id:'wild',reels:[1,2,3,4]},scatter:{id:'pepper',pays:[[3,200],[4,800],[5,3000]]},
   freeSpins:{trigger:3,award:12,perExtra:0,retrigger:3,multiplier:1,maxPlayed:60,boards:{start:2,collect:'chilli',steps:[{at:9,boards:3,wildReel:4},{at:14,boards:4,wildReel:3},{at:30,wildReel:2}]}},maxWin:5000}),
  // sphinxlegend: 5x3, 20 lines; 3 scatters let the player choose one of four free spin packages of equal value.
- sphinxlegend:linesSlot('sphinxlegend','sphinxlegend',{lines:LINES_20,payScale:31.6,
+ sphinxlegend:linesSlot('sphinxlegend','SphinxLegend',{lines:LINES_20,payScale:31.6,
   symbols:[['sphinx',[500,2000,8000]],['pharaoh',[300,1200,5000]],['cat',[200,800,3000]],['eye',[150,600,2000]],['ankh',[100,400,1500]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
   weights:{sphinx:10,pharaoh:14,cat:18,eye:22,ankh:26,A:40,K:44,Q:48,J:52,wild:[0,12,12,12,12],pyramid:8},wild:{id:'wild',reels:[1,2,3,4]},
   scatter:{id:'pyramid',pays:[[3,200],[4,1000],[5,5000]]},
@@ -219,7 +219,7 @@ export const CASINO_GAMES=Object.freeze({
  glorycup:plainWheel('glorycup','GloryCup',[['team1',40],['team2',40],['team3',12],['team4',12],['team5',6],['team6',6],['team7',4],['team8',4]],{released:true,maxOptions:8,bonus:{liabilityMultiplier:160,table:[{type:'none',weight:9953},{type:'extra',value:3,weight:47}]}}),
  // SolomonMines: three chests, one wins; x2.91 (stake included) -> 97%.
  solomonmines:plainWheel('solomonmines','SolomonMines',[['courage',2.91],['wisdom',2.91],['strength',2.91]],{released:true,maxOptions:3,chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(50000)])}),
- roulette:rouletteGame('roulette','roulette',[['zero',36,[0]],['d1',3,range(1,12)],['d2',3,range(13,24)],['d3',3,range(25,36)],['red',2,RED],['black',2,BLACK],['even',2,range(1,36).filter(n=>n%2===0)],['odd',2,range(1,36).filter(n=>n%2)]]),
+ roulette:rouletteGame('roulette','Roulette',[['zero',36,[0]],['d1',3,range(1,12)],['d2',3,range(13,24)],['d3',3,range(25,36)],['red',2,RED],['black',2,BLACK],['even',2,range(1,36).filter(n=>n%2===0)],['odd',2,range(1,36).filter(n=>n%2)]]),
  roulettepro:rouletteGame('roulettepro','RoulettePro',[['zero',36,[0]],['d1',3,range(1,12)],['d2',3,range(13,24)],['d3',3,range(25,36)],['red',2,RED],['black',2,BLACK],['single',2,range(1,36).filter(n=>n%2)],['double',2,range(1,36).filter(n=>n%2===0)]]),
  // SicBo: three dice (216 equally likely); BIG 11-17 / SMALL 4-10 lose on any triple; ANY TRIPLE x35.
  sicbo:Object.freeze({id:'sicbo',released:true,family:'wheel',reference:'SicBo',name:'SicBo',zh:'SicBo',ar:'SicBo',round:Object.freeze({betMs:15000,drawMs:6000,showMs:5000}),
