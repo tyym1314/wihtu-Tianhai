@@ -9,7 +9,8 @@ export const LOCALES=['zh','en','ar'];
 const STORAGE_KEY='oasis-locale';
 export function normalizeLocale(value){
  const v=String(value||'').toLowerCase();
- return v.startsWith('zh')?'zh':v.startsWith('ar')?'ar':v.startsWith('en')?'en':null;
+ // Players get English or Arabic only (Chinese stays the dictionary source / server language).
+ return v.startsWith('ar')?'ar':v?'en':null;
 }
 function detect(){
  // Node also exposes navigator.language; server and tests always use the source language.
@@ -17,7 +18,7 @@ function detect(){
  try{const saved=normalizeLocale(globalThis.localStorage?.getItem(STORAGE_KEY));if(saved)return saved;}catch{}
  const langs=globalThis.navigator?.languages||[globalThis.navigator?.language];
  for(const l of langs||[]){const n=normalizeLocale(l);if(n)return n;}
- return 'zh';
+ return 'en';
 }
 let locale=detect();
 const listeners=new Set();

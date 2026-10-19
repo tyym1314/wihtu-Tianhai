@@ -18,6 +18,7 @@ test('t() formats placeholders and falls back to the source text',()=>{
  setLocale('en',{persist:false});
  assert.equal(t('已就位 {0} / {1} 名玩家',[1,2]),'1 / 2 players ready');
  assert.equal(t('未登记的中文'),'未登记的中文');
+ // Players never get Chinese: a zh request resolves to English.
  setLocale('zh',{persist:false});
- assert.equal(t('已就位 {0} / {1} 名玩家',[1,2]),'已就位 1 / 2 名玩家');
+ assert.equal(t('已就位 {0} / {1} 名玩家',[1,2]),'1 / 2 players ready');
 });

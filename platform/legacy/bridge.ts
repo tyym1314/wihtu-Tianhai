@@ -24,7 +24,7 @@ function hostBack(){
 }
 // Session language (from the App's launch request) seeds each game's own language preference.
 function applyLocale(game:string,sessionLocale:unknown){
- const pick=(v:unknown)=>{const l=String(v||'').toLowerCase();return l.startsWith('zh')?'zh':l.startsWith('ar')?'ar':l.startsWith('en')?'en':null;};
+ const pick=(v:unknown)=>{const l=String(v||'').toLowerCase();return l.startsWith('ar')?'ar':l?'en':null;};
  let locale=pick(sessionLocale);
  try{locale??=pick(localStorage.getItem('oasis-locale'));}catch{}
  locale??=pick(navigator.language);if(!locale)return;

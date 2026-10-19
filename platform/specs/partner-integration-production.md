@@ -120,7 +120,7 @@ POST https://game.tianyahuyu.com/v1/sessions
 返回：`session_id`、`launch_code`（60 秒内一次有效）、`expires_at`、`entry_url`。
 
 - 签名规则见[接入教程第 3 节](integration-guide.md#3-hmac-sha256-签名规范--request-authentication)与[固定签名向量](examples/signature-vector.json)；Node.js 可直接使用 [sdk-node.mjs](examples/sdk-node.mjs) 的 `OasisClient.createSession()`。
-- `locale` 决定游戏语言：`zh-CN`、`en` 或 `ar`。
+- `locale` 决定游戏语言：游戏只提供英文和阿语，`ar` 显示阿语，其他值（包括 `zh-CN`）显示英文。
 - 网络超时请用**相同 request_id 和相同正文**重试，平台返回同一结果；新的启动意图使用新 request_id。
 - 使用平台启动页（第 4.1 节）时**不要传 `host_origin`**。只有在你自己的网页里用 iframe 嵌入（第 4.2 节）时，才传入并在“接入”页登记你的网页 Origin。
 

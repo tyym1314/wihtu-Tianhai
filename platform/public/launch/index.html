@@ -73,8 +73,9 @@ const $=id=>document.getElementById(id);
 const params=new URLSearchParams(location.search),fragment=new URLSearchParams(location.hash.slice(1));
 const gameId=params.get('game'),code=fragment.get('code'),sessionId=fragment.get('session');
 // Language: ?lang=zh|en|ar from the App, else the device language. Stored for the same-origin game page.
-const pickLang=v=>{v=String(v||'').toLowerCase();return v.startsWith('zh')?'zh':v.startsWith('ar')?'ar':v.startsWith('en')?'en':null;};
-const lang=pickLang(params.get('lang')||params.get('locale'))||(()=>{try{return pickLang(localStorage.getItem('oasis-locale'));}catch{return null;}})()||pickLang(navigator.language)||'zh';
+// Games are offered in English and Arabic only (any other language, Chinese included, shows English).
+const pickLang=v=>{v=String(v||'').toLowerCase();return v.startsWith('ar')?'ar':v?'en':null;};
+const lang=pickLang(params.get('lang')||params.get('locale'))||(()=>{try{return pickLang(localStorage.getItem('oasis-locale'));}catch{return null;}})()||pickLang(navigator.language)||'en';
 try{localStorage.setItem('oasis-locale',lang);}catch{}
 document.documentElement.lang=lang==='zh'?'zh-CN':lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';
 const T={zh:{entering:'正在进入游戏',wait:'请稍候…',back:'返回',quitTitle:'退出游戏？',quitMsg:'进行中的投注会照常结算，结果可在游戏记录中查看。',stay:'继续游戏',quit:'退出',badTitle:'无法进入游戏',badMsg:'启动参数无效，请返回 App 重新进入。',errTitle:'游戏暂时无法连接',expired:'会话已过期，请返回 App 重新进入。',retry:'请返回 App 后重新进入。'},

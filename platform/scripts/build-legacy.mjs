@@ -35,10 +35,11 @@ for(const [game,relative] of [['thunder','src/style.css'],['tiger','src/tiger/st
  // button and demo badge go; HOW TO PLAY stays), music starts with the first tap (no TAP FOR MUSIC
  // badge), demo previews/reset/sound-test and the platform footer are hidden, and the balance shows
  // a "+" that opens the App's top-up.
+ const noZh='option[value="zh"]{display:none}';
  const plus='.th-plus{position:absolute;top:6px;inset-inline-end:6px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;font:800 16px/1 system-ui;cursor:pointer}';
  const inset=game==='thunder'
-  ?'\n.game-shell{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n.topbar{justify-content:flex-end!important}\n.stat{position:relative}\n.demo-badge,.info-button,.audio-status-badge,.game-footer,.audio-test-button,.setting-section:has(.preview-actions){display:none!important}\n'+plus+'.th-plus{background:linear-gradient(#ffe7a3,#d39a33);color:#3a2207;box-shadow:0 1px 3px #0008}\n'
-  :'\n.tiger-game{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n.wallet-cell{position:relative}\n.tiger-game .topbar{justify-content:flex-end!important}\n.demo-pill,.music-status,.tiger-game footer,[data-action=sound-test],[data-action=reset],[data-action=reset-confirm],.preview-buttons,.preview-buttons+.muted-note,h3:has(+.preview-buttons){display:none!important}\n'+plus+'.th-plus{background:linear-gradient(#ffdf8a,#c9871f);color:#5a1d00;box-shadow:0 1px 3px #0006}\n';
+  ?'\n'+noZh+'\n.game-shell{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n.topbar{justify-content:flex-end!important}\n.stat{position:relative}\n.demo-badge,.info-button,.audio-status-badge,.game-footer,.audio-test-button,.setting-section:has(.preview-actions){display:none!important}\n'+plus+'.th-plus{background:linear-gradient(#ffe7a3,#d39a33);color:#3a2207;box-shadow:0 1px 3px #0008}\n'
+  :'\n'+noZh+'\n.editorial{display:none!important}\n.tiger-game{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n.wallet-cell{position:relative}\n.tiger-game .topbar{justify-content:flex-end!important}\n.demo-pill,.music-status,.tiger-game footer,[data-action=sound-test],[data-action=reset],[data-action=reset-confirm],.preview-buttons,.preview-buttons+.muted-note,h3:has(+.preview-buttons){display:none!important}\n'+plus+'.th-plus{background:linear-gradient(#ffdf8a,#c9871f);color:#5a1d00;box-shadow:0 1px 3px #0006}\n';
  await writeFile(file,localizeLegacyFonts(await readFile(file,'utf8'),game)+inset);
 }
 await cp(path.join(platform,'legacy/bridge.ts'),path.join(stage,'bridge.ts'));
@@ -101,6 +102,9 @@ const mustReplace=(text,from,to,label)=>{if(!text.includes(from))throw new Error
 thunder=mustReplace(thunder,"toast(cp('noMoney'));","toast(cp('noMoney'));requestHostRecharge('insufficient');",'thunder noMoney');
 thunder=mustReplace(thunder,"import { platformConfig } from '../bridge';","import { platformConfig, requestHostRecharge, onHostBalanceRefresh } from '../bridge';",'thunder bridge import');
 thunder+="\nonHostBalanceRefresh(async()=>{try{session=await api<Session>('session');displayBalance=session.balance;updateUI();}catch{}});\ndocument.getElementById('balance')?.closest('.stat')?.addEventListener('click',()=>requestHostRecharge('user'));\n{const b=document.getElementById('balance');if(b&&!b.parentElement?.querySelector('.th-plus')){const p=document.createElement('i');p.className='th-plus';p.textContent='+';p.setAttribute('aria-hidden','true');b.after(p);}}\n";
+// English and Arabic only: the stored preference never comes back as Chinese and the switch toggles EN / عربي.
+thunder=mustReplace(thunder,"let locale: Locale = ['zh', 'en', 'ar'].includes(readPref('tt-language', 'zh')) ? readPref('tt-language', 'zh') as Locale : 'zh';","let locale: Locale = readPref('tt-language', 'en') === 'ar' ? 'ar' : 'en';",'thunder locale');
+thunder=mustReplace(thunder,"locale = locale === 'zh' ? 'en' : locale === 'en' ? 'ar' : 'zh';","locale = locale === 'en' ? 'ar' : 'en';",'thunder language switch');
 await writeFile(thunderFile,thunder);
 const tigerFile=path.join(stage,'src/tiger/main.ts');let tiger=await readFile(tigerFile,'utf8');
 tiger=tiger.replace("import { TIGER_CONFIG } from './math';",`import { TIGER_CONFIG as LEGACY_TIGER_CONFIG } from './math';\nimport { platformConfig } from '../../bridge';\nconst TIGER_CONFIG = { ...LEGACY_TIGER_CONFIG, get targetRtp() { return platformConfig.targetRtp ?? LEGACY_TIGER_CONFIG.targetRtp; }, get mathVersion() { return platformConfig.version ?? platformConfig.mathVersion ?? LEGACY_TIGER_CONFIG.mathVersion; }, get symbols() { const scale=platformConfig.payoutScale ?? {numerator:1,denominator:1}; return LEGACY_TIGER_CONFIG.symbols.map(s => ({...s,payoutBps:s.payoutBps*scale.numerator/scale.denominator})); } };`);
@@ -119,6 +123,9 @@ tiger+=`\nimport './platform-restoration.css';\n`;
 tiger=mustReplace(tiger,"toast(t('noFunds'));","toast(t('noFunds'));requestHostRecharge('insufficient');",'tiger noFunds');
 tiger=mustReplace(tiger,"import { platformConfig } from '../../bridge';","import { platformConfig, requestHostRecharge, onHostBalanceRefresh } from '../../bridge';",'tiger bridge import');
 tiger+="\nonHostBalanceRefresh(async()=>{try{session=await api<TigerSession>('session');displayBalance=session.balance;updateUI();}catch{}});\ndocument.getElementById('balance')?.closest('.wallet-cell')?.addEventListener('click',()=>requestHostRecharge('user'));\n{const b=document.getElementById('balance');if(b&&!b.parentElement?.querySelector('.th-plus')){const p=document.createElement('i');p.className='th-plus';p.textContent='+';p.setAttribute('aria-hidden','true');b.after(p);}}\n";
+tiger=mustReplace(tiger,'<b>福</b>','<b>✦</b>','tiger roof ornament');
+tiger=mustReplace(tiger,"let locale:Locale=['zh','en','ar'].includes(pref('locale','zh'))?pref('locale','zh') as Locale:'zh';","let locale:Locale=pref('locale','en')==='ar'?'ar':'en';",'tiger locale');
+tiger=mustReplace(tiger,"locale=locale==='zh'?'en':locale==='en'?'ar':'zh';","locale=locale==='en'?'ar':'en';",'tiger language switch');
 await writeFile(tigerFile,tiger);
 const translationsFile=path.join(stage,'src/ui/i18n.ts');let translations=await readFile(translationsFile,'utf8');
 translations=translations.replace("demo: 'DEMO'","demo: 'PLATFORM'").replace("demo: '试玩版'","demo: '平台游戏'").replace("demo: 'نسخة تجريبية'","demo: 'المنصة'");

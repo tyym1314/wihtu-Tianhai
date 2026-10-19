@@ -71,8 +71,9 @@ const DICT={
   '1. Pick a chip and tap a dish to bet, up to 6 dishes per round.\n2. Betting lasts 20 seconds, then the wheel draws.\n3. If the drawn dish matches your bet you win its multiplier (stake included): vegetables ×5, shrimp ×10, fish ×15, steak ×25, roast chicken ×45.\n4. A rare SALAD pays every vegetable; a rare PIZZA pays every meat.',
   '1. اختر رقاقة وانقر طبقاً للرهان، حتى 6 أطباق في الجولة.\n2. يستمر الرهان 20 ثانية ثم تدور العجلة.\n3. إذا طابق الطبق المسحوب رهانك تربح مضاعفه (شاملاً الرهان): الخضار ×5، الروبيان ×10، السمك ×15، الستيك ×25، الدجاج المشوي ×45.\n4. السلطة النادرة تدفع لكل الخضار، والبيتزا النادرة تدفع لكل اللحوم.'],
 };
-const pick=v=>{v=String(v||'').toLowerCase();return v.startsWith('zh')?0:v.startsWith('ar')?2:v.startsWith('en')?1:null;};
-let index=(()=>{try{const q=pick(new URLSearchParams(location.search).get('locale'));if(q!==null)return q;const s=pick(localStorage.getItem('oasis-locale'));if(s!==null)return s;}catch{}return pick(navigator.language)??0;})();
+// English and Arabic only: any other language (Chinese included) shows English.
+const pick=v=>{v=String(v||'').toLowerCase();return v.startsWith('ar')?2:v?1:null;};
+let index=(()=>{try{const q=pick(new URLSearchParams(location.search).get('locale'));if(q!==null)return q;const s=pick(localStorage.getItem('oasis-locale'));if(s!==null)return s;}catch{}return pick(navigator.language)??1;})();
 export const locale=()=>['zh','en','ar'][index];
 export const isRtl=()=>index===2;
 export function setLocale(v){const p=pick(v);if(p!==null){index=p;document.documentElement.lang=['zh-CN','en','ar'][p];}}
