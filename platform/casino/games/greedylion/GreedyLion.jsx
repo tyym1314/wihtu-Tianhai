@@ -97,7 +97,7 @@ export default function GreedyLion({initial}){
   {g.offline&&<div className="cs-toast">{t('offline')}</div>}
   {g.toast&&<div className="cs-toast" key={g.toast.id}>{t(g.toast.key,[GAME.maxOptionsPerRound])}</div>}
   {rules&&<div className="cs-modal-back gl-modal" onClick={()=>setRules(false)}><div className="cs-modal" onClick={e=>e.stopPropagation()}>
-   <h2>{t('rules')}</h2><p>{t('lionRules')}</p><h2>{t('fair')}</h2><p>{t('fairText')}</p><small>commitment: {round.commitment}</small>{round.seed&&<small>seed: {round.seed}</small>}
+   <h2>{t('rules')}</h2><p>{t('lionRules')}</p><h2>{t('fair')}</h2><p>{t('fairText')}</p>
    <button className="cs-gold-btn" onClick={()=>setRules(false)}>{t('close')}</button></div></div>}
    {records&&<HistoryModal onClose={()=>setRecords(false)}/>}
  </Stage>;

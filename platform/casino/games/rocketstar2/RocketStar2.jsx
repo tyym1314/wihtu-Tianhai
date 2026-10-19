@@ -136,7 +136,7 @@ export default function RocketStar2({initial}){
   {offline&&<div className="cs-toast">{t('offline')}</div>}
   {toast&&<div className="cs-toast" key={toast.id}>{t(toast.key)}</div>}
   {rules&&<div className="cs-modal-back" onClick={()=>setRules(false)}><div className="cs-modal" onClick={e=>e.stopPropagation()}>
-   <h2>{t('rules')}</h2><p>{t('rocketRules')}</p><h2>{t('fair')}</h2><p>{t('fairText')}</p><small>commitment: {round.commitment}</small>{round.seed&&<small>seed: {round.seed}</small>}
+   <h2>{t('rules')}</h2><p>{t('rocketRules')}</p><h2>{t('fair')}</h2><p>{t('fairText')}</p>
    <button className="cs-gold-btn" onClick={()=>setRules(false)}>{t('close')}</button></div></div>}
    {records&&<HistoryModal onClose={()=>setRecords(false)} label={id=>id.length===1?id.toUpperCase():id}/>}
  </Stage>;

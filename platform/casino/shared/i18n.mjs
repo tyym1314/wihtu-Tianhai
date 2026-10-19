@@ -33,7 +33,7 @@ const DICT={
  salad:['沙拉！所有蔬菜中奖','SALAD! All vegetables win','سلطة! كل الخضار تفوز'],
  pizza:['披萨！所有肉类中奖','PIZZA! All meats win','بيتزا! كل اللحوم تفوز'],
  fair:['公平校验','Provably fair','عدالة قابلة للتحقق'],
- fairText:['每局开始前公布结果承诺（SHA-256），开奖后公开种子，可自行校验。','Each round publishes a SHA-256 commitment before betting and reveals the seed after the draw.','تُنشر بصمة SHA-256 قبل كل جولة ويُكشف البذر بعد السحب.'],
+ fairText:['每局结果在下注截止前就已由服务器锁定，下注不会改变结果；每一局的输赢都可以在游戏记录中查看。','Each round\'s result is locked by the server before betting closes, so bets cannot change it; every round you play is listed in your game history.','تُثبَّت نتيجة كل جولة على الخادم قبل إغلاق الرهان، فلا تغيّرها الرهانات؛ وتظهر كل جولة تلعبها في سجل اللعب.'],
  bet:['下注','Bet','راهن'],
  betPlaced:['已下注 · 等待起飞','Bet placed · waiting','تم الرهان · بانتظار الإقلاع'],
  waitNext:['等待下一局','Wait for next round','انتظر الجولة التالية'],

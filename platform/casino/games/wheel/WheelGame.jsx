@@ -6,16 +6,18 @@ import {Stage,Box,CountUp,PhaseBanner} from '../../shared/Stage.jsx';
 import {RechargeTap,useHostBalance} from '../../shared/recharge.jsx';
 import {HistoryModal} from '../../shared/History.jsx';
 import {wheelRules,optionName} from '../../shared/rules.mjs';
+import {RIMS,CHIP_FIX} from './rims.mjs';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import {LAYOUTS} from './layouts.mjs';
 import './wheel.css';
 
 const SPARKS=[[60,320],[880,420],[90,1040],[860,1100],[460,250],[300,1300],[700,1300]];
+const ell=([x,y,rx,ry])=>({left:x-rx,top:y-ry,width:2*rx,height:2*ry,borderRadius:'50%'});
 const rect=([x,y,a,b])=>b===undefined?{left:x-a,top:y-a,width:2*a,height:2*a,borderRadius:'50%'}:{left:x-a/2,top:y-b/2,width:a,height:b,borderRadius:22};
 
 /** Greedy-style shared-round game rendered on its concept plate; everything game-specific comes from LAYOUTS. */
 export default function WheelGame({initial}){
- const id=initial.game_id,GAME=CASINO_GAMES[id],L=LAYOUTS[id],img=n=>`/casino/${id}/${n}.webp?v=${__ASSET_VERSION__}`;
+ const id=initial.game_id,GAME=CASINO_GAMES[id],L=CHIP_FIX[id]?{...LAYOUTS[id],chips:{...LAYOUTS[id].chips,...CHIP_FIX[id]}}:LAYOUTS[id],img=n=>`/casino/${id}/${n}.webp?v=${__ASSET_VERSION__}`;
  const g=useRound(initial,GAME),{state,round,phase,now}=g;
  const audio=useAudio(id,['chip','tick','win','lose','coin','click','select','close','chips','spin']);
  const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false);
@@ -77,7 +79,7 @@ export default function WheelGame({initial}){
   {L.miniReels&&L.miniReels.map(([x,y,w,h],i)=><Box key={i} x={x} y={y} w={w} h={h} className={`wg-reel ${reelsSpinning?'spinning':''} ${phase==='result'&&bonus&&bonus.type!=='none'?'hit':''}`}>
    <span>{reelsSpinning?'':(phase!=='betting'&&now>=end?reelText(bonus)[i]:'')}</span></Box>)}
   {ORDER.map((o,i)=>{const it=L.items[o];return <React.Fragment key={o}>
-   <button className={`wg-item ${light===i||light===-2&&winners.includes(o)?'lit':''} ${winners.includes(o)?'win':''} ${phase==='result'&&winners.length&&!winners.includes(o)?'dim':''}`} style={rect(it)} onClick={()=>bet(o)} aria-label={`${o} x${MULT[o]}`}/>
+   <button className={`wg-item ${light===i||light===-2&&winners.includes(o)?'lit':''} ${winners.includes(o)?'win':''} ${phase==='result'&&winners.length&&!winners.includes(o)?'dim':''}`} style={RIMS[id]?.[o]?ell(RIMS[id][o]):rect(it)} onClick={()=>bet(o)} aria-label={`${o} x${MULT[o]}`}/>
    {totals[o]&&<Box x={it[0]-60+(L.totalAt?.[0]||0)} y={it[1]-(it[3]||2*it[2])/2-6+(L.totalAt?.[1]||0)} w={120} h={30} className="wg-total">{short(totals[o].stake_minor)}</Box>}
    {g.mine[o]&&<Box x={it[0]+(it[3]?it[2]/2-90:it[2]*.35)} y={it[1]-(it[3]?it[3]/2-6:it[2]*.95)} w={84} h={40} className="wg-mine">{short(g.mine[o])}</Box>}
   </React.Fragment>;})}
@@ -111,7 +113,7 @@ export default function WheelGame({initial}){
   {g.offline&&<div className="cs-toast">{t('offline')}</div>}
   {g.toast&&<div className="cs-toast" key={g.toast.id}>{t(g.toast.key,[GAME.maxOptionsPerRound])}</div>}
   {rules&&<div className="cs-modal-back" onClick={()=>setRules(false)}><div className="cs-modal" onClick={e=>e.stopPropagation()}>
-   <h2>{t('rules')}</h2><p>{wheelRules(GAME)}</p><h2>{t('fair')}</h2><p>{t('fairText')}</p><small>commitment: {round.commitment}</small>{round.seed&&<small>seed: {round.seed}</small>}
+   <h2>{t('rules')}</h2><p>{wheelRules(GAME)}</p><h2>{t('fair')}</h2><p>{t('fairText')}</p>
    <button className="cs-gold-btn" onClick={()=>setRules(false)}>{t('close')}</button></div></div>}
   {records&&<HistoryModal onClose={()=>setRecords(false)} label={o=>optionName(o,id)}/>}
  </Stage>;
