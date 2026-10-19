@@ -45,3 +45,5 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cs-history small{color:#b99a6a;font-size:11px}.cs-history em{font-style:normal;color:#ffd77a;white-space:nowrap}
 .cs-history b{font-size:14px}.cs-history b.up{color:#7dffb0}.cs-history b.down{color:#ff9fb0}
 .cs-recharge-tap{z-index:6;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wg-hot{position:absolute;background:none;border:0;padding:0;-webkit-tap-highlight-color:transparent}
+.wg-balance{display:flex;align-items:center;justify-content:center;font:900 30px Georgia,serif;color:#fff3d0;text-shadow:0 2px 0 #3a1a00;pointer-events:none}

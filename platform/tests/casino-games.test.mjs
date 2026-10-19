@@ -87,3 +87,9 @@ test('return-rate tiers: adjustable families reach the tier, fixed ones keep the
  assert.equal(by.greedylion.tiers['99'],99);assert.equal(by.greedylion.tiers['96'],by.greedylion.default);
  for(const id of ['roulette','sicbo','teenpatti','fruitparty'])assert.equal(by[id].adjustable,false,id);
 });
+
+test('classes used by several game families are styled in the shared stylesheet (each game loads only its own CSS)',async()=>{
+ const {readFileSync}=await import('node:fs');const shell=readFileSync(new URL('../casino/shared/shell.css',import.meta.url),'utf8');
+ for(const cls of ['wg-hot','wg-balance'])assert.match(shell,new RegExp('\\.'+cls+'\\{[^}]*'),cls);
+ assert.match(shell,/\.wg-hot\{[^}]*position:absolute/);
+});
