@@ -30,7 +30,8 @@ for(const [game,relative] of [['thunder','src/style.css'],['tiger','src/tiger/st
  const file=path.join(stage,relative);
  // Inside an App WebView that draws under the status bar, keep the header below the host's top inset
  // (--oasis-host-inset-top is set by the host bridge from the App's safe area).
- const inset=game==='thunder'?'\n.game-shell{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n':'\n.tiger-game{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n';
+ // The demo/platform corner badge means nothing to players and sits where the App's back button goes.
+ const inset=game==='thunder'?'\n.game-shell{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n.demo-badge{display:none!important}\n':'\n.tiger-game{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n.demo-pill{display:none!important}\n';
  await writeFile(file,localizeLegacyFonts(await readFile(file,'utf8'),game)+inset);
 }
 await cp(path.join(platform,'legacy/bridge.ts'),path.join(stage,'bridge.ts'));
