@@ -7,6 +7,11 @@ let gameBridge:any=null,hostState:any={muted:false,voiceActive:false,visible:tru
 const stateListeners=new Set<(state:any)=>void>();
 let prepareBack:(()=>{pending?:boolean})|null=null;
 export function subscribeHostState(listener:(state:any)=>void){stateListeners.add(listener);listener(hostState);return()=>stateListeners.delete(listener);}
+const balanceListeners=new Set<()=>void>();
+/** Ask the host App to open its top-up page (balance tapped or not enough coins). */
+export function requestHostRecharge(reason:'user'|'insufficient'='user'){gameBridge?.requestRecharge?.(reason);}
+/** The host App reports a balance change (e.g. after its top-up page closes). */
+export function onHostBalanceRefresh(listener:()=>void){balanceListeners.add(listener);return()=>balanceListeners.delete(listener);}
 export function registerPresentationHost(adapter:{prepareBack?:()=>{pending?:boolean}}){prepareBack=adapter.prepareBack||null;}
 function hostBack(){
  if(document.querySelector('.oasis-return-dialog'))return;
@@ -71,6 +76,6 @@ export async function boot(game:'thunder'|'tiger',load:()=>Promise<unknown>){
     token=result.access_token;applyLocale(game,result.locale);await refreshProfile(game);
     if(!loaded){await load();loaded=true;for(const item of document.querySelectorAll('.demo-badge,.desktop-demo'))if(item.textContent?.includes('DEMO'))item.textContent='PLATFORM · APP WALLET';}
     return{host_origin:result.host_origin||body.host_origin,game_id:game,session_id:result.session_id};
-  },onState:(state:any)=>{hostState=state;stateListeners.forEach(listener=>listener(state));},onBack:hostBack,onError:(error:Error)=>{if(!loaded)screen('暂时无法启动',error.message||'请重新获取启动授权',true);}});
+  },onState:(state:any)=>{hostState=state;stateListeners.forEach(listener=>listener(state));},onBack:hostBack,onBalanceRefresh:()=>balanceListeners.forEach(listener=>listener()),onError:(error:Error)=>{if(!loaded)screen('暂时无法启动',error.message||'请重新获取启动授权',true);}});
   window.addEventListener('pagehide',()=>{token='';gameBridge?.dispose();stateListeners.clear();},{once:true});
 }

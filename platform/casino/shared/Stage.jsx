@@ -1,15 +1,28 @@
 import React,{useEffect,useState} from 'react';
 
+// Extended plates (plate-ext.webp) continue the art above and below the 1672-px design area.
+export const EXT_HEIGHT=2100;
+const insets=()=>{const css=getComputedStyle(document.documentElement);const px=k=>Math.max(0,parseFloat(css.getPropertyValue('--oasis-host-inset-'+k))||0);return{top:px('top'),bottom:px('bottom')};};
+
 /**
- * Renders the concept plate at its design size (default 941x1672) scaled to fit the screen.
- * Children are positioned in design pixels. Extra screen height shows a blurred extension of the plate.
+ * Renders the concept plate at its design size (default 941x1672), scaled to fit between the host's
+ * top and bottom insets (status bar, navigation bar). Children are positioned in design pixels.
+ * The extended plate fills the rest of the screen; a blurred copy covers anything beyond it.
  */
 export function Stage({plate,width=941,height=1672,className='',dir,children}){
- const [scale,setScale]=useState(1);
- useEffect(()=>{const fit=()=>setScale(Math.min(window.innerWidth/width,window.innerHeight/height));fit();window.addEventListener('resize',fit);return()=>window.removeEventListener('resize',fit);},[width,height]);
+ const [fit,setFit]=useState({scale:1,cy:0});
+ useEffect(()=>{
+  const update=()=>{const {top,bottom}=insets(),w=window.innerWidth,h=window.innerHeight,avail=Math.max(1,h-top-bottom);
+   setFit({scale:Math.min(w/width,avail/height),cy:top+avail/2});};
+  update();window.addEventListener('resize',update);window.addEventListener('oasis:host-state',update);
+  return()=>{window.removeEventListener('resize',update);window.removeEventListener('oasis:host-state',update);};
+ },[width,height]);
+ const ext=typeof plate==='string'?plate.replace('/plate.webp','/plate-ext.webp'):null,{scale,cy}=fit;
+ const at=`translate(-50%,-50%) scale(${scale})`;
  return <div className="cs-stage-root" dir={dir}>
   <div className="cs-stage-fill" style={{backgroundImage:`url(${plate})`}}/>
-  <div className={`cs-stage ${className}`} style={{width,height,transform:`translate(-50%,-50%) scale(${scale})`,backgroundImage:`url(${plate})`}}>{children}</div>
+  {ext&&<div className="cs-stage-ext" style={{width,height:EXT_HEIGHT,top:cy,transform:at,backgroundImage:`url(${ext})`}}/>}
+  <div className={`cs-stage ${className}`} style={{width,height,top:cy,transform:at,backgroundImage:`url(${plate})`}}>{children}</div>
  </div>;
 }
 

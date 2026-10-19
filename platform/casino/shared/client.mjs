@@ -7,13 +7,14 @@ export const hostState=()=>bridge?.state||{muted:false,voiceActive:false,visible
 export function registerHostControls(callbacks){controls.add(callbacks);return()=>controls.delete(callbacks);}
 export const reportProgress=value=>bridge?.progress?.(value);
 export const reportShown=()=>bridge?.shown?.();
+export const requestRecharge=(reason='user')=>bridge?.requestRecharge?.(reason);
 export function requestExit(details={}){return bridge?.completeReturn?.({reason:'user',...details})===true;}
 
 export async function api(path,body,{signal}={}){
  const response=await fetch(path,{method:body===undefined?'GET':'POST',cache:'no-store',signal:signal||AbortSignal.timeout(12000),
   headers:{'Content-Type':'application/json',...(accessToken?{Authorization:`Bearer ${accessToken}`}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
  let data;try{data=await response.json();}catch{throw Object.assign(new Error('Connection interrupted'),{code:'NETWORK'});}
- if(!response.ok)throw Object.assign(new Error(data.error?.message||`Request failed (${response.status})`),{code:data.error?.code,status:response.status});
+ if(!response.ok){if(data.error?.code==='INSUFFICIENT_FUNDS')requestRecharge('insufficient');throw Object.assign(new Error(data.error?.message||`Request failed (${response.status})`),{code:data.error?.code,status:response.status});}
  return data;
 }
 
@@ -29,7 +30,7 @@ export function waitForLaunch(game,onStatus){
    if(!resolved){resolved=true;resolve({state,locale:r.locale||null});}
    return{host_origin:r.host_origin||body.host_origin,game_id:game,session_id:r.session_id};
   },
-  onState:s=>controls.forEach(c=>c.onState?.(s)),onBack:()=>controls.forEach(c=>c.onBack?.()),
+  onState:s=>controls.forEach(c=>c.onState?.(s)),onBack:()=>controls.forEach(c=>c.onBack?.()),onBalanceRefresh:()=>controls.forEach(c=>c.onBalanceRefresh?.()),
   onError:e=>{onStatus?.(e.message);if(e.code==='LAUNCH_TIMEOUT'&&!resolved)reject(e);}});}catch(e){reject(e);}});
 }
 if(typeof window!=='undefined')window.addEventListener('pagehide',()=>{accessToken='';bridge?.dispose();},{once:true});

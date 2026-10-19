@@ -1,9 +1,10 @@
 import React,{useEffect,useRef,useState} from 'react';
-import {api,requestId,registerHostControls,requestExit} from '../../shared/client.mjs';
+import {api,requestId,registerHostControls,requestExit,requestRecharge} from '../../shared/client.mjs';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
 import {Stage,Box,CountUp} from '../../shared/Stage.jsx';
+import {RechargeTap,useHostBalance} from '../../shared/recharge.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import {HistoryModal} from '../../shared/History.jsx';
 import './olympus.css';
@@ -34,6 +35,7 @@ export default function Olympus({initial}){
  if(keys.current.grid!==grid){const k=keys.current,prev=k.grid;keys.current={grid,gen,keys:grid.map((c,i)=>prev&&gen===k.gen&&prev[i]?.s===c.s&&prev[i]?.m===c.m?k.keys[i]:`${gen}-${i}-${Math.random()}`)};}
  const wait=ms=>sleep(ms*speed.current);
  useEffect(()=>registerHostControls({onBack:()=>{if(!busy)requestExit();}}),[busy]);
+ useHostBalance(setBalance);
  const say=key=>setToast({key,id:Math.random()});
 
  async function play(result){
@@ -70,7 +72,7 @@ export default function Olympus({initial}){
 
  async function spinOnce({buy=false}={}){
   const cost=buy?buyCost(stake):stake;
-  if(balanceRef.current!==null&&BigInt(balanceRef.current)<BigInt(cost)){say('insufficient');return false;}
+  if(balanceRef.current!==null&&BigInt(balanceRef.current)<BigInt(cost)){say('insufficient');requestRecharge('insufficient');return false;}
   setWin(0n);audio.play('spin');setBalance(b=>b===null?b:String(BigInt(b)-BigInt(cost)));
   try{
    setLeaving(true);const [r]=await Promise.all([api('/api/casino/spin',{request_id:requestId(),stake_minor:stake,...(buy?{buy:true}:{})}),sleep(320*speed.current)]);setLeaving(false);
@@ -104,7 +106,7 @@ export default function Olympus({initial}){
   {fountain>0&&<div key={fountain} className="ol-fountain">{Array.from({length:big?46:18},(_,i)=><span key={i} className="ol-coinf" style={{left:470+(i%2?1:-1)*(i*7%160),'--dx':`${(i%2?1:-1)*(80+i*17%420)}px`,'--h':`${-500-(i*37%500)}px`,animationDelay:`${i*35}ms`}}/>)}</div>}
   {free&&<Box x={170} y={545} w={600} h={60} className="ol-freebar"><b>{t('freeLeft',[free.n,free.of])}</b>{free.total>0&&<span>{t('totalMult',[free.total])}</span>}</Box>}
   <Box x={520} y={1230} w={250} h={60} className="ol-win"><CountUp value={Number(win)} format={v=>full(Math.round(v))} ms={500}/></Box>
-  <Box x={96} y={1352} w={170} h={44} className="ol-balance">{balance===null?'—':<CountUp value={Number(balance)} format={v=>full(Math.round(v))}/>}</Box>
+  <RechargeTap x={96} y={1352} w={170} h={44}/><Box x={96} y={1352} w={170} h={44} className="ol-balance">{balance===null?'—':<CountUp value={Number(balance)} format={v=>full(Math.round(v))}/>}</Box>
   <button className="ol-hit" style={{left:300,top:1335,width:58,height:58}} disabled={busy} onClick={()=>step(-1)} aria-label="-"/>
   <Box x={360} y={1345} w={220} h={50} className="ol-bet">{full(stake)}</Box>
   <button className="ol-hit" style={{left:585,top:1335,width:58,height:58}} disabled={busy} onClick={()=>step(1)} aria-label="+"/>

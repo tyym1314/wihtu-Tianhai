@@ -1,9 +1,10 @@
 import React,{useEffect,useRef,useState} from 'react';
-import {api,requestId,registerHostControls,requestExit} from '../../shared/client.mjs';
+import {api,requestId,registerHostControls,requestExit,requestRecharge} from '../../shared/client.mjs';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {full} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
 import {Stage,Box,CountUp} from '../../shared/Stage.jsx';
+import {RechargeTap,useHostBalance} from '../../shared/recharge.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import {HistoryModal} from '../../shared/History.jsx';
 import {SLOTS} from './layouts.mjs';
@@ -33,6 +34,7 @@ export default function SlotGame({initial}){
  const autoRef=useRef(0),balanceRef=useRef(balance);balanceRef.current=balance;
  const wait=ms=>sleep(ms*speed.current);
  useEffect(()=>registerHostControls({onBack:()=>{if(!busy)requestExit();}}),[busy]);
+ useHostBalance(setBalance);
  const say=key=>setToast({key,id:Math.random()});
  // Cell geometry inside the reel window.
  const [rx,ry,rw,rh]=L.reels,cw=rw/COLS,ch=rh/MAXR;
@@ -103,7 +105,7 @@ export default function SlotGame({initial}){
  }
  async function spinOnce(){
   const cost=stake;
-  if(balanceRef.current!==null&&BigInt(balanceRef.current)<BigInt(cost)){say('insufficient');return false;}
+  if(balanceRef.current!==null&&BigInt(balanceRef.current)<BigInt(cost)){say('insufficient');requestRecharge('insufficient');return false;}
   setWin(0n);setBalance(b=>b===null?b:String(BigInt(b)-BigInt(cost)));
   try{
    setSpinning(Array(COLS).fill(true));audio.play('spin',{volume:.5});
@@ -156,7 +158,7 @@ export default function SlotGame({initial}){
   {free&&<Box x={rx} y={L.freebar||ry-64} w={rw} h={56} className="sg-freebar"><b>{t('freeLeft',[free.n||0,free.of||0])}</b><span>{full(free.total||0n)}</span></Box>}
   {fountain>0&&<div key={fountain} className="ol-fountain">{Array.from({length:big?46:18},(_,i)=><span key={i} className="ol-coinf" style={{left:470+(i%2?1:-1)*(i*7%160),'--dx':`${(i%2?1:-1)*(80+i*17%420)}px`,'--h':`${-500-(i*37%500)}px`,animationDelay:`${i*35}ms`}}/>)}</div>}
   <Box x={L.win[0]} y={L.win[1]} w={L.win[2]} h={L.win[3]} className="sg-win">{win>0n?<CountUp value={Number(win)} format={v=>full(Math.round(v))} ms={500}/>:<span>{busy?'':'GOOD LUCK'}</span>}</Box>
-  <Box x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]} className="sg-balance">{balance===null?'—':<CountUp value={Number(balance)} format={v=>full(Math.round(v))}/>}</Box>
+  <RechargeTap x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]}/><Box x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]} className="sg-balance">{balance===null?'—':<CountUp value={Number(balance)} format={v=>full(Math.round(v))}/>}</Box>
   <button className="wg-hot" style={{...circ(L.minus),borderRadius:'50%'}} disabled={busy} onClick={()=>step(-1)} aria-label="-"/>
   <Box x={L.bet[0]} y={L.bet[1]} w={L.bet[2]} h={L.bet[3]} className="sg-bet">{full(stake)}</Box>
   <button className="wg-hot" style={{...circ(L.plus),borderRadius:'50%'}} disabled={busy} onClick={()=>step(1)} aria-label="+"/>

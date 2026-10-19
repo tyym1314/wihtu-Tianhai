@@ -3,6 +3,7 @@ import {t,isRtl} from '../../shared/i18n.mjs';
 import {useRound,full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
 import {Stage,Box,CountUp,PhaseBanner} from '../../shared/Stage.jsx';
+import {RechargeTap,useHostBalance} from '../../shared/recharge.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import {HistoryModal} from '../../shared/History.jsx';
 import './greedylion.css';
@@ -12,7 +13,9 @@ const img=n=>`/casino/greedylion/${n}.webp?v=${__ASSET_VERSION__}`;
 // Design-pixel positions measured on the 941x1672 concept plate (clockwise from the top plate).
 const ORDER=['tomato','corn','carrot','lettuce','shrimp','fish','steak','chicken'];
 const PLATE={tomato:[472,652],corn:[670,736],carrot:[740,933],lettuce:[673,1109],shrimp:[472,1179],fish:[271,1107],steak:[201,930],chicken:[268,736]};
-const CHIP_X=[75,212,348,484,620],CHIP_Y=1425,CENTER=[472,923],BALANCE=[808,45];
+// Highlight ellipses [cx,cy,rx,ry] fitted to each dish rim on the plate art (the dishes are drawn in perspective).
+const RIM={tomato:[472,675,94,75],corn:[673,747,91,69],carrot:[743,929,88,72],lettuce:[673,1108,88,78],shrimp:[472,1181,94,81],fish:[271,1112,91,78],steak:[201,926,88,69],chicken:[271,753,97,78]};
+const CHIP_X=[78,215,351,487,625],CHIP_Y=1422,CHIP_R=58,CENTER=[472,923],BALANCE=[808,45];
 const MULT=Object.fromEntries(GAME.options.map(o=>[o.id,o.multiplier]));
 const SPARKS=[[40,300],[118,420],[60,980],[905,640],[860,1010],[150,1270],[800,1300],[420,520]];
 // Lantern flames on the plate (design px) for a soft flicker.
@@ -62,13 +65,13 @@ export default function GreedyLion({initial}){
   <Box x={517} y={30} w={116} h={116} className={`gl-timer ${phase==='betting'&&secs<=5?'urgent':''}`}>
    {phase==='betting'?<><small>{t('bet')}</small><b>{secs}s</b></>:phase==='drawing'?<b className="gl-spin">★</b>:<small>{t('result')}</small>}
   </Box>
-  <Box x={742} y={20} w={132} h={50} className="gl-balance">{g.balance===null?'—':<CountUp value={Number(g.balance)} format={v=>full(Math.round(v))}/>}</Box>
+  <RechargeTap x={742} y={20} w={132} h={50}/><Box x={742} y={20} w={132} h={50} className="gl-balance">{g.balance===null?'—':<CountUp value={Number(g.balance)} format={v=>full(Math.round(v))}/>}</Box>
   <Box x={672} y={150} w={248} h={112} className="gl-winners">
    {(state.today_winners||[]).length?state.today_winners.map((w,i)=><div key={w.external_user_id}><em className={`r${i}`}>{w.external_user_id===state.me?'★':(w.external_user_id[0]||'?').toUpperCase()}</em><span>{w.external_user_id===state.me?t('myBet'):w.external_user_id.slice(0,9)}</span><b>{short(w.payout_minor)}</b></div>)
     :<p>—</p>}
   </Box>
   {ORDER.map((id,i)=>{const [x,y]=PLATE[id];return <React.Fragment key={id}>
-   <button className={`gl-plate ${light===i||light===-2&&winners.includes(id)?'lit':''} ${winners.includes(id)?'win':''} ${phase==='result'&&winners.length&&!winners.includes(id)?'dim':''}`} style={{left:x-86,top:y-98}} onClick={()=>bet(id)} aria-label={`${id} x${MULT[id]}`}/>
+   <button className={`gl-plate ${light===i||light===-2&&winners.includes(id)?'lit':''} ${winners.includes(id)?'win':''} ${phase==='result'&&winners.length&&!winners.includes(id)?'dim':''}`} style={{left:RIM[id][0]-RIM[id][2],top:RIM[id][1]-RIM[id][3],width:RIM[id][2]*2,height:RIM[id][3]*2}} onClick={()=>bet(id)} aria-label={`${id} x${MULT[id]}`}/>
    <Box x={x-46} y={y+44} w={92} h={34} className="gl-mult">x{MULT[id]}</Box>
    {totals[id]&&<Box x={x-60} y={y-118} w={120} h={30} className="gl-total">{short(totals[id].stake_minor)}</Box>}
    {g.mine[id]&&<Box x={x+30} y={y-70} w={84} h={40} className="gl-mine">{short(g.mine[id])}</Box>}
@@ -79,7 +82,7 @@ export default function GreedyLion({initial}){
    {!ORDER.includes(round.result.outcome)&&<p className="special">{t(round.result.outcome)}</p>}
    {g.myWin>0n?<p className="won">{t('youWon')} <b><CountUp value={Number(g.myWin)} format={v=>full(Math.round(v))}/></b></p>:<p>{g.myStake>0n?t('noWin'):t('next')}</p>}
   </Box>}
-  {GAME.chips.map((c,i)=><button key={c} className={`gl-chip ${chip===c?'on':''}`} style={{left:CHIP_X[i]-62,top:CHIP_Y-62}} onClick={()=>{setChip(c);audio.play('click');}} aria-label={short(c)}/>)}
+  {GAME.chips.map((c,i)=><button key={c} className={`gl-chip ${chip===c?'on':''}`} style={{left:CHIP_X[i]-CHIP_R,top:CHIP_Y-CHIP_R,width:CHIP_R*2,height:CHIP_R*2}} onClick={()=>{setChip(c);audio.play('click');}} aria-label={short(c)}/>)}
   <button className="gl-repeat" style={{left:720,top:1384,width:204,height:84}} disabled={phase!=='betting'||!g.canRepeat} onClick={()=>{audio.play('chips');g.repeat();}} aria-label={t('repeat')}><span>{t('repeat')}</span></button>
   <Box x={36} y={1566} w={644} h={66} className="gl-results">{state.history.slice(0,10).map(h=><img key={h.seq} src={icon(h.outcome)} alt={h.outcome}/>)}</Box>
   {flies.map(f=><span key={f.id} className="cs-fly gl-flychip" style={{left:f.x-34,top:f.y-34,transform:f.go?`translate(${f.tx-f.x}px,${f.ty-f.y}px) scale(.7)`:'none',opacity:f.go?.2:1}}>{f.label}</span>)}

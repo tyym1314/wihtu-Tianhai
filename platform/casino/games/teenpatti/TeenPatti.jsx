@@ -3,6 +3,7 @@ import {t,isRtl} from '../../shared/i18n.mjs';
 import {useRound,full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
 import {Stage,Box,CountUp,PhaseBanner} from '../../shared/Stage.jsx';
+import {RechargeTap,useHostBalance} from '../../shared/recharge.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import {HistoryModal} from '../../shared/History.jsx';
 import './teenpatti.css';
@@ -39,7 +40,7 @@ export default function TeenPatti({initial}){
  const doubleBets=async()=>{audio.play('chips');for(const [o,v] of Object.entries(g.mine))if(GAME.chips.includes(String(v)))await g.bet(o,String(v));else for(const c of [...GAME.chips].reverse()){let left=v;while(left>=BigInt(c)){await g.bet(o,c);left-=BigInt(c);}}};
  return <Stage plate={img('plate')} className={`tp-${phase}`} dir={isRtl()?'rtl':'ltr'}>
   <Box x={129} y={214} w={179} h={54} className={`tp-timer ${phase==='betting'&&secs<=5?'urgent':''}`}>{phase==='betting'?`${t('bet').toUpperCase()} ${secs}s`:phase==='drawing'?t('drawing'):t('result')}</Box>
-  <Box x={688} y={32} w={170} h={46} className="tp-balance">{g.balance===null?'—':<CountUp value={Number(g.balance)} format={v=>full(Math.round(v))}/>}</Box>
+  <RechargeTap x={688} y={32} w={170} h={46}/><Box x={688} y={32} w={170} h={46} className="tp-balance">{g.balance===null?'—':<CountUp value={Number(g.balance)} format={v=>full(Math.round(v))}/>}</Box>
   <PhaseBanner round={round} phase={phase} text={{betting:t('startBet'),drawing:t('stopBet')}} onShow={p=>audio.play(p==='betting'?'shuffle':'close')}/>
   {winner&&<span className="cs-burst" style={{left:CARD_X[winner],top:CARD_Y}}/>}
   {HANDS.map((id,i)=><div key={id} className={`tp-hand ${winner===id?'win':''} ${winner&&winner!==id?'lose':''}`} style={{left:CARD_X[id],top:CARD_Y}}>

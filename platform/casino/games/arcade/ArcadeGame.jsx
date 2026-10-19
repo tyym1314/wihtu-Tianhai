@@ -4,6 +4,7 @@ import {full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
 import {useArcade} from '../../shared/useArcade.js';
 import {Stage,Box,CountUp} from '../../shared/Stage.jsx';
+import {RechargeTap,useHostBalance} from '../../shared/recharge.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import './arcade.css';
 
@@ -105,7 +106,7 @@ export default function ArcadeGame({initial}){
    :f.type==='coin'?<span key={f.k} className="cs-coin" style={{left:f.x-22,top:f.y-22,'--dx':`${f.dx}px`,'--dy':`${f.dy}px`,animationDelay:`${f.delay}ms`}}/>
    :f.type==='hammer'?<img key={f.k} className="ag-hammer" src={img('hammer')} alt="" style={{left:f.x,top:f.y}}/>
    :<span key={f.k} className="ag-boom" style={{left:f.x,top:f.y}}/>)}
-  <Box x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]} className="ag-balance">{A.balance===null?'—':<CountUp value={Number(A.balance)} format={v=>full(Math.round(v))}/>}</Box>
+  <RechargeTap x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]}/><Box x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]} className="ag-balance">{A.balance===null?'—':<CountUp value={Number(A.balance)} format={v=>full(Math.round(v))}/>}</Box>
   {L.prize&&<Box x={L.prize[0]} y={L.prize[1]} w={L.prize[2]} h={L.prize[3]} className="ag-prize"><CountUp value={Number(A.sessionWin)} format={v=>full(Math.round(v))}/></Box>}
   {L.slots&&slots.map((s,i)=><Box key={s.k} x={L.slots[i][0]-92} y={L.slots[i][1]-33} w={184} h={66} className="ag-slot"><img src={img(s.kind)} alt=""/><b>{short(s.minor)}</b></Box>)}
   {Object.entries(L.weapons).map(([w,c])=><button key={w} className={`ag-weapon ${weapon===w?'on':''}`} style={circ(c)} onClick={()=>{audio.play('click');setWeapon(w);}} aria-label={w}/>)}

@@ -28,7 +28,10 @@ for(const font of fontManifest.fonts){
 await cp(fontDirectory,path.join(stage,'fonts'),{recursive:true});
 for(const [game,relative] of [['thunder','src/style.css'],['tiger','src/tiger/style.css']]){
  const file=path.join(stage,relative);
- await writeFile(file,localizeLegacyFonts(await readFile(file,'utf8'),game));
+ // Inside an App WebView that draws under the status bar, keep the header below the host's top inset
+ // (--oasis-host-inset-top is set by the host bridge from the App's safe area).
+ const inset=game==='thunder'?'\n.game-shell{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n':'\n.tiger-game{padding-top:var(--oasis-host-inset-top,0px);box-sizing:border-box}\n';
+ await writeFile(file,localizeLegacyFonts(await readFile(file,'utf8'),game)+inset);
 }
 await cp(path.join(platform,'legacy/bridge.ts'),path.join(stage,'bridge.ts'));
 await cp(path.join(platform,'legacy/host-bridge.mjs'),path.join(stage,'host-bridge.mjs'));
@@ -84,6 +87,12 @@ thunder=thunder.replaceAll('Connecting to demo wallet…','Connecting to App wal
 thunder+=`\nimport {registerPresentationHost} from '../bridge';\nregisterPresentationHost({prepareBack:()=>{autoplay?.stop();updateUI();return{pending:busy||!!retryRequestId||!!session?.pendingRound};}});\n`;
 await cp(path.join(platform,'legacy/art/thunder-responsive.css'),path.join(stage,'src/platform-responsive.css'));
 thunder+=`\nimport './platform-responsive.css';\n`;
+// Host App top-up: not enough coins or a tap on the balance opens the App's own top-up page;
+// after it the App asks for a balance refresh.
+const mustReplace=(text,from,to,label)=>{if(!text.includes(from))throw new Error('Legacy transform anchor missing: '+label);return text.replace(from,to);};
+thunder=mustReplace(thunder,"toast(cp('noMoney'));","toast(cp('noMoney'));requestHostRecharge('insufficient');",'thunder noMoney');
+thunder=mustReplace(thunder,"import { platformConfig } from '../bridge';","import { platformConfig, requestHostRecharge, onHostBalanceRefresh } from '../bridge';",'thunder bridge import');
+thunder+="\nonHostBalanceRefresh(async()=>{try{session=await api<Session>('session');displayBalance=session.balance;updateUI();}catch{}});\ndocument.getElementById('balance')?.closest('.stat')?.addEventListener('click',()=>requestHostRecharge('user'));\n";
 await writeFile(thunderFile,thunder);
 const tigerFile=path.join(stage,'src/tiger/main.ts');let tiger=await readFile(tigerFile,'utf8');
 tiger=tiger.replace("import { TIGER_CONFIG } from './math';",`import { TIGER_CONFIG as LEGACY_TIGER_CONFIG } from './math';\nimport { platformConfig } from '../../bridge';\nconst TIGER_CONFIG = { ...LEGACY_TIGER_CONFIG, get targetRtp() { return platformConfig.targetRtp ?? LEGACY_TIGER_CONFIG.targetRtp; }, get mathVersion() { return platformConfig.version ?? platformConfig.mathVersion ?? LEGACY_TIGER_CONFIG.mathVersion; }, get symbols() { const scale=platformConfig.payoutScale ?? {numerator:1,denominator:1}; return LEGACY_TIGER_CONFIG.symbols.map(s => ({...s,payoutBps:s.payoutBps*scale.numerator/scale.denominator})); } };`);
@@ -99,6 +108,9 @@ tiger=tiger.replace('displayBalance=round.balanceBefore-round.bet;','displayBala
 tiger+=`\nimport {registerPresentationHost} from '../../bridge';\nregisterPresentationHost({prepareBack:()=>{autoplay.stop();updateUI();return{pending:busy||!!retryId||!!session?.pendingRound};}});\n`;
 await cp(path.join(platform,'legacy/art/tiger-restoration.css'),path.join(stage,'src/tiger/platform-restoration.css'));
 tiger+=`\nimport './platform-restoration.css';\n`;
+tiger=mustReplace(tiger,"toast(t('noFunds'));","toast(t('noFunds'));requestHostRecharge('insufficient');",'tiger noFunds');
+tiger=mustReplace(tiger,"import { platformConfig } from '../../bridge';","import { platformConfig, requestHostRecharge, onHostBalanceRefresh } from '../../bridge';",'tiger bridge import');
+tiger+="\nonHostBalanceRefresh(async()=>{try{session=await api<TigerSession>('session');displayBalance=session.balance;updateUI();}catch{}});\ndocument.getElementById('balance')?.closest('.wallet-cell')?.addEventListener('click',()=>requestHostRecharge('user'));\n";
 await writeFile(tigerFile,tiger);
 const translationsFile=path.join(stage,'src/ui/i18n.ts');let translations=await readFile(translationsFile,'utf8');
 translations=translations.replace("demo: 'DEMO'","demo: 'PLATFORM'").replace("demo: '试玩版'","demo: '平台游戏'").replace("demo: 'نسخة تجريبية'","demo: 'المنصة'");

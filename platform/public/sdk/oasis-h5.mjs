@@ -20,11 +20,14 @@ export class OasisHost {
   else if(data.type==='oasis.return_requested'&&this.loaded){this.emit('return_requested',{reason:data.reason==='completed'?'completed':'user',room_id:typeof data.room_id==='string'?data.room_id:undefined,status:typeof data.status==='string'?data.status:undefined,presentation_only:true});}
   else if(data.type==='oasis.progress'&&this.loaded&&Number.isFinite(data.value))this.emit('progress',{value:Math.max(0,Math.min(1,data.value))});
   else if(data.type==='oasis.shown'&&this.loaded)this.emit('shown',{});
+  else if(data.type==='oasis.recharge_requested'&&this.loaded)this.emit('recharge_requested',{reason:data.reason==='insufficient'?'insufficient':'user'});
   else if(data.type==='oasis.host_state_applied'&&this.loaded)this.emit('host_state_applied',{request_id:data.request_id});
   else if(data.type==='oasis.reauth_required'&&this.loaded&&!this.reauthorizing){this.reauthorizing=true;this.emit('reauthorizing');clearTimeout(this.timer);this.timer=setTimeout(()=>{this.reauthorizing=false;this.fail('REAUTH_TIMEOUT','The original session was not reauthorized; return to the App and reopen.');},this.timeoutMs);this.getLaunch(true).catch(e=>{clearTimeout(this.timer);this.reauthorizing=false;this.fail('REAUTH_FAILED',e.message);});}
  }
  setHostState(value){const next=hostState(value);this.state={...this.state,...next,safeArea:{...this.state.safeArea,...next.safeArea}};if(this.loaded&&!this.closed)this.target.postMessage({type:'oasis.host_state',protocol_version:1,game_id:this.gameId,bridge_nonce:this.nonce,request_id:id(),state:this.state},this.origin);}
  requestBack(){if(this.loaded&&!this.closed)this.target.postMessage({type:'oasis.back',protocol_version:1,game_id:this.gameId,bridge_nonce:this.nonce},this.origin);}
+ /** After the host's top-up (or any balance change it knows of), the game re-reads its balance. */
+ refreshBalance(){if(this.loaded&&!this.closed)this.target.postMessage({type:'oasis.balance_refresh',protocol_version:1,game_id:this.gameId,bridge_nonce:this.nonce},this.origin);}
  fail(code,message){if(!this.closed)this.emit('error',{code,message:String(message||'Launch failed').slice(0,300)});}
  destroy(){if(this.closed)return;this.closed=true;this.code='';clearTimeout(this.timer);clearInterval(this.closeTimer);window.removeEventListener('message',this.receive);document.removeEventListener('visibilitychange',this.visibility);this.frame?.remove();if(this.popup&&!this.popup.closed)this.popup.close();this.target=null;this.emit('destroyed');}
 }

@@ -1,9 +1,10 @@
 import React,{useCallback,useEffect,useRef,useState} from 'react';
-import {api,requestId,registerHostControls,requestExit} from '../../shared/client.mjs';
+import {api,requestId,registerHostControls,requestExit,requestRecharge} from '../../shared/client.mjs';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
 import {Stage,Box,CountUp,PhaseBanner} from '../../shared/Stage.jsx';
+import {RechargeTap,useHostBalance} from '../../shared/recharge.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import {HistoryModal} from '../../shared/History.jsx';
 import '../rocketstar2/rocketstar2.css';
@@ -80,7 +81,7 @@ export default function CrashGame({initial}){
   timer=setTimeout(loop,300);return()=>{stop=true;clearTimeout(timer);};
  },[refresh]);
  useEffect(()=>{let raf;const tick=()=>{setNow(serverNow());raf=requestAnimationFrame(tick);};raf=requestAnimationFrame(tick);return()=>cancelAnimationFrame(raf);},[]);
- useEffect(()=>registerHostControls({onBack:()=>requestExit()}),[]);
+ useEffect(()=>registerHostControls({onBack:()=>requestExit(),onBalanceRefresh:()=>refresh(true)}),[refresh]);
  const round=state.round,phase=phaseOf(round,now);
  useEffect(()=>{const k=round.id+phase;if(seen.current[k])return;seen.current[k]=1;if(phase==='flying')audio.play('launch');if(phase==='crashed')audio.play('boom');},[phase,round.id]);
  const secs=Math.max(0,Math.ceil((round.bet_until-now)/1000));
@@ -90,7 +91,7 @@ export default function CrashGame({initial}){
  async function placeBet(stake){
   if(phaseOf(ref.current.round,serverNow())!=='betting'){say('closed');return;}
   if(bet){say('already');return;}
-  if(balance!==null&&BigInt(balance)<BigInt(stake)){say('insufficient');return;}
+  if(balance!==null&&BigInt(balance)<BigInt(stake)){say('insufficient');requestRecharge('insufficient');return;}
   setBusy(true);audio.play('chip');if(balance!==null)setBalance(b=>String(BigInt(b)-BigInt(stake)));
   try{const placed=await api('/api/casino/bets',{request_id:requestId(),round_id:round.id,option_id:'a',stake_minor:stake,...(autoOn?{auto_x100:AUTO[autoIdx]}:{})});
    setState(s=>s.round.id===round.id?{...s,my_bets:[...s.my_bets,placed]}:s);}
@@ -132,7 +133,7 @@ export default function CrashGame({initial}){
   {L.best&&<Box x={L.best[0]} y={L.best[1]} w={L.best[2]} h={L.best[3]} className="cg-best">{best?`${best.toFixed(2)}x`:'—'}</Box>}
   {L.players&&<Box x={L.players[0]} y={L.players[1]} w={L.players[2]} h={L.players[3]} className="cg-players">
    {(state.cashouts||[]).slice(-4).reverse().map((c,i)=><div key={c.external_user_id+i}><em>{c.external_user_id===state.me?'★':(c.external_user_id[0]||'?').toUpperCase()}</em><span><b>{c.external_user_id===state.me?t('myBet'):c.external_user_id.slice(0,8)}</b><small>{fx(c.cashout_x100)}x · win {short(BigInt(c.stake_minor)*BigInt(c.cashout_x100)/100n)}</small></span></div>)}</Box>}
-  <Box x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]} className="wg-balance cg-bal">{balance===null?'—':<CountUp value={Number(balance)} format={v=>full(Math.round(v))}/>}</Box>
+  <RechargeTap x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]}/><Box x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]} className="wg-balance cg-bal">{balance===null?'—':<CountUp value={Number(balance)} format={v=>full(Math.round(v))}/>}</Box>
   {GAME.chips.map((c,i)=>{const C=L.chips,style=C.r?circ([C.xs[i],C.y,C.r]):box([C.xs[i]-C.w/2,C.y-C.h/2,C.w,C.h]);
    return <button key={c} className={`cg-chip ${bet&&bet.stake_minor===c?'on':''}`} style={style} disabled={busy||phase!=='betting'||!!bet} onClick={()=>placeBet(c)} aria-label={short(c)}/>;})}
   <button className={`cg-take ${canCash?'cash':bet?.cashout_x100?'done':''}`} style={box(L.take)} disabled={!canCash} onClick={cash}>{takeText}</button>

@@ -3,6 +3,7 @@ import {t,isRtl} from '../../shared/i18n.mjs';
 import {useRound,full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
 import {Stage,Box,CountUp,PhaseBanner} from '../../shared/Stage.jsx';
+import {RechargeTap,useHostBalance} from '../../shared/recharge.jsx';
 import {HistoryModal} from '../../shared/History.jsx';
 import {wheelRules,optionName} from '../../shared/rules.mjs';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
@@ -66,7 +67,7 @@ export default function WheelGame({initial}){
    {L.timerStyle==='led'?<b>{phase==='betting'?String(secs).padStart(2,'0'):'--'}</b>:L.timerStyle==='clock'?<b>{`00:${String(phase==='betting'?secs:0).padStart(2,'0')}`}</b>:L.timerStyle==='plain'?(phase==='betting'?<b>{secs}s</b>:phase==='drawing'?<b className="wg-spin">★</b>:<small>{t('result')}</small>)
     :phase==='betting'?<><small>{t('bet')}</small><b>{secs}s</b></>:phase==='drawing'?<b className="wg-spin">★</b>:<small>{t('result')}</small>}
   </Box>
-  <Box x={bx} y={by} w={bw} h={bh} className="wg-balance">{g.balance===null?'—':<CountUp value={Number(g.balance)} format={v=>full(Math.round(v))}/>}</Box>
+  <RechargeTap x={bx} y={by} w={bw} h={bh}/><Box x={bx} y={by} w={bw} h={bh} className="wg-balance">{g.balance===null?'—':<CountUp value={Number(g.balance)} format={v=>full(Math.round(v))}/>}</Box>
   {L.winners&&<Box x={L.winners[0]} y={L.winners[1]} w={L.winners[2]} h={L.winners[3]} className="wg-winners">
    {(state.today_winners||[]).length?state.today_winners.slice(0,L.winners[4]).map((w,i)=><div key={w.external_user_id}><em className={`r${i}`}>{w.external_user_id===state.me?'★':(w.external_user_id[0]||'?').toUpperCase()}</em><span>{w.external_user_id===state.me?t('myBet'):w.external_user_id.slice(0,9)}</span><b>{short(w.payout_minor)}</b></div>):<p>—</p>}
   </Box>}

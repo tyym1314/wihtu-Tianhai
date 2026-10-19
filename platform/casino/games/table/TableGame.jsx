@@ -3,6 +3,7 @@ import {t,isRtl} from '../../shared/i18n.mjs';
 import {useRound,full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
 import {Stage,Box,CountUp,PhaseBanner} from '../../shared/Stage.jsx';
+import {RechargeTap,useHostBalance} from '../../shared/recharge.jsx';
 import {HistoryModal} from '../../shared/History.jsx';
 import {tableRules,tableOptionName} from './rules.mjs';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
@@ -103,7 +104,7 @@ export default function TableGame({initial}){
   </Box>
   {L.newBox&&state.history[0]&&<Box x={L.newBox[0]} y={L.newBox[1]} w={L.newBox[2]} h={L.newBox[3]} className="tg-new">
    {state.history[0].outcome[0]==='n'?<span className={`tg-num ${numColor(Number(state.history[0].outcome.slice(1)))}`}>{state.history[0].outcome.slice(1)}</span>:dice(state.history[0].outcome).map((v,i)=><Die key={i} v={v} size={L.newBox[3]*.62}/>)}</Box>}
-  <Box x={bx} y={by} w={bw} h={bh} className="wg-balance">{g.balance===null?'—':<CountUp value={Number(g.balance)} format={v=>full(Math.round(v))}/>}</Box>
+  <RechargeTap x={bx} y={by} w={bw} h={bh}/><Box x={bx} y={by} w={bw} h={bh} className="wg-balance">{g.balance===null?'—':<CountUp value={Number(g.balance)} format={v=>full(Math.round(v))}/>}</Box>
   {GAME.options.map(o=>{const [x,y,w,h]=L.cells[o.id];return <React.Fragment key={o.id}>
    <button className={`tg-cell ${winners.includes(o.id)?'win':''} ${phase==='result'&&winners.length&&!winners.includes(o.id)?'dim':''}`} style={{left:x,top:y,width:w,height:h}} onClick={()=>bet(o.id)} aria-label={`${label(o.id)} x${o.multiplier}`}/>
    {totals[o.id]&&<Box x={x+w/2-60+(L.totalAt?.[0]||0)} y={y+(L.totalAt?.[1]??4)} w={120} h={30} className="wg-total">{short(totals[o.id].stake_minor)}</Box>}

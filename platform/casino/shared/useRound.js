@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
-import {api,requestId,registerHostControls,requestExit} from './client.mjs';
+import {api,requestId,registerHostControls,requestExit,requestRecharge} from './client.mjs';
 
 const ERRORS={INSUFFICIENT_FUNDS:'insufficient',BETTING_CLOSED:'closed',ROUND_STAKE_LIMIT:'limit',TOO_MANY_OPTIONS:'tooMany'};
 const live=b=>!['REJECTED','VOIDED','VOIDING'].includes(b.status);
@@ -27,7 +27,7 @@ export function useRound(initial,game){
   timer=setTimeout(loop,700);return()=>{stop=true;clearTimeout(timer);};
  },[refresh,serverNow]);
  useEffect(()=>{let raf;const tick=()=>{setNow(serverNow());raf=requestAnimationFrame(tick);};raf=requestAnimationFrame(tick);return()=>cancelAnimationFrame(raf);},[serverNow]);
- useEffect(()=>registerHostControls({onBack:()=>requestExit()}),[]);
+ useEffect(()=>registerHostControls({onBack:()=>requestExit(),onBalanceRefresh:()=>refresh(true)}),[refresh]);
 
  const round=state.round,phase=phaseAt(round,now);
  const mine={};for(const b of state.my_bets)if(live(b))mine[b.option_id]=(mine[b.option_id]||0n)+BigInt(b.stake_minor);
@@ -37,7 +37,7 @@ export function useRound(initial,game){
   const r=ref.current.round;
   if(phaseAt(r,serverNow())!=='betting'){say('closed');return;}
   if(!mine[option]&&Object.keys(mine).length>=game.maxOptionsPerRound){say('tooMany');return;}
-  if(balance!==null&&BigInt(balance)<BigInt(stake)){say('insufficient');return;}
+  if(balance!==null&&BigInt(balance)<BigInt(stake)){say('insufficient');requestRecharge('insufficient');return;}
   setPending(p=>({...p,[option]:(p[option]||0n)+BigInt(stake)}));if(balance!==null)setBalance(b=>String(BigInt(b)-BigInt(stake)));
   try{const placed=await api('/api/casino/bets',{request_id:requestId(),round_id:r.id,option_id:option,stake_minor:stake});
    setState(s=>{if(s.round.id!==r.id)return s;const n={...s,my_bets:[...s.my_bets,placed]};ref.current=n;return n;});}

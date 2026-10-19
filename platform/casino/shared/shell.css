@@ -14,7 +14,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cs-gold-btn{display:block;margin:14px auto 0;min-width:140px;padding:10px 22px;border-radius:999px;background:linear-gradient(#ffe39a,#e2a93b 55%,#b9771f);color:#4a2508;font-weight:800;box-shadow:0 4px 0 #6d3b0c,0 8px 16px #0007}
 .cs-stage-root{position:fixed;inset:0;overflow:hidden;background:#000}
 .cs-stage-fill{position:absolute;inset:-40px;background:center/cover no-repeat;filter:blur(22px) brightness(.55);transform:scale(1.1)}
-.cs-stage{position:absolute;left:50%;top:50%;transform-origin:50% 50%;background:center/100% 100% no-repeat;overflow:hidden;box-shadow:0 0 60px #000}
+.cs-stage{position:absolute;left:50%;top:50%;transform-origin:50% 50%;background:center/100% 100% no-repeat;overflow:hidden}
+.cs-stage-ext{position:absolute;left:50%;transform-origin:50% 50%;background:center/100% 100% no-repeat;pointer-events:none}
 .cs-icon-btn{width:64px;height:64px;border-radius:50%;background:radial-gradient(#3a230f,#140a04);border:3px solid #e8b65a;color:#ffe2a0;font-size:34px;font-weight:900;display:grid;place-items:center;box-shadow:0 4px 10px #000a}
 .cs-menu{position:absolute;display:flex;flex-direction:column;gap:14px;z-index:30}
 .cs-fly{position:absolute;z-index:40;pointer-events:none;transition:transform .45s cubic-bezier(.3,.8,.4,1),opacity .45s}
@@ -43,3 +44,4 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cs-history li div{display:flex;justify-content:space-between;gap:10px}
 .cs-history small{color:#b99a6a;font-size:11px}.cs-history em{font-style:normal;color:#ffd77a;white-space:nowrap}
 .cs-history b{font-size:14px}.cs-history b.up{color:#7dffb0}.cs-history b.down{color:#ff9fb0}
+.cs-recharge-tap{z-index:6;cursor:pointer;-webkit-tap-highlight-color:transparent}

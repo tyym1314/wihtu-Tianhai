@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
-import {api,requestId,registerHostControls,requestExit} from './client.mjs';
+import {api,requestId,registerHostControls,requestExit,requestRecharge} from './client.mjs';
 
 const AMMO=50;
 const ERR={INSUFFICIENT_FUNDS:'insufficient',OUT_OF_AMMO:'failed',ARCADE_CLOSED:'failed'};
@@ -21,7 +21,7 @@ export function useArcade(initial,game){
  // A session left open by a previous visit is settled first (its shot sequence lives on the server).
  useEffect(()=>{if(initial.open)queue.current=queue.current.then(close);},[]);
  useEffect(()=>{const hide=()=>{if(document.visibilityState==='hidden')close();};document.addEventListener('visibilitychange',hide);return()=>document.removeEventListener('visibilitychange',hide);},[close]);
- useEffect(()=>registerHostControls({onBack:()=>{close().finally(()=>requestExit());}}),[close]);
+ useEffect(()=>registerHostControls({onBack:()=>{close().finally(()=>requestExit());},onBalanceRefresh:()=>{balanceNow();}}),[close]);
 
  async function ensureOpen(cost){
   let a=ref.current;
@@ -29,7 +29,7 @@ export function useArcade(initial,game){
   if(a)return a;
   if(wallet!==null&&BigInt(wallet)<BigInt(bet)*BigInt(AMMO)){
    // Not enough for a full magazine: buy what the wallet allows.
-   const n=wallet===null?AMMO:Number(BigInt(wallet)/BigInt(bet));if(n<cost)throw Object.assign(new Error('funds'),{code:'INSUFFICIENT_FUNDS'});
+   const n=wallet===null?AMMO:Number(BigInt(wallet)/BigInt(bet));if(n<cost){requestRecharge('insufficient');throw Object.assign(new Error('funds'),{code:'INSUFFICIENT_FUNDS'});}
    a=await api('/api/casino/arcade/open',{request_id:requestId(),bet_minor:bet,shots:n});
   }else a=await api('/api/casino/arcade/open',{request_id:requestId(),bet_minor:bet,shots:AMMO});
   seq.current=0;a={...a,used:a.used||0,win_minor:a.win_minor||'0'};sync(a);await balanceNow();return a;

@@ -4,6 +4,7 @@ import {t,isRtl} from '../../shared/i18n.mjs';
 import {full,short} from '../../shared/useRound.js';
 import {useAudio} from '../../shared/audio.mjs';
 import {Stage,Box,CountUp,PhaseBanner} from '../../shared/Stage.jsx';
+import {RechargeTap,useHostBalance} from '../../shared/recharge.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import {HistoryModal} from '../../shared/History.jsx';
 import './rocketstar2.css';
@@ -90,7 +91,7 @@ export default function RocketStar2({initial}){
   timer=setTimeout(loop,300);return()=>{stop=true;clearTimeout(timer);};
  },[refresh]);
  useEffect(()=>{let raf;const tick=()=>{setNow(serverNow());raf=requestAnimationFrame(tick);};raf=requestAnimationFrame(tick);return()=>cancelAnimationFrame(raf);},[]);
- useEffect(()=>registerHostControls({onBack:()=>requestExit()}),[]);
+ useEffect(()=>registerHostControls({onBack:()=>requestExit(),onBalanceRefresh:()=>refresh(true)}),[refresh]);
  const round=state.round,phase=phaseOf(round,now);
  // Phase sounds: launch on lift-off, explosion on crash; ticks in the last three seconds.
  useEffect(()=>{const k=round.id+phase;if(seen.current[k])return;seen.current[k]=1;if(phase==='flying')audio.play('launch');if(phase==='crashed')audio.play('boom');},[phase,round.id]);
@@ -123,7 +124,7 @@ export default function RocketStar2({initial}){
     :<><b key={phase==='flying'?tier:'c'} className={`rs-mult ${phase} ${tier}`}>{fx(mult)}x</b>{phase==='crashed'&&<small>{t('crashedAt',[fx(mult)])}</small>}</>}
   </Box>
   {state.history.slice(0,5).map((h,i)=>{const x=Math.round(Number(h.outcome)*100);return <Box key={h.seq} x={HIST_X[i]-56} y={186} w={112} h={44} className={`rs-hist ${tone(x)}`}>{h.outcome}x</Box>;})}
-  <Box x={712} y={38} w={150} h={50} className="rs-balance">{balance===null?'—':<CountUp value={Number(balance)} format={v=>full(Math.round(v))}/>}</Box>
+  <RechargeTap x={712} y={38} w={150} h={50}/><Box x={712} y={38} w={150} h={50} className="rs-balance">{balance===null?'—':<CountUp value={Number(balance)} format={v=>full(Math.round(v))}/>}</Box>
   <Box x={26} y={300} w={300} h={400} className="rs-cashouts">{(state.cashouts||[]).slice(-6).map((c,i)=><span key={c.external_user_id+i}>{c.external_user_id===state.me?'★':c.external_user_id.slice(0,6)} <b>{fx(c.cashout_x100)}x</b></span>)}</Box>
   {[0,1].map(i=><Panel key={i} index={i} state={state} phase={phase} mult={mult} balance={balance} onBet={onBet} onCash={onCash} audio={audio}/>)}
   <button className="rs-menu" style={{left:17,top:19,width:80,height:80}} onClick={()=>setMenu(m=>!m)} aria-label="menu"/>
