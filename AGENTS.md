@@ -76,6 +76,7 @@ npm run build:release            # 构建全部前端 + release-build-manifest.j
 2. 服务器新建版本目录：`cp -a /opt/oasis/releases/<当前> /opt/oasis/releases/<YYYYMMDD-NN>`，再从本地 rsync `platform/{server,shared}`（--delete）以及 `legacy dist public specs scripts deploy examples casino` 与根 `src/`；`arena` 只同步 `dist/` 和代码文件（`--delete --delete-excluded --include 'dist/***' --include '*/' --include '*.mjs' --include '*.js' --include '*.jsx' --include '*.json' --exclude '*' --prune-empty-dirs`，原始美术约 650MB 不上线，否则磁盘告警）；部署后删除自己更早的版本，只保留上一版回滚；`chmod -R u=rwX,go=rX`。
 3. 切换：改 `/etc/systemd/system/oasis-production-api.service` 的 `WorkingDirectory`，`ln -sfn` 更新 `/opt/oasis/production-current`，`systemctl daemon-reload && systemctl restart oasis-production-api`。
 4. 验证：`curl https://game.tianyahuyu.com/health`；`systemctl start oasis-production-instance-monitor` 后查看 `/opt/oasis/production-instance-private/monitor/status.json` 全部 ok。
+- `/opt/oasis/current` 是指向 `production-current` 的软链（`oasis-certificate.timer` 的续期脚本从这里运行）。清理旧版本时只保留最近 5 个，且不能删掉任何软链指向的目录。
 5. 回滚：WorkingDirectory/软链指回上一版本目录并重启。
 
 - 私有配置：`/opt/oasis/production-instance-private/runtime.env`（含 `OASIS_PUBLIC_ORIGIN`、`OASIS_PARTNER_ADMISSION=1`）。数据库容器 `oasis-production-postgres`（127.0.0.1:18893）。
