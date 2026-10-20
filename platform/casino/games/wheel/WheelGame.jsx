@@ -94,7 +94,7 @@ export default function WheelGame({initial}){
   {phase==='result'&&result&&(g.myWin>0n||g.myStake>0n)&&<Box x={bnx} y={bny} w={bnw} h={110} className="wg-banner">
    {g.myWin>0n?<p className="won">{t('youWon')} <b><CountUp value={Number(g.myWin)} format={v=>full(Math.round(v))}/></b></p>:<p>{t('noWin')}</p>}
   </Box>}
-  {GAME.chips.map((c,i)=><button key={c} className={`wg-chip ${chip===c?'on':''}`} style={{left:L.chips.xs[i]-L.chips.r,top:L.chips.y-L.chips.r,width:2*L.chips.r,height:2*L.chips.r}} onClick={()=>{setChip(c);audio.play('click');}} aria-label={short(c)}/>)}
+  {GAME.chips.map((c,i)=><button key={c} className={`wg-chip ${chip===c?'on':''}`} style={{left:L.chips.xs[i]-L.chips.r,top:L.chips.y-(L.chips.ry||L.chips.r),width:2*L.chips.r,height:2*(L.chips.ry||L.chips.r)}} onClick={()=>{setChip(c);audio.play('click');}} aria-label={short(c)}/>)}
   {L.repeat&&<button className="wg-repeat" style={{left:L.repeat[0],top:L.repeat[1],width:L.repeat[2],height:L.repeat[3]}} disabled={phase!=='betting'||!g.canRepeat} onClick={()=>{audio.play('chips');g.repeat();}} aria-label={t('repeat')}/>}
   {L.rulesBtn&&<button className="wg-hot" style={rect(L.rulesBtn)} onClick={()=>{audio.play('click');setRules(true);}} aria-label={t('rules')}/>}
   {L.backBtn&&<button className="wg-hot" style={rect(L.backBtn)} onClick={g.exit} aria-label="exit"/>}
