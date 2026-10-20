@@ -58,6 +58,14 @@
 - 进程：生产用 `server/cluster.mjs`（systemd ExecStart），runtime.env 里 `OASIS_WORKERS=3 OASIS_LEADER_HTTP=0`（1 个后台 leader 跑迁移/开奖/恢复，2 个 HTTP 进程），连接预算 `OASIS_DB_POOL_MAX=12 OASIS_WALLET_POOL_MAX=8 OASIS_DB_LOCK_POOL_MAX=5`（3×37≈111，生产 PG `max_connections=128`），`OASIS_CASINO_SETTLE_CONCURRENCY=6`。加机器时按核数加 workers 并同步调大 PG 连接数。
 - 容量（2026-10-18）：优化前单 App 约 150 人；优化后不再有单 App 上限，只受机器限制。现有生产机（4 核共享、PG 限 2 核/1G）估算约 550–600 名高强度在玩玩家稳定（峰值约 850）；本机 14 核测 1000 人 p95 旋转 0.25s / 下注 0.34s，2000 人零错误。
 
+## 语音房半屏、下注档位、返还率（2026-10-20）
+
+- 语音房面板（宽:高 0.8，WithU 在入口地址带 `aspectRatio=0.8`）：`casino/shared/half.mjs`。`HALF_BANDS` 的游戏去掉装饰横条后拼接底图，叠加元素按去掉的高度上移（展开的菜单按顶部定位，不跳动）；`HALF_WIDE` 的 13 款按原比例缩放，左右用生图延展的 `plate-wide.webp`（1338×1672，中间是原底图）。面板里任何游戏都铺满，无空边。
+- 下注档位在 `shared/casino-games.mjs` 的 `TABLE_BETS / CRASH_BETS / SLOT_BETS / ARCADE_BETS`。底图上印着筹码的 20 款用 `.local/chips/build.py` 重排（抹掉旧筹码、复用筹码图案、数字由 `casino/shared/ChipRow.jsx` 显示，位置在 `casino/shared/chip-rows.json`）。
+- 返还率档位（应用级 96–99）：`server/casino/rtp.mjs`。老虎机按 payScale 比例缩放，爆点/街机直接用档位，Greedy 系列靠特殊结果概率只能 98/99，FruitParty/FootballLeague/GloryCup 缩放奖励权重；其余固定。改动数学参数会产生新版本，旧版本要留在 `LEGACY_*` 里供已开局结算（雷霆/虎虎 v1、街机旧档位、5 款老虎机旧校准）。
+- 加载页的游戏名/配色/图标由 `scripts/launch-meta.mjs` 内嵌进 `public/launch/index.html`（首帧即最终样子），新增游戏后要重跑。
+- 部署只同步改动目录时，可直接 rsync 到当前版本目录后重启；改了服务端数学或依赖时新建版本目录。
+
 ## 本地开发与验证
 
 ```sh
