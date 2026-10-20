@@ -1,3 +1,4 @@
+import {ChipRow,chipAt} from '../../shared/ChipRow.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {useRound,full,short} from '../../shared/useRound.js';
@@ -81,7 +82,7 @@ export default function TableGame({initial}){
  function bet(o){
   if(phase!=='betting')return;audio.play('chip');
   const i=GAME.chips.indexOf(chip),[x,y,w,h]=L.cells[o];
-  const f={id:Math.random(),x:L.chips.xs[i],y:L.chips.y,tx:x+w/2,ty:y+h/2,label:short(chip)};
+  const [cx,cy]=chipAt(id,i)||[L.chips.xs[i],L.chips.y],f={id:Math.random(),x:cx,y:cy,tx:x+w/2,ty:y+h/2,label:short(chip)};
   setFlies(v=>[...v,f]);requestAnimationFrame(()=>requestAnimationFrame(()=>setFlies(v=>v.map(z=>z.id===f.id?{...z,go:true}:z))));
   setTimeout(()=>setFlies(v=>v.filter(z=>z.id!==f.id)),500);g.bet(o,chip);
  }
@@ -113,7 +114,7 @@ export default function TableGame({initial}){
   {phase==='result'&&result&&(g.myWin>0n||g.myStake>0n)&&<Box x={bnx} y={bny} w={bnw} h={110} className="wg-banner">
    {g.myWin>0n?<p className="won">{t('youWon')} <b><CountUp value={Number(g.myWin)} format={v=>full(Math.round(v))}/></b></p>:<p>{t('noWin')}</p>}
   </Box>}
-  {GAME.chips.map((c,i)=><button key={c} className={`wg-chip ${chip===c?'on':''}`} style={{left:L.chips.xs[i]-L.chips.r,top:L.chips.y-L.chips.r,width:2*L.chips.r,height:2*L.chips.r}} onClick={()=>{setChip(c);audio.play('click');}} aria-label={short(c)}/>)}
+  <ChipRow id={id} chips={GAME.chips} isOn={c=>chip===c} onPick={c=>{setChip(c);audio.play('click');}}/>
   <button className="wg-repeat" style={{left:L.repeat[0],top:L.repeat[1],width:L.repeat[2],height:L.repeat[3]}} disabled={phase!=='betting'||!g.canRepeat} onClick={()=>{audio.play('chips');g.repeat();}} aria-label={t('repeat')}/>
   {L.rulesBtn&&<button className="wg-hot" style={{left:L.rulesBtn[0]-L.rulesBtn[2],top:L.rulesBtn[1]-L.rulesBtn[2],width:2*L.rulesBtn[2],height:2*L.rulesBtn[2],borderRadius:'50%'}} onClick={()=>{audio.play('click');setRules(true);}} aria-label={t('rules')}/>}
   {L.backBtn&&<button className="wg-hot" style={{left:L.backBtn[0]-L.backBtn[2],top:L.backBtn[1]-L.backBtn[2],width:2*L.backBtn[2],height:2*L.backBtn[2],borderRadius:'50%'}} onClick={g.exit} aria-label="exit"/>}

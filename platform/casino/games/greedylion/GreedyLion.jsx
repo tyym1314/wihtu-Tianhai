@@ -1,3 +1,4 @@
+import {ChipRow,chipAt} from '../../shared/ChipRow.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {useRound,full,short} from '../../shared/useRound.js';
@@ -51,7 +52,7 @@ export default function GreedyLion({initial}){
 
  function bet(id){
   if(phase!=='betting')return;audio.play('chip');
-  const i=GAME.chips.indexOf(chip),[tx,ty]=PLATE[id],f={id:Math.random(),x:CHIP_X[i],y:CHIP_Y,tx,ty,label:short(chip)};
+  const i=GAME.chips.indexOf(chip),[tx,ty]=PLATE[id],[cx,cy]=chipAt('greedylion',i),f={id:Math.random(),x:cx,y:cy,tx,ty,label:short(chip)};
   setFlies(v=>[...v,f]);requestAnimationFrame(()=>requestAnimationFrame(()=>setFlies(v=>v.map(x=>x.id===f.id?{...x,go:true}:x))));
   setTimeout(()=>setFlies(v=>v.filter(x=>x.id!==f.id)),500);g.bet(id,chip);
  }
@@ -82,7 +83,7 @@ export default function GreedyLion({initial}){
    {!ORDER.includes(round.result.outcome)&&<p className="special">{t(round.result.outcome)}</p>}
    {g.myWin>0n?<p className="won">{t('youWon')} <b><CountUp value={Number(g.myWin)} format={v=>full(Math.round(v))}/></b></p>:<p>{g.myStake>0n?t('noWin'):t('next')}</p>}
   </Box>}
-  {GAME.chips.map((c,i)=><button key={c} className={`gl-chip ${chip===c?'on':''}`} style={{left:CHIP_X[i]-CHIP_R,top:CHIP_Y-CHIP_R,width:CHIP_R*2,height:CHIP_R*2}} onClick={()=>{setChip(c);audio.play('click');}} aria-label={short(c)}/>)}
+  <ChipRow id="greedylion" chips={GAME.chips} isOn={c=>chip===c} onPick={c=>{setChip(c);audio.play('click');}}/>
   <button className="gl-repeat" style={{left:720,top:1384,width:204,height:84}} disabled={phase!=='betting'||!g.canRepeat} onClick={()=>{audio.play('chips');g.repeat();}} aria-label={t('repeat')}><span>{t('repeat')}</span></button>
   <Box x={36} y={1566} w={644} h={66} className="gl-results">{state.history.slice(0,10).map(h=><img key={h.seq} src={icon(h.outcome)} alt={h.outcome}/>)}</Box>
   {flies.map(f=><span key={f.id} className="cs-fly gl-flychip" style={{left:f.x-34,top:f.y-34,transform:f.go?`translate(${f.tx-f.x}px,${f.ty-f.y}px) scale(.7)`:'none',opacity:f.go?.2:1}}>{f.label}</span>)}

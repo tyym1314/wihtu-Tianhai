@@ -9,6 +9,7 @@ import {wheelRules,optionName} from '../../shared/rules.mjs';
 import {RIMS,CHIP_FIX} from './rims.mjs';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import {LAYOUTS} from './layouts.mjs';
+import {ChipRow,chipAt} from '../../shared/ChipRow.jsx';
 import './wheel.css';
 
 const SPARKS=[[60,320],[880,420],[90,1040],[860,1100],[460,250],[300,1300],[700,1300]];
@@ -52,7 +53,7 @@ export default function WheelGame({initial}){
  function bet(o){
   if(phase!=='betting'||!MULT[o])return;audio.play('chip');
   const i=GAME.chips.indexOf(chip),target=L.items[o]||[L.groups[o][0]+L.groups[o][2]/2,L.groups[o][1]+L.groups[o][3]/2];
-  const f={id:Math.random(),x:L.chips.xs[i],y:L.chips.y,tx:target[0],ty:target[1],label:short(chip)};
+  const [cx,cy]=chipAt(id,i)||[L.chips.xs[i],L.chips.y],f={id:Math.random(),x:cx,y:cy,tx:target[0],ty:target[1],label:short(chip)};
   setFlies(v=>[...v,f]);requestAnimationFrame(()=>requestAnimationFrame(()=>setFlies(v=>v.map(x=>x.id===f.id?{...x,go:true}:x))));
   setTimeout(()=>setFlies(v=>v.filter(x=>x.id!==f.id)),500);g.bet(o,chip);
  }
@@ -94,7 +95,7 @@ export default function WheelGame({initial}){
   {phase==='result'&&result&&(g.myWin>0n||g.myStake>0n)&&<Box x={bnx} y={bny} w={bnw} h={110} className="wg-banner">
    {g.myWin>0n?<p className="won">{t('youWon')} <b><CountUp value={Number(g.myWin)} format={v=>full(Math.round(v))}/></b></p>:<p>{t('noWin')}</p>}
   </Box>}
-  {GAME.chips.map((c,i)=><button key={c} className={`wg-chip ${chip===c?'on':''}`} style={{left:L.chips.xs[i]-L.chips.r,top:L.chips.y-(L.chips.ry||L.chips.r),width:2*L.chips.r,height:2*(L.chips.ry||L.chips.r)}} onClick={()=>{setChip(c);audio.play('click');}} aria-label={short(c)}/>)}
+  <ChipRow id={id} chips={GAME.chips} isOn={c=>chip===c} onPick={c=>{setChip(c);audio.play('click');}}/>
   {L.repeat&&<button className="wg-repeat" style={{left:L.repeat[0],top:L.repeat[1],width:L.repeat[2],height:L.repeat[3]}} disabled={phase!=='betting'||!g.canRepeat} onClick={()=>{audio.play('chips');g.repeat();}} aria-label={t('repeat')}/>}
   {L.rulesBtn&&<button className="wg-hot" style={rect(L.rulesBtn)} onClick={()=>{audio.play('click');setRules(true);}} aria-label={t('rules')}/>}
   {L.backBtn&&<button className="wg-hot" style={rect(L.backBtn)} onClick={g.exit} aria-label="exit"/>}

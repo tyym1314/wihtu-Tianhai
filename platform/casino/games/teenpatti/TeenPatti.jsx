@@ -1,3 +1,4 @@
+import {ChipRow,chipAt} from '../../shared/ChipRow.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {useRound,full,short} from '../../shared/useRound.js';
@@ -48,12 +49,12 @@ export default function TeenPatti({initial}){
    {result&&shown(i)&&<span className="tp-cat">{t(result.categories[id])}</span>}
    {winner===id&&<span className="tp-ribbon">{t('winner')} ×{MULT}</span>}
   </div>)}
-  {HANDS.map(id=><button key={id} className={`tp-zone ${winner===id?'win':''}`} style={{left:ZONE_X[id],top:689,width:ZONE_W,height:381}} onClick={()=>{if(phase!=='betting')return;audio.play('chip');const i=GAME.chips.indexOf(chip),f={id:Math.random(),x:CHIP_X[i],y:CHIP_Y,tx:ZONE_X[id]+ZONE_W/2,ty:960,label:short(chip)};setFlies(v=>[...v,f]);requestAnimationFrame(()=>requestAnimationFrame(()=>setFlies(v=>v.map(x=>x.id===f.id?{...x,go:true}:x))));setTimeout(()=>setFlies(v=>v.filter(x=>x.id!==f.id)),500);g.bet(id,chip);}} aria-label={LABEL[id]}>
+  {HANDS.map(id=><button key={id} className={`tp-zone ${winner===id?'win':''}`} style={{left:ZONE_X[id],top:689,width:ZONE_W,height:381}} onClick={()=>{if(phase!=='betting')return;audio.play('chip');const i=GAME.chips.indexOf(chip),f={id:Math.random(),x:chipAt('teenpatti',i)[0],y:chipAt('teenpatti',i)[1],tx:ZONE_X[id]+ZONE_W/2,ty:960,label:short(chip)};setFlies(v=>[...v,f]);requestAnimationFrame(()=>requestAnimationFrame(()=>setFlies(v=>v.map(x=>x.id===f.id?{...x,go:true}:x))));setTimeout(()=>setFlies(v=>v.filter(x=>x.id!==f.id)),500);g.bet(id,chip);}} aria-label={LABEL[id]}>
    <span className="tp-total">{full(totals[id]?.stake_minor||0)}</span>
    <span className="tp-players">{t('players',[totals[id]?.players||0])}</span>
    {g.mine[id]?<span className="tp-mine"><i/>{short(g.mine[id])}</span>:null}
   </button>)}
-  {GAME.chips.map((c,i)=><button key={c} className={`tp-chip ${chip===c?'on':''}`} style={{left:CHIP_X[i]-84,top:CHIP_Y-84}} onClick={()=>{setChip(c);audio.play('click');}} aria-label={short(c)}/>)}
+  <ChipRow id="teenpatti" chips={GAME.chips} isOn={c=>chip===c} onPick={c=>{setChip(c);audio.play('click');}}/>
   <button className="tp-btn" style={{left:37,top:1267,width:418,height:117}} disabled={phase!=='betting'||!g.canRepeat} onClick={()=>{audio.play('chips');g.repeat();}} aria-label={t('repeat')}/>
   <button className="tp-btn" style={{left:486,top:1267,width:418,height:117}} disabled={phase!=='betting'||!g.myStake} onClick={doubleBets} aria-label={t('double')}/>
   <Box x={50} y={1466} w={724} h={120} className="tp-road">{state.history.slice(0,24).reverse().map(h=><i key={h.seq} className={`d-${h.outcome}`}>{LABEL[h.outcome]}</i>)}</Box>

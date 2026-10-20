@@ -47,3 +47,10 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cs-recharge-tap{z-index:6;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .wg-hot{position:absolute;background:none;border:0;padding:0;-webkit-tap-highlight-color:transparent}
 .wg-balance{display:flex;align-items:center;justify-content:center;font:900 30px Georgia,serif;color:#fff3d0;text-shadow:0 2px 0 #3a1a00;pointer-events:none}
+.cs-chip{position:absolute;border:0;padding:0;background:center/100% 100% no-repeat;display:flex;align-items:center;justify-content:center;color:#fff;font-family:Georgia,serif;font-weight:900;line-height:1;text-shadow:0 2px 0 #000,0 0 6px #000;transition:transform .15s;-webkit-tap-highlight-color:transparent}
+.cs-chip span{pointer-events:none;letter-spacing:-.02em}
+.cs-chip::after{content:'';position:absolute;inset:var(--pad);border-radius:50%;pointer-events:none}
+.cs-chip.rect::after{border-radius:16px}
+.cs-chip.on{transform:translateY(-6px)}
+.cs-chip.on::after{box-shadow:inset 0 0 0 4px #ffd84a,0 0 0 2px #ffd84a,0 0 22px 6px #ffd34d99}
+.cs-chip:disabled{filter:brightness(.7)}

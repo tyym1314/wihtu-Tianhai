@@ -9,7 +9,7 @@ export const MATH_VERSION = 'thunder-0.1.0';
 export const MAX_CASCADES = 24;
 export const MAX_MULTIPLIER = 100;
 export const MAX_WIN_MULTIPLE = 1000;
-export const MIN_BET = 1000;
+export const MIN_BET = 500;
 export const MAX_BET = 100000;
 /** A fixed, public paytable scale calibrated through the simulation script. */
 export const PAYTABLE_SCALE = 2.176;
@@ -93,7 +93,7 @@ export function settleMultiplier(baseWin: number, collectedMultiplier: number, i
 
 export function generateRound(input: RoundInput, random: RandomSource = secureRandomInt): RoundResult {
   const { bet, freeSpins, freeMultiplier } = input;
-  if (!Number.isSafeInteger(bet) || bet < MIN_BET || bet > MAX_BET || bet % 100 !== 0) throw new RangeError('Stake must be 10–1000 coins in whole coins');
+  if (!Number.isSafeInteger(bet) || bet < MIN_BET || bet > MAX_BET || bet % 100 !== 0) throw new RangeError('Stake must be 5–1000 coins in whole coins');
   if (!Number.isSafeInteger(freeSpins) || freeSpins < 0 || freeSpins > 100000) throw new RangeError('Invalid free spins');
   if (!Number.isSafeInteger(freeMultiplier) || freeMultiplier < 0 || freeMultiplier > MAX_MULTIPLIER) throw new RangeError('Invalid free multiplier');
   let id = 0;

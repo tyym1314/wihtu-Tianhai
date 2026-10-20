@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-20T04:44:39.444Z",
+  "generatedAt": "2026-10-20T13:53:06.143Z",
   "status": "PLATFORM_PRESENTATION_BUILD",
   "sourceFilesVerifiedUnchanged": 26,
   "outputDirectory": "platform/legacy/dist",
@@ -16,7 +16,7 @@
     },
     {
       "path": "src/game/engine.ts",
-      "sha256": "58fc823228724deb9e9c203898680834ee2c800b01c464a9a5af4935906f122d"
+      "sha256": "b307f1697d98f5396f9f4e8aaaa4c7bc0e587cfc517426460014a4e49fbc6e02"
     },
     {
       "path": "src/game/types.ts",

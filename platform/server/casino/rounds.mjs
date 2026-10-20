@@ -15,7 +15,7 @@ import {CASINO_GAMES,isCasinoGame} from '../../shared/casino-games.mjs';
 import {wheelModel,drawWheel,wheelPayout} from './wheel.mjs';
 import {crashModel,drawCrash,crashPayout,multiplierAt,timeToReach} from './crash.mjs';
 import {cards3Model,drawCards3,cards3Payout} from './cards3.mjs';
-import {getProfile,PROFILE_NAMES} from '../math/index.ts';
+import {allProfiles} from '../math/index.ts';
 import {RTP_TIERS,tierGame} from './rtp.mjs';
 import {instantModels,instantState,isInstantGame} from './instant.mjs';
 import {arcadeModels,isArcadeGame} from './arcade.mjs';
@@ -71,7 +71,7 @@ ALTER TABLE casino_jackpots ADD COLUMN IF NOT EXISTS seeded_minor bigint NOT NUL
 
 /** Register each casino math profile in a wallet ledger scope (platform/simple escrow ledgers). */
 export async function registerCasinoProfiles(db,scopeId){
- const legacy=['thunder','tiger'].flatMap(g=>PROFILE_NAMES.map(p=>getProfile(g,p)));
+ const legacy=allProfiles();
  for(const m of [...casinoProfiles(),...legacy])await db.query('INSERT INTO wallet_math_profiles(scope_id,game_id,math_version,math_config_hash,max_payout_multiplier) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING',[scopeId,m.gameId,m.version,m.hash,String(m.maxMultiplier)]);
 }
 

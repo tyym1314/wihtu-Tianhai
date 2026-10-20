@@ -23,7 +23,7 @@ export default function SlotGame({initial}){
  const SYMS=[...new Set([...Object.keys(S.weights.base),...Object.keys(S.weights.free||{})])];
  const randomGrid=()=>Array.from({length:COLS},(_,c)=>Array.from({length:rowsOf(c)},(_,r)=>({s:SYMS.filter(x=>x!==S.scatter?.id&&x!==S.wild?.id)[(c*3+r*5+1)%(SYMS.length-2)]})));
  const last=initial.last_spin?.result?.spins?.[0];
- const [balance,setBalance]=useState(initial.balance?.available_minor??null),[stake,setStake]=useState(GAME.stakes[2]);
+ const [balance,setBalance]=useState(initial.balance?.available_minor??null),[stake,setStake]=useState(GAME.stakes[1]);
  const [grid,setGrid]=useState(()=>last?.initial||randomGrid()),[boards,setBoards]=useState(null);
  const [spinning,setSpinning]=useState([]),[gen,setGen]=useState(0),[winCells,setWinCells]=useState([]),[popping,setPopping]=useState(false),[line,setLine]=useState(null),[lines,setLines]=useState([]);
  const [win,setWin]=useState(0n),[busy,setBusy]=useState(false),[free,setFree]=useState(null),[big,setBig]=useState(null),[summary,setSummary]=useState(null),[turbo,setTurbo]=useState(false);

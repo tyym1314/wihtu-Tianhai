@@ -2,7 +2,7 @@ import {randomBytes} from 'node:crypto';
 import {pool,tx,locked} from './db.mjs';
 import {id,hash,seal,unseal,fail} from './security.mjs';
 import {appById,scope,audit,validate} from './platform.mjs';
-import {getProfile,playCycle} from './math/index.ts';
+import {getProfile,getProfileByVersion,playCycle} from './math/index.ts';
 import {walletRequest,validatedWalletBalance} from './wallet-binding.mjs';
 import {assertNewFinancialAdmission,partnerProfile,publicAdmissionCapability,unitsPerCoin} from './production-admission.mjs';
 export {walletRequest} from './wallet-binding.mjs';
@@ -61,9 +61,9 @@ async function advanceUnlocked(cycleId){
     if(cycle.status==='ACCEPTED'){
       // No RNG before a persisted, confirmed acceptance. Crash before this commit
       // exposes no result; after this commit every caller reads this exact result.
-      const executable=getProfile(cycle.game_id,cycle.math_profile);
+      const executable=getProfileByVersion(cycle.math_version)||getProfile(cycle.game_id,cycle.math_profile);
       if(executable.version!==cycle.math_version||executable.hash!==cycle.math_hash)fail(503,'PINNED_MATH_UNAVAILABLE','必须加载该周期冻结的数学版本才能恢复');
-      const seed=randomBytes(32).toString('hex'),result=playCycle(cycle.game_id,Number(cycle.stake_minor),cycle.math_profile,seed);
+      const seed=randomBytes(32).toString('hex'),result=playCycle(cycle.game_id,Number(cycle.stake_minor),cycle.math_profile,seed,cycle.math_version);
       if(result.mathVersion!==cycle.math_version||result.mathConfigHash!==cycle.math_hash)throw Error('Math version invariant');
       if(!Number.isSafeInteger(result.grossPayoutMinor)||result.grossPayoutMinor<0||BigInt(result.grossPayoutMinor)>BigInt(cycle.max_payout_minor))throw Error('Math liability invariant');
       const digest=hash(JSON.stringify(result));

@@ -25,7 +25,9 @@ export interface CycleResult {
 const scales = { '99': { numerator: 1, denominator: 1 }, '98': { numerator: 98, denominator: 99 }, '97': { numerator: 97, denominator: 99 }, '96': { numerator: 96, denominator: 99 } } as const;
 const MAX_FREE_SPINS = 100;
 const THUNDER_CYCLE_CAP = 10_000;
-const BETS = [1_000, 5_000, 10_000, 20_000, 50_000];
+// Bet levels in minor units. v1 (until 2026-10-20) stays loadable so cycles pinned to it still recover.
+const BETS_V1 = [1_000, 5_000, 10_000, 20_000, 50_000];
+const BETS = [500, 1_000, 5_000, 10_000, 50_000, 100_000];
 export function canonicalJson(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
@@ -36,15 +38,16 @@ function freeze<T>(value: T): T {
   if (value && typeof value === 'object') { Object.values(value).forEach(freeze); Object.freeze(value); }
   return value;
 }
-function defineProfile(gameId: ProbabilityGame, profile: ProfileName): MathProfile {
-  const version = `${gameId}-platform-${profile}-v1`;
+function defineProfile(gameId: ProbabilityGame, profile: ProfileName, generation = 2): MathProfile {
+  const version = `${gameId}-platform-${profile}-v${generation}`;
   const maxMultiplier = gameId === 'thunder' ? THUNDER_CYCLE_CAP : 455;
   const config = JSON.parse(JSON.stringify({
     sourceMathVersion: gameId === 'thunder' ? GAME_CONFIG.mathVersion : TIGER_CONFIG.mathVersion,
-    baseConfig: gameId === 'thunder' ? GAME_CONFIG : TIGER_CONFIG,
+    // v1 keeps the engine limits it was frozen with (minimum stake 1000 minor units).
+    baseConfig: gameId === 'thunder' ? (generation === 1 ? { ...GAME_CONFIG, minBet: 1000 } : GAME_CONFIG) : TIGER_CONFIG,
     mathVersion: version, targetRtp: Number(profile) / 100, payoutScale: scales[profile],
     payoutRounding: 'floor each symbol/line award after rational scaling, then apply the feature multiplier',
-    currencyScale: 100, stakeMinorChoices: BETS,
+    currencyScale: 100, stakeMinorChoices: generation === 1 ? BETS_V1 : BETS,
     completeCycleMaximumMultiplier: maxMultiplier,
     ...(gameId === 'thunder' ? { maxFreeSpinsPerPaidCycle: MAX_FREE_SPINS, maxWinPerPaidCycle: THUNDER_CYCLE_CAP,
       capRule: 'clip the final accepted round to remaining gross allowance; no further bonus obligations once cap reached; total granted/played free spins cannot exceed 100' }
@@ -55,8 +58,12 @@ function defineProfile(gameId: ProbabilityGame, profile: ProfileName): MathProfi
   }));
   return freeze({ gameId, profile, version, hash: hash(config), targetRtp: Number(profile) / 100, maxMultiplier, config });
 }
-const tiers = (game: ProbabilityGame) => Object.fromEntries(PROFILE_NAMES.map(p => [p, defineProfile(game, p)])) as Record<ProfileName, MathProfile>;
+const tiers = (game: ProbabilityGame, generation = 2) => Object.fromEntries(PROFILE_NAMES.map(p => [p, defineProfile(game, p, generation)])) as Record<ProfileName, MathProfile>;
 const profiles = { thunder: tiers('thunder'), tiger: tiers('tiger') };
+const byVersion = new Map([...Object.values(profiles), tiers('thunder', 1), tiers('tiger', 1)].flatMap(t => Object.values(t)).map(m => [m.version, m]));
+/** Every loadable profile (current and pinned legacy versions), for wallet registration and recovery. */
+export function allProfiles(): MathProfile[] { return [...byVersion.values()]; }
+export function getProfileByVersion(version: string): MathProfile | undefined { return byVersion.get(version); }
 export function getProfile(gameId: string, profile = '99'): MathProfile {
   if (gameId !== 'thunder' && gameId !== 'tiger') throw new RangeError('Unknown probability game');
   if (!(PROFILE_NAMES as readonly string[]).includes(profile)) throw new RangeError('Unknown math profile');
@@ -138,9 +145,11 @@ export function generateTigerCycle(stakeMinor: number, selected: MathProfile, ra
     rawTotalWin:round.totalWin,cycleWinCapReached:false,cycleFreeSpinLimitReached:false,freeSpinsBefore:0,freeSpinsAfter:0,payoutScale:{...scales[selected.profile]}};
   return {rounds:[result],grossPayoutMinor:result.totalWin,freeSpinsPlayed:0,cycleWinCapReached:false,cycleFreeSpinLimitReached:false};
 }
-export function playCycle(gameId: string, stakeMinor: number, profile = '99', seedHex: string): CycleResult {
-  const selected=getProfile(gameId,profile);
-  if(!Number.isSafeInteger(stakeMinor)||!BETS.includes(stakeMinor)) throw new RangeError('Unsupported integer minor-unit stake');
+export function playCycle(gameId: string, stakeMinor: number, profile = '99', seedHex: string, version?: string): CycleResult {
+  const pinned=version?byVersion.get(version):undefined;
+  if(version&&(!pinned||pinned.gameId!==gameId)) throw new RangeError('Unknown math version');
+  const selected=pinned||getProfile(gameId,profile);
+  if(!Number.isSafeInteger(stakeMinor)||!(selected.config.stakeMinorChoices as number[]).includes(stakeMinor)) throw new RangeError('Unsupported integer minor-unit stake');
   const random=createCycleRandom(seedHex,selected.hash);
   let data: ReturnType<typeof generateThunderCycle>;
   if(selected.gameId==='thunder') data=generateThunderCycle(stakeMinor,selected,random);

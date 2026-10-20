@@ -23,7 +23,7 @@ async function loadFixture(options={}){
   './db.mjs':prefix+'export const pool={query:(...args)=>f.query(...args)};export const tx=fn=>f.tx(fn);export const locked=(key,fn)=>f.locked(key,fn);',
   './security.mjs':prefix+'export const id=prefix=>f.id(prefix);export const hash=value=>f.hash(value);export const seal=value=>f.seal(value);export const unseal=value=>value;export const fail=(status,code,message)=>f.fail(status,code,message);',
   './platform.mjs':prefix+'export const appById=id=>f.appById(id);export const scope=app=>f.scope(app);export const audit=(...args)=>f.audit(...args);export const validate=(...args)=>f.validate(...args);',
-  './math/index.ts':prefix+'export const getProfile=(...args)=>f.getProfile(...args);export const playCycle=(...args)=>f.playCycle(...args);',
+  './math/index.ts':prefix+'export const getProfile=(...args)=>f.getProfile(...args);export const playCycle=(...args)=>f.playCycle(...args);export const getProfileByVersion=()=>undefined;',
   './wallet-binding.mjs':prefix+'export const walletRequest=(...args)=>f.walletRequest(...args);export const validatedWalletBalance=(...args)=>f.validatedWalletBalance(...args);',
   './production-admission.mjs':prefix+'export const partnerProfile=profile=>profile==="partner-external-v1";export const unitsPerCoin=scale=>{if(!Number.isInteger(scale)||scale<0||scale>6)throw Error("INTERNAL_COIN_PRECISION_INVALID");return 10**scale;};export const assertNewFinancialAdmission=(...args)=>f.assertNewFinancialAdmission(...args);export const publicAdmissionCapability=info=>f.publicAdmissionCapability(info);',
  };

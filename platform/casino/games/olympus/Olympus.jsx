@@ -20,7 +20,7 @@ const buyCost=stake=>String(BigInt(stake)*BigInt(SLOT.buy.price_x100)/100n);
 
 export default function Olympus({initial}){
  const last=initial.last_spin?.result?.spins.at(-1);
- const [balance,setBalance]=useState(initial.balance?.available_minor??null),[stake,setStake]=useState(GAME.stakes[2]);
+ const [balance,setBalance]=useState(initial.balance?.available_minor??null),[stake,setStake]=useState(GAME.stakes[1]);
  const [grid,setGrid]=useState(()=>last?.tumbles.at(-1)?.grid||last?.initial||idle());
  const [gen,setGen]=useState(0),[winCells,setWinCells]=useState([]),[popping,setPopping]=useState(false),[win,setWin]=useState(0n),[busy,setBusy]=useState(false);
  const [free,setFree]=useState(null),[mult,setMult]=useState(null),[big,setBig]=useState(null),[turbo,setTurbo]=useState(false),[toast,setToast]=useState(null);

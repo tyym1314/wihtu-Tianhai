@@ -33,7 +33,11 @@ import {RTP_TIERS,tierGame} from './rtp.mjs';
 const models=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>g.family==='arcade').map(g=>[g.id,arcadeModel(g)]));
 // Return-rate tiers (see rtp.mjs): extra pinned models per (game, tier).
 const tierModels=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>g.family==='arcade').flatMap(g=>RTP_TIERS.map(t=>{const v=tierGame(g,t);return v?[[`${g.id}:${t}`,arcadeModel(v)]]:[];}).flat()));
-const byVersion=new Map([...Object.values(models),...Object.values(tierModels)].map(m=>[m.version,m]));
+// Bet levels before 2026-10-20 are part of the old math config: kept so sessions opened then still settle.
+const LEGACY_BETS=[['1','5','10','50','100']];
+const legacyModels=Object.values(CASINO_GAMES).filter(g=>g.family==='arcade').flatMap(g=>LEGACY_BETS.flatMap(bets=>{const old={...g,arcade:{...g.arcade,bets}};
+ return [arcadeModel(old),...RTP_TIERS.map(t=>tierGame(old,t)).filter(Boolean).map(arcadeModel)];}));
+const byVersion=new Map([...legacyModels,...Object.values(models),...Object.values(tierModels)].map(m=>[m.version,m]));
 export const arcadeModels=()=>[...byVersion.values()];
 export const arcadeModelFor=(gameId,tier)=>tierModels[`${gameId}:${tier}`]||models[gameId];
 export const isArcadeGame=gameId=>CASINO_GAMES[gameId]?.family==='arcade';

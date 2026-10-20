@@ -1,3 +1,4 @@
+import {ChipRow,chipAt} from '../../shared/ChipRow.jsx';
 import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {api,requestId,registerHostControls,requestExit,requestRecharge} from '../../shared/client.mjs';
 import {t,isRtl} from '../../shared/i18n.mjs';
@@ -134,8 +135,7 @@ export default function CrashGame({initial}){
   {L.players&&<Box x={L.players[0]} y={L.players[1]} w={L.players[2]} h={L.players[3]} className="cg-players">
    {(state.cashouts||[]).slice(-4).reverse().map((c,i)=><div key={c.external_user_id+i}><em>{c.external_user_id===state.me?'★':(c.external_user_id[0]||'?').toUpperCase()}</em><span><b>{c.external_user_id===state.me?t('myBet'):c.external_user_id.slice(0,8)}</b><small>{fx(c.cashout_x100)}x · win {short(BigInt(c.stake_minor)*BigInt(c.cashout_x100)/100n)}</small></span></div>)}</Box>}
   <RechargeTap x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]}/><Box x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]} className="wg-balance cg-bal">{balance===null?'—':<CountUp value={Number(balance)} format={v=>full(Math.round(v))}/>}</Box>
-  {GAME.chips.map((c,i)=>{const C=L.chips,style=C.r?circ([C.xs[i],C.y,C.r]):box([C.xs[i]-C.w/2,C.y-C.h/2,C.w,C.h]);
-   return <button key={c} className={`cg-chip ${bet&&bet.stake_minor===c?'on':''}`} style={style} disabled={busy||phase!=='betting'||!!bet} onClick={()=>placeBet(c)} aria-label={short(c)}/>;})}
+  <ChipRow id={id} chips={GAME.chips} isOn={c=>!!bet&&bet.stake_minor===c} disabled={busy||phase!=='betting'||!!bet} onPick={placeBet}/>
   <button className={`cg-take ${canCash?'cash':bet?.cashout_x100?'done':''}`} style={box(L.take)} disabled={!canCash} onClick={cash}>{takeText}</button>
   <button className="wg-hot" style={box(L.autoToggle)} onClick={()=>{audio.play('click');setAutoOn(v=>!v);}} aria-label="auto take"/>
   {L.autoBox&&autoOn&&<span className="cg-check" style={circ(L.autoBox)}>✓</span>}

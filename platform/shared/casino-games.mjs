@@ -59,7 +59,14 @@ function crashGame(id,name){
  return Object.freeze({id,released:true,family:'crash',reference:name,name,zh:name,ar:name,round:Object.freeze({betMs:8000,showMs:3500}),chips:CHIPS2,maxOptionsPerRound:2,maxStakePerRound:coins(200000),
   options:Object.freeze([{id:'a'},{id:'b'}].map(Object.freeze)),rtp:0.97,maxMultiplier:1000,autoCashout:Object.freeze({min_x100:101,max_x100:100000})});
 }
-export const CASINO_GAMES=Object.freeze({
+// Bet levels (WithU diamonds; operator decision 2026-10-20), one list per kind of game.
+const TABLE_BETS=Object.freeze(['500','1000','5000','10000','100000','300000']);    // wheel / table / three-hand chips
+const CRASH_BETS=Object.freeze(['500','1000','5000','10000','50000','100000']);
+const SLOT_BETS=Object.freeze(['500','1000','5000','10000','50000','100000']);     // per spin
+const ARCADE_BETS=Object.freeze(['500','1000','2000','5000','10000','50000']);    // per shot
+const withBets=g=>Object.freeze(g.family==='arcade'?{...g,arcade:Object.freeze({...g.arcade,bets:ARCADE_BETS})}
+ :g.family==='slot'?{...g,chips:SLOT_BETS,stakes:SLOT_BETS}:{...g,chips:g.family==='crash'?CRASH_BETS:TABLE_BETS});
+const DEFINED=Object.freeze({
  greedylion:Object.freeze({
   id:'greedylion',released:true,family:'wheel',reference:'GreedyLion',name:'GreedyLion',zh:'GreedyLion',ar:'GreedyLion',
   round:Object.freeze({betMs:20000,drawMs:7000,showMs:5000}),
@@ -239,6 +246,8 @@ export const CASINO_GAMES=Object.freeze({
  crash:crashGame('crash','Crash'),
  crashstar:crashGame('crashstar','CrashStar'),
 });
+export const CASINO_GAMES=Object.freeze(Object.fromEntries(Object.entries(DEFINED).map(([id,g])=>[id,withBets(g)])));
+
 /** Games playable by Apps; unreleased definitions exist for math and server work before their art ships. */
 const preview=typeof process!=='undefined'&&process.env?.OASIS_CASINO_PREVIEW==='1'&&process.env?.OASIS_ENVIRONMENT!=='production'||typeof process!=='undefined'&&process.env?.OASIS_CASINO_PREVIEW==='test';
 export const CASINO_IDS=Object.freeze(Object.keys(CASINO_GAMES).filter(id=>CASINO_GAMES[id].released||preview));
