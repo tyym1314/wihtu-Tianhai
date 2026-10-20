@@ -1,5 +1,5 @@
 import React,{useEffect,useLayoutEffect,useRef,useState} from 'react';
-import {DECORATIVE,HALF_MIN_ASPECT,halfLayout} from './half.mjs';
+import {DECORATIVE,HALF_MIN_ASPECT,HALF_WIDE,WIDE_WIDTH,halfLayout} from './half.mjs';
 
 // Extended plates (plate-ext.webp) continue the art above and below the 1672-px design area.
 export const EXT_HEIGHT=2100;
@@ -13,7 +13,7 @@ const insets=()=>{const css=getComputedStyle(document.documentElement);const px=
 export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,children}){
  const id=typeof plate==='string'?(plate.match(/\/casino\/([^/]+)\/plate\.webp/)||[])[1]:null;
  const [aspect,setAspect]=useState(()=>window.innerWidth/window.innerHeight);
- const panel=aspect>HALF_MIN_ASPECT,half=panel?halfLayout(id,fullHeight):null,height=half?half.height:fullHeight;
+ const panel=aspect>HALF_MIN_ASPECT,half=panel?halfLayout(id,fullHeight):null,height=half?half.height:fullHeight,wide=panel&&!half&&HALF_WIDE.has(id);
  const stage=useRef(null);
  const [fit,setFit]=useState({scale:1,cy:0});
  useEffect(()=>{
@@ -21,13 +21,13 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
   // would otherwise reach under the status bar or the navigation bar.
   const update=()=>{const {top,bottom}=insets(),w=window.innerWidth,h=window.innerHeight,avail=Math.max(1,h-top-bottom);
    // Voice-room panel: fill it edge to edge (full width, full height; the plate is squeezed vertically if needed).
-   if(window.innerWidth/window.innerHeight>HALF_MIN_ASPECT){setFit({scale:w/width,scaleY:h/height,cy:h/2});return;}
+   if(window.innerWidth/window.innerHeight>HALF_MIN_ASPECT){setFit(wide?{scale:h/height,cy:h/2}:{scale:w/width,scaleY:h/height,cy:h/2});return;}
    const scale=Math.min(w/width,avail/height),half=height*scale/2;
    setFit({scale,cy:Math.min(Math.max(h/2,top+half),h-bottom-half)});};
   update();setAspect(window.innerWidth/window.innerHeight);
   const resize=()=>{setAspect(window.innerWidth/window.innerHeight);update();};window.addEventListener('resize',resize);window.addEventListener('oasis:host-state',update);
   return()=>{window.removeEventListener('resize',resize);window.removeEventListener('oasis:host-state',update);};
- },[width,height]);
+ },[width,height,wide]);
  // Half-screen: move every overlay up by the plate height removed above it (CSS `translate`, so the
  // elements' own transforms and animations are untouched); full-stage wrappers pass this on to their children.
  useLayoutEffect(()=>{
@@ -49,6 +49,7 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
  const at=`translate(-50%,-50%) scale(${scale},${scaleY})`;
  return <div className="cs-stage-root" dir={dir}>
   <div className="cs-stage-fill" style={{backgroundImage:`url(${plate})`}}/>
+  {wide&&<div className="cs-stage-ext" style={{width:WIDE_WIDTH,height,top:cy,transform:at,backgroundImage:`url(${plate.replace('/plate.webp','/plate-wide.webp')})`}}/>}
   {ext&&!panel&&<div className="cs-stage-ext" style={{width,height:EXT_HEIGHT,top:cy,transform:at,backgroundImage:`url(${ext})`}}/>}
   <div ref={stage} className={`cs-stage ${className}`} style={{width,height,top:cy,transform:at,backgroundImage:half?'none':`url(${plate})`}}>
    {half&&<HalfPlate plate={plate} layout={half} width={width} height={fullHeight}/>}{children}</div>
