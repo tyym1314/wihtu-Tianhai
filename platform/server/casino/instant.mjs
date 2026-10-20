@@ -22,7 +22,11 @@ import {RTP_TIERS,tierGame} from './rtp.mjs';
 const models=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>g.kind==='instant').map(g=>[g.id,engineOf(g).model(g)]));
 // Return-rate tiers (see rtp.mjs): extra pinned models per (game, tier).
 const tierModels=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>g.kind==='instant').flatMap(g=>RTP_TIERS.map(t=>{const v=tierGame(g,t);return v?[[`${g.id}:${t}`,engineOf(g).model(v)]]:[];}).flat()));
-const byVersion=new Map([...Object.values(models),...Object.values(tierModels)].map(m=>[m.version,m]));
+// Earlier calibrations (2M-spin recheck 2026-10-20): kept so spins pinned to them still settle.
+const LEGACY_PAY_SCALE={djlive:[22.82],magicslot:[31.1]};
+const legacyModels=Object.entries(LEGACY_PAY_SCALE).flatMap(([id,scales])=>scales.flatMap(payScale=>{const g=CASINO_GAMES[id],old={...g,slot:{...g.slot,payScale}};
+ return [engineOf(g).model(old),...RTP_TIERS.map(t=>tierGame(old,t)).filter(Boolean).map(v=>engineOf(g).model(v))];}));
+const byVersion=new Map([...legacyModels,...Object.values(models),...Object.values(tierModels)].map(m=>[m.version,m]));
 export const instantModelFor=(gameId,tier)=>tierModels[`${gameId}:${tier}`]||models[gameId];
 export const instantModels=()=>[...byVersion.values()];
 export const isInstantGame=gameId=>CASINO_GAMES[gameId]?.kind==='instant';

@@ -163,7 +163,7 @@ const DEFINED=Object.freeze({
   symbols:[['seven',[200,5000]],['bar3',[100,2000]],['bar2',[60,1200]],['bar',[40,800]],['bell',[30,500]],['cherry',[20,300]]],
   weights:{seven:6,bar3:9,bar2:12,bar:15,bell:18,cherry:22,wild:4},wild:{id:'wild',reels:[1,2]},maxWin:1000}),
  // DJlive: 5x4, 20 lines, scatter free spins x2.
- djlive:linesSlot('djlive','DJLive',{columns:5,rows:4,lines:LINES_20x4,payScale:22.82,
+ djlive:linesSlot('djlive','DJLive',{columns:5,rows:4,lines:LINES_20x4,payScale:22.95,
   symbols:[['dj',[500,2000,10000]],['speaker',[300,1200,5000]],['mic',[200,800,3000]],['headphones',[150,600,2000]],['vinyl',[100,400,1500]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
   weights:{dj:10,speaker:14,mic:18,headphones:22,vinyl:26,A:40,K:44,Q:48,J:52,wild:[0,14,14,14,14],disc:8},wild:{id:'wild',reels:[1,2,3,4]},
   scatter:{id:'disc',pays:[[3,200],[4,1000],[5,5000]]},freeSpins:{trigger:3,award:10,perExtra:5,retrigger:5,multiplier:2,maxPlayed:60}}),
@@ -212,7 +212,7 @@ const DEFINED=Object.freeze({
   symbols:[['pharaoh',[500,2000,8000]],['ankh',[300,1200,5000]],['scarab',[200,800,3000]],['eye',[150,600,2000]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
   weights:{pharaoh:10,ankh:14,scarab:18,eye:22,A:40,K:44,Q:48,J:52,wild:[0,12,12,12,12],coin:12,wheel:5},wild:{id:'wild',reels:[1,2,3,4]},
   collect:{id:'coin',min:5,values:[{x:1,w:50},{x:2,w:25},{x:3,w:13},{x:4,w:8},{x:5,w:4}]},wheel:{id:'wheel',count:3,values:[{x:10,w:50},{x:20,w:25},{x:30,w:13},{x:50,w:8},{x:100,w:4}]},maxWin:3000}),
- magicslot:linesSlot('magicslot','MagicSlot',{lines:LINES_20,payScale:31.1,
+ magicslot:linesSlot('magicslot','MagicSlot',{lines:LINES_20,payScale:31.44,
   symbols:[['wizard',[500,2000,8000]],['crystal',[300,1200,5000]],['potion',[200,800,3000]],['book',[150,600,2000]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
   weights:{wizard:10,crystal:14,potion:18,book:22,A:40,K:44,Q:48,J:52,wild:[0,12,12,12,12],coin:12,wheel:5},wild:{id:'wild',reels:[1,2,3,4]},
   collect:{id:'coin',min:5,values:[{x:1,w:50},{x:2,w:25},{x:3,w:13},{x:4,w:8},{x:5,w:4}]},wheel:{id:'wheel',count:3,values:[{x:10,w:50},{x:20,w:25},{x:30,w:13},{x:50,w:8},{x:100,w:4}]},maxWin:3000}),
