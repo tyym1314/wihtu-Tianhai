@@ -1,4 +1,5 @@
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useLayoutEffect,useRef,useState} from 'react';
+import {DECORATIVE,HALF_MIN_ASPECT,halfLayout} from './half.mjs';
 
 // Extended plates (plate-ext.webp) continue the art above and below the 1672-px design area.
 export const EXT_HEIGHT=2100;
@@ -9,7 +10,11 @@ const insets=()=>{const css=getComputedStyle(document.documentElement);const px=
  * top and bottom insets (status bar, navigation bar). Children are positioned in design pixels.
  * The extended plate fills the rest of the screen; a blurred copy covers anything beyond it.
  */
-export function Stage({plate,width=941,height=1672,className='',dir,children}){
+export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,children}){
+ const id=typeof plate==='string'?(plate.match(/\/casino\/([^/]+)\/plate\.webp/)||[])[1]:null;
+ const [aspect,setAspect]=useState(()=>window.innerWidth/window.innerHeight);
+ const half=aspect>HALF_MIN_ASPECT?halfLayout(id,fullHeight):null,height=half?half.height:fullHeight;
+ const stage=useRef(null);
  const [fit,setFit]=useState({scale:1,cy:0});
  useEffect(()=>{
   // Centre on the screen so the extended plate covers it top to bottom; only move the design area when it
@@ -17,16 +22,45 @@ export function Stage({plate,width=941,height=1672,className='',dir,children}){
   const update=()=>{const {top,bottom}=insets(),w=window.innerWidth,h=window.innerHeight,avail=Math.max(1,h-top-bottom);
    const scale=Math.min(w/width,avail/height),half=height*scale/2;
    setFit({scale,cy:Math.min(Math.max(h/2,top+half),h-bottom-half)});};
-  update();window.addEventListener('resize',update);window.addEventListener('oasis:host-state',update);
-  return()=>{window.removeEventListener('resize',update);window.removeEventListener('oasis:host-state',update);};
+  update();setAspect(window.innerWidth/window.innerHeight);
+  const resize=()=>{setAspect(window.innerWidth/window.innerHeight);update();};window.addEventListener('resize',resize);window.addEventListener('oasis:host-state',update);
+  return()=>{window.removeEventListener('resize',resize);window.removeEventListener('oasis:host-state',update);};
  },[width,height]);
+ // Half-screen: move every overlay up by the plate height removed above it (CSS `translate`, so the
+ // elements' own transforms and animations are untouched); full-stage wrappers pass this on to their children.
+ useLayoutEffect(()=>{
+  const root=stage.current;if(!root)return;
+  const place=parent=>{for(const el of parent.children){if(el.dataset.halfBands!==undefined)continue;
+   const top=el.offsetTop,h=el.offsetHeight;
+   if(!half){el.style.translate='';el.style.visibility='';continue;}
+   if(top<=1&&h>=height*0.9){el.style.translate='';place(el);continue;}
+   const c=top+h/2,cut=half.cutAt(c),decor=DECORATIVE.test(el.className?.toString?.()||'');
+   // Inside a removed band: decoration hides, controls / live data sit at the seam.
+   el.style.translate=`0 ${cut&&!decor?cut[0]-half.removedAbove(cut[0])-top:-half.removedAbove(c)}px`;
+   el.style.visibility=cut&&decor?'hidden':'';}};
+  place(root);
+  const mo=new MutationObserver(()=>place(root));mo.observe(root,{childList:true,subtree:true});
+  return()=>mo.disconnect();
+ });
  const ext=typeof plate==='string'?plate.replace('/plate.webp','/plate-ext.webp'):null,{scale,cy}=fit;
  const at=`translate(-50%,-50%) scale(${scale})`;
  return <div className="cs-stage-root" dir={dir}>
   <div className="cs-stage-fill" style={{backgroundImage:`url(${plate})`}}/>
-  {ext&&<div className="cs-stage-ext" style={{width,height:EXT_HEIGHT,top:cy,transform:at,backgroundImage:`url(${ext})`}}/>}
-  <div className={`cs-stage ${className}`} style={{width,height,top:cy,transform:at,backgroundImage:`url(${plate})`}}>{children}</div>
+  {ext&&!half&&<div className="cs-stage-ext" style={{width,height:EXT_HEIGHT,top:cy,transform:at,backgroundImage:`url(${ext})`}}/>}
+  <div ref={stage} className={`cs-stage ${className}`} style={{width,height,top:cy,transform:at,backgroundImage:half?'none':`url(${plate})`}}>
+   {half&&<HalfPlate plate={plate} layout={half} width={width} height={fullHeight}/>}{children}</div>
  </div>;
+}
+
+const SEAM=24;
+/** The kept bands of the plate stacked top to bottom; each later band fades in over the one above. */
+function HalfPlate({plate,layout,width,height}){
+ let out=0;
+ return <div data-half-bands="" style={{position:'absolute',inset:0,pointerEvents:'none'}}>{layout.kept.map(([a,b],i)=>{
+  const from=i?Math.max(0,a-SEAM):a,top=out-(a-from);out+=b-a;
+  const mask=i?`linear-gradient(to bottom,transparent 0,#000 ${a-from}px)`:undefined;
+  return <div key={a} style={{position:'absolute',left:0,top,width,height:b-from,backgroundImage:`url(${plate})`,backgroundSize:`${width}px ${height}px`,
+   backgroundPosition:`0 ${-from}px`,WebkitMaskImage:mask,maskImage:mask}}/>;})}</div>;
 }
 
 /** Absolutely positioned box in design pixels. */

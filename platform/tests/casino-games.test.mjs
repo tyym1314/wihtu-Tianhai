@@ -93,3 +93,13 @@ test('classes used by several game families are styled in the shared stylesheet 
  for(const cls of ['wg-hot','wg-balance'])assert.match(shell,new RegExp('\\.'+cls+'\\{[^}]*'),cls);
  assert.match(shell,/\.wg-hot\{[^}]*position:absolute/);
 });
+
+test('half-screen bands are ordered, inside the plate and keep the top and bottom controls',async()=>{
+ const {HALF_BANDS,halfLayout}=await import('../casino/shared/half.mjs');
+ for(const [id,bands] of Object.entries(HALF_BANDS)){
+  assert.ok(CASINO_IDS.includes(id),id);
+  let last=0;for(const [a,b] of bands){assert.ok(a>=last&&b>a&&b<=1672,id);last=b;}
+  const l=halfLayout(id);assert.ok(l.height<1672&&l.height>=900,id);
+  assert.equal(l.removedAbove(1672),1672-l.height);assert.ok(l.cutAt((bands[0][0]+bands[0][1])/2),id);
+ }
+});
