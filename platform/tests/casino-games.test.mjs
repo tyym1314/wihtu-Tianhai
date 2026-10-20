@@ -85,7 +85,9 @@ test('return-rate tiers: adjustable families reach the tier, fixed ones keep the
  for(const id of ['thunder','tiger','crash','monster','olympus','oceanslot'])for(const t of ['96','97','98','99'])assert.equal(by[id].tiers[t],Number(t),id+' '+t);
  // Greedy wheels: specials lift the return above the printed-multiplier floor (97.19%), never below it.
  assert.equal(by.greedylion.tiers['99'],99);assert.equal(by.greedylion.tiers['96'],by.greedylion.default);
- for(const id of ['roulette','sicbo','teenpatti','fruitparty'])assert.equal(by[id].adjustable,false,id);
+ for(const id of ['roulette','sicbo','teenpatti','greedyking'])assert.equal(by[id].adjustable,false,id);
+ // Mini-reel bonus games reach every tier by scaling the bonus weights.
+ for(const id of ['fruitparty','footballleague','glorycup'])for(const t of ['96','97','98','99'])assert.equal(by[id].tiers[t],Number(t),id+' '+t);
 });
 
 test('classes used by several game families are styled in the shared stylesheet (each game loads only its own CSS)',async()=>{

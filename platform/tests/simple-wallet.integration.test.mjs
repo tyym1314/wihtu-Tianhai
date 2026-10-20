@@ -258,7 +258,8 @@ test('FruitParty feeds 2% of each stake into the jackpot and a jackpot draw pays
  const pool0=BigInt((await casino.casinoState(alice)).jackpot_minor);assert.equal(pool0,seedPool+9n*20n,'seed plus 2% of nine 1,000-coin bets');
  // Force the close to draw a jackpot bonus by pinning the round seed until one is found.
  const {wheelModel,drawWheel}=await import('../server/casino/wheel.mjs');const {CASINO_GAMES}=await import('../shared/casino-games.mjs');const {seal}=await import('../server/security.mjs');
- const m=wheelModel(CASINO_GAMES.fruitparty);let seed;do seed=randomBytes(32).toString('hex');while(drawWheel(m,seed).bonus.type!=='jackpot');
+ const {casinoProfiles}=await import('../server/casino/rounds.mjs');const pinned=(await pool.query('SELECT math_version FROM casino_rounds WHERE id=$1',[s0.round.id])).rows[0].math_version;
+ const m=casinoProfiles().find(x=>x.version===pinned)||wheelModel(CASINO_GAMES.fruitparty);let seed;do seed=randomBytes(32).toString('hex');while(drawWheel(m,seed).bonus.type!=='jackpot');
  await pool.query('UPDATE casino_rounds SET seed_enc=$2,bet_until=$3 WHERE id=$1',[s0.round.id,seal(seed),Date.now()-1]);
  await casino.tickCasino();await casino.tickCasino();await recover();
  const r=(await pool.query('SELECT result FROM casino_rounds WHERE id=$1',[s0.round.id])).rows[0].result;
