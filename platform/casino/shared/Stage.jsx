@@ -13,13 +13,15 @@ const insets=()=>{const css=getComputedStyle(document.documentElement);const px=
 export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,children}){
  const id=typeof plate==='string'?(plate.match(/\/casino\/([^/]+)\/plate\.webp/)||[])[1]:null;
  const [aspect,setAspect]=useState(()=>window.innerWidth/window.innerHeight);
- const half=aspect>HALF_MIN_ASPECT?halfLayout(id,fullHeight):null,height=half?half.height:fullHeight;
+ const panel=aspect>HALF_MIN_ASPECT,half=panel?halfLayout(id,fullHeight):null,height=half?half.height:fullHeight;
  const stage=useRef(null);
  const [fit,setFit]=useState({scale:1,cy:0});
  useEffect(()=>{
   // Centre on the screen so the extended plate covers it top to bottom; only move the design area when it
   // would otherwise reach under the status bar or the navigation bar.
   const update=()=>{const {top,bottom}=insets(),w=window.innerWidth,h=window.innerHeight,avail=Math.max(1,h-top-bottom);
+   // Voice-room panel: fill it edge to edge (full width, full height; the plate is squeezed vertically if needed).
+   if(window.innerWidth/window.innerHeight>HALF_MIN_ASPECT){setFit({scale:w/width,scaleY:h/height,cy:h/2});return;}
    const scale=Math.min(w/width,avail/height),half=height*scale/2;
    setFit({scale,cy:Math.min(Math.max(h/2,top+half),h-bottom-half)});};
   update();setAspect(window.innerWidth/window.innerHeight);
@@ -42,13 +44,11 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
   const mo=new MutationObserver(()=>place(root));mo.observe(root,{childList:true,subtree:true});
   return()=>mo.disconnect();
  });
- const ext=typeof plate==='string'?plate.replace('/plate.webp','/plate-ext.webp'):null,{scale,cy}=fit;
- const at=`translate(-50%,-50%) scale(${scale})`;
+ const ext=typeof plate==='string'?plate.replace('/plate.webp','/plate-ext.webp'):null,{scale,cy}=fit,scaleY=fit.scaleY??scale;
+ const at=`translate(-50%,-50%) scale(${scale},${scaleY})`;
  return <div className="cs-stage-root" dir={dir}>
   <div className="cs-stage-fill" style={{backgroundImage:`url(${plate})`}}/>
-  {half&&[-1,1].map(side=><div key={side} className="cs-half-side" style={{width,height,top:cy,transform:`translate(calc(-50% + ${side*width*scale}px),-50%) scale(${-scale},${scale})`}}>
-   <HalfPlate plate={plate} layout={half} width={width} height={fullHeight}/></div>)}
-  {ext&&!half&&<div className="cs-stage-ext" style={{width,height:EXT_HEIGHT,top:cy,transform:at,backgroundImage:`url(${ext})`}}/>}
+  {ext&&!panel&&<div className="cs-stage-ext" style={{width,height:EXT_HEIGHT,top:cy,transform:at,backgroundImage:`url(${ext})`}}/>}
   <div ref={stage} className={`cs-stage ${className}`} style={{width,height,top:cy,transform:at,backgroundImage:half?'none':`url(${plate})`}}>
    {half&&<HalfPlate plate={plate} layout={half} width={width} height={fullHeight}/>}{children}</div>
  </div>;

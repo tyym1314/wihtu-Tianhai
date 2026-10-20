@@ -15,7 +15,6 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cs-stage-root{position:fixed;inset:0;overflow:hidden;background:#000}
 .cs-stage-fill{position:absolute;inset:-40px;background:center/cover no-repeat;filter:blur(22px) brightness(.55);transform:scale(1.1)}
 .cs-stage{position:absolute;left:50%;top:50%;transform-origin:50% 50%;background:center/100% 100% no-repeat;overflow:hidden}
-.cs-half-side{position:absolute;left:50%;transform-origin:50% 50%;pointer-events:none;filter:blur(5px) brightness(.7)}
 .cs-stage-ext{position:absolute;left:50%;transform-origin:50% 50%;background:center/100% 100% no-repeat;pointer-events:none}
 .cs-icon-btn{width:64px;height:64px;border-radius:50%;background:radial-gradient(#3a230f,#140a04);border:3px solid #e8b65a;color:#ffe2a0;font-size:34px;font-weight:900;display:grid;place-items:center;box-shadow:0 4px 10px #000a}
 .cs-menu{position:absolute;display:flex;flex-direction:column;gap:14px;z-index:30}
