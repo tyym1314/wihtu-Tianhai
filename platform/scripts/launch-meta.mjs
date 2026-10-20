@@ -1,7 +1,7 @@
 // Loading-screen data for /launch/: per game name (zh/en/ar), tip family, theme color and icon.
 // Icons come from .local/art/icons/<id>.png (scripts: .local/art/icons/gen.mjs); run after adding art.
 import {execFileSync} from 'node:child_process';
-import {existsSync,mkdirSync,writeFileSync} from 'node:fs';
+import {existsSync,mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {CASINO_GAMES,CASINO_IDS} from '../shared/casino-games.mjs';
 import {ARENA_GAMES,ARENA_IDS} from '../shared/games.mjs';
 import DICT from '../arena/shared/i18n-dict.mjs';
@@ -19,4 +19,7 @@ for(const [id,m] of Object.entries(meta)){
  m.color=[...rgb].map(v=>Math.round(v));m.icon=true;
 }
 writeFileSync(`${out}/meta.json`,JSON.stringify(meta));
+// Inline the same data into the launch page (first frame without waiting for meta.json).
+{const page=`${out}/index.html`,html=readFileSync(page,'utf8'),next=html.replace(/\/\*LAUNCH_META\*\/[\s\S]*?\/\*END_LAUNCH_META\*\//,`/*LAUNCH_META*/${JSON.stringify(meta)}/*END_LAUNCH_META*/`);
+ if(next===html&&!html.includes('/*LAUNCH_META*/'))throw new Error('launch page has no LAUNCH_META marker');writeFileSync(page,next);}
 console.log(Object.keys(meta).length,'games,',Object.values(meta).filter(m=>m.icon).length,'with icons');
