@@ -168,7 +168,7 @@ const DEFINED=Object.freeze({
   weights:{dj:10,speaker:14,mic:18,headphones:22,vinyl:26,A:40,K:44,Q:48,J:52,wild:[0,14,14,14,14],disc:8},wild:{id:'wild',reels:[1,2,3,4]},
   scatter:{id:'disc',pays:[[3,200],[4,1000],[5,5000]]},freeSpins:{trigger:3,award:10,perExtra:5,retrigger:5,multiplier:2,maxPlayed:60}}),
  // jackpotSlots: 5x3, 20 lines; five jackpot symbols on a line pay 1000x line; 3 scatters give 10 free spins.
- jackpotslots:linesSlot('jackpotslots','JackpotSlots',{lines:LINES_20,payScale:26.6,
+ jackpotslots:linesSlot('jackpotslots','JackpotSlots',{lines:LINES_20,payScale:26.77,
   symbols:[['jackpot',[2000,10000,100000]],['crown',[500,2000,8000]],['gold',[300,1200,5000]],['diamond',[200,800,3000]],['bell',[150,600,2000]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
   weights:{jackpot:5,crown:12,gold:16,diamond:20,bell:24,A:40,K:44,Q:48,J:52,wild:[0,12,12,12,12],star:8},wild:{id:'wild',reels:[1,2,3,4]},
   scatter:{id:'star',pays:[[3,200],[4,800],[5,4000]]},freeSpins:{trigger:3,award:10,perExtra:0,retrigger:10,multiplier:1,maxPlayed:60},maxWin:5000}),
@@ -187,14 +187,14 @@ const DEFINED=Object.freeze({
 
  // ChilliSlot: 5x3, 25 lines; 3 scatters give 12 free spins on 2 boards. Collected chillies: 9 -> 3rd board and
  // reel 5 wild, 14 -> 4th board and reel 4 wild, 30 -> reel 3 wild. 3+ scatters on a board add 3 spins.
- chillislot:linesSlot('chillislot','ChilliSlot',{lines:[...LINES_20,[0,1,1,1,2],[2,1,1,1,0],[1,0,1,2,1],[1,2,1,0,1],[0,2,2,2,0]],payScale:25,
+ chillislot:linesSlot('chillislot','ChilliSlot',{lines:[...LINES_20,[0,1,1,1,2],[2,1,1,1,0],[1,0,1,2,1],[1,2,1,0,1],[0,2,2,2,0]],payScale:25.26,
   symbols:[['mariachi',[500,2000,8000]],['guitar',[300,1200,5000]],['sombrero',[200,800,3000]],['taco',[150,600,2000]],['maraca',[100,400,1500]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
   weights:{mariachi:10,guitar:14,sombrero:18,taco:22,maraca:26,A:40,K:44,Q:48,J:52,wild:[0,12,12,12,12],pepper:7},
   freeWeights:{mariachi:10,guitar:14,sombrero:18,taco:22,maraca:26,A:40,K:44,Q:48,J:52,wild:[0,10,10,10,10],pepper:3,chilli:14},
   wild:{id:'wild',reels:[1,2,3,4]},scatter:{id:'pepper',pays:[[3,200],[4,800],[5,3000]]},
   freeSpins:{trigger:3,award:12,perExtra:0,retrigger:3,multiplier:1,maxPlayed:60,boards:{start:2,collect:'chilli',steps:[{at:9,boards:3,wildReel:4},{at:14,boards:4,wildReel:3},{at:30,wildReel:2}]}},maxWin:5000}),
  // sphinxlegend: 5x3, 20 lines; 3 scatters let the player choose one of four free spin packages of equal value.
- sphinxlegend:linesSlot('sphinxlegend','SphinxLegend',{lines:LINES_20,payScale:31.6,
+ sphinxlegend:linesSlot('sphinxlegend','SphinxLegend',{lines:LINES_20,payScale:31.77,
   symbols:[['sphinx',[500,2000,8000]],['pharaoh',[300,1200,5000]],['cat',[200,800,3000]],['eye',[150,600,2000]],['ankh',[100,400,1500]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
   weights:{sphinx:10,pharaoh:14,cat:18,eye:22,ankh:26,A:40,K:44,Q:48,J:52,wild:[0,12,12,12,12],pyramid:8},wild:{id:'wild',reels:[1,2,3,4]},
   scatter:{id:'pyramid',pays:[[3,200],[4,1000],[5,5000]]},
