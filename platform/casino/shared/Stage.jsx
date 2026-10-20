@@ -36,9 +36,10 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
    const top=el.offsetTop,h=el.offsetHeight;
    if(!half){el.style.translate='';el.style.visibility='';continue;}
    if(top<=1&&h>=height*0.9){el.style.translate='';place(el);continue;}
-   const c=top+h/2,cut=half.cutAt(c),decor=DECORATIVE.test(el.className?.toString?.()||'');
+   // Anchored near the element's top, so a control that grows (an opened menu) keeps its place.
+   const c=top+Math.min(h,80)/2,cut=half.cutAt(c),decor=DECORATIVE.test(el.className?.toString?.()||'');
    // Inside a removed band: decoration hides, controls / live data sit at the seam.
-   el.style.translate=`0 ${(cut&&!decor?half.map(cut[0]):half.map(c))-c+(cut&&!decor?h/2:0)}px`;
+   el.style.translate=`0 ${cut&&!decor?half.map(cut[0])-top:half.map(c)-c}px`;
    el.style.visibility=cut&&decor?'hidden':'';}};
   place(root);
   const mo=new MutationObserver(()=>place(root));mo.observe(root,{childList:true,subtree:true});

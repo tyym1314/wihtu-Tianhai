@@ -26,7 +26,7 @@ export const HALF_BANDS={
  crash:[[110, 385]],
  glorycup:[[97, 593]],
  crazyfruit:[[40, 331]],
- fruitparty:[[40, 317]],
+ fruitparty:[[80, 317]],
  bountyfootball:[[40, 305]],
  footballleague:[[40, 320]],
  molestar:[[175, 320]],
