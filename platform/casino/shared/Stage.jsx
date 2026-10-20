@@ -36,7 +36,7 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
    if(top<=1&&h>=height*0.9){el.style.translate='';place(el);continue;}
    const c=top+h/2,cut=half.cutAt(c),decor=DECORATIVE.test(el.className?.toString?.()||'');
    // Inside a removed band: decoration hides, controls / live data sit at the seam.
-   el.style.translate=`0 ${cut&&!decor?cut[0]-half.removedAbove(cut[0])-top:-half.removedAbove(c)}px`;
+   el.style.translate=`0 ${(cut&&!decor?half.map(cut[0]):half.map(c))-c+(cut&&!decor?h/2:0)}px`;
    el.style.visibility=cut&&decor?'hidden':'';}};
   place(root);
   const mo=new MutationObserver(()=>place(root));mo.observe(root,{childList:true,subtree:true});
@@ -46,6 +46,8 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
  const at=`translate(-50%,-50%) scale(${scale})`;
  return <div className="cs-stage-root" dir={dir}>
   <div className="cs-stage-fill" style={{backgroundImage:`url(${plate})`}}/>
+  {half&&[-1,1].map(side=><div key={side} className="cs-half-side" style={{width,height,top:cy,transform:`translate(calc(-50% + ${side*width*scale}px),-50%) scale(${-scale},${scale})`}}>
+   <HalfPlate plate={plate} layout={half} width={width} height={fullHeight}/></div>)}
   {ext&&!half&&<div className="cs-stage-ext" style={{width,height:EXT_HEIGHT,top:cy,transform:at,backgroundImage:`url(${ext})`}}/>}
   <div ref={stage} className={`cs-stage ${className}`} style={{width,height,top:cy,transform:at,backgroundImage:half?'none':`url(${plate})`}}>
    {half&&<HalfPlate plate={plate} layout={half} width={width} height={fullHeight}/>}{children}</div>
@@ -53,14 +55,14 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
 }
 
 const SEAM=24;
-/** The kept bands of the plate stacked top to bottom; each later band fades in over the one above. */
-function HalfPlate({plate,layout,width,height}){
- let out=0;
- return <div data-half-bands="" style={{position:'absolute',inset:0,pointerEvents:'none'}}>{layout.kept.map(([a,b],i)=>{
-  const from=i?Math.max(0,a-SEAM):a,top=out-(a-from);out+=b-a;
-  const mask=i?`linear-gradient(to bottom,transparent 0,#000 ${a-from}px)`:undefined;
-  return <div key={a} style={{position:'absolute',left:0,top,width,height:b-from,backgroundImage:`url(${plate})`,backgroundSize:`${width}px ${height}px`,
-   backgroundPosition:`0 ${-from}px`,WebkitMaskImage:mask,maskImage:mask}}/>;})}</div>;
+/** The kept / squeezed segments of the plate stacked top to bottom; a segment after a cut fades in over the one above. */
+export function HalfPlate({plate,layout,width,height,style}){
+ return <div data-half-bands="" style={{position:'absolute',inset:0,pointerEvents:'none',...style}}>{layout.segments.map((g,i)=>{
+  if(!g.s)return null;
+  const afterCut=i>0&&layout.segments[i-1].s===0,from=afterCut?Math.max(0,g.a-SEAM):g.a,lead=(g.a-from)*g.s,top=layout.map(g.a)-lead;
+  const mask=afterCut?`linear-gradient(to bottom,transparent 0,#000 ${lead}px)`:undefined;
+  return <div key={g.a} style={{position:'absolute',left:0,top,width,height:(g.b-from)*g.s,backgroundImage:`url(${plate})`,
+   backgroundSize:`${width}px ${height*g.s}px`,backgroundPosition:`0 ${-from*g.s}px`,WebkitMaskImage:mask,maskImage:mask}}/>;})}</div>;
 }
 
 /** Absolutely positioned box in design pixels. */

@@ -1,29 +1,30 @@
 /**
- * Compact half-screen layouts (voice-room game panel) built from the existing plates: per game, the
- * design-pixel bands [y0, y1) left out. The rest of the plate is stacked with a short cross-fade and every
- * overlay moves up by the height removed above it. Full screen is unchanged.
+ * Compact half-screen layouts (voice-room game panel, width/height 0.8) built from the existing plates.
+ * Per game, design-pixel bands: [y0, y1] is left out, [y0, y1, s] is squeezed vertically to s (0 < s < 1).
+ * The rest of the plate is stacked with a short cross-fade and every overlay follows its band. A side gap that
+ * is still left is filled with a mirror of the plate's edge. Full screen is unchanged.
  * Only bands without live data or controls may be removed (titles, scenery, decoration).
  */
 export const HALF_BANDS={
- olympus:[[40, 595]],
+ olympus:[[99, 595]],
  teenpatti:[[288, 640]],
  greedylion:[[282, 545]],
- oceanslot:[[40, 690]],
+ oceanslot:[[194, 690]],
  mahjongslot:[[40, 398]],
  cleopatraslot:[[40, 410]],
  crazygems:[[40, 525]],
- slot777:[[40, 580]],
+ slot777:[[84, 580]],
  djlive:[[40, 503]],
  jackpotslots:[[40, 385]],
  yummy:[[40, 532]],
  worldgoal:[[40, 405]],
- chillislot:[[40, 556]],
- sphinxlegend:[[40, 652]],
- nights1001:[[40, 549]],
- pyramidslots:[[40, 551]],
+ chillislot:[[60, 556]],
+ sphinxlegend:[[156, 652]],
+ nights1001:[[53, 549]],
+ pyramidslots:[[55, 551]],
  magicslot:[[40, 477]],
  crash:[[110, 385]],
- glorycup:[[40, 593]],
+ glorycup:[[97, 593]],
  crazyfruit:[[40, 331]],
  fruitparty:[[40, 317]],
  bountyfootball:[[40, 305]],
@@ -32,16 +33,21 @@ export const HALF_BANDS={
  crashstar:[[130, 295]],
 };
 
-/** Decoration that disappears with its band; any other overlay inside a removed band is pinned to the seam. */
-export const DECORATIVE=/(^|\s)(cs-glow|cs-sparkle|ol-eye)(\s|$)/;
-
+/** Panel ratio the voice room uses for every game (WithU sends aspectRatio=0.8). */
+export const HALF_TARGET=0.8;
 /** Above this width/height the view is a half-screen panel rather than a phone screen. */
 export const HALF_MIN_ASPECT=0.6;
 
+/** Decoration that disappears with its band; any other overlay inside a removed band is pinned to the seam. */
+export const DECORATIVE=/(^|\s)(cs-glow|cs-sparkle|ol-eye)(\s|$)/;
+
+/** Segments covering the plate: {a, b, s} with s = 1 (kept), 0 (removed) or the squeeze factor. */
 export function halfLayout(id,height=1672){
- const cut=HALF_BANDS[id];if(!cut?.length)return null;
- const kept=[];let y=0;for(const [a,b] of cut){if(a>y)kept.push([y,a]);y=b;}if(y<height)kept.push([y,height]);
- const removedAbove=v=>cut.reduce((s,[a,b])=>s+(v>=b?b-a:v>a?v-a:0),0);
- const cutAt=v=>cut.find(([a,b])=>v>a&&v<b);
- return {kept,height:height-cut.reduce((s,[a,b])=>s+b-a,0),removedAbove,cutAt};
+ const bands=HALF_BANDS[id];if(!bands?.length)return null;
+ const seg=[];let y=0;
+ for(const [a,b,s=0] of bands){if(a>y)seg.push({a:y,b:a,s:1});seg.push({a,b,s});y=b;}
+ if(y<height)seg.push({a:y,b:height,s:1});
+ const map=v=>{let out=0;for(const g of seg){if(v>=g.b){out+=(g.b-g.a)*g.s;continue;}if(v>g.a)out+=(v-g.a)*g.s;break;}return out;};
+ const cutAt=v=>{const g=seg.find(g=>g.s===0&&v>g.a&&v<g.b);return g?[g.a,g.b]:null;};
+ return {segments:seg,height:Math.round(map(height)),map,cutAt,removedAbove:v=>v-map(v)};
 }
