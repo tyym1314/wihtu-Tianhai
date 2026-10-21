@@ -63,6 +63,7 @@
 - 语音房面板（宽:高 0.8，WithU 在入口地址带 `aspectRatio=0.8`）：`casino/shared/half.mjs`。`HALF_BANDS` 的游戏去掉装饰横条后拼接底图，叠加元素按去掉的高度上移（展开的菜单按顶部定位，不跳动）；`HALF_WIDE` 的 13 款按原比例缩放，左右用生图延展的 `plate-wide.webp`（1338×1672，中间是原底图）。面板里任何游戏都铺满，无空边。
 - 下注档位在 `shared/casino-games.mjs` 的 `TABLE_BETS / CRASH_BETS / SLOT_BETS / ARCADE_BETS`。底图上印着筹码的 20 款用 `.local/chips/build.py` 重排（抹掉旧筹码、复用筹码图案、数字由 `casino/shared/ChipRow.jsx` 显示，位置在 `casino/shared/chip-rows.json`）。
 - 返还率档位（应用级 96–99）：`server/casino/rtp.mjs`。老虎机按 payScale 比例缩放，爆点/街机直接用档位，Greedy 系列靠特殊结果概率只能 98/99，FruitParty/FootballLeague/GloryCup 缩放奖励权重；其余固定。改动数学参数会产生新版本，旧版本要留在 `LEGACY_*` 里供已开局结算（雷霆/虎虎 v1、街机旧档位、5 款老虎机旧校准）。
+- 中奖演出：`casino/shared/fx/Celebrate.jsx`（7 档场景、按游戏波动的门槛 `GROUPS/GAME_GROUP`、升档蓄力）、`particles.js`（画布粒子）、`themes.js`（每款配色）；标题字和道具图在 `casino/public/fx/`（生图原图 `.local/art/fx/`）；音效 `.local/audio/fx/build.py` 生成 `casino/public/audio/sfx-*.mp3`。本地 `localhost` 可在游戏 iframe 里调 `window.__oasisFx(赢额, 下注)` 预览。振动走 `oasis.haptic` → App 消息 `haptic`（1.6.7+）。
 - 加载页的游戏名/配色/图标由 `scripts/launch-meta.mjs` 内嵌进 `public/launch/index.html`（首帧即最终样子），新增游戏后要重跑。
 - 部署只同步改动目录时，可直接 rsync 到当前版本目录后重启；改了服务端数学或依赖时新建版本目录。
 
