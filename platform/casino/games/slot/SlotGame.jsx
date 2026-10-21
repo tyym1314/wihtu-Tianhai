@@ -140,7 +140,7 @@ export default function SlotGame({initial}){
    const out=await play(r.result,r);const total=out.after?out.prefix+out.after.total:out.total;
    const payout=BigInt(out.payout??r.payout_minor??0);setWin(total);
    setStreak(total>0n);
-   if(total>0n)await fx.celebrate(total,stake,{at:[L.win[0]+L.win[2]/2,L.win[1]+L.win[3]/2],fast:turbo||autoRef.current>0});
+   if(total>0n)await fx.celebrate(total,stake,{at:[L.win[0]+L.win[2]/2,L.win[1]+L.win[3]/2],from:[rx+rw/2,ry+rh/2],fast:turbo||autoRef.current>0});
    setBalance(b=>b===null?b:String(BigInt(b)+payout));return true;
   }catch(e){audio.bonus(false);reelLoop.current?.stop(60);reelLoop.current=null;setAnticip(-1);setSpinning(Array(COLS).fill(false));setChoice(null);setBalance(b=>b===null?b:String(BigInt(b)+BigInt(cost)));say(ERR[e.code]||'failed');return false;}
  }
