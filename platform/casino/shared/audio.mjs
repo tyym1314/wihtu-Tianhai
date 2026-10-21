@@ -21,7 +21,8 @@ class CasinoAudio{
   if(this.buffers.has(name))return this.buffers.get(name);
   const p=fetch(url(`sfx-${name}`)).then(r=>r.arrayBuffer()).then(b=>this.ctx.decodeAudioData(b)).catch(()=>null);this.buffers.set(name,p);return p;
  }
- preload(names){if(this.ctx)names.forEach(n=>this.buffer(n));}
+ /** One request at a time, so effects do not compete with the game's images and spins on slow networks. */
+ async preload(names){if(!this.ctx||this.preloading)return;this.preloading=true;for(const n of names){await this.buffer(n);await new Promise(r=>setTimeout(r,60));}}
  async play(name,{volume=1,rate=1}={}){
   if(!this.ctx||this.level()===0)return;const b=await this.buffer(name);if(!b)return;
   const s=this.ctx.createBufferSource(),g=this.ctx.createGain();s.buffer=b;s.playbackRate.value=rate;g.gain.value=volume;s.connect(g).connect(this.gain);s.start();

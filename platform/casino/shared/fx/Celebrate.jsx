@@ -35,7 +35,11 @@ const BOLT=()=>{let x=50+Math.random()*40-20,y=0,pts=[`${x},0`];while(y<100){y+=
  */
 export function useCelebration(id,audio){
  const [show,setShow]=useState(null),[pops,setPops]=useState([]),skip=useRef(null),theme=themeOf(id),th=thresholdsFor(id);
- useEffect(()=>{for(const n of ['title-nice','title-great','great-banner','title-big','title-mega','title-epic','title-legendary','vault-door','crown','fire-frame']){const i=new Image();i.src=art(n);}},[]);
+ // Celebration art loads while the player is idle, one file at a time; on a slow or data-saving connection only
+ // when a celebration needs it.
+ useEffect(()=>{const c=navigator.connection,slow=c&&(c.saveData||/(^|-)2g|3g/.test(c.effectiveType||''));if(slow)return;let stop=false;
+  const tm=setTimeout(async()=>{for(const n of ['title-nice','title-great','great-banner','title-big','vault-door','title-mega','title-epic','title-legendary','crown','fire-frame']){if(stop)return;const i=new Image();i.src=art(n);await i.decode().catch(()=>{});}},6000);
+  return()=>{stop=true;clearTimeout(tm);};},[]);
  async function celebrate(total,stake,{at,from,fast=false}={}){
   const win=Number(total),bet=Number(stake);if(!(win>0)||!(bet>0))return;
   const x=win/bet,tier=tierOf(x,th),speed=fast?0.5:1;

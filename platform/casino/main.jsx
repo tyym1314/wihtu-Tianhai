@@ -14,11 +14,15 @@ family(()=>import('./games/arcade/ArcadeGame.jsx'),['monster','molestar']);
 family(()=>import('./games/slot/SlotGame.jsx'),['oceanslot','mahjongslot','cleopatraslot','crazygems','slot777','djlive','jackpotslots','yummy','worldgoal','chillislot','sphinxlegend','nights1001','pyramidslots','magicslot']);
 const Scene=LOADERS[GAME]&&lazy(LOADERS[GAME]);
 
-// Before the scene mounts: its code and its full-screen plate (the largest asset), reported as progress.
+// Before the scene mounts: its code, its full-screen plate and (slots) every reel symbol, reported as progress,
+// so a slow connection never opens on empty reels. Capped at 15 s; anything still loading keeps loading in place.
+const img=n=>{const i=new Image();i.src=`/casino/${GAME}/${n}.webp?v=${__ASSET_VERSION__}`;return i.decode().catch(()=>{});};
 async function preload(){
- const plate=new Image();plate.src=`/casino/${GAME}/plate.webp?v=${__ASSET_VERSION__}`;
- const steps=[LOADERS[GAME](),plate.decode().catch(()=>{})];let done=0;
- await Promise.all(steps.map(p=>p.then(()=>reportProgress(.25+.7*(++done/steps.length)))));
+ const plate=img('plate'),{CASINO_GAMES}=await import('../shared/casino-games.mjs');
+ const S=CASINO_GAMES[GAME]?.slot,symbols=S?[...new Set([...(S.symbols||[]).map(x=>x.id),S.wild?.id,S.scatter?.id].filter(Boolean))]:[];
+ const extra={olympus:['spinbtn']}[GAME]||[];
+ const steps=[LOADERS[GAME](),plate,...[...symbols,...extra].map(img)];let done=0;
+ await Promise.race([Promise.all(steps.map(p=>p.then(()=>reportProgress(.25+.7*(++done/steps.length))))),new Promise(r=>setTimeout(r,15000))]);
 }
 /** Tells the host the first frame is on screen (two frames after mount, once the plate is painted). */
 function Shown(){useEffect(()=>{let id=requestAnimationFrame(()=>{id=requestAnimationFrame(reportShown);});return()=>cancelAnimationFrame(id);},[]);return null;}
