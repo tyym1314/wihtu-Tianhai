@@ -28,7 +28,7 @@ export default function Olympus({initial}){
  const [free,setFree]=useState(null),[mult,setMult]=useState(null),[big,setBig]=useState(null),[turbo,setTurbo]=useState(false),[toast,setToast]=useState(null);
  const [modal,setModal]=useState(null),[auto,setAuto]=useState(0),[menu,setMenu]=useState(false),[records,setRecords]=useState(false);
  const [leaving,setLeaving]=useState(false),[pops,setPops]=useState([]),[flash,setFlash]=useState(0),[fountain,setFountain]=useState(0),[scatterHit,setScatterHit]=useState(false),[summary,setSummary]=useState(null);
- const audio=useAudio('olympus',['spin','drop','tumble','win','bigwin','orb','thunder','feature','click','coin','pop','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic','fs-trigger','whoosh']);
+ const audio=useAudio('olympus',['spin','drop','tumble','win','bigwin','orb','thunder','feature','click','coin','pop','ding','nice','stamp','rollup','roll-end','charge','cheer','celebrate-loop','sting-big','sting-mega','sting-epic','sting-legend','fs-trigger','whoosh','scatter-land']);
  const fx=useCelebration('olympus',audio);
  const speed=useRef(1);speed.current=turbo?0.45:1;
  const autoRef=useRef(0);
@@ -50,6 +50,7 @@ export default function Olympus({initial}){
    if(si>0){setLeaving(true);await wait(280);setLeaving(false);}
    setWinCells([]);setMult(null);setGrid(sp.initial);setGen(g=>g+1);audio.play('drop',{volume:.6});await wait(sp.free?700:600);
    if(sp.initial.some(c=>c.s==='orb'))audio.play('orb',{volume:.5});
+   {const n=sp.initial.filter(c=>c.s==='scatter').length;for(let k=0;k<n;k++)setTimeout(()=>audio.play('scatter-land',{volume:.7,rate:1+k*0.12}),k*140);if(n)haptic('light');}
    let spinWin=0,chain=0;
    for(const tb of sp.tumbles){
     setWinCells(tb.wins.flatMap(w=>w.cells));audio.play('win',{volume:.55});

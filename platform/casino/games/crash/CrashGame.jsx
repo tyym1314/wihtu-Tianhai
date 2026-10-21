@@ -69,7 +69,7 @@ export default function CrashGame({initial}){
  const [state,setState]=useState(initial),[balance,setBalance]=useState(initial.balance?.available_minor??null),[now,setNow]=useState(Date.now());
  const [toast,setToast]=useState(null),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false),[offline,setOffline]=useState(false),[pop,setPop]=useState(null);
  const [autoOn,setAutoOn]=useState(false),[autoIdx,setAutoIdx]=useState(0),[busy,setBusy]=useState(false);
- const audio=useAudio(id,['launch','boom','cash','click','chip','tick','coin','select','close','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic']);
+ const audio=useAudio(id,['launch','boom','cash','click','chip','tick','coin','select','close','ding','nice','stamp','rollup','roll-end','charge','cheer','celebrate-loop','sting-big','sting-mega','sting-epic','sting-legend']);
  const cel=useCelebration(id,audio);
  const offset=useRef(initial.server_now-Date.now()),balanceRound=useRef(null),ref=useRef(initial),ship=useRef(null),seen=useRef({}),tip=useRef([400,900]);
  const serverNow=()=>Date.now()+offset.current;

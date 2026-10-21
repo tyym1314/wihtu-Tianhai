@@ -83,3 +83,68 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cs-shake-hard{animation:cs-shake-hard .6s ease-out}
 @keyframes cs-shake{0%,100%{transform:none}20%{transform:translate(-6px,3px)}40%{transform:translate(5px,-4px)}60%{transform:translate(-3px,2px)}80%{transform:translate(2px,-1px)}}
 @keyframes cs-shake-hard{0%,100%{transform:none}15%{transform:translate(-12px,6px) rotate(-.4deg)}30%{transform:translate(10px,-8px) rotate(.4deg)}45%{transform:translate(-8px,5px)}60%{transform:translate(6px,-4px)}80%{transform:translate(-3px,2px)}}
+/* ===== Tier scenes (2026-10-21) ===== */
+.cs-win.full{background:none}
+.cs-win-bg{position:absolute;inset:0;transition:background .35s}
+.cs-win.big .cs-win-bg{background:radial-gradient(circle at 50% 45%,#3a2400e8 0,#000000eb 55%,#000000f5 100%)}
+.cs-win.mega .cs-win-bg{background:radial-gradient(circle at 50% 45%,#5a0a5ae8 0,#1a0030ee 55%,#07000ff5 100%)}
+.cs-win.epic .cs-win-bg{background:radial-gradient(circle at 50% 40%,#0a2a5ae8 0,#020a24f0 55%,#000308f8 100%);animation:cs-storm 2.2s ease-in-out infinite}
+.cs-win.legendary .cs-win-bg{background:radial-gradient(circle at 50% 45%,#6a1800e8 0,#2a0500f0 55%,#0a0100f8 100%);animation:cs-beat .47s ease-in-out infinite}
+@keyframes cs-storm{0%,100%{filter:brightness(1)}48%{filter:brightness(1)}50%{filter:brightness(1.9)}53%{filter:brightness(1)}}
+@keyframes cs-beat{0%,100%{filter:brightness(1)}20%{filter:brightness(1.35)}}
+.cs-title{display:block;width:740px;max-width:none;filter:drop-shadow(0 10px 18px #000c);animation:cs-title-in .6s cubic-bezier(.2,1.5,.4,1),cs-win-breathe 1.1s .6s ease-in-out infinite alternate}
+.cs-win.mega .cs-title{animation:cs-title-in .5s cubic-bezier(.2,1.5,.4,1),cs-neon .9s .5s steps(1) infinite}
+.cs-win.epic .cs-title{animation:cs-title-in .45s cubic-bezier(.2,1.5,.4,1),cs-jitter .18s .45s linear infinite}
+.cs-win.legendary .cs-title{width:690px;animation:cs-title-in .7s cubic-bezier(.2,1.5,.4,1),cs-beat-scale .47s .7s ease-in-out infinite}
+@keyframes cs-title-in{0%{transform:scale(2.6);opacity:0;filter:blur(8px) brightness(3)}55%{transform:scale(.92);opacity:1;filter:none}100%{transform:scale(1)}}
+@keyframes cs-neon{0%{opacity:1}6%{opacity:.55}9%{opacity:1}62%{opacity:1}64%{opacity:.7}66%{opacity:1}}
+@keyframes cs-jitter{0%{transform:translate(0,0)}25%{transform:translate(2px,-1px)}50%{transform:translate(-2px,1px)}75%{transform:translate(1px,2px)}}
+@keyframes cs-beat-scale{0%,100%{transform:scale(1)}20%{transform:scale(1.07)}}
+.cs-win.full .cs-win-amount{font-size:110px;margin-top:6px}
+.cs-win.mega .cs-win-amount{color:#ffe8fb;text-shadow:0 0 30px #ff4fd8,0 5px 0 #6a0a5a}
+.cs-win.epic .cs-win-amount{color:#e8f8ff;text-shadow:0 0 30px #38b6ff,0 5px 0 #0a2a6a}
+.cs-win.legendary .cs-win-amount{font-size:124px;color:#fff3c4;text-shadow:0 0 36px #ff6a00,0 6px 0 #6a1800}
+/* BIG: vault doors part */
+.cs-vault{position:absolute;top:0;bottom:0;width:50%;background-size:cover;background-position:center;z-index:2;box-shadow:0 0 60px #000;animation:cs-vault-l 1s .15s cubic-bezier(.6,0,.2,1) forwards}
+.cs-vault.l{left:0}
+.cs-vault.r{right:0;transform:scaleX(-1);animation-name:cs-vault-r}
+@keyframes cs-vault-l{to{transform:translateX(-102%)}}
+@keyframes cs-vault-r{from{transform:scaleX(-1)}to{transform:scaleX(-1) translateX(-102%)}}
+.cs-win.big .cs-win-rays{animation-duration:12s}
+.cs-win.mega .cs-win-rays{animation-duration:4s}
+.cs-win-rays.two{animation-direction:reverse;animation-duration:6s;opacity:.7}
+/* EPIC: lightning */
+.cs-bolts{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;animation:cs-bolt .5s ease-out forwards}
+.cs-bolts polyline{fill:none;stroke:#e8f8ff;stroke-width:.9;filter:drop-shadow(0 0 2px #38b6ff) drop-shadow(0 0 6px #38b6ff);vector-effect:non-scaling-stroke;stroke-width:5px}
+.cs-bolts polyline.thin{stroke-width:2px;opacity:.7}
+@keyframes cs-bolt{0%{opacity:0}8%{opacity:1}20%{opacity:.3}30%{opacity:1}100%{opacity:0}}
+/* LEGENDARY: burning frame, descending crown */
+.cs-fire{position:absolute;inset:0;background-size:100% 100%;z-index:3;pointer-events:none;mix-blend-mode:screen;animation:cs-fade-in .8s ease-out,cs-flicker .25s .8s steps(2) infinite}
+@keyframes cs-flicker{0%{opacity:1}50%{opacity:.85}}
+.cs-crown{position:absolute;left:50%;top:9%;width:calc(380px * var(--s));transform:translateX(-50%);z-index:4;filter:drop-shadow(0 0 24px #ffb300);animation:cs-crown 1.6s cubic-bezier(.2,.9,.3,1)}
+@keyframes cs-crown{from{transform:translate(-50%,-160%) rotate(-8deg);opacity:0}to{transform:translateX(-50%);opacity:1}}
+@keyframes cs-fade-in{from{opacity:0}to{opacity:1}}
+/* Tier break: white flash and shockwave; charge glow before it */
+.cs-flash{position:absolute;inset:0;background:#fff;z-index:6;pointer-events:none;animation:cs-flash .45s ease-out forwards}
+@keyframes cs-flash{0%{opacity:.95}100%{opacity:0}}
+.cs-wave{position:absolute;left:50%;top:46%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:10px solid #fff;z-index:5;pointer-events:none;animation:cs-wave .7s ease-out forwards}
+@keyframes cs-wave{0%{transform:scale(.2);opacity:1}100%{transform:scale(40);opacity:0;border-width:2px}}
+.cs-win.charging .cs-win-bg{box-shadow:inset 0 0 120px 30px #fff6;animation:cs-charge .2s ease-in-out infinite alternate}
+.cs-win.charging .cs-win-amount{animation:cs-jitter .08s linear infinite}
+@keyframes cs-charge{from{filter:brightness(1)}to{filter:brightness(1.4)}}
+.cs-punch{animation:cs-punch .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes cs-punch{0%{transform:scale(1)}30%{transform:scale(1.08)}100%{transform:scale(1)}}
+/* GREAT: stamp + dust ring */
+.cs-stamp{display:block;font:900 120px/1 Georgia,serif;letter-spacing:.02em;background:linear-gradient(#fffbe6,#ffd56b 45%,#c98a12 62%,#fffbe6);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 7px 0 #5a3604) drop-shadow(0 0 30px #ffb300);animation:cs-stamp .32s cubic-bezier(.5,0,.8,.5) both,cs-win-breathe 1s .4s ease-in-out infinite alternate;white-space:nowrap}
+@keyframes cs-stamp{0%{transform:scale(3.2);opacity:0}70%{transform:scale(.92);opacity:1}100%{transform:scale(1)}}
+.cs-dust{position:absolute;left:50%;top:50%;width:200px;height:60px;margin:-30px 0 0 -100px;border-radius:50%;background:radial-gradient(ellipse,#ffe9a8aa 0,transparent 70%);transform:scale(.3);opacity:0;animation:cs-dust .7s .16s ease-out forwards}
+@keyframes cs-dust{0%{transform:scale(.3);opacity:.9}100%{transform:scale(6,3);opacity:0}}
+/* NICE: silver ribbon */
+.cs-ribbon{position:fixed;left:0;right:0;top:60%;z-index:34;display:flex;align-items:center;justify-content:center;gap:calc(26px * var(--s));height:calc(130px * var(--s));pointer-events:none;
+ background:linear-gradient(90deg,transparent,#c9d4e8dd 8%,#ffffffee 50%,#c9d4e8dd 92%,transparent);box-shadow:0 0 30px #fff8;animation:cs-ribbon 1s ease-out both}
+.cs-ribbon b{font:900 calc(64px * var(--s))/1 Georgia,serif;color:#24304a;letter-spacing:.04em}
+.cs-ribbon em{font:900 calc(58px * var(--s))/1 Georgia,serif;font-style:normal;color:#8a5a00;text-shadow:0 2px 0 #fff}
+@keyframes cs-ribbon{0%{transform:translateX(-110%) skewX(-12deg)}25%{transform:translateX(0) skewX(0)}80%{transform:translateX(0);opacity:1}100%{transform:translateX(30%);opacity:0}}
+/* SMALL: amount pop */
+.cs-pop-amt{position:fixed;z-index:34;transform:translate(-50%,-50%);font:900 calc(56px * var(--s))/1 Georgia,serif;color:#ffe9a0;text-shadow:0 0 14px #ffb300,0 3px 0 #6a4206;pointer-events:none;animation:cs-pop-amt .9s ease-out forwards}
+@keyframes cs-pop-amt{0%{transform:translate(-50%,-50%) scale(.4);opacity:0}25%{transform:translate(-50%,-80%) scale(1.35);opacity:1}100%{transform:translate(-50%,-150%) scale(1);opacity:0}}

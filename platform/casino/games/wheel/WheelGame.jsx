@@ -21,7 +21,7 @@ const rect=([x,y,a,b])=>b===undefined?{left:x-a,top:y-a,width:2*a,height:2*a,bor
 export default function WheelGame({initial}){
  const id=initial.game_id,GAME=CASINO_GAMES[id],L=CHIP_FIX[id]?{...LAYOUTS[id],chips:{...LAYOUTS[id].chips,...CHIP_FIX[id]}}:LAYOUTS[id],img=n=>`/casino/${id}/${n}.webp?v=${__ASSET_VERSION__}`;
  const g=useRound(initial,GAME),{state,round,phase,now}=g;
- const audio=useAudio(id,['chip','tick','win','lose','coin','click','select','close','chips','spin','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic']);
+ const audio=useAudio(id,['chip','tick','win','lose','coin','click','select','close','chips','spin','ding','nice','stamp','rollup','roll-end','charge','cheer','celebrate-loop','sting-big','sting-mega','sting-epic','sting-legend']);
  const fx=useCelebration(id,audio);
  const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false);
  const [light,setLight]=useState(-1),[landed,setLanded]=useState(false),[flies,setFlies]=useState([]),[coins,setCoins]=useState([]);

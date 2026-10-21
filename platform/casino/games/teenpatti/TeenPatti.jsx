@@ -27,7 +27,7 @@ function Card({code,open,i,dealt}){
 }
 
 export default function TeenPatti({initial}){
- const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('teenpatti',['chip','deal','flip','win','lose','click','tick','chips','coin','shuffle','select','close','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic']),fx=useCelebration('teenpatti',audio);
+ const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('teenpatti',['chip','deal','flip','win','lose','click','tick','chips','coin','shuffle','select','close','ding','nice','stamp','rollup','roll-end','charge','cheer','celebrate-loop','sting-big','sting-mega','sting-epic','sting-legend']),fx=useCelebration('teenpatti',audio);
  const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false),[coins,setCoins]=useState([]),[flies,setFlies]=useState([]);
  const since=now-round.bet_until,result=round.result,seen=useRef({});
  const shown=i=>phase==='result'||(phase==='drawing'&&since>=FLIP_AT[i]);

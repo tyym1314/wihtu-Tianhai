@@ -43,7 +43,7 @@ function Roulette({d,plate,angle,ball}){
 export default function TableGame({initial}){
  const id=initial.game_id,GAME=CASINO_GAMES[id],L=TABLES[id],img=n=>`/casino/${id}/${n}.webp?v=${__ASSET_VERSION__}`,D=L.drawer;
  const g=useRound(initial,GAME),{state,round,phase,now}=g;
- const audio=useAudio(id,['chip','tick','win','lose','coin','click','select','close','chips','spin','dice','throw','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic']);
+ const audio=useAudio(id,['chip','tick','win','lose','coin','click','select','close','chips','spin','dice','throw','ding','nice','stamp','rollup','roll-end','charge','cheer','celebrate-loop','sting-big','sting-mega','sting-epic','sting-legend']);
  const fx=useCelebration(id,audio);
  const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false);
  const [flies,setFlies]=useState([]),[coins,setCoins]=useState([]);

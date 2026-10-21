@@ -78,7 +78,7 @@ function Panel({index,state,phase,mult,balance,onBet,onCash,audio}){
 export default function RocketStar2({initial}){
  const [state,setState]=useState(initial),[balance,setBalance]=useState(initial.balance?.available_minor??null),[now,setNow]=useState(Date.now());
  const [toast,setToast]=useState(null),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false),[offline,setOffline]=useState(false),[pop,setPop]=useState(null);
- const audio=useAudio('rocketstar2',['launch','boom','cash','click','chip','tick','coin','select','close','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic']);
+ const audio=useAudio('rocketstar2',['launch','boom','cash','click','chip','tick','coin','select','close','ding','nice','stamp','rollup','roll-end','charge','cheer','celebrate-loop','sting-big','sting-mega','sting-epic','sting-legend']);
  const cel=useCelebration('rocketstar2',audio),cele=useRef({});
  // Cash-outs (manual or auto) get the win tiers: payout over stake.
  useEffect(()=>{for(const b of state.my_bets||[])if(b.cashout_x100&&b.payout_minor&&!cele.current[b.id]){cele.current[b.id]=1;cel.celebrate(BigInt(b.payout_minor),BigInt(b.stake_minor),{fast:true});}},[state.my_bets]);

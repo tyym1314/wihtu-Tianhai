@@ -25,7 +25,7 @@ const LANTERNS=[[45,540,110],[250,305,90],[95,752,70],[846,342,95],[831,700,100]
 const icon=id=>ORDER.includes(id)?img(`icon-${id}`):img(id);
 
 export default function GreedyLion({initial}){
- const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('greedylion',['chip','tick','win','lose','coin','click','select','close','chips','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic']),fx=useCelebration('greedylion',audio);
+ const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('greedylion',['chip','tick','win','lose','coin','click','select','close','chips','ding','nice','stamp','rollup','roll-end','charge','cheer','celebrate-loop','sting-big','sting-mega','sting-epic','sting-legend']),fx=useCelebration('greedylion',audio);
  const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false);
  const [light,setLight]=useState(-1),[flies,setFlies]=useState([]),[coins,setCoins]=useState([]),[landed,setLanded]=useState(false);
  const lastStep=useRef(-1),lastSec=useRef(-1),played=useRef(null);

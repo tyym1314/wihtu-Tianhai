@@ -33,9 +33,12 @@ export default function SlotGame({initial}){
  const [win,setWin]=useState(0n),[busy,setBusy]=useState(false),[free,setFree]=useState(null),[big,setBig]=useState(null),[summary,setSummary]=useState(null),[turbo,setTurbo]=useState(false);
  const [toast,setToast]=useState(null),[modal,setModal]=useState(null),[auto,setAuto]=useState(0),[menu,setMenu]=useState(false),[records,setRecords]=useState(false);
  const [ladder,setLadder]=useState(0),[reelMult,setReelMult]=useState(null),[feature,setFeature]=useState(null),[fountain,setFountain]=useState(0),[pops,setPops]=useState([]),[expanded,setExpanded]=useState([]),[collected,setCollected]=useState(null),[choice,setChoice]=useState(null);
- const audio=useAudio(id,['spin','stop','drop','tumble','win','bigwin','feature','click','coin','orb','thunder','reel-loop','reel-stop','anticip','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic','fs-trigger','pop']);
+ const audio=useAudio(id,['spin','stop','drop','tumble','win','bigwin','feature','click','coin','orb','thunder','reel-loop','reel-stop','anticip','ding','nice','stamp','rollup','roll-end','charge','cheer','celebrate-loop','sting-big','sting-mega','sting-epic','sting-legend','land-hi','scatter-land','energy','fs-trigger','pop']);
  const HI=new Set([...S.symbols].sort((a,b)=>Math.max(...b.pays.map(p=>p[1]))-Math.max(...a.pays.map(p=>p[1]))).slice(0,3).map(x=>x.id));
- const fx=useCelebration(id,audio),reelLoop=useRef(null),[bounce,setBounce]=useState([]),[anticip,setAnticip]=useState(-1);
+ const fx=useCelebration(id,audio),reelLoop=useRef(null),[bounce,setBounce]=useState([]),[anticip,setAnticip]=useState(-1),[landFlash,setLandFlash]=useState([]),[hot,setHot]=useState(false),streak=useRef(0),energy=useRef(null);
+ // Hot streak: 3 winning spins in a row light the reel frame and add a shimmer layer (presentation only).
+ const setStreak=async won=>{streak.current=won?streak.current+1:0;const on=streak.current>=3;setHot(on);
+  if(on&&!energy.current)energy.current=await audio.loop('energy',{volume:.22});if(!on&&energy.current){energy.current.stop(400);energy.current=null;}};
  const startReels=async()=>{reelLoop.current?.stop(60);reelLoop.current=await audio.loop('reel-loop',{volume:.45});};
  const speed=useRef(1);speed.current=turbo?0.45:1;
  const autoRef=useRef(0),balanceRef=useRef(balance);balanceRef.current=balance;
@@ -59,7 +62,10 @@ export default function SlotGame({initial}){
    await wait(tense?900:c?160:260);
    setSpinning(s=>s.map((v,i)=>i===c?false:v));setBounce(b=>[...b,c]);setTimeout(()=>setBounce(b=>b.filter(x=>x!==c)),360);
    audio.play('reel-stop',{volume:.55,rate:1+c*0.045});if(tense)setAnticip(c+1<COLS?c+1:-1);
-   seen+=next[c].filter(x=>x.s===S.scatter?.id).length;
+   // Top symbols land with weight; each scatter rings one step higher.
+   const his=next[c].map((x,r)=>HI.has(x.s)?c+':'+r:null).filter(Boolean);if(his.length){audio.play('land-hi',{volume:.45});setLandFlash(f=>[...f,...his]);setTimeout(()=>setLandFlash(f=>f.filter(k=>!his.includes(k))),380);}
+   const sc=next[c].filter(x=>x.s===S.scatter?.id).length;if(sc){for(let k=0;k<sc;k++)audio.play('scatter-land',{volume:.7,rate:1+(seen+k)*0.12});haptic('light');}
+   seen+=sc;
    if(c===COLS-1){reelLoop.current?.stop(90);reelLoop.current=null;}
   }
   setAnticip(-1);await wait(200);
@@ -133,6 +139,7 @@ export default function SlotGame({initial}){
    const [r]=await Promise.all([api('/api/casino/spin',{request_id:requestId(),stake_minor:stake}),sleep(300)]);
    const out=await play(r.result,r);const total=out.after?out.prefix+out.after.total:out.total;
    const payout=BigInt(out.payout??r.payout_minor??0);setWin(total);
+   setStreak(total>0n);
    if(total>0n)await fx.celebrate(total,stake,{at:[L.win[0]+L.win[2]/2,L.win[1]+L.win[3]/2],fast:turbo||autoRef.current>0});
    setBalance(b=>b===null?b:String(BigInt(b)+payout));return true;
   }catch(e){audio.bonus(false);reelLoop.current?.stop(60);reelLoop.current=null;setAnticip(-1);setSpinning(Array(COLS).fill(false));setChoice(null);setBalance(b=>b===null?b:String(BigInt(b)+BigInt(cost)));say(ERR[e.code]||'failed');return false;}
@@ -145,14 +152,14 @@ export default function SlotGame({initial}){
 
  const Cell=({x,c,r,board})=>{const k=c+':'+r,lit=board===undefined?winCells.includes(k):line?.board===board&&line.cells.includes(k);
   const coinV=feature?.kind==='collect'&&feature.cells.findIndex(([a,b])=>a===c&&b===r);
-  return <div className={`sg-cell ${lit?(popping?'pop':'win'):''} ${HI.has(x.s)?'hi':''} ${x.g?'gold':''} ${x.random?'magic':''} ${x.mega?'mega':''} ${x.s===S.scatter?.id?'scatter':''} ${x.s===S.wild?.id?'wild':''}`}>
+  return <div className={`sg-cell ${lit?(popping?'pop':'win'):''} ${HI.has(x.s)?'hi':''} ${landFlash.includes(k)?'landhi':''} ${x.g?'gold':''} ${x.random?'magic':''} ${x.mega?'mega':''} ${x.s===S.scatter?.id?'scatter':''} ${x.s===S.wild?.id?'wild':''}`}>
    <img src={img(x.s)} alt="" draggable="false"/>{coinV!==false&&coinV>=0&&<b className="sg-coinv">×{feature.values[coinV]}</b>}</div>;};
  const colTop=c=>(MAXR-rowsOf(c))*ch/2;
  return <Stage plate={img('plate')} className={`sg sg-${id} ${free?'sg-free':''}`} dir={isRtl()?'rtl':'ltr'}>
   {(L.glows||[]).map(([x,y,r],i)=><span key={'g'+i} className="cs-glow" style={{left:x-r,top:y-r,width:2*r,height:2*r,background:`radial-gradient(${L.accent||'#ffd34d'}aa,transparent 70%)`,animationDelay:`${i*.5}s`}}/>)}
   {[[60,300],[880,420],[90,1040],[860,1100],[460,200]].map(([x,y],i)=><span key={i} className="cs-sparkle" style={{left:x,top:y,animationDelay:`${i*.37}s`}}/>)}
   {free&&<div className="sg-freetint"/>}
-  {!boards&&<Box x={rx} y={ry} w={rw} h={rh} className={`sg-reels ${anticip>=0?'tense':''}`}>
+  {!boards&&<Box x={rx} y={ry} w={rw} h={rh} className={`sg-reels ${anticip>=0?'tense':''} ${hot?'hot':''}`}>
    {grid.map((col,c)=><div key={c} className={`sg-col ${spinning[c]?'spinning':''} ${bounce.includes(c)?'bounce':''} ${anticip>=0&&c>=anticip&&spinning[c]?'anticip':''} ${expanded.includes(c)?'expanded':''} ${collected?.wild?.includes(c)?'wildreel':''}`} style={{left:c*cw,top:colTop(c),width:cw,height:rowsOf(c)*ch}}>
     {spinning[c]?<div className="sg-strip" style={{'--h':`${rowsOf(c)*ch}px`}}>{Array.from({length:rowsOf(c)*3},(_,i)=><div key={i} className="sg-cell blur" style={{height:ch}}><img src={img(SYMS[(i*5+c*3)%SYMS.length])} alt=""/></div>)}</div>
      :col.map((x,r)=><div key={keys.current.keys[c]?.[r]||r} className="sg-slot" style={{height:ch,animationDelay:`${r*30}ms`}}><Cell x={x} c={c} r={r}/></div>)}
