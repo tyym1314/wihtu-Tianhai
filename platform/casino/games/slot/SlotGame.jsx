@@ -33,13 +33,12 @@ export default function SlotGame({initial}){
  const [win,setWin]=useState(0n),[busy,setBusy]=useState(false),[free,setFree]=useState(null),[big,setBig]=useState(null),[summary,setSummary]=useState(null),[turbo,setTurbo]=useState(false);
  const [toast,setToast]=useState(null),[modal,setModal]=useState(null),[auto,setAuto]=useState(0),[menu,setMenu]=useState(false),[records,setRecords]=useState(false);
  const [ladder,setLadder]=useState(0),[reelMult,setReelMult]=useState(null),[feature,setFeature]=useState(null),[fountain,setFountain]=useState(0),[pops,setPops]=useState([]),[expanded,setExpanded]=useState([]),[collected,setCollected]=useState(null),[choice,setChoice]=useState(null);
- const audio=useAudio(id,['spin','stop','drop','tumble','win','bigwin','feature','click','coin','orb','thunder','reel-loop','reel-stop','anticip','ding','nice','stamp','rollup','roll-end','charge','cheer','celebrate-loop','sting-big','sting-mega','sting-epic','sting-legend','land-hi','scatter-land','energy','fs-trigger','pop']);
+ const audio=useAudio(id,['spin','stop','drop','tumble','win','bigwin','feature','click','coin','orb','thunder','reel-loop','reel-stop','anticip','ding','nice','stamp','rollup','roll-end','charge','cheer','celebrate-loop','sting-big','sting-mega','sting-epic','sting-legend','land-hi','scatter-land','fs-trigger','pop']);
  const HI=new Set([...S.symbols].sort((a,b)=>Math.max(...b.pays.map(p=>p[1]))-Math.max(...a.pays.map(p=>p[1]))).slice(0,3).map(x=>x.id));
- const fx=useCelebration(id,audio),reelLoop=useRef(null),[bounce,setBounce]=useState([]),[anticip,setAnticip]=useState(-1),[landFlash,setLandFlash]=useState([]),[hot,setHot]=useState(false),streak=useRef(0),energy=useRef(null);
- // Hot streak: 3 winning spins in a row light the reel frame and add a shimmer layer (presentation only).
- const setStreak=async won=>{streak.current=won?streak.current+1:0;const on=streak.current>=3;setHot(on);
-  if(on&&!energy.current)energy.current=await audio.loop('energy',{volume:.22});if(!on&&energy.current){energy.current.stop(400);energy.current=null;}};
- const startReels=async()=>{reelLoop.current?.stop(60);reelLoop.current=await audio.loop('reel-loop',{volume:.45});};
+ const fx=useCelebration(id,audio),reelLoop=useRef(null),[bounce,setBounce]=useState([]),[anticip,setAnticip]=useState(-1),[landFlash,setLandFlash]=useState([]),[hot,setHot]=useState(false),streak=useRef(0);
+ // Hot streak: 3 winning spins in a row light the reel frame (presentation only).
+ const setStreak=won=>{streak.current=won?streak.current+1:0;setHot(streak.current>=3);};
+ const startReels=()=>{reelLoop.current?.stop(60);reelLoop.current=audio.loop('reel-loop',{volume:.4});};
  const speed=useRef(1);speed.current=turbo?0.45:1;
  const autoRef=useRef(0),balanceRef=useRef(balance);balanceRef.current=balance;
  const wait=ms=>sleep(ms*speed.current);
