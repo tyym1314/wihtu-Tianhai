@@ -35,7 +35,7 @@ const BOLT=()=>{let x=50+Math.random()*40-20,y=0,pts=[`${x},0`];while(y<100){y+=
  */
 export function useCelebration(id,audio){
  const [show,setShow]=useState(null),[pops,setPops]=useState([]),skip=useRef(null),theme=themeOf(id),th=thresholdsFor(id);
- useEffect(()=>{for(const n of ['title-big','title-mega','title-epic','title-legendary','vault-door','crown','fire-frame']){const i=new Image();i.src=art(n);}},[]);
+ useEffect(()=>{for(const n of ['title-nice','title-big','title-mega','title-epic','title-legendary','vault-door','crown','fire-frame']){const i=new Image();i.src=art(n);}},[]);
  async function celebrate(total,stake,{at,fast=false}={}){
   const win=Number(total),bet=Number(stake);if(!(win>0)||!(bet>0))return;
   const x=win/bet,tier=tierOf(x,th),speed=fast?0.5:1;
@@ -45,11 +45,12 @@ export function useCelebration(id,audio){
    const p={id:Math.random(),x:sx,y:sy,v:win};setPops(a=>[...a,p]);setTimeout(()=>setPops(a=>a.filter(q=>q.id!==p.id)),900);
    audio.play('ding',{volume:.7});burst({kind:'sparks',x:sx,y:sy,count:12,size:.8,theme});haptic('tick');await sleep(400*speed);return;
   }
-  // NICE: a silver ribbon swipes across under the reels.
+  // NICE: a platinum badge pops above the reels (glass plate, light sweep, twinkling stars), amount rolls under it.
   if(tier==='nice'){
-   setShow({kind:'ribbon',value:0});audio.play('nice',{volume:.9});haptic('light');burst({kind:'coins',x:sx,y:sy,count:22,theme});burst({kind:'sparks',x:sx,y:sy,count:16,theme});
-   const ms=600*speed,t0=performance.now();while(true){const p=Math.min(1,(performance.now()-t0)/ms);setShow(s=>s&&{...s,value:Math.round(win*easeOut(p))});if(p>=1)break;await sleep(33);}
-   await sleep(Math.max(200,1000*speed-ms));setShow(null);return;
+   const total=fast?1200:1800,ms=Math.min(900,total*0.5);setShow({kind:'nice',value:0});audio.play('nice',{volume:.9});haptic('light');
+   setTimeout(()=>{const [cx,cy]=[innerWidth/2,innerHeight*0.42];burst({kind:'sparks',x:cx,y:cy,count:26,theme:{...theme,spark:['#ffffff','#bfe9ff','#7fd4ff']}});burst({kind:'coins',x:sx,y:sy,count:16,theme});},180);
+   const t0=performance.now();while(true){const p=Math.min(1,(performance.now()-t0)/ms);setShow(s=>s&&{...s,value:Math.round(win*easeOut(p))});if(p>=1)break;await sleep(33);}
+   setShow(s=>s&&{...s,done:true});await sleep(total-ms-280);setShow(s=>s&&{...s,leaving:true});await sleep(280);setShow(null);return;
   }
   audio.duck(tier==='great'?0.5:0.25);
   try{
@@ -107,7 +108,9 @@ export function useCelebration(id,audio){
  if(typeof location!=='undefined'&&/^(localhost|127\.0\.0\.1)$/.test(location.hostname))window.__oasisFx=(w,b,o)=>celebrate(w,b,o);
  const st=typeof document!=='undefined'&&document.querySelector('.cs-stage'),sc=st?st.getBoundingClientRect().width/st.offsetWidth:1;
  let layer=null;
- if(show?.kind==='ribbon')layer=<div className="cs-ribbon"><b>{t('niceWin')}</b><em>{full(show.value)}</em></div>;
+ if(show?.kind==='nice')layer=<div className={`cs-nice ${show.done?'done':''} ${show.leaving?'leaving':''}`}>
+  <div className="cs-nice-plate"><i className="cs-nice-sweep"/>{[0,1,2,3,4,5].map(i=><i key={i} className="cs-star" style={{'--i':i}}/>)}
+   <img className="cs-nice-title" src={art('title-nice')} alt={t('niceWin')}/><em>{full(show.value)}</em></div></div>;
  else if(show?.kind==='great')layer=<div className={`cs-win banner great ${show.done?'done':''}`} onClick={()=>skip.current?.()}>
   <i className="cs-dust"/><div className="cs-win-box"><b className="cs-stamp">{t('greatWin')}</b><em className="cs-win-amount">{full(show.value)}</em></div></div>;
  else if(show?.kind==='full')layer=<div className={`cs-win full ${show.tier} ${show.done?'done':''} ${show.charging?'charging':''}`} onClick={()=>skip.current?.()}>

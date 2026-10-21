@@ -148,3 +148,21 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 /* SMALL: amount pop */
 .cs-pop-amt{position:fixed;z-index:34;transform:translate(-50%,-50%);font:900 calc(56px * var(--s))/1 Georgia,serif;color:#ffe9a0;text-shadow:0 0 14px #ffb300,0 3px 0 #6a4206;pointer-events:none;animation:cs-pop-amt .9s ease-out forwards}
 @keyframes cs-pop-amt{0%{transform:translate(-50%,-50%) scale(.4);opacity:0}25%{transform:translate(-50%,-80%) scale(1.35);opacity:1}100%{transform:translate(-50%,-150%) scale(1);opacity:0}}
+/* NICE: platinum badge */
+.cs-nice{position:fixed;left:0;right:0;top:42%;z-index:34;display:flex;justify-content:center;pointer-events:none;transform:translateY(-50%)}
+.cs-nice-plate{position:relative;display:flex;flex-direction:column;align-items:center;gap:calc(4px * var(--s));padding:calc(26px * var(--s)) calc(70px * var(--s)) calc(22px * var(--s));border-radius:calc(40px * var(--s));overflow:hidden;
+ background:radial-gradient(ellipse at 50% 35%,#2a4a7af2 0,#0c1830f5 60%,#060c1af8 100%);box-shadow:0 0 0 calc(3px * var(--s)) #cfe6ffaa,0 0 calc(40px * var(--s)) #7fd4ff88,inset 0 0 calc(30px * var(--s)) #7fd4ff44;
+ animation:cs-nice-in .5s cubic-bezier(.2,1.6,.4,1) both}
+.cs-nice.leaving .cs-nice-plate{animation:cs-nice-out .28s ease-in forwards}
+@keyframes cs-nice-in{0%{transform:scale(.55) rotate(-4deg);opacity:0}100%{transform:none;opacity:1}}
+@keyframes cs-nice-out{to{transform:translateY(-30%) scale(.9);opacity:0}}
+.cs-nice-title{width:calc(560px * var(--s));display:block;filter:drop-shadow(0 calc(6px * var(--s)) calc(8px * var(--s)) #000a);animation:cs-nice-title .6s .08s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes cs-nice-title{0%{transform:scale(1.8);opacity:0;filter:brightness(3) blur(4px)}100%{transform:none;opacity:1}}
+.cs-nice-plate em{font:900 calc(92px * var(--s))/1 Georgia,serif;font-style:normal;color:#eef8ff;text-shadow:0 0 calc(18px * var(--s)) #7fd4ff,0 calc(4px * var(--s)) 0 #1a3a6a;font-variant-numeric:tabular-nums}
+.cs-nice.done .cs-nice-plate em{animation:cs-win-pop .45s cubic-bezier(.2,1.6,.4,1)}
+.cs-nice-sweep{position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,#ffffff88 48%,#ffffffcc 50%,#ffffff88 52%,transparent 70%) -150% 0/220% 100% no-repeat;animation:cs-nice-sweep 1.1s .35s ease-in-out;mix-blend-mode:screen}
+@keyframes cs-nice-sweep{to{background-position:250% 0}}
+.cs-star{position:absolute;width:calc(22px * var(--s));height:calc(22px * var(--s));left:calc(8% + var(--i) * 16.5%);top:calc(12% + (var(--i) * 37 % 70) * 1%);
+ background:radial-gradient(circle,#fff 0 18%,transparent 20%),conic-gradient(from 45deg,transparent 0 10%,#fff 12% 13%,transparent 15% 35%,#fff 37% 38%,transparent 40% 60%,#fff 62% 63%,transparent 65% 85%,#fff 87% 88%,transparent 90%);
+ opacity:0;animation:cs-twinkle 1s calc(.25s + var(--i) * .14s) ease-in-out infinite}
+@keyframes cs-twinkle{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:1;transform:scale(1.2) rotate(45deg)}}
