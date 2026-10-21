@@ -20,6 +20,7 @@ export class OasisHost {
   else if(data.type==='oasis.return_requested'&&this.loaded){this.emit('return_requested',{reason:data.reason==='completed'?'completed':'user',room_id:typeof data.room_id==='string'?data.room_id:undefined,status:typeof data.status==='string'?data.status:undefined,presentation_only:true});}
   else if(data.type==='oasis.progress'&&this.loaded&&Number.isFinite(data.value))this.emit('progress',{value:Math.max(0,Math.min(1,data.value))});
   else if(data.type==='oasis.shown'&&this.loaded)this.emit('shown',{});
+  else if(data.type==='oasis.haptic'&&this.loaded)this.emit('haptic',{kind:String(data.kind||'light')});
   else if(data.type==='oasis.recharge_requested'&&this.loaded)this.emit('recharge_requested',{reason:data.reason==='insufficient'?'insufficient':'user'});
   else if(data.type==='oasis.host_state_applied'&&this.loaded)this.emit('host_state_applied',{request_id:data.request_id});
   else if(data.type==='oasis.reauth_required'&&this.loaded&&!this.reauthorizing){this.reauthorizing=true;this.emit('reauthorizing');clearTimeout(this.timer);this.timer=setTimeout(()=>{this.reauthorizing=false;this.fail('REAUTH_TIMEOUT','The original session was not reauthorized; return to the App and reopen.');},this.timeoutMs);this.getLaunch(true).catch(e=>{clearTimeout(this.timer);this.reauthorizing=false;this.fail('REAUTH_FAILED',e.message);});}

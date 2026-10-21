@@ -1,3 +1,4 @@
+import {useCelebration} from '../../shared/fx/Celebrate.jsx';
 import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {api,requestId,registerHostControls,requestExit} from '../../shared/client.mjs';
 import {t,isRtl} from '../../shared/i18n.mjs';
@@ -77,7 +78,10 @@ function Panel({index,state,phase,mult,balance,onBet,onCash,audio}){
 export default function RocketStar2({initial}){
  const [state,setState]=useState(initial),[balance,setBalance]=useState(initial.balance?.available_minor??null),[now,setNow]=useState(Date.now());
  const [toast,setToast]=useState(null),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false),[offline,setOffline]=useState(false),[pop,setPop]=useState(null);
- const audio=useAudio('rocketstar2',['launch','boom','cash','click','chip','tick','coin','select','close']);
+ const audio=useAudio('rocketstar2',['launch','boom','cash','click','chip','tick','coin','select','close','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic']);
+ const cel=useCelebration('rocketstar2',audio),cele=useRef({});
+ // Cash-outs (manual or auto) get the win tiers: payout over stake.
+ useEffect(()=>{for(const b of state.my_bets||[])if(b.cashout_x100&&b.payout_minor&&!cele.current[b.id]){cele.current[b.id]=1;cel.celebrate(BigInt(b.payout_minor),BigInt(b.stake_minor),{fast:true});}},[state.my_bets]);
  const offset=useRef(initial.server_now-Date.now()),balanceRound=useRef(null),ref=useRef(initial),ship=useRef(null),seen=useRef({}),tip=useRef([560,500]);
  const serverNow=()=>Date.now()+offset.current;
  const say=useCallback(key=>setToast({key,id:Math.random()}),[]);
@@ -106,12 +110,13 @@ export default function RocketStar2({initial}){
   catch(e){if(balance!==null)setBalance(b=>String(BigInt(b)+BigInt(stake)));say(ERR[e.code]||'failed');}
  }
  async function onCash(bet){
-  try{const done=await api('/api/casino/cashout',{bet_id:bet.id});audio.play('cash');audio.play('coin');setPop({id:Math.random(),x:done.cashout_x100,v:done.payout_minor});setTimeout(()=>setPop(null),1600);setState(s=>({...s,my_bets:s.my_bets.map(b=>b.id===done.id?done:b)}));if(balance!==null)setBalance(b=>String(BigInt(b)+BigInt(done.payout_minor)));}
+  try{const done=await api('/api/casino/cashout',{bet_id:bet.id});audio.play('cash');setPop({id:Math.random(),x:done.cashout_x100,v:done.payout_minor});setTimeout(()=>setPop(null),1600);setState(s=>({...s,my_bets:s.my_bets.map(b=>b.id===done.id?done:b)}));if(balance!==null)setBalance(b=>String(BigInt(b)+BigInt(done.payout_minor)));}
   catch(e){say(ERR[e.code]||'failed');}
  }
  const tone=x=>x>=1000?'gold':x>=200?'green':'red';
  const tier=mult>=1000?'t4':mult>=500?'t3':mult>=200?'t2':'t1';
  return <Stage plate={img('plate')} className={`rs-${phase}`} dir={isRtl()?'rtl':'ltr'}>
+  {cel.node}
   {phase==='flying'&&<div className="rs-stars" style={{animationDuration:`${Math.max(.25,1.6-Math.log2(mult/100)*.35)}s`}}/>}
   <div className={phase==='crashed'?'rs-shake':''}><Flight round={round} now={now} phase={phase} ship={ship} tip={tip}/></div>
   <PhaseBanner round={round} phase={phase} text={{betting:t('startBet'),flying:t('stopBet')}} onShow={p=>audio.play(p==='betting'?'select':'close')}/>

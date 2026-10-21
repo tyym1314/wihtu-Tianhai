@@ -178,6 +178,7 @@ else{
    else if(event.type==='progress')milestone=Math.max(milestone,40+event.value*55);
    else if(event.type==='shown')finish();
    else if(event.type==='recharge_requested')notifyApp('recharge',{reason:event.reason});
+   else if(event.type==='haptic')notifyApp('haptic',{kind:event.kind});
    // A game's own back button (reason "user") gets the same confirmation; game-completed returns go straight back.
    else if(event.type==='return_requested'){if(event.reason==='user'&&!quitConfirmed){if($('quit').hidden)requestBack();}else close({reason:event.reason,room_id:event.room_id,status:event.status});}
    else if(event.type==='error'){loader.hidden=true;show('error',T.errTitle,event.code==='REAUTH_REQUIRED'||event.code==='REAUTH_FAILED'?T.expired:T.retry);notifyApp('error',{code:event.code});}

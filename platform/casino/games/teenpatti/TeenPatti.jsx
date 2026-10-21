@@ -1,3 +1,4 @@
+import {useCelebration} from '../../shared/fx/Celebrate.jsx';
 import {ChipRow,chipAt} from '../../shared/ChipRow.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import {t,isRtl} from '../../shared/i18n.mjs';
@@ -26,7 +27,7 @@ function Card({code,open,i,dealt}){
 }
 
 export default function TeenPatti({initial}){
- const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('teenpatti',['chip','deal','flip','win','lose','click','tick','chips','coin','shuffle','select','close']);
+ const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('teenpatti',['chip','deal','flip','win','lose','click','tick','chips','coin','shuffle','select','close','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic']),fx=useCelebration('teenpatti',audio);
  const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false),[coins,setCoins]=useState([]),[flies,setFlies]=useState([]);
  const since=now-round.bet_until,result=round.result,seen=useRef({});
  const shown=i=>phase==='result'||(phase==='drawing'&&since>=FLIP_AT[i]);
@@ -34,7 +35,7 @@ export default function TeenPatti({initial}){
  const secs=Math.max(0,Math.ceil((round.bet_until-now)/1000));
  const once=(k,f)=>{if(!seen.current[round.id+k]){seen.current[round.id+k]=1;f();}};
  useEffect(()=>{if(phase==='drawing')once('deal',()=>audio.play('deal'));HANDS.forEach((_,i)=>{if(phase==='drawing'&&shown(i))once('f'+i,()=>audio.play('flip'));});
-  if(winner)once('w',()=>{const won=g.myWin>0n||state.my_bets.some(b=>b.option_id===winner);audio.play(won?'win':g.myStake>0n?'lose':'select');
+  if(winner)once('w',()=>{const won=g.myWin>0n||state.my_bets.some(b=>b.option_id===winner);if(g.myWin>0n)fx.celebrate(g.myWin,g.myStake,{fast:true});else audio.play(won?'win':g.myStake>0n?'lose':'select');
    if(g.mine[winner]){const x=ZONE_X[winner]+ZONE_W/2,y=950;setCoins(Array.from({length:12},(_,k)=>({id:round.id+k,x,y,dx:BALANCE[0]-x+(k-6)*10,dy:BALANCE[1]-y,delay:k*55})));setTimeout(()=>audio.play('coin'),700);setTimeout(()=>setCoins([]),2200);}});},[now]);
  useEffect(()=>{if(phase==='betting'&&secs<=3&&secs>0)once('t'+secs,()=>audio.play('tick'));},[secs]);
  const totals=state.totals||{};
@@ -67,6 +68,7 @@ export default function TeenPatti({initial}){
     <button className="cs-icon-btn tp-ib" onClick={audio.toggle}>{audio.muted?'🔇':'🔊'}</button>
     <button className="cs-icon-btn tp-ib" onClick={g.exit}>⏻</button></>}
   </div>
+  {fx.node}
   {phase==='result'&&(g.myWin>0n||g.myStake>0n)&&<Box x={220} y={880} w={500} h={110} className="tp-banner">{g.myWin>0n?<p>{t('youWon')} <b><CountUp value={Number(g.myWin)} format={v=>full(Math.round(v))}/></b></p>:<p>{t('noWin')}</p>}</Box>}
   {g.offline&&<div className="cs-toast">{t('offline')}</div>}
   {g.toast&&<div className="cs-toast" key={g.toast.id}>{t(g.toast.key,[GAME.maxOptionsPerRound])}</div>}

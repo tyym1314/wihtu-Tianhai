@@ -69,3 +69,27 @@
 .sg-choice>div{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .sg-choice button{display:flex;flex-direction:column;align-items:center;padding:14px;border-radius:18px;border:3px solid #ffd34d;background:linear-gradient(#5a2a8a,#2a0a4a);color:#fff}
 .sg-choice b{font:900 54px 'Arial Black',sans-serif;color:#ffe14d}.sg-choice small{font-size:20px}.sg-choice em{font:900 36px sans-serif;font-style:normal;color:#7dfcff}
+/* Reel feel: kick on start, overshoot on stop, slow glowing reels when a feature is one scatter away */
+.sg-col.spinning{animation:sg-kick .22s ease-out}
+@keyframes sg-kick{0%{transform:none}40%{transform:translateY(-18px)}100%{transform:none}}
+.sg-col.bounce{animation:sg-bounce .34s cubic-bezier(.3,1.8,.5,1)}
+@keyframes sg-bounce{0%{transform:translateY(-22px)}55%{transform:translateY(9px)}100%{transform:none}}
+.sg-col.anticip{box-shadow:inset 0 0 0 5px #ffd34d,0 0 34px 10px #ffb300aa;border-radius:14px;animation:sg-tense .45s ease-in-out infinite alternate;z-index:2}
+.sg-col.anticip .sg-strip{animation-duration:.12s!important}
+@keyframes sg-tense{from{box-shadow:inset 0 0 0 4px #ffd34d,0 0 20px 6px #ffb30088}to{box-shadow:inset 0 0 0 7px #fff3b0,0 0 46px 16px #ffb300}}
+.sg-reels.tense .sg-col:not(.anticip){filter:brightness(.55);transition:filter .25s}
+/* Symbol wins: shine sweep on every winner; top symbols, wilds and scatters get their own motion */
+.sg-cell.win::before{content:'';position:absolute;inset:6%;border-radius:16px;pointer-events:none;background:linear-gradient(115deg,transparent 35%,#fff9 50%,transparent 65%) 0 0/260% 100%;mix-blend-mode:screen;animation:sg-shine .9s linear infinite;z-index:1}
+@keyframes sg-shine{from{background-position:130% 0}to{background-position:-130% 0}}
+.sg-cell.win.hi{animation:sg-win-hi .5s ease-in-out infinite alternate}
+.sg-cell.win.hi::after{content:'';position:absolute;inset:-4%;border-radius:50%;background:conic-gradient(from 0deg,#ffd34d00,#ffd34d99,#fff6,#ffd34d00 40%,#ffd34d99 70%,#ffd34d00);filter:blur(8px);animation:sg-halo 1.6s linear infinite;z-index:-1;pointer-events:none}
+@keyframes sg-win-hi{from{transform:scale(1.04)}to{transform:scale(1.2)}}
+@keyframes sg-halo{to{transform:rotate(360deg)}}
+.sg-cell.win.wild{animation:sg-win-wild .6s ease-in-out infinite alternate}
+.sg-cell.win.wild img{filter:drop-shadow(0 0 18px #fff) drop-shadow(0 0 10px #c58bff) hue-rotate(0deg);animation:sg-rainbow 1.4s linear infinite}
+@keyframes sg-win-wild{0%{transform:scale(1.05) rotate(-4deg)}100%{transform:scale(1.18) rotate(4deg)}}
+@keyframes sg-rainbow{to{filter:drop-shadow(0 0 18px #fff) drop-shadow(0 0 10px #c58bff) hue-rotate(360deg)}}
+.sg-cell.win.scatter{animation:sg-win-scatter .42s cubic-bezier(.3,1.6,.5,1) infinite alternate}
+@keyframes sg-win-scatter{from{transform:translateY(0) scale(1.05)}to{transform:translateY(-10px) scale(1.2)}}
+.sg-lines polyline.flow{stroke:#fff;stroke-width:5;stroke-dasharray:26 70;filter:drop-shadow(0 0 6px #fff);animation:sg-flow .6s linear infinite;opacity:.9}
+@keyframes sg-flow{to{stroke-dashoffset:-96}}

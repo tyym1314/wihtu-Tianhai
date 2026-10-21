@@ -1,3 +1,4 @@
+import {useCelebration} from '../../shared/fx/Celebrate.jsx';
 import {ChipRow,chipAt} from '../../shared/ChipRow.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import {t,isRtl} from '../../shared/i18n.mjs';
@@ -42,7 +43,8 @@ function Roulette({d,plate,angle,ball}){
 export default function TableGame({initial}){
  const id=initial.game_id,GAME=CASINO_GAMES[id],L=TABLES[id],img=n=>`/casino/${id}/${n}.webp?v=${__ASSET_VERSION__}`,D=L.drawer;
  const g=useRound(initial,GAME),{state,round,phase,now}=g;
- const audio=useAudio(id,['chip','tick','win','lose','coin','click','select','close','chips','spin','dice','throw']);
+ const audio=useAudio(id,['chip','tick','win','lose','coin','click','select','close','chips','spin','dice','throw','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic']);
+ const fx=useCelebration(id,audio);
  const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false);
  const [flies,setFlies]=useState([]),[coins,setCoins]=useState([]);
  const lastSec=useRef(-1),played=useRef(null),rolled=useRef(null);
@@ -55,7 +57,7 @@ export default function TableGame({initial}){
  useEffect(()=>{if(phase==='drawing'&&rolled.current!==round.id){rolled.current=round.id;if(D.type==='dice')audio.play('dice');}},[phase,round.id]);
  useEffect(()=>{
   if(phase!=='result'||played.current===round.id||!result)return;played.current=round.id;
-  const won=g.myWin>0n;audio.play(won?'win':g.myStake>0n?'lose':'select');
+  const won=g.myWin>0n;if(won)fx.celebrate(g.myWin,g.myStake,{fast:true});else audio.play(g.myStake>0n?'lose':'select');
   if(won){const bal=[L.balance[0]+L.balance[2]/2,L.balance[1]+L.balance[3]/2];
    const from=GAME.options.filter(o=>winning(o)&&g.mine[o.id]).map(o=>{const [x,y,w,h]=L.cells[o.id];return [x+w/2,y+h/2];});
    setCoins(from.flatMap(([x,y],k)=>Array.from({length:10},(_,i)=>({id:`${round.id}-${k}-${i}`,x,y,dx:bal[0]-x+(i-5)*8,dy:bal[1]-y,delay:i*60}))));
@@ -111,6 +113,7 @@ export default function TableGame({initial}){
    {totals[o.id]&&<Box x={x+w/2-60+(L.totalAt?.[0]||0)} y={y+(L.totalAt?.[1]??4)} w={120} h={30} className="wg-total">{short(totals[o.id].stake_minor)}</Box>}
    {g.mine[o.id]&&<Box x={x+w-92} y={y+h-46} w={84} h={40} className="wg-mine">{short(g.mine[o.id])}</Box>}
   </React.Fragment>;})}
+  {fx.node}
   {phase==='result'&&result&&(g.myWin>0n||g.myStake>0n)&&<Box x={bnx} y={bny} w={bnw} h={110} className="wg-banner">
    {g.myWin>0n?<p className="won">{t('youWon')} <b><CountUp value={Number(g.myWin)} format={v=>full(Math.round(v))}/></b></p>:<p>{t('noWin')}</p>}
   </Box>}

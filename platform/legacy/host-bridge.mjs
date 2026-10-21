@@ -34,6 +34,8 @@ export function createGameHostBridge({game,onLaunch,onState=()=>{},onBack=()=>{}
   progress(value){if(phase==='loaded'&&modern&&Number.isFinite(value))post('oasis.progress',{value:Math.max(0,Math.min(1,value))});},
   shown(){if(phase==='loaded'&&modern)post('oasis.shown');},
   // Ask the host App to open its own top-up page (balance tapped or not enough coins).
+  // Haptic feedback (App 1.6.7+): tick | light | medium | heavy | celebrate; ignored by hosts without vibration.
+  haptic(kind='light'){if(phase==='loaded'&&modern)post('oasis.haptic',{kind:['tick','light','medium','heavy','celebrate'].includes(kind)?kind:'light'});},
   requestRecharge(reason='user'){if(phase==='loaded'&&modern)post('oasis.recharge_requested',{reason:reason==='insufficient'?'insufficient':'user'});},
   requestReauth(){if(phase==='loaded'&&modern){phase='reauth';armTimeout();post('oasis.reauth_required');return true;}return false;},
   // This confirms dispatch to the pinned host, not host navigation or an ACK.

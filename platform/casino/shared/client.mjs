@@ -8,6 +8,8 @@ export function registerHostControls(callbacks){controls.add(callbacks);return()
 export const reportProgress=value=>bridge?.progress?.(value);
 export const reportShown=()=>bridge?.shown?.();
 export const requestRecharge=(reason='user')=>bridge?.requestRecharge?.(reason);
+/** Vibration on the phone (App 1.6.7+, Android): tick | light | medium | heavy | celebrate. */
+export const haptic=kind=>{try{bridge?.haptic?.(kind);}catch{}};
 export function requestExit(details={}){return bridge?.completeReturn?.({reason:'user',...details})===true;}
 
 export async function api(path,body,{signal}={}){

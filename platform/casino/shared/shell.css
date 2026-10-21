@@ -54,3 +54,32 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cs-chip.on{transform:translateY(-6px)}
 .cs-chip.on::after{box-shadow:inset 0 0 0 4px #ffd84a,0 0 0 2px #ffd84a,0 0 22px 6px #ffd34d99}
 .cs-chip:disabled{filter:brightness(.7)}
+/* Win celebration (casino/shared/fx/Celebrate.jsx) */
+.cs-win{position:fixed;inset:0;z-index:35;display:grid;place-items:center;pointer-events:auto;overflow:hidden;--g1:#fffbe6;--g2:#ffd56b;--g3:#c98a12;--glow:#ffb300}
+.cs-win.full{background:radial-gradient(circle at 50% 46%,#1a0f00e6 0,#000000e0 45%,#000000f0 100%);animation:cs-win-in .35s ease-out}
+.cs-win.full .cs-win-box{top:46%;padding:60px 40px;background:radial-gradient(ellipse at center,#000d 0,#0009 50%,transparent 72%)}
+.cs-win.banner{inset:auto 0;top:38%;height:calc(320px * var(--s));background:linear-gradient(90deg,#000a,#000000ee 12%,#000000ee 88%,#000a);box-shadow:0 0 0 3px #ffd56b55,0 0 60px #ffb30055;animation:cs-win-in .25s ease-out}
+.cs-win-rays{position:absolute;left:50%;top:46%;width:1800px;height:1800px;margin:-900px 0 0 -900px;transform-origin:center;scale:var(--s);background:repeating-conic-gradient(from 0deg,#ffd56b2e 0 8deg,transparent 8deg 20deg);animation:cs-rays 9s linear infinite;mask-image:radial-gradient(circle,#000 0,transparent 62%);-webkit-mask-image:radial-gradient(circle,#000 0,transparent 62%)}
+.cs-win-box{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(var(--s));display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.cs-win-label{font:900 118px/1 Georgia,serif;letter-spacing:.02em;background:linear-gradient(var(--g1),var(--g2) 45%,var(--g3) 62%,var(--g1));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 7px 0 #5a3604) drop-shadow(0 0 34px var(--glow));animation:cs-win-pop .55s cubic-bezier(.2,1.6,.4,1),cs-win-breathe 1.2s .55s ease-in-out infinite alternate;white-space:nowrap}
+.cs-win.banner .cs-win-label{font-size:104px}
+.cs-win-amount{font:900 96px/1 Georgia,serif;font-style:normal;color:#fff6d8;text-shadow:0 0 26px var(--glow),0 5px 0 #6a4206;font-variant-numeric:tabular-nums}
+.cs-win.banner .cs-win-amount{font-size:80px}
+.cs-win.done .cs-win-amount{animation:cs-win-pop .5s cubic-bezier(.2,1.6,.4,1)}
+.cs-win-skip{margin-top:26px;font:600 30px/1 sans-serif;color:#fff9;letter-spacing:.04em}
+.cs-win.mega{--g1:#fff4fd;--g2:#ffb8f4;--g3:#f05ad8;--glow:#ff4fd8}
+.cs-win.mega .cs-win-rays{background:repeating-conic-gradient(from 0deg,#ff9af033 0 8deg,transparent 8deg 20deg)}
+.cs-win.epic{--g2:#9fe8ff;--g3:#2b7de0;--glow:#38b6ff}
+.cs-win.epic .cs-win-rays{background:repeating-conic-gradient(from 0deg,#9fe8ff33 0 7deg,transparent 7deg 15deg);animation-duration:5s}
+.cs-win.legendary{--g2:#ffef9a;--g3:#ff5a1f;--glow:#ff3d00}
+.cs-win.legendary .cs-win-rays{background:repeating-conic-gradient(from 0deg,#ffb34733 0 6deg,#ff3d0022 6deg 9deg,transparent 9deg 15deg);animation-duration:3.5s}
+.cs-win.mega .cs-win-label,.cs-win.epic .cs-win-label{font-size:126px}
+.cs-win.legendary .cs-win-label{font-size:86px}
+@keyframes cs-win-in{from{opacity:0}to{opacity:1}}
+@keyframes cs-rays{to{transform:rotate(360deg)}}
+@keyframes cs-win-pop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.18);opacity:1}100%{transform:scale(1)}}
+@keyframes cs-win-breathe{from{transform:scale(1)}to{transform:scale(1.06)}}
+.cs-shake{animation:cs-shake .45s ease-out}
+.cs-shake-hard{animation:cs-shake-hard .6s ease-out}
+@keyframes cs-shake{0%,100%{transform:none}20%{transform:translate(-6px,3px)}40%{transform:translate(5px,-4px)}60%{transform:translate(-3px,2px)}80%{transform:translate(2px,-1px)}}
+@keyframes cs-shake-hard{0%,100%{transform:none}15%{transform:translate(-12px,6px) rotate(-.4deg)}30%{transform:translate(10px,-8px) rotate(.4deg)}45%{transform:translate(-8px,5px)}60%{transform:translate(6px,-4px)}80%{transform:translate(-3px,2px)}}

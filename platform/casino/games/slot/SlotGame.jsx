@@ -1,3 +1,7 @@
+import {useCelebration} from '../../shared/fx/Celebrate.jsx';
+import {burst,toScreen} from '../../shared/fx/particles.js';
+import {themeOf} from '../../shared/fx/themes.js';
+import {haptic} from '../../shared/client.mjs';
 import React,{useEffect,useRef,useState} from 'react';
 import {api,requestId,registerHostControls,requestExit,requestRecharge} from '../../shared/client.mjs';
 import {t,isRtl} from '../../shared/i18n.mjs';
@@ -29,7 +33,10 @@ export default function SlotGame({initial}){
  const [win,setWin]=useState(0n),[busy,setBusy]=useState(false),[free,setFree]=useState(null),[big,setBig]=useState(null),[summary,setSummary]=useState(null),[turbo,setTurbo]=useState(false);
  const [toast,setToast]=useState(null),[modal,setModal]=useState(null),[auto,setAuto]=useState(0),[menu,setMenu]=useState(false),[records,setRecords]=useState(false);
  const [ladder,setLadder]=useState(0),[reelMult,setReelMult]=useState(null),[feature,setFeature]=useState(null),[fountain,setFountain]=useState(0),[pops,setPops]=useState([]),[expanded,setExpanded]=useState([]),[collected,setCollected]=useState(null),[choice,setChoice]=useState(null);
- const audio=useAudio(id,['spin','stop','drop','tumble','win','bigwin','feature','click','coin','orb','thunder']);
+ const audio=useAudio(id,['spin','stop','drop','tumble','win','bigwin','feature','click','coin','orb','thunder','reel-loop','reel-stop','anticip','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic','fs-trigger','pop']);
+ const HI=new Set([...S.symbols].sort((a,b)=>Math.max(...b.pays.map(p=>p[1]))-Math.max(...a.pays.map(p=>p[1]))).slice(0,3).map(x=>x.id));
+ const fx=useCelebration(id,audio),reelLoop=useRef(null),[bounce,setBounce]=useState([]),[anticip,setAnticip]=useState(-1);
+ const startReels=async()=>{reelLoop.current?.stop(60);reelLoop.current=await audio.loop('reel-loop',{volume:.45});};
  const speed=useRef(1);speed.current=turbo?0.45:1;
  const autoRef=useRef(0),balanceRef=useRef(balance);balanceRef.current=balance;
  const wait=ms=>sleep(ms*speed.current);
@@ -46,12 +53,25 @@ export default function SlotGame({initial}){
  async function land(next,{free:isFree}={}){
   setGrid(next);setGen(g=>g+1);
   // Reels stop left to right.
-  for(let c=0;c<COLS;c++){await wait(c?150:250);setSpinning(s=>s.map((v,i)=>i===c?false:v));audio.play('stop',{volume:.5});}
-  await wait(200);
+  const need=S.scatter?(S.freeSpins?.trigger||3)-1:99;let seen=0,tense=false;
+  for(let c=0;c<COLS;c++){
+   if(!tense&&S.scatter&&seen>=need&&c<COLS){tense=true;setAnticip(c);audio.play('anticip',{volume:.7});haptic('light');}
+   await wait(tense?900:c?160:260);
+   setSpinning(s=>s.map((v,i)=>i===c?false:v));setBounce(b=>[...b,c]);setTimeout(()=>setBounce(b=>b.filter(x=>x!==c)),360);
+   audio.play('reel-stop',{volume:.55,rate:1+c*0.045});if(tense)setAnticip(c+1<COLS?c+1:-1);
+   seen+=next[c].filter(x=>x.s===S.scatter?.id).length;
+   if(c===COLS-1){reelLoop.current?.stop(90);reelLoop.current=null;}
+  }
+  setAnticip(-1);await wait(200);
+ }
+ function sparkCells(wins,kind){
+  const cells=[...new Set(wins.flatMap(w=>w.cells.map(([c,r])=>c+':'+r)))].slice(0,12),theme=themeOf(id);
+  for(const k of cells){const [c,r]=k.split(':').map(Number),[x,y]=toScreen(...cellXY(c,r));
+   burst({kind:'sparks',x,y,count:kind==='pop'?14:7,size:kind==='pop'?1:.7,theme});if(kind==='pop')burst({kind:'confetti',x,y,count:4,size:.6,theme});}
  }
  async function showWins(wins,unit,{cascade=false}={}){
   if(!wins.length)return;
-  setWinCells(wins.flatMap(w=>w.cells.map(([c,r])=>c+':'+r)));audio.play('win',{volume:.6});
+  setWinCells(wins.flatMap(w=>w.cells.map(([c,r])=>c+':'+r)));audio.play('win',{volume:.6});sparkCells(wins,'sparks');
   if(S.pay==='lines'){setLines(wins.map(w=>w.line));setPops(wins.map(w=>{const [c,r]=w.cells[Math.floor(w.cells.length/2)];const [x,y]=cellXY(c,r);return{id:Math.random(),x,y,v:unit*BigInt(Math.round(w.pay_x100))/100n};}));await wait(900);
    if(!autoRef.current&&wins.length>1)for(const w of wins.slice(0,6)){setLines([w.line]);setWinCells(w.cells.map(([c,r])=>c+':'+r));await wait(420);}}
   else{setPops(wins.map(w=>{const [c,r]=w.cells[0];const [x,y]=cellXY(c,r);return{id:Math.random(),x,y,v:unit*BigInt(Math.round(w.pay_x100))/100n};}));await wait(cascade?750:900);}
@@ -66,7 +86,7 @@ export default function SlotGame({initial}){
    for(const [bi,b] of sp.boards.entries())if(b.steps.length){setLine({board:bi,cells:b.steps[0].wins.flatMap(w=>w.cells.map(([c,r])=>c+':'+r))});audio.play('win',{volume:.6});await wait(650);}
    setLine(null);
   }else{
-   setBoards(null);setSpinning(Array(COLS).fill(true));audio.play('spin',{volume:.5});await wait(350);
+   setBoards(null);setSpinning(Array(COLS).fill(true));startReels();await wait(350);
    if(L.multReel)setReelMult('spin');
    await land(sp.initial,{free:sp.free});
    if(sp.random_wilds){setFeature({kind:'magic'});audio.play('orb');await wait(900);setFeature(null);}
@@ -75,7 +95,7 @@ export default function SlotGame({initial}){
    for(const [i,st] of sp.steps.entries()){
     if(S.cascade)setLadder(i);
     await showWins(st.wins,unit*BigInt(st.multiplier||1),{cascade:!!st.grid});
-    if(st.grid){setPopping(true);audio.play('tumble');await wait(260);setPopping(false);setWinCells([]);setGrid(st.grid);g=st.grid;await wait(420);}
+    if(st.grid){sparkCells(st.wins,'pop');setPopping(true);audio.play('pop',{volume:.8,rate:1+i*0.09});audio.play('tumble',{volume:.6});await wait(260);setPopping(false);setWinCells([]);setGrid(st.grid);g=st.grid;await wait(420);}
    }
    if(L.multReel){setReelMult(sp.reel_multiplier);if(sp.reel_multiplier>1&&sp.win_x100>0){audio.play('orb');await wait(700);}}
    if(sp.bonus){setFeature({kind:'bonus',x:S.bonus.multiplier});audio.play('feature');await wait(1500);setFeature(null);}
@@ -93,14 +113,15 @@ export default function SlotGame({initial}){
   const base=result.spins.filter(x=>!x.free);
   for(const sp of base){total=await playSpin(sp,unit,total);si++;}
   if(result.pending){
-   setBig({kind:'free'});audio.play('feature');await wait(1800);setBig(null);
+   setBig({kind:'free'});audio.play('fs-trigger');haptic('heavy');await wait(1800);setBig(null);
    const k=await new Promise(res=>setChoice({choices:result.pending.choices,pick:res}));setChoice(null);
    const r=await api('/api/casino/choose',{spin_id:spinRow.id,choice:k});return {after:await play({...r.result,spins:r.result.spins.slice(base.length),skipIntro:true},r),payout:r.payout_minor,prefix:total};
   }
   const frees=result.spins.filter(x=>x.free);
-  if(frees.length){if(!result.skipIntro){setBig({kind:'free',n:frees.length});audio.play('feature');await wait(2000);setBig(null);}
+  if(frees.length){if(!result.skipIntro){setBig({kind:'free',n:frees.length});audio.play('fs-trigger');haptic('heavy');{const [x,y]=toScreen(470,700);burst({kind:'confetti',x,y,count:90,theme:themeOf(id)});}await wait(2000);setBig(null);}
+   audio.bonus(true);
    for(const [i,sp] of frees.entries()){total=await playSpin(sp,unit,total,i+1,frees.length);await wait(sp.win_x100>0?500:300);}
-   setSummary(total);audio.play('bigwin',{volume:.7});await wait(2200);setSummary(null);setFree(null);setBoards(null);setCollected(null);}
+   audio.bonus(false);setSummary(total);audio.play('roll-end',{volume:.9});await wait(2200);setSummary(null);setFree(null);setBoards(null);setCollected(null);}
   return {total};
  }
  async function spinOnce(){
@@ -108,15 +129,13 @@ export default function SlotGame({initial}){
   if(balanceRef.current!==null&&BigInt(balanceRef.current)<BigInt(cost)){say('insufficient');requestRecharge('insufficient');return false;}
   setWin(0n);setBalance(b=>b===null?b:String(BigInt(b)-BigInt(cost)));
   try{
-   setSpinning(Array(COLS).fill(true));audio.play('spin',{volume:.5});
+   setSpinning(Array(COLS).fill(true));startReels();
    const [r]=await Promise.all([api('/api/casino/spin',{request_id:requestId(),stake_minor:stake}),sleep(300)]);
    const out=await play(r.result,r);const total=out.after?out.prefix+out.after.total:out.total;
    const payout=BigInt(out.payout??r.payout_minor??0);setWin(total);
-   const x=Number(total*100n/BigInt(stake))/100;
-   if(x>=10){setBig({kind:x>=50?'epicWin':x>=25?'megaWin':'bigWin',amount:total});setFountain(f=>f+1);audio.play('bigwin');await wait(3200);setBig(null);}
-   else if(total>0n){setFountain(f=>f+1);audio.play('coin');}
+   if(total>0n)await fx.celebrate(total,stake,{at:[L.win[0]+L.win[2]/2,L.win[1]+L.win[3]/2],fast:turbo||autoRef.current>0});
    setBalance(b=>b===null?b:String(BigInt(b)+payout));return true;
-  }catch(e){setSpinning(Array(COLS).fill(false));setChoice(null);setBalance(b=>b===null?b:String(BigInt(b)+BigInt(cost)));say(ERR[e.code]||'failed');return false;}
+  }catch(e){audio.bonus(false);reelLoop.current?.stop(60);reelLoop.current=null;setAnticip(-1);setSpinning(Array(COLS).fill(false));setChoice(null);setBalance(b=>b===null?b:String(BigInt(b)+BigInt(cost)));say(ERR[e.code]||'failed');return false;}
  }
  async function run(task){if(busy)return;setBusy(true);try{await task();}finally{setBusy(false);api('/api/casino/state?balance=1').then(s=>s.balance&&setBalance(s.balance.available_minor)).catch(()=>{});}}
  const spin=()=>run(()=>spinOnce());
@@ -126,19 +145,19 @@ export default function SlotGame({initial}){
 
  const Cell=({x,c,r,board})=>{const k=c+':'+r,lit=board===undefined?winCells.includes(k):line?.board===board&&line.cells.includes(k);
   const coinV=feature?.kind==='collect'&&feature.cells.findIndex(([a,b])=>a===c&&b===r);
-  return <div className={`sg-cell ${lit?(popping?'pop':'win'):''} ${x.g?'gold':''} ${x.random?'magic':''} ${x.mega?'mega':''} ${x.s===S.scatter?.id?'scatter':''} ${x.s===S.wild?.id?'wild':''}`}>
+  return <div className={`sg-cell ${lit?(popping?'pop':'win'):''} ${HI.has(x.s)?'hi':''} ${x.g?'gold':''} ${x.random?'magic':''} ${x.mega?'mega':''} ${x.s===S.scatter?.id?'scatter':''} ${x.s===S.wild?.id?'wild':''}`}>
    <img src={img(x.s)} alt="" draggable="false"/>{coinV!==false&&coinV>=0&&<b className="sg-coinv">×{feature.values[coinV]}</b>}</div>;};
  const colTop=c=>(MAXR-rowsOf(c))*ch/2;
  return <Stage plate={img('plate')} className={`sg sg-${id} ${free?'sg-free':''}`} dir={isRtl()?'rtl':'ltr'}>
   {(L.glows||[]).map(([x,y,r],i)=><span key={'g'+i} className="cs-glow" style={{left:x-r,top:y-r,width:2*r,height:2*r,background:`radial-gradient(${L.accent||'#ffd34d'}aa,transparent 70%)`,animationDelay:`${i*.5}s`}}/>)}
   {[[60,300],[880,420],[90,1040],[860,1100],[460,200]].map(([x,y],i)=><span key={i} className="cs-sparkle" style={{left:x,top:y,animationDelay:`${i*.37}s`}}/>)}
   {free&&<div className="sg-freetint"/>}
-  {!boards&&<Box x={rx} y={ry} w={rw} h={rh} className="sg-reels">
-   {grid.map((col,c)=><div key={c} className={`sg-col ${spinning[c]?'spinning':''} ${expanded.includes(c)?'expanded':''} ${collected?.wild?.includes(c)?'wildreel':''}`} style={{left:c*cw,top:colTop(c),width:cw,height:rowsOf(c)*ch}}>
+  {!boards&&<Box x={rx} y={ry} w={rw} h={rh} className={`sg-reels ${anticip>=0?'tense':''}`}>
+   {grid.map((col,c)=><div key={c} className={`sg-col ${spinning[c]?'spinning':''} ${bounce.includes(c)?'bounce':''} ${anticip>=0&&c>=anticip&&spinning[c]?'anticip':''} ${expanded.includes(c)?'expanded':''} ${collected?.wild?.includes(c)?'wildreel':''}`} style={{left:c*cw,top:colTop(c),width:cw,height:rowsOf(c)*ch}}>
     {spinning[c]?<div className="sg-strip" style={{'--h':`${rowsOf(c)*ch}px`}}>{Array.from({length:rowsOf(c)*3},(_,i)=><div key={i} className="sg-cell blur" style={{height:ch}}><img src={img(SYMS[(i*5+c*3)%SYMS.length])} alt=""/></div>)}</div>
      :col.map((x,r)=><div key={keys.current.keys[c]?.[r]||r} className="sg-slot" style={{height:ch,animationDelay:`${r*30}ms`}}><Cell x={x} c={c} r={r}/></div>)}
    </div>)}
-   {lines.length>0&&S.lines&&<svg className="sg-lines" viewBox={`0 0 ${rw} ${rh}`}>{lines.map((li,k)=><polyline key={k} style={{'--c':`hsl(${li*47%360} 95% 60%)`}} points={S.lines[li].map((row,c)=>`${(c+.5)*cw},${colTop(c)+(row+.5)*ch}`).join(' ')}/>)}</svg>}
+   {lines.length>0&&S.lines&&<svg className="sg-lines" viewBox={`0 0 ${rw} ${rh}`}>{lines.map((li,k)=>{const pts=S.lines[li].map((row,c)=>`${(c+.5)*cw},${colTop(c)+(row+.5)*ch}`).join(' ');return <g key={k} style={{'--c':`hsl(${li*47%360} 95% 60%)`}}><polyline points={pts}/><polyline className="flow" points={pts}/></g>;})}</svg>}
   </Box>}
   {boards&&<Box x={rx} y={ry} w={rw} h={rh} className="sg-boards">
    {boards.map((b,bi)=><div key={bi} className="sg-board" style={{width:rw/2-8,height:rh/2-8}}>{b.map((col,c)=><div key={c} className={`sg-mcol ${collected?.wild?.includes(c)?'wildreel':''}`}>{col.map((x,r)=><Cell key={r} x={x} c={c} r={r} board={bi}/>)}</div>)}</div>)}
@@ -174,6 +193,7 @@ export default function SlotGame({initial}){
     <button className="cs-icon-btn" disabled={busy} onClick={()=>requestExit()}>⏻</button></>}
   </div>
   {big&&<div className={`ol-big ${big.kind}`} onClick={()=>setBig(null)}><i className="ol-rays"/><div>{big.kind==='free'?<>{S.scatter&&<img src={img(S.scatter.id)} alt=""/>}<b>{t('freeSpins')}</b>{big.n&&<em>×{big.n}</em>}</>:<><b>{t(big.kind)}</b><em><CountUp value={Number(big.amount)} format={v=>full(Math.round(v))} ms={2600}/></em></>}</div></div>}
+  {fx.node}
   {summary!==null&&<div className="ol-big summary"><i className="ol-rays"/><div><b>{t('totalWin')}</b><em><CountUp value={Number(summary)} format={v=>full(Math.round(v))} ms={1800}/></em></div></div>}
   {choice&&<div className="cs-modal-back"><div className="cs-modal sg-choice"><h2>{t('chooseFree')}</h2>
    <div>{choice.choices.map((c,i)=><button key={i} onClick={()=>{audio.play('click');choice.pick(i);}}><b>{c.award}</b><small>{t('freeSpins')}</small><em>×{c.multiplier}</em></button>)}</div></div></div>}

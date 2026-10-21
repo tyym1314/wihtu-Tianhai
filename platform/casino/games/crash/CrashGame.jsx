@@ -1,3 +1,4 @@
+import {useCelebration} from '../../shared/fx/Celebrate.jsx';
 import {ChipRow,chipAt} from '../../shared/ChipRow.jsx';
 import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {api,requestId,registerHostControls,requestExit,requestRecharge} from '../../shared/client.mjs';
@@ -68,7 +69,8 @@ export default function CrashGame({initial}){
  const [state,setState]=useState(initial),[balance,setBalance]=useState(initial.balance?.available_minor??null),[now,setNow]=useState(Date.now());
  const [toast,setToast]=useState(null),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false),[offline,setOffline]=useState(false),[pop,setPop]=useState(null);
  const [autoOn,setAutoOn]=useState(false),[autoIdx,setAutoIdx]=useState(0),[busy,setBusy]=useState(false);
- const audio=useAudio(id,['launch','boom','cash','click','chip','tick','coin','select','close']);
+ const audio=useAudio(id,['launch','boom','cash','click','chip','tick','coin','select','close','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic']);
+ const cel=useCelebration(id,audio);
  const offset=useRef(initial.server_now-Date.now()),balanceRound=useRef(null),ref=useRef(initial),ship=useRef(null),seen=useRef({}),tip=useRef([400,900]);
  const serverNow=()=>Date.now()+offset.current;
  const say=useCallback(key=>setToast({key,id:Math.random()}),[]);
@@ -89,6 +91,9 @@ export default function CrashGame({initial}){
  useEffect(()=>{if(phase==='betting'&&secs<=3&&secs>0)audio.play('tick');},[secs]);
  const mult=phase==='flying'?multAt(now-round.bet_until):phase==='crashed'?round.result.crash_x100:100;
  const bet=state.my_bets.find(b=>b.option_id==='a'&&live(b));
+ // Cash-outs (manual or auto) get the win tiers: payout over stake.
+ const cele=useRef({});
+ useEffect(()=>{for(const b of state.my_bets||[])if(b.cashout_x100&&b.payout_minor&&!cele.current[b.id]){cele.current[b.id]=1;cel.celebrate(BigInt(b.payout_minor),BigInt(b.stake_minor),{fast:true});}},[state.my_bets]);
  async function placeBet(stake){
   if(phaseOf(ref.current.round,serverNow())!=='betting'){say('closed');return;}
   if(bet){say('already');return;}
@@ -101,7 +106,7 @@ export default function CrashGame({initial}){
  }
  async function cash(){
   if(!bet||phase!=='flying'||bet.cashout_x100)return;
-  try{const done=await api('/api/casino/cashout',{bet_id:bet.id});audio.play('cash');audio.play('coin');setPop({id:Math.random(),x:done.cashout_x100,v:done.payout_minor});setTimeout(()=>setPop(null),1800);
+  try{const done=await api('/api/casino/cashout',{bet_id:bet.id});audio.play('cash');setPop({id:Math.random(),x:done.cashout_x100,v:done.payout_minor});setTimeout(()=>setPop(null),1800);
    setState(s=>({...s,my_bets:s.my_bets.map(b=>b.id===done.id?done:b)}));if(balance!==null)setBalance(b=>String(BigInt(b)+BigInt(done.payout_minor)));}
   catch(e){say(ERR[e.code]||'failed');}
  }
@@ -118,6 +123,7 @@ export default function CrashGame({initial}){
  else takeText=<b className="cg-small">{t('waitNext')}</b>;
  const {pills:P}=L;
  return <Stage plate={img('plate')} className={`cg cg-${id} rs-${phase}`} dir={isRtl()?'rtl':'ltr'}>
+  {cel.node}
   {phase==='flying'&&<div className="rs-stars" style={{animationDuration:`${Math.max(.25,1.6-Math.log2(mult/100)*.35)}s`}}/>}
   <div className={phase==='crashed'?'rs-shake':''}><Graph L={L} round={round} now={now} phase={phase} ship={ship} tip={tip}/></div>
   <img ref={ship} className="cg-ship" src={img('ship')} alt="" style={{width:L.ship,height:L.ship}} draggable="false"/>

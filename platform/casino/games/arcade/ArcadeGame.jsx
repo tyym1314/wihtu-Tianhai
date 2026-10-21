@@ -1,3 +1,6 @@
+import {useCelebration} from '../../shared/fx/Celebrate.jsx';
+import {burst,toScreen} from '../../shared/fx/particles.js';
+import {themeOf} from '../../shared/fx/themes.js';
 import React,{useEffect,useRef,useState} from 'react';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {full,short} from '../../shared/useRound.js';
@@ -46,7 +49,8 @@ function useMonsters(L,game){
 export default function ArcadeGame({initial}){
  const id=initial.game_id,GAME=CASINO_GAMES[id],img=n=>`/casino/${id}/${n}.webp?v=${__ASSET_VERSION__}`,isMonster=id==='monster',L=isMonster?MONSTER:MOLE;
  const A=useArcade(initial,GAME);
- const audio=useAudio(id,['shoot','zap','hit','whack','bomb','coin','click','win','bigwin']);
+ const audio=useAudio(id,['shoot','zap','hit','whack','bomb','coin','click','win','bigwin','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic']);
+ const cel=useCelebration(id,audio);
  const weapons=GAME.arcade.weapons,[weapon,setWeapon]=useState(weapons[0].id),[auto,setAuto]=useState(false),[menu,setMenu]=useState(false),[rules,setRules]=useState(false);
  const [fx,setFx]=useState([]),[recoil,setRecoil]=useState(0),[slots,setSlots]=useState([]);
  const mult=Object.fromEntries(GAME.arcade.targets.map(x=>[x.id,x.multiplier??`${x.min}-${x.max}`]));
@@ -54,7 +58,10 @@ export default function ArcadeGame({initial}){
  const M=isMonster?useMonsters(L,GAME):null;
  const holes=isMonster?null:useHoles(L);
  const win=(at,minor,big)=>{addFx({type:'pop',x:at.x,y:at.y,text:`+${full(minor)}`,big},1300);for(let i=0;i<8;i++)addFx({type:'coin',x:at.x,y:at.y,dx:(Math.random()-.5)*260,dy:-120-Math.random()*200,delay:i*40},1000);
-  audio.play(big?'bigwin':'coin');if(big)setSlots(s=>[{k:Math.random(),kind:at.kind,minor},...s].slice(0,3));};
+  if(big)setSlots(s=>[{k:Math.random(),kind:at.kind,minor},...s].slice(0,3));
+  // Win tiers per shot (multiplier = win / bet): sparks for every hit, full celebration from 10x.
+  const bet=BigInt(A.open?.bet_minor||A.bet),x=Number(minor/bet),[sx,sy]=toScreen(at.x,at.y);burst({kind:'sparks',x:sx,y:sy,count:x>=5?24:10,theme:themeOf(id)});
+  if(x>=10)cel.celebrate(minor,bet,{fast:true});else audio.play(x>=3?'win-m':'coin');};
 
  async function fire(target){
   const w=weapons.find(x=>x.id===weapon);
@@ -93,6 +100,7 @@ export default function ArcadeGame({initial}){
  const tapField=e=>{if(!isMonster)return;const r=e.currentTarget.getBoundingClientRect(),s=r.width/941,p={x:(e.clientX-r.left)/s,y:(e.clientY-r.top)/s};
   const c=M.ref.current.filter(m=>!m.dead).map(m=>({m,d:Math.hypot(m.x-p.x,m.y-p.y)})).filter(x=>x.d<Math.max(70,x.m.w*.45)).sort((a,b)=>a.d-b.d)[0];if(c)fire(c.m);};
  return <Stage plate={img('plate')} className={`ag ag-${id}`} dir={isRtl()?'rtl':'ltr'}>
+  {cel.node}
   {isMonster&&<div className="ag-field" onPointerDown={tapField}>
    {M.list.map(m=><div key={m.id} className={`ag-mon ${m.dead?'dead':''} ${m.hurt&&performance.now()-m.hurt<250?'hurt':''} ${m.locked?'locked':''}`} style={{left:m.x,top:m.y,width:m.w}}>
     <img src={img(m.kind)} alt="" draggable="false"/><b>x{mult[m.kind]}</b></div>)}

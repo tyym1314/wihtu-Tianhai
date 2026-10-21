@@ -1,3 +1,4 @@
+import {useCelebration} from '../../shared/fx/Celebrate.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import {t,isRtl} from '../../shared/i18n.mjs';
 import {useRound,full,short} from '../../shared/useRound.js';
@@ -20,7 +21,8 @@ const rect=([x,y,a,b])=>b===undefined?{left:x-a,top:y-a,width:2*a,height:2*a,bor
 export default function WheelGame({initial}){
  const id=initial.game_id,GAME=CASINO_GAMES[id],L=CHIP_FIX[id]?{...LAYOUTS[id],chips:{...LAYOUTS[id].chips,...CHIP_FIX[id]}}:LAYOUTS[id],img=n=>`/casino/${id}/${n}.webp?v=${__ASSET_VERSION__}`;
  const g=useRound(initial,GAME),{state,round,phase,now}=g;
- const audio=useAudio(id,['chip','tick','win','lose','coin','click','select','close','chips','spin']);
+ const audio=useAudio(id,['chip','tick','win','lose','coin','click','select','close','chips','spin','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic']);
+ const fx=useCelebration(id,audio);
  const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false);
  const [light,setLight]=useState(-1),[landed,setLanded]=useState(false),[flies,setFlies]=useState([]),[coins,setCoins]=useState([]);
  const [sessionWin,setSessionWin]=useState(0);
@@ -43,7 +45,7 @@ export default function WheelGame({initial}){
  useEffect(()=>{if(phase==='betting'&&secs<=5&&secs>0&&secs!==lastSec.current){lastSec.current=secs;audio.play('tick');}},[secs,phase]);
  useEffect(()=>{
   if(phase!=='result'||played.current===round.id||!result)return;played.current=round.id;
-  const won=g.myWin>0n;if(won)setSessionWin(v=>v+Number(g.myWin));audio.play(won?'win':g.myStake>0n?'lose':'select');
+  const won=g.myWin>0n;if(won){setSessionWin(v=>v+Number(g.myWin));fx.celebrate(g.myWin,g.myStake,{fast:true});}else audio.play(g.myStake>0n?'lose':'select');
   if(won){const bal=[L.balance[0]+L.balance[2]/2,L.balance[1]+L.balance[3]/2];
    const from=result.winners.filter(w=>L.items[w]&&g.mine[w]).map(w=>L.items[w]);
    setCoins(from.flatMap(([x,y],k)=>Array.from({length:10},(_,i)=>({id:`${round.id}-${k}-${i}`,x,y,dx:bal[0]-x+(i-5)*8,dy:bal[1]-y,delay:i*60}))));
@@ -92,6 +94,7 @@ export default function WheelGame({initial}){
   {phase==='result'&&bonus?.type==='extra'&&now<round.reveal_at+2600&&<div className="cs-special"><div><div className="wg-special-icons">{result.winners.filter(w=>w!==result.outcome).map(o=><img key={o} src={icon(o)} alt=""/>)}</div><b>{t('godPrize')}</b></div></div>}
   {phase==='result'&&bonus?.type==='jackpot'&&now<round.reveal_at+2600&&<div className="cs-special wg-jp"><div><b>JACKPOT</b>{result.jackpot&&<b className="amt"><CountUp value={Number(result.jackpot.paid_minor)} format={v=>full(Math.round(v))} ms={1800}/></b>}</div></div>}
   {phase==='result'&&result&&L.center&&L.items[result.outcome]&&<Box x={L.center[0]-L.center[2]*.7} y={L.center[1]-L.center[2]*.7} w={L.center[2]*1.4} h={L.center[2]*1.4} className="wg-center"><img src={icon(result.outcome)} alt=""/></Box>}
+  {fx.node}
   {phase==='result'&&result&&(g.myWin>0n||g.myStake>0n)&&<Box x={bnx} y={bny} w={bnw} h={110} className="wg-banner">
    {g.myWin>0n?<p className="won">{t('youWon')} <b><CountUp value={Number(g.myWin)} format={v=>full(Math.round(v))}/></b></p>:<p>{t('noWin')}</p>}
   </Box>}

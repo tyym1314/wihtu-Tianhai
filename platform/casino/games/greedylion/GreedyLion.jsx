@@ -1,3 +1,4 @@
+import {useCelebration} from '../../shared/fx/Celebrate.jsx';
 import {ChipRow,chipAt} from '../../shared/ChipRow.jsx';
 import React,{useEffect,useRef,useState} from 'react';
 import {t,isRtl} from '../../shared/i18n.mjs';
@@ -24,7 +25,7 @@ const LANTERNS=[[45,540,110],[250,305,90],[95,752,70],[846,342,95],[831,700,100]
 const icon=id=>ORDER.includes(id)?img(`icon-${id}`):img(id);
 
 export default function GreedyLion({initial}){
- const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('greedylion',['chip','tick','win','lose','coin','click','select','close','chips']);
+ const g=useRound(initial,GAME),{state,round,phase,now}=g,audio=useAudio('greedylion',['chip','tick','win','lose','coin','click','select','close','chips','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic']),fx=useCelebration('greedylion',audio);
  const [chip,setChip]=useState(GAME.chips[1]),[menu,setMenu]=useState(false),[records,setRecords]=useState(false),[rules,setRules]=useState(false);
  const [light,setLight]=useState(-1),[flies,setFlies]=useState([]),[coins,setCoins]=useState([]),[landed,setLanded]=useState(false);
  const lastStep=useRef(-1),lastSec=useRef(-1),played=useRef(null);
@@ -44,7 +45,7 @@ export default function GreedyLion({initial}){
  // Reveal: win/lose jingle and coins flying from the winning plates to the balance.
  useEffect(()=>{
   if(phase!=='result'||played.current===round.id||!round.result)return;played.current=round.id;
-  const won=g.myWin>0n;audio.play(won?'win':g.myStake>0n?'lose':'select');
+  const won=g.myWin>0n;if(won)fx.celebrate(g.myWin,g.myStake,{fast:true});else audio.play(g.myStake>0n?'lose':'select');
   if(won){const from=round.result.winners.filter(w=>PLATE[w]&&g.mine[w]).map(w=>PLATE[w]);
    setCoins(from.flatMap(([x,y],k)=>Array.from({length:10},(_,i)=>({id:`${round.id}-${k}-${i}`,x,y,dx:BALANCE[0]-x+(i-5)*8,dy:BALANCE[1]-y,delay:i*60}))));
    setTimeout(()=>audio.play('coin'),700);setTimeout(()=>setCoins([]),2200);}
@@ -79,6 +80,7 @@ export default function GreedyLion({initial}){
   </React.Fragment>;})}
   {phase==='result'&&round.result&&!ORDER.includes(round.result.outcome)&&now<round.reveal_at+2200&&<div className="cs-special"><div><img src={icon(round.result.outcome)} alt=""/><b>{t(round.result.outcome)}</b></div></div>}
   {phase==='result'&&round.result&&<Box x={CENTER[0]-95} y={CENTER[1]-95} w={190} h={190} className="gl-center"><img src={icon(round.result.outcome)} alt=""/></Box>}
+  {fx.node}
   {phase==='result'&&round.result&&<Box x={170} y={1250} w={600} h={110} className="gl-banner">
    {!ORDER.includes(round.result.outcome)&&<p className="special">{t(round.result.outcome)}</p>}
    {g.myWin>0n?<p className="won">{t('youWon')} <b><CountUp value={Number(g.myWin)} format={v=>full(Math.round(v))}/></b></p>:<p>{g.myStake>0n?t('noWin'):t('next')}</p>}

@@ -1,3 +1,5 @@
+import {useCelebration} from '../../shared/fx/Celebrate.jsx';
+import {haptic} from '../../shared/client.mjs';
 import React,{useEffect,useRef,useState} from 'react';
 import {api,requestId,registerHostControls,requestExit,requestRecharge} from '../../shared/client.mjs';
 import {t,isRtl} from '../../shared/i18n.mjs';
@@ -26,7 +28,8 @@ export default function Olympus({initial}){
  const [free,setFree]=useState(null),[mult,setMult]=useState(null),[big,setBig]=useState(null),[turbo,setTurbo]=useState(false),[toast,setToast]=useState(null);
  const [modal,setModal]=useState(null),[auto,setAuto]=useState(0),[menu,setMenu]=useState(false),[records,setRecords]=useState(false);
  const [leaving,setLeaving]=useState(false),[pops,setPops]=useState([]),[flash,setFlash]=useState(0),[fountain,setFountain]=useState(0),[scatterHit,setScatterHit]=useState(false),[summary,setSummary]=useState(null);
- const audio=useAudio('olympus',['spin','drop','tumble','win','bigwin','orb','thunder','feature','click','coin']);
+ const audio=useAudio('olympus',['spin','drop','tumble','win','bigwin','orb','thunder','feature','click','coin','pop','win-s','win-m','win-l','rollup','roll-end','sting-great','sting-big','sting-mega','sting-epic','fs-trigger','whoosh']);
+ const fx=useCelebration('olympus',audio);
  const speed=useRef(1);speed.current=turbo?0.45:1;
  const autoRef=useRef(0);
  const balanceRef=useRef(balance);balanceRef.current=balance;
@@ -40,14 +43,14 @@ export default function Olympus({initial}){
 
  async function play(result){
   let total=0n;const unit=BigInt(result.base_stake_minor);
-  if(result.mode==='buy'){setBig({kind:'free'});setFlash(f=>f+1);audio.play('thunder');audio.play('feature');await wait(2200);setBig(null);}
+  if(result.mode==='buy'){setBig({kind:'free'});setFlash(f=>f+1);audio.play('thunder');audio.play('fs-trigger');haptic('heavy');await wait(2200);setBig(null);}
   for(let si=0;si<result.spins.length;si++){
    const sp=result.spins[si],freeIndex=result.spins.slice(0,si+1).filter(x=>x.free).length;
-   if(sp.free)setFree(f=>({n:freeIndex,of:result.free_spins,total:f?.total||0}));
+   if(sp.free){setFree(f=>({n:freeIndex,of:result.free_spins,total:f?.total||0}));audio.bonus(true);}
    if(si>0){setLeaving(true);await wait(280);setLeaving(false);}
    setWinCells([]);setMult(null);setGrid(sp.initial);setGen(g=>g+1);audio.play('drop',{volume:.6});await wait(sp.free?700:600);
    if(sp.initial.some(c=>c.s==='orb'))audio.play('orb',{volume:.5});
-   let spinWin=0;
+   let spinWin=0,chain=0;
    for(const tb of sp.tumbles){
     setWinCells(tb.wins.flatMap(w=>w.cells));audio.play('win',{volume:.55});
     // Show each cluster's pay where it landed.
@@ -55,18 +58,17 @@ export default function Olympus({initial}){
      return{id:Math.random(),x:87+(cx+.5)*764/COLS,y:615+(cy+.5)*592/ROWS,v:unit*BigInt(w.pay_x100)/100n,d:k*120};}));
     await wait(700);
     spinWin+=tb.wins.reduce((a,w)=>a+w.pay_x100,0);setWin(total+unit*BigInt(spinWin)/100n);
-    setPopping(true);audio.play('tumble');await wait(280);setPopping(false);setWinCells([]);setPops([]);setGrid(tb.grid);await wait(460);
+    setPopping(true);audio.play('pop',{volume:.8,rate:1+chain*0.09});chain++;audio.play('tumble',{volume:.6});await wait(280);setPopping(false);setWinCells([]);setPops([]);setGrid(tb.grid);await wait(460);
    }
    if(sp.multiplier>1&&spinWin>0){setFlash(f=>f+1);audio.play('thunder');setMult(sp.multiplier);audio.play('orb');await wait(1100);setWin(total+unit*BigInt(sp.win_x100)/100n);}
    if(sp.scatters>=(sp.free?SLOT.freeSpins.retrigger:SLOT.freeSpins.trigger)){setScatterHit(true);audio.play('feature',{volume:.6});await wait(900);setScatterHit(false);}
    total+=unit*BigInt(sp.win_x100)/100n;setWin(total);
-   if(!sp.free&&sp.scatters>=SLOT.freeSpins.trigger){setBig({kind:'free'});setFlash(f=>f+1);audio.play('thunder');await wait(2200);setBig(null);}
+   if(!sp.free&&sp.scatters>=SLOT.freeSpins.trigger){setBig({kind:'free'});setFlash(f=>f+1);audio.play('thunder');audio.play('fs-trigger');haptic('heavy');await wait(2200);setBig(null);}
    if(sp.free){setFree(f=>({...f,total:sp.total_multiplier}));await wait(spinWin>0?700:1000);}
   }
-  const x=Number(total*100n/unit)/100;
-  if(result.free_spins>0){setSummary(total);audio.play('bigwin',{volume:.7});await wait(2400);setSummary(null);}
-  if(x>=10){setBig({kind:x>=50?'epicWin':x>=25?'megaWin':'bigWin',amount:total});setFountain(f=>f+1);audio.play('bigwin');await wait(3400);setBig(null);}
-  else if(total>0n){setFountain(f=>f+1);audio.play('coin');}
+  audio.bonus(false);
+  if(result.free_spins>0){setSummary(total);audio.play('roll-end',{volume:.9});await wait(2400);setSummary(null);}
+  if(total>0n)await fx.celebrate(total,unit,{at:[645,1260],fast:speed.current<1||autoRef.current>0});
   setFree(null);setMult(null);
  }
 
@@ -77,7 +79,7 @@ export default function Olympus({initial}){
   try{
    setLeaving(true);const [r]=await Promise.all([api('/api/casino/spin',{request_id:requestId(),stake_minor:stake,...(buy?{buy:true}:{})}),sleep(320*speed.current)]);setLeaving(false);
    await play(r.result);setBalance(b=>b===null?b:String(BigInt(b)+BigInt(r.payout_minor)));return true;
-  }catch(e){setLeaving(false);setBalance(b=>b===null?b:String(BigInt(b)+BigInt(cost)));say(ERR[e.code]||'failed');return false;}
+  }catch(e){audio.bonus(false);setLeaving(false);setBalance(b=>b===null?b:String(BigInt(b)+BigInt(cost)));say(ERR[e.code]||'failed');return false;}
  }
  async function run(task){
   if(busy)return;setBusy(true);
@@ -105,6 +107,7 @@ export default function Olympus({initial}){
   {pops.map(p=><span key={p.id} className="ol-pop" style={{left:p.x,top:p.y,animationDelay:`${p.d}ms`}}>+{full(p.v)}</span>)}
   {fountain>0&&<div key={fountain} className="ol-fountain">{Array.from({length:big?46:18},(_,i)=><span key={i} className="ol-coinf" style={{left:470+(i%2?1:-1)*(i*7%160),'--dx':`${(i%2?1:-1)*(80+i*17%420)}px`,'--h':`${-500-(i*37%500)}px`,animationDelay:`${i*35}ms`}}/>)}</div>}
   {free&&<Box x={170} y={545} w={600} h={60} className="ol-freebar"><b>{t('freeLeft',[free.n,free.of])}</b>{free.total>0&&<span>{t('totalMult',[free.total])}</span>}</Box>}
+  {fx.node}
   <Box x={520} y={1230} w={250} h={60} className="ol-win"><CountUp value={Number(win)} format={v=>full(Math.round(v))} ms={500}/></Box>
   <RechargeTap x={96} y={1352} w={170} h={44}/><Box x={96} y={1352} w={170} h={44} className="ol-balance">{balance===null?'—':<CountUp value={Number(balance)} format={v=>full(Math.round(v))}/>}</Box>
   <button className="ol-hit" style={{left:300,top:1335,width:58,height:58}} disabled={busy} onClick={()=>step(-1)} aria-label="-"/>
