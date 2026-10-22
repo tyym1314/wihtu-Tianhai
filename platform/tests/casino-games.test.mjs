@@ -105,3 +105,9 @@ test('half-screen bands are ordered, inside the plate and keep the top and botto
   assert.equal(l.removedAbove(1672),1672-l.height);assert.ok(l.cutAt((bands[0][0]+bands[0][1])/2),id);
  }
 });
+
+test('OASIS_RETIRED_GAMES withdraws games from the catalogue (production: thunder, tiger)',async()=>{
+ const {execFileSync}=await import('node:child_process');
+ const out=execFileSync(process.execPath,['--input-type=module','-e',"import {ALL_GAME_IDS,RELEASED_IDS} from './shared/games.mjs';console.log(JSON.stringify([ALL_GAME_IDS.includes('thunder'),ALL_GAME_IDS.includes('tiger'),RELEASED_IDS.includes('thunder'),ALL_GAME_IDS.includes('olympus')]))"],{env:{...process.env,OASIS_RETIRED_GAMES:'thunder,tiger'},cwd:new URL('..',import.meta.url)}).toString();
+ assert.deepEqual(JSON.parse(out),[false,false,false,true]);
+});

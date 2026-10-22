@@ -18,8 +18,15 @@ export const LEGACY_IDS=Object.freeze(['thunder','tiger']);
 export {CASINO_IDS};
 /** Probability games: per-user cycles (thunder/tiger) and shared-round casino games. */
 export const PROBABILITY_IDS=Object.freeze([...LEGACY_IDS,...CASINO_IDS]);
-export const RELEASED_IDS=Object.freeze([...LEGACY_IDS,...ARENA_IDS]);
+/**
+ * Games withdrawn from the platform (server setting OASIS_RETIRED_GAMES, comma separated; production: thunder,tiger
+ * since 2026-10-22). They leave the catalogue: no App can enable or launch them and startup removes them from every
+ * App; their engines stay only to read and reconcile past rounds.
+ */
+export const RETIRED_IDS=Object.freeze((typeof process!=='undefined'&&process.env?.OASIS_RETIRED_GAMES||'').split(',').map(s=>s.trim()).filter(Boolean));
+const live=ids=>ids.filter(id=>!RETIRED_IDS.includes(id));
+export const RELEASED_IDS=Object.freeze(live([...LEGACY_IDS,...ARENA_IDS]));
 /** Every game a partner or sandbox App can enable: the original catalogue plus casino games. */
-export const ALL_GAME_IDS=Object.freeze([...RELEASED_IDS,...CASINO_IDS]);
+export const ALL_GAME_IDS=Object.freeze(live([...RELEASED_IDS,...CASINO_IDS]));
 export const teamSizeFor=(game,capacity)=>ARENA_GAMES[game]?.teamCapacity===capacity?2:1;
 export const allowedCapacity=(game,capacity)=>Object.hasOwn(ARENA_GAMES,game)&&ARENA_GAMES[game].players.includes(capacity);
