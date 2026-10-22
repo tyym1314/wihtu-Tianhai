@@ -29,9 +29,9 @@ const BOLT=()=>{let x=50+Math.random()*40-20,y=0,pts=[`${x},0`];while(y<100){y+=
 
 /**
  * useCelebration(id, audio) -> {celebrate(total, stake, {at, fast}), node}
- * Each tier has its own scene: SMALL number pop, NICE silver ribbon, GREAT gold stamp, BIG vault doors, MEGA neon
- * shockwave, EPIC thunderstorm, LEGENDARY burning frame and crown. BIG+ roll up from BIG and break into each next
- * tier (charge, then flash and the new scene). Tap skips to the final tier and amount.
+ * Each tier has its own scene: SMALL amount flying into the WIN box, NICE platinum badge, GREAT winged plaque,
+ * BIG vault doors, MEGA neon shockwave, EPIC thunderstorm, LEGENDARY burning frame and crown. BIG+ show the final
+ * tier's scene directly while the amount rolls up. Tap skips to the final amount.
  */
 export function useCelebration(id,audio){
  const [show,setShow]=useState(null),[pops,setPops]=useState([]),skip=useRef(null),theme=themeOf(id),th=thresholdsFor(id);
@@ -73,42 +73,23 @@ export function useCelebration(id,audio){
     roll.stop();setShow(s=>({...s,value:win,done:true}));audio.play('roll-end',{volume:.9});burst({kind:'sparks',x:innerWidth/2,y:innerHeight*0.42,count:30,theme});
     await sleep(skipped?600:fast?1000:1800);return;
    }
-   // BIG and above: one roll-up through the tiers, breaking into each next scene.
-   const steps=ORDER.slice(3,ORDER.indexOf(tier)+1).map(n=>({tier:n,from:th[n]*bet}));
-   const ends=steps.map((s,i)=>i+1<steps.length?steps[i+1].from:win);
-   const rollMs=(HOLD[tier]-1500)*speed,segMs=rollMs/(steps.length+0.5);
-   const loop=await audio.loop('celebrate-loop',{volume:.5});
-   const enter=(n,first)=>{
-    setShow(s=>({...(s||{}),kind:'full',tier:n,flash:(s?.flash||0)+(first?0:1),charging:false,bolts:n==='epic'?1:0}));
-    audio.play(STING[n]);haptic(BUZZ[n]);
-    if(n==='big'){stageFx('cs-shake',450);fireworks({ms:HOLD[tier]*speed,every:700,theme});}
-    if(n==='mega'){stageFx('cs-punch',520);for(const k of [0,350,700]){setTimeout(()=>{burst({kind:'confetti',x:0,y:innerHeight,angle:[-80,-45],speed:22,count:60,theme});burst({kind:'confetti',x:innerWidth,y:innerHeight,angle:[-135,-100],speed:22,count:60,theme});},k);}}
-    if(n==='epic'){stageFx('cs-shake-hard',600);rain({kind:'gem',ms:rollMs,rate:22,theme});}
-    if(n==='legendary'){stageFx('cs-shake-hard',600);loop.stop(400);rain({kind:'coins',ms:HOLD.legendary*speed,rate:26,size:.95,theme});fireworks({ms:HOLD.legendary*speed,every:420,theme});}
-   };
-   enter('big',true);
-   // coins gush up from the bottom while it rolls
+   // BIG and above: straight into the final tier's scene (operator decision 2026-10-22: no step-by-step upgrades);
+   // the amount rolls from 0 to the win, then holds.
+   const sp=fast?0.7:1,rollMs=(HOLD[tier]-1500)*sp;
+   const loop=audio.loop('celebrate-loop',{volume:.5});
+   setShow({kind:'full',tier,flash:1,charging:false,bolts:tier==='epic'?1:0,value:0});audio.play(STING[tier]);haptic(BUZZ[tier]);
+   if(tier==='big'){stageFx('cs-shake',450);fireworks({ms:HOLD.big*sp,every:700,theme});}
+   if(tier==='mega'){stageFx('cs-punch',520);for(const k of [0,350,700,1400,2100]){setTimeout(()=>{burst({kind:'confetti',x:0,y:innerHeight,angle:[-80,-45],speed:22,count:60,theme});burst({kind:'confetti',x:innerWidth,y:innerHeight,angle:[-135,-100],speed:22,count:60,theme});},k);}fireworks({ms:HOLD.mega*sp,every:600,theme});}
+   if(tier==='epic'){stageFx('cs-shake-hard',600);rain({kind:'gem',ms:rollMs,rate:22,theme});fireworks({ms:HOLD.epic*sp,every:500,theme});}
+   if(tier==='legendary'){stageFx('cs-shake-hard',600);loop.stop(400);rain({kind:'coins',ms:HOLD.legendary*sp,rate:26,size:.95,theme});fireworks({ms:HOLD.legendary*sp,every:420,theme});}
    const gush=setInterval(()=>burst({kind:'coins',x:innerWidth/2+(Math.random()-.5)*innerWidth*0.6,y:innerHeight+10,angle:[-105,-75],speed:19,count:5,theme}),260);
-   const roll=await audio.loop('rollup',{volume:.55});
-   let skipped=false;skip.current=()=>{skipped=true;};let from=0;
-   try{
-    for(const [i,step] of steps.entries()){
-     if(skipped)break;
-     if(i>0){enter(step.tier);roll.rate(1+i*0.12);}
-     const to=ends[i],ms=i===0?segMs*1.5:segMs,last=i===steps.length-1,t0=performance.now();let charged=false;
-     while(!skipped){
-      const e=performance.now()-t0,p=Math.min(1,e/ms);setShow(s=>({...s,value:Math.round(from+(to-from)*easeOut(p))}));
-      // Charge just before the next threshold: the number slows, the edges glow, a riser builds.
-      if(!last&&!charged&&e>ms-650){charged=true;setShow(s=>({...s,charging:true}));audio.play('charge',{volume:.8});}
-      if(p>=1)break;await sleep(33);
-     }
-     from=to;
-    }
-   }finally{clearInterval(gush);roll.stop();}
-   if(skipped){setShow(s=>({...s,tier,flash:(s.flash||0)+1,charging:false,bolts:tier==='epic'?1:0}));audio.play(STING[tier]);stageFx('cs-shake-hard',600);}
-   setShow(s=>({...s,value:win,done:true,charging:false}));audio.play('roll-end');if(ORDER.indexOf(tier)>=4)audio.play('cheer',{volume:.7});haptic('celebrate');
+   const roll=audio.loop('rollup',{volume:.55});
+   let skipped=false;skip.current=()=>{skipped=true;};
+   try{const t0=performance.now();while(!skipped){const q=Math.min(1,(performance.now()-t0)/rollMs);setShow(s=>({...s,value:Math.round(win*easeOut(q))}));if(q>=1)break;await sleep(33);}}
+   finally{clearInterval(gush);roll.stop();}
+   setShow(s=>({...s,value:win,done:true}));audio.play('roll-end');if(ORDER.indexOf(tier)>=4)audio.play('cheer',{volume:.7});haptic('celebrate');
    burst({kind:'coins',x:innerWidth/2,y:innerHeight*0.78,count:40,size:1.1,theme});
-   await sleep(skipped?1000:1500*speed);loop.stop(300);
+   await sleep(skipped?1000:1500*sp);loop.stop(300);
   }finally{skip.current=null;setShow(null);audio.duck(1);}
  }
  // Lightning strikes every 0.7 s during EPIC.
