@@ -64,6 +64,7 @@
 - 下注档位在 `shared/casino-games.mjs` 的 `TABLE_BETS / CRASH_BETS / SLOT_BETS / ARCADE_BETS`。底图上印着筹码的 20 款用 `.local/chips/build.py` 重排（抹掉旧筹码、复用筹码图案、数字由 `casino/shared/ChipRow.jsx` 显示，位置在 `casino/shared/chip-rows.json`）。
 - 返还率档位（应用级 96–99）：`server/casino/rtp.mjs`。老虎机按 payScale 比例缩放，爆点/街机直接用档位，Greedy 系列靠特殊结果概率只能 98/99，FruitParty/FootballLeague/GloryCup 缩放奖励权重；其余固定。改动数学参数会产生新版本，旧版本要留在 `LEGACY_*` 里供已开局结算（雷霆/虎虎 v1、街机旧档位、5 款老虎机旧校准）。
 - 中奖演出：`casino/shared/fx/Celebrate.jsx`（7 档场景、按游戏波动的门槛 `GROUPS/GAME_GROUP`、升档蓄力）、`particles.js`（画布粒子）、`themes.js`（每款配色）；标题字和道具图在 `casino/public/fx/`（生图原图 `.local/art/fx/`）；音效 `.local/audio/fx/build.py` 生成 `casino/public/audio/sfx-*.mp3`。本地 `localhost` 可在游戏 iframe 里调 `window.__oasisFx(赢额, 下注)` 预览。振动走 `oasis.haptic` → App 消息 `haptic`（1.6.7+）。
+- 下架游戏：生产 `runtime.env` 的 `OASIS_RETIRED_GAMES`（逗号分隔，2026-10-22 起为 `thunder,tiger`）。被下架的游戏移出游戏总表：所有应用不能启用/启动，启动时自动从各应用 `game_ids` 移除，`/play/<id>` 404，管理台不显示；引擎代码保留用于历史对局对账。WithU 侧由 `TianhaiBootstrap` 的一次性脚本 `tianhai_retire.sql` 删除游戏与列表位置。
 - 加载页的游戏名/配色/图标由 `scripts/launch-meta.mjs` 内嵌进 `public/launch/index.html`（首帧即最终样子），新增游戏后要重跑。
 - 部署只同步改动目录时，可直接 rsync 到当前版本目录后重启；改了服务端数学或依赖时新建版本目录。
 
