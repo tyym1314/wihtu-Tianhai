@@ -65,13 +65,13 @@ export function useCelebration(id,audio){
   try{
    // GREAT: a gold stamp slams onto the screen, dust ring, coins burst, amount rolls.
    if(tier==='great'){
-    const ms=fast?2000:3000;setShow({kind:'great',value:0});audio.play('stamp');setTimeout(()=>audio.play('nice',{volume:.5,rate:.8}),120);
+    const ms=fast?1500:2200;setShow({kind:'great',value:0});audio.play('stamp');setTimeout(()=>audio.play('nice',{volume:.5,rate:.8}),120);
     setTimeout(()=>{stageFx('cs-shake',450);haptic('medium');burst({kind:'sparks',x:innerWidth/2,y:innerHeight*0.42,count:40,theme});burst({kind:'confetti',x:innerWidth/2,y:innerHeight*0.42,count:30,theme});},200);
     const fountain=setInterval(()=>{burst({kind:'coins',x:innerWidth*0.08,y:innerHeight,angle:[-88,-78],speed:13,count:3,theme});burst({kind:'coins',x:innerWidth*0.92,y:innerHeight,angle:[-102,-92],speed:13,count:3,theme});},150);setTimeout(()=>clearInterval(fountain),ms);const roll=await audio.loop('rollup',{volume:.5});
     let skipped=false;skip.current=()=>{skipped=true;};const t0=performance.now();
     while(!skipped){const p=Math.min(1,(performance.now()-t0)/ms);setShow(s=>({...s,value:Math.round(win*easeOut(p))}));if(p>=1)break;await sleep(33);}
     roll.stop();setShow(s=>({...s,value:win,done:true}));audio.play('roll-end',{volume:.9});burst({kind:'sparks',x:innerWidth/2,y:innerHeight*0.42,count:30,theme});
-    await sleep(skipped?600:fast?1000:1800);return;
+    await sleep(skipped?600:fast?1000:1300);return;
    }
    // BIG and above: straight into the final tier's scene (operator decision 2026-10-22: no step-by-step upgrades);
    // the amount rolls from 0 to the win, then holds.
