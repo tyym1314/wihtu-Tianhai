@@ -111,3 +111,10 @@ test('OASIS_RETIRED_GAMES withdraws games from the catalogue (production: thunde
  const out=execFileSync(process.execPath,['--input-type=module','-e',"import {ALL_GAME_IDS,RELEASED_IDS} from './shared/games.mjs';console.log(JSON.stringify([ALL_GAME_IDS.includes('thunder'),ALL_GAME_IDS.includes('tiger'),RELEASED_IDS.includes('thunder'),ALL_GAME_IDS.includes('olympus')]))"],{env:{...process.env,OASIS_RETIRED_GAMES:'thunder,tiger'},cwd:new URL('..',import.meta.url)}).toString();
  assert.deepEqual(JSON.parse(out),[false,false,false,true]);
 });
+
+test('arcade: every weapon keeps the configured return on every target (catch chance never above 100%)',async()=>{
+ const {arcadeModelFor}=await import('../server/casino/arcade.mjs');
+ for(const g of Object.values(CASINO_GAMES).filter(g=>g.family==='arcade'))for(const tier of ['96','97','98','99']){const c=arcadeModelFor(g.id,tier).config;
+  for(const w of c.weapons)for(const t of c.targets){const mean=t.multiplier??(t.min+t.max)/2,p=c.rtp*w.cost/(w.targets*mean);
+   assert.ok(p<=1,`${g.id} ${tier} ${w.id} on ${t.id}: catch chance ${p.toFixed(3)} > 1`);}}
+});

@@ -116,7 +116,8 @@ export async function shoot(session,body){
   if(a.status!=='OPEN')fail(409,'ARCADE_CLOSED');
   if(body.seq!==await nextSeq(c,a.id))fail(409,'SHOT_OUT_OF_ORDER');
   const model=byVersion.get(a.math_version);if(!model||model.hash!==a.math_hash)fail(503,'PINNED_MATH_UNAVAILABLE');
-  const r=resolveShot(model,unseal(a.seed_enc),body.seq,body.weapon,body.targets);
+  // The struck targets are kept with the result so every shot can be replayed from the seed in an audit.
+  const r={...resolveShot(model,unseal(a.seed_enc),body.seq,body.weapon,body.targets),targets:body.targets};
   if(a.used+r.cost>a.shots)fail(409,'OUT_OF_AMMO');
   const win=BigInt(a.bet_minor)*BigInt(r.win_x100)/100n;
   await c.query('INSERT INTO casino_arcade_shots(arcade_id,seq,weapon,cost,result) VALUES($1,$2,$3,$4,$5)',[a.id,body.seq,body.weapon,r.cost,r]);

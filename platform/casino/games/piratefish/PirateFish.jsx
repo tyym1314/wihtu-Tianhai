@@ -76,6 +76,8 @@ export default function PirateFish({initial}){
   const w=GAME.arcade.weapons.find(x=>x.id===weapon);
   const alive=F.ref.current.filter(f=>!f.dead&&f.x>20&&f.x<921);if(!alive.includes(target)||busy.current&&weapon!=='cannon')return;
   const chosen=[target,...alive.filter(f=>f!==target).sort((a,b)=>Math.hypot(a.x-target.x,a.y-target.y)-Math.hypot(b.x-target.x,b.y-target.y)).slice(0,w.targets-1)];
+  // The laser is priced for five fish: with fewer on screen it waits rather than paying for strikes it cannot make.
+  if(chosen.length<w.targets){if(weapon==='laser')A.say('fewFish');return;}
   setAngle(angleTo(target.x,target.y));setRecoil(r=>r+1);busy.current=true;
   if(weapon==='laser'){audio.play('zap');addFx({type:'laser',pts:[{x:L.origin[0],y:L.origin[1]},...chosen.map(f=>({x:f.x,y:f.y}))]},520);}
   else if(weapon==='hook'){audio.play('shoot',{rate:.8});addFx({type:'hook',x:target.x,y:target.y},700);}

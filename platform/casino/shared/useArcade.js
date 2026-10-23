@@ -48,5 +48,5 @@ export function useArcade(initial,game){
  }
  function setBet(v){setBetState(v);if(ref.current&&ref.current.bet_minor!==v)queue.current=queue.current.then(close);}
  const a=open,display=wallet===null?null:BigInt(wallet)+(a?BigInt(a.bet_minor)*BigInt(a.shots-a.used)+BigInt(a.win_minor||0):0n);
- return {bet,bets,setBet,shoot,balance:display,toast,sessionWin,open:a,exit:()=>close().finally(()=>requestExit())};
+ return {bet,bets,setBet,shoot,say,balance:display,toast,sessionWin,open:a,exit:()=>close().finally(()=>requestExit())};
 }
