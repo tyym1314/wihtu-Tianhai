@@ -11,6 +11,8 @@ const MUSIC={
  olympus:['music/experimenting-with-greek-instrument-samples--greek%20instruments_0.ogg','Greek instruments by Spring Spring (OpenGameArt, CC0)'],
  greedycat2:['music/banana-track--banana_track.ogg','Banana Track by skrjablin (OpenGameArt, CC0)'],
  greedyking:['music/medieval-kings-feast--Kings_Feast.mp3',"Medieval: King's Feast by RandomMind (OpenGameArt, CC0)"],
+ fruitmachine:['music2/carnival-rides--carnivalrides.ogg','Carnival Rides (OpenGameArt, CC0)'],
+ piratefish:['music2/a-sailors-chant--oga_jam_menu_music_loopable_0.ogg',"A Sailor's Chant (OpenGameArt, CC0)"],
  greedyforest:['music/joyful-jungle--joyful_jungle_bpm140.ogg','Joyful Jungle by MintoDog (OpenGameArt, CC0)'],
  herochest:['music/bravery-run--bravery_run_bpm170.ogg','Bravery Run by MintoDog (OpenGameArt, CC0)'],
  crazyfruit:['music/amusement-park-stage--amusement_park_stage_bpm150.ogg','Amusement park Stage by MintoDog (OpenGameArt, CC0)'],

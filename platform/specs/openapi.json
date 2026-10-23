@@ -1741,7 +1741,9 @@
           "magicslot",
           "chillislot",
           "sphinxlegend",
-          "nights1001"
+          "nights1001",
+          "fruitmachine",
+          "piratefish"
         ]
       },
       "CompetitiveGameId": {
@@ -1802,7 +1804,9 @@
           "magicslot",
           "chillislot",
           "sphinxlegend",
-          "nights1001"
+          "nights1001",
+          "fruitmachine",
+          "piratefish"
         ]
       },
       "Scope": {

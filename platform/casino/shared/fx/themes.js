@@ -2,6 +2,8 @@
 const GOLD=['#ffe58a','#f5b52e','#a86a0e'];
 const T=(spark,confetti,coin=GOLD)=>({coin,spark,confetti});
 const THEMES={
+ fruitmachine:T(['#fff6c8','#ff8a2e','#ffd34d'],['#ff3b5c','#ffd34d','#7dff8a','#ff8a2e','#56d1ff']),
+ piratefish:T(['#e6fbff','#57e2ff','#ffd34d'],['#57e2ff','#ffd34d','#ff5c7a','#ffffff']),
  olympus:T(['#fffbe6','#9fd8ff','#ffd34d'],['#ffd34d','#9fd8ff','#ffffff','#c58bff']),
  oceanslot:T(['#e6fbff','#56d1ff','#7dffe0'],['#56d1ff','#7dffe0','#ffd34d','#ffffff']),
  mahjongslot:T(['#fff2c2','#ff5c5c','#ffd34d'],['#ff3b3b','#ffd34d','#3bd16f','#ffffff']),

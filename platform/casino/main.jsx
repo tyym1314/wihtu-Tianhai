@@ -5,9 +5,9 @@ import {t,setLocale,isRtl} from './shared/i18n.mjs';
 import './shared/shell.css';
 
 const GAME=location.pathname.split('/').pop();
-const LOADERS={greedylion:()=>import('./games/greedylion/GreedyLion.jsx'),rocketstar2:()=>import('./games/rocketstar2/RocketStar2.jsx'),teenpatti:()=>import('./games/teenpatti/TeenPatti.jsx'),olympus:()=>import('./games/olympus/Olympus.jsx')};
+const LOADERS={greedylion:()=>import('./games/greedylion/GreedyLion.jsx'),rocketstar2:()=>import('./games/rocketstar2/RocketStar2.jsx'),teenpatti:()=>import('./games/teenpatti/TeenPatti.jsx'),olympus:()=>import('./games/olympus/Olympus.jsx'),piratefish:()=>import('./games/piratefish/PirateFish.jsx')};
 const family=(loader,ids)=>{for(const id of ids)LOADERS[id]=loader;};
-family(()=>import('./games/wheel/WheelGame.jsx'),['greedycat2','greedyking','greedybrutal','bigeater','fruitparty','greedyforest','herochest','crazyfruit','footballleague','glorycup','bountyfootball','magiccard','solomonmines']);
+family(()=>import('./games/wheel/WheelGame.jsx'),['greedycat2','greedyking','fruitmachine','greedybrutal','bigeater','fruitparty','greedyforest','herochest','crazyfruit','footballleague','glorycup','bountyfootball','magiccard','solomonmines']);
 family(()=>import('./games/table/TableGame.jsx'),['roulette','roulettepro','sicbo']);
 family(()=>import('./games/crash/CrashGame.jsx'),['crash','crashstar']);
 family(()=>import('./games/arcade/ArcadeGame.jsx'),['monster','molestar']);

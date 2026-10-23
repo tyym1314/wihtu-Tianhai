@@ -37,7 +37,7 @@ export const HALF_BANDS={
  * Games without removable bands: in the panel the plate keeps its proportions (scaled to the panel height) and a
  * wide plate (plate-wide.webp, scenery extended left and right by image generation) fills the sides.
  */
-export const HALF_WIDE=new Set(['rocketstar2','greedycat2','greedybrutal','bigeater','greedyking','greedyforest','herochest','magiccard','solomonmines','roulette','roulettepro','sicbo','monster']);
+export const HALF_WIDE=new Set(['rocketstar2','greedycat2','greedybrutal','bigeater','greedyking','greedyforest','herochest','magiccard','solomonmines','roulette','roulettepro','sicbo','monster','fruitmachine','piratefish']);
 export const WIDE_WIDTH=1338;
 
 /** Panel ratio the voice room uses for every game (WithU sends aspectRatio=0.8). */

@@ -1,0 +1,42 @@
+.pf-field{position:absolute;inset:0;overflow:hidden;touch-action:none}
+.pf-fish{position:absolute;transform:translate(-50%,-50%) scaleX(var(--flip)) rotate(var(--tilt));pointer-events:none;transition:filter .15s}
+.pf-fish img{width:100%;display:block;filter:drop-shadow(0 14px 10px #0006);animation:pf-swim .9s ease-in-out infinite alternate}
+.pf-fish.shark img,.pf-fish.seaturtle img,.pf-fish.goldturtle img,.pf-fish.crab img{animation-duration:1.6s}
+@keyframes pf-swim{from{transform:scaleY(.96) skewY(-2deg)}to{transform:scaleY(1.03) skewY(2deg)}}
+.pf-fish b{position:absolute;left:50%;top:-6px;transform:translateX(-50%) scaleX(var(--flip));font:900 34px/1 Georgia,serif;color:#fff3b0;text-shadow:0 0 10px #ff9a00,0 3px 0 #5a2a00;white-space:nowrap}
+.pf-fish.hurt img{filter:brightness(2.2) saturate(.3) drop-shadow(0 0 12px #fff)}
+.pf-fish.dead img{animation:pf-caught .9s ease-in forwards}
+@keyframes pf-caught{0%{transform:rotate(0);filter:brightness(2.5)}40%{transform:rotate(200deg) scale(1.15)}100%{transform:rotate(540deg) scale(.2);opacity:0}}
+.pf-fish.goldturtle img,.pf-fish.crab img{filter:drop-shadow(0 0 18px #ffd34d) drop-shadow(0 14px 10px #0006)}
+.pf-crosshair{position:absolute;transform:translate(-50%,-50%);border:4px solid #ff3b3b;border-radius:50%;box-shadow:0 0 14px #ff3b3b,inset 0 0 14px #ff3b3b88;pointer-events:none;animation:pf-lock 1s linear infinite}
+.pf-crosshair::before,.pf-crosshair::after{content:'';position:absolute;left:50%;top:-14px;bottom:-14px;width:4px;margin-left:-2px;background:linear-gradient(#ff3b3b 0 22%,transparent 22% 78%,#ff3b3b 78%)}
+.pf-crosshair::after{transform:rotate(90deg)}
+@keyframes pf-lock{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.pf-cannon{position:absolute;width:150px;height:auto;transform-origin:50% 190px;transform:rotate(var(--rot));transition:transform .12s ease-out;pointer-events:none;filter:drop-shadow(0 8px 8px #0008);animation:pf-recoil .18s ease-out}
+@keyframes pf-recoil{0%{translate:0 0}40%{translate:0 10px}100%{translate:0 0}}
+.pf-shell{position:absolute;width:46px;margin:-23px 0 0 -23px;pointer-events:none;filter:drop-shadow(0 0 10px #ffd34d);animation:pf-shell .26s linear forwards}
+@keyframes pf-shell{to{transform:translate(var(--dx),var(--dy))}}
+.pf-net{position:absolute;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;pointer-events:none;
+ background:repeating-conic-gradient(#ffffffaa 0 4deg,transparent 4deg 22deg),radial-gradient(circle,#fff6 0,transparent 65%);-webkit-mask:radial-gradient(circle,#000 55%,transparent 70%);mask:radial-gradient(circle,#000 55%,transparent 70%);animation:pf-net .5s ease-out forwards}
+@keyframes pf-net{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.2);opacity:0}}
+.pf-hook{position:absolute;width:6px;height:var(--len);margin-left:-3px;transform-origin:50% 0;transform:rotate(calc(var(--rot) + 180deg));background:repeating-linear-gradient(#d9b25a 0 10px,#7a5a18 10px 14px);pointer-events:none;animation:pf-hook .7s ease-in-out forwards}
+.pf-hook img{position:absolute;left:50%;bottom:-40px;width:60px;transform:translateX(-50%) rotate(180deg)}
+@keyframes pf-hook{0%{clip-path:inset(0 0 100% 0)}45%{clip-path:inset(0 0 -60px 0)}100%{clip-path:inset(0 0 100% 0)}}
+.pf-laser{position:absolute;left:0;top:0;width:941px;height:1672px;pointer-events:none;animation:pf-laser .52s ease-out forwards}
+.pf-laser polyline{fill:none;stroke:#57e2ff;stroke-width:26;stroke-linejoin:round;filter:drop-shadow(0 0 16px #57e2ff);opacity:.75}
+.pf-laser polyline.core{stroke:#fff;stroke-width:8;opacity:1}
+@keyframes pf-laser{0%{opacity:0}10%{opacity:1}70%{opacity:1}100%{opacity:0}}
+.pf-reel{position:absolute;transform:translate(-50%,-100%);width:150px;height:62px;border-radius:12px;overflow:hidden;background:linear-gradient(#2a1200,#5a2a00);border:4px solid #ffd34d;box-shadow:0 0 18px #ffb300;pointer-events:none}
+.pf-reel b{display:block;font:900 44px/62px Georgia,serif;color:#fff3b0;text-align:center;text-shadow:0 0 10px #ff9a00;animation:pf-reel 1.05s cubic-bezier(.2,.7,.3,1)}
+@keyframes pf-reel{0%{transform:translateY(-600%);filter:blur(3px)}80%{filter:blur(0)}100%{transform:translateY(0)}}
+.pf-pop{position:absolute;transform:translate(-50%,-50%);font:900 46px/1 Georgia,serif;color:#fff3b0;text-shadow:0 0 12px #ffb300,0 4px 0 #6a3a00;white-space:nowrap;pointer-events:none;animation:pf-pop 1.4s ease-out forwards}
+.pf-pop.big{font-size:64px}
+@keyframes pf-pop{0%{transform:translate(-50%,-50%) scale(.4);opacity:0}20%{transform:translate(-50%,-80%) scale(1.2);opacity:1}100%{transform:translate(-50%,-180%) scale(1);opacity:0}}
+.pf-coin{animation-duration:1s}
+.pf-balance{font:800 34px/50px system-ui,sans-serif;color:#fff;text-align:center;text-shadow:0 2px 3px #000}
+.pf-bet{font:900 36px/54px system-ui,sans-serif;color:#ffe9a0;text-align:center;text-shadow:0 2px 3px #000}
+.pf-bet small{font-size:24px;color:#9ff0ff;margin-left:6px}
+.pf-btn{position:absolute;background:transparent;border:0;padding:0;cursor:pointer;border-radius:22px!important}
+.pf-btn.on{box-shadow:0 0 0 5px #57e2ff,0 0 26px 6px #57e2ffaa;animation:pf-on 1.2s ease-in-out infinite}
+@keyframes pf-on{50%{box-shadow:0 0 0 5px #9ff0ff,0 0 34px 10px #57e2ffcc}}
+.pf-over{position:absolute;pointer-events:none}

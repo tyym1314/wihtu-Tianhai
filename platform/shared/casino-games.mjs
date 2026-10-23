@@ -126,6 +126,10 @@ const DEFINED=Object.freeze({
  greedyking:wheelGame('greedyking','GreedyKing',{released:true,veg:['carrot','cabbage','corn','tomato'],meat:[['hotdog',10],['kebab',15],['ham',25],['steak',45]],specials:[],
   groups:[{id:'salad',multiplier:1.25,group:'veg'},{id:'pizza',multiplier:4.37,group:'meat'}],chips:Object.freeze([coins(1000),coins(5000),coins(10000),coins(100000),coins(300000)]),round:{betMs:30000,drawMs:7000,showMs:5000}}),
 
+ // Fruit Machine: GreedyKing's math with fruits x5, burger x10, shrimp x15, puffer fish x25, steak x45 and two group bets.
+ fruitmachine:wheelGame('fruitmachine','Fruit Machine',{released:true,veg:['strawberry','banana','orange','cherry'],meat:[['burger',10],['shrimp',15],['pufferfish',25],['steak',45]],specials:[],
+  groups:[{id:'allfruits',multiplier:1.25,group:'veg'},{id:'allmeat',multiplier:4.37,group:'meat'}],round:{betMs:20000,drawMs:7000,showMs:5000}}),
+
  // GreedyForest: herbivores x5; carnivore and herbivore jackpots pay their whole group.
  greedyforest:wheelGame('greedyforest','GreedyForest',{released:true,veg:['rabbit','cow','sheep','deer'],meat:[['fox',10],['bear',15],['tiger',25],['lion',45]],specials:['grass','meat'],chips:CHIPS2,round:{betMs:20000,drawMs:7000,showMs:5000}}),
  // HeroChest: eight boxes with salad/pizza lucky jackpots; a rare "God" reward opens 4 extra random boxes.
@@ -239,6 +243,13 @@ const DEFINED=Object.freeze({
    targets:Object.freeze([{id:'bat',multiplier:2},{id:'slime',multiplier:3},{id:'goblin',multiplier:5},{id:'wolf',multiplier:8},{id:'orc',multiplier:12},{id:'troll',multiplier:20},{id:'golem',multiplier:30},{id:'dragon',multiplier:50},{id:'chest',min:10,max:100}].map(Object.freeze)),
    // Normal arrow (1 bet, 1 target), triple arrow (3 bets, 3 targets), lightning (5 bets, chains up to 5 targets).
    weapons:Object.freeze([{id:'arrow',cost:1,targets:1},{id:'triple',cost:3,targets:3},{id:'lightning',cost:5,targets:5}].map(Object.freeze))})}),
+ // Pirate Fish: fishing shooter. Crab boss and golden turtle pay a random multiplier; the hook doubles the chance on one fish,
+ // the laser strikes up to five fish.
+ piratefish:Object.freeze({id:'piratefish',released:true,family:'arcade',kind:'arcade',reference:'Pirate Fish',name:'Pirate Fish',zh:'Pirate Fish',ar:'Pirate Fish',
+  arcade:Object.freeze({rtp:0.97,bets:Object.freeze([coins(1),coins(5),coins(10),coins(50),coins(100)]),
+   targets:Object.freeze([{id:'clownfish',multiplier:2},{id:'bluetang',multiplier:3},{id:'angelfish',multiplier:5},{id:'lanternfish',multiplier:8},{id:'pufferfish',multiplier:12},
+    {id:'seaturtle',multiplier:20},{id:'shark',multiplier:50},{id:'crab',min:30,max:88},{id:'goldturtle',min:20,max:100}].map(Object.freeze)),
+   weapons:Object.freeze([{id:'cannon',cost:1,targets:1},{id:'hook',cost:2,targets:1},{id:'laser',cost:5,targets:5}].map(Object.freeze))})}),
  molestar:Object.freeze({id:'molestar',released:true,family:'arcade',kind:'arcade',reference:'MoleStar',name:'MoleStar',zh:'MoleStar',ar:'MoleStar',
   arcade:Object.freeze({rtp:0.97,bets:Object.freeze([coins(1),coins(5),coins(10),coins(50),coins(100)]),
    targets:Object.freeze([{id:'mole',multiplier:2},{id:'helmet',multiplier:3},{id:'miner',multiplier:5},{id:'ninja',multiplier:10},{id:'king',multiplier:20},{id:'golden',multiplier:50},{id:'star',multiplier:100}].map(Object.freeze)),
