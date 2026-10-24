@@ -208,7 +208,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cs-lite.legendary .cs-lite-edge{box-shadow:inset 0 0 140px 30px #ff6a00cc,inset 0 0 40px 8px #ffd34d;animation:cs-lite-pulse .47s ease-in-out infinite alternate}
 @keyframes cs-lite-pulse{from{opacity:.75}to{opacity:1}}
 .cs-lite-bar{position:absolute;left:50%;top:15%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;padding:6px 34px 10px;border-radius:24px;
- background:radial-gradient(ellipse at 50% 40%,#000a,#0006 60%,transparent 75%);animation:cs-lite-in .45s cubic-bezier(.2,1.6,.4,1) both}
+ background:radial-gradient(ellipse at 50% 40%,#000a,#0006 60%,transparent 75%);visibility:hidden}
+.cs-lite-bar.ready{visibility:visible;animation:cs-lite-in .45s cubic-bezier(.2,1.6,.4,1) both}
 .cs-lite-bar img{height:min(11vh,90px);width:auto;filter:drop-shadow(0 4px 8px #000c)}
 .cs-lite-bar em{font:900 min(8vh,56px)/1 Georgia,serif;font-style:normal;color:#fff3c4;text-shadow:0 0 18px #ffb300,0 3px 0 #5a2a00;font-variant-numeric:tabular-nums}
 .cs-lite.mega .cs-lite-bar em{color:#ffe8fb;text-shadow:0 0 18px #ff4fd8,0 3px 0 #6a0a5a}

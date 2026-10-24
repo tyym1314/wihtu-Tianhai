@@ -22,6 +22,14 @@ const STING={big:'sting-big',mega:'sting-mega',epic:'sting-epic',legendary:'stin
 const BUZZ={big:'heavy',mega:'heavy',epic:'heavy',legendary:'celebrate'};
 const LABEL={nice:'niceWin',great:'greatWin',big:'bigWin',mega:'megaWin',epic:'epicWin',legendary:'legendaryWin'};
 const art=n=>`/casino/fx/${n}.webp?v=${__ASSET_VERSION__}`;
+// Preloaded title images, kept referenced so the WebView keeps them decoded.
+const TITLES={};
+/** The lite title bar stays invisible until its title image has loaded, then slides in once: no first-frame jump. */
+function LiteBar({src,alt,run,width,value}){
+ const [ready,setReady]=useState(false);
+ return <div className={`cs-lite-bar ${ready?'ready':''}`}><img src={src} alt={alt} ref={i=>{if(i?.complete&&i.naturalWidth&&!ready)setReady(true);}} onLoad={()=>setReady(true)} onError={()=>setReady(true)}/>
+  <em key={run} className="cs-lite-amount" style={{minWidth:`${width}ch`}}>{value}</em></div>;
+}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const easeOut=p=>1-Math.pow(1-p,3);
 function stageFx(cls,ms){const el=document.querySelector('.cs-stage-root');if(!el)return;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);setTimeout(()=>el.classList.remove(cls),ms);}
@@ -42,7 +50,7 @@ export function useCelebration(id,audio){
   return()=>{stop=true;clearTimeout(tm);};},[]);
  const liteRun=useRef(0);
  // Title art is decoded before the first win, so the lite bar never lays out without it and jumps.
- useEffect(()=>{for(const k of ['great','big','mega','epic','legendary']){const i=new Image();i.src=art('title-'+k);i.decode?.().catch(()=>{});}},[]);
+ useEffect(()=>{for(const k of ['great','big','mega','epic','legendary'])if(!TITLES[k]){const i=new Image();i.src=art('title-'+k);i.decode?.().catch(()=>{});TITLES[k]=i;}},[]);
  /**
   * Real-time games (arcade, crash): the same tiers without blocking the play. No dimming, no click capture: a title
   * bar at the top with the rolling amount, coins from the catch and an edge glow per tier; a newer win replaces it.
@@ -119,7 +127,7 @@ export function useCelebration(id,audio){
  const st=typeof document!=='undefined'&&document.querySelector('.cs-stage'),sc=st?st.getBoundingClientRect().width/st.offsetWidth:1;
  let layer=null;
  if(show?.kind==='lite')layer=<div className={`cs-lite ${show.tier} ${show.done?'done':''}`}><i className="cs-lite-edge"/>
-  <div className="cs-lite-bar"><img src={art('title-'+show.tier)} alt={t(LABEL[show.tier])}/><em key={show.run} className="cs-lite-amount" style={{minWidth:`${show.width}ch`}}>{full(show.value)}</em></div></div>;
+  <LiteBar src={art('title-'+show.tier)} alt={t(LABEL[show.tier])} run={show.run} width={show.width} value={full(show.value)}/></div>;
  if(show?.kind==='nice')layer=<div className={`cs-nice ${show.done?'done':''} ${show.leaving?'leaving':''}`}>
   <div className="cs-nice-plate"><i className="cs-nice-sweep"/>{[0,1,2,3,4,5].map(i=><i key={i} className="cs-star" style={{'--i':i}}/>)}
    <img className="cs-nice-title" src={art('title-nice')} alt={t('niceWin')}/><em>{full(show.value)}</em></div></div>;
