@@ -15,7 +15,7 @@ import './fishstar.css';
 
 // Design pixels on the 1672x941 landscape plate.
 export const L={
- W:1672,H:941,field:{top:120,bottom:790},origin:[851,822],
+ W:1672,H:941,X:520,field:{top:120,bottom:790},origin:[851,822],
  balance:[95,858,185,52],piggy:[1395,36,160,46],piggyBtn:[1230,15,345,75],menu:[1623,53,36],
  aim:[1600,593,50],fast:[1600,710,50],auto:[1600,836,50],minus:[696,882,36],plus:[996,882,36],betBox:[770,860,156,56],max:18,
 };
@@ -35,12 +35,14 @@ const pick=items=>{const tot=items.reduce((a,x)=>a+x.weight,0);let r=Math.random
 const circ=([x,y,r])=>({left:x-r,top:y-r,width:2*r,height:2*r,borderRadius:'50%'});
 const angleTo=(x,y)=>Math.atan2(x-L.origin[0],L.origin[1]-y)*180/Math.PI;
 let uid=0;
+/** Visible design-x range on this phone (the stage is centred; the extended plate fills the sides). */
+const onScreen=(f,pad=20)=>{const st=document.querySelector('.cs-stage'),s=st?st.getBoundingClientRect().width/L.W:1,half=innerWidth/s/2;return f.x>L.W/2-half+pad&&f.x<L.W/2+half-pad;};
 
 /** Fish enter from either side, often in schools, and swim across on a gentle wave. Presentation only. */
 function useFish(){
  const [list,setList]=useState([]),ref=useRef([]),last=useRef(performance.now()),banner=useRef(null);
  useEffect(()=>{let raf;const step=now=>{const dt=Math.min(.05,(now-last.current)/1000);last.current=now;
-  let a=ref.current.filter(f=>f.x>-f.w-60&&f.x<L.W+f.w+60&&!(f.dead&&now-f.dead>900));
+  let a=ref.current.filter(f=>f.x>-L.X-f.w&&f.x<L.W+L.X+f.w&&!(f.dead&&now-f.dead>900));
   for(const f of a)if(!f.dead&&!f.held){f.t+=dt;f.x+=f.vx*dt;f.y=f.y0+Math.sin(f.t*f.fr)*f.amp;}
   const first=!ref.current.length;
   while(a.filter(f=>!f.dead).length<L.max){
@@ -49,7 +51,7 @@ function useFish(){
    const y0=L.field.top+k.w*.35+Math.random()*(L.field.bottom-L.field.top-k.w*.7),speed=k.speed*(.85+Math.random()*.3);
    if((k.king||k.boss)&&!first)banner.current={kind:k.id,at:now};
    for(let i=0;i<n;i++){
-    const start=first?120+Math.random()*1430:dir>0?-k.w/2-i*k.w*.8:L.W+k.w/2+i*k.w*.8;
+    const start=first?120+Math.random()*1430:dir>0?-L.X-k.w/2-i*k.w*.8:L.W+L.X+k.w/2+i*k.w*.8;
     a.push({id:++uid,kind:k.id,w:k.w,x:start,y0:y0+(i%2?1:-1)*i*k.w*.3,y:0,vx:dir*speed,t:Math.random()*6,fr:.6+Math.random()*.6,amp:k.w>200?16:26});
    }
   }
@@ -92,7 +94,7 @@ export default function FishStar({initial}){
   f.dead=performance.now();if(k.king)addFx({type:'flash'},400);pay(f,minor);
  }
  async function fire(target){
-  const alive=F.ref.current.filter(f=>!f.dead&&!f.held&&f.x>30&&f.x<L.W-30);if(!alive.includes(target)||busy.current)return;
+  const alive=F.ref.current.filter(f=>!f.dead&&!f.held&&onScreen(f));if(!alive.includes(target)||busy.current)return;
   let entry=target.kind,along=[];
   // Bosses that take other fish along: the client names them, the server prices the capture on all of them.
   if(target.kind==='hammercrab'){along=alive.filter(f=>f!==target&&T[f.kind].multiplier<=50&&!T[f.kind].type).slice(0,GAME.arcade.sweepCap);entry={id:'hammercrab',with:along.map(f=>f.kind)};}
@@ -107,12 +109,12 @@ export default function FishStar({initial}){
  useEffect(()=>{if(A.toast?.key==='insufficient'){setAuto(false);setAim(false);}},[A.toast]);
  // AIM keeps firing at the chosen fish; AUTO fires at random fish; FAST shortens the interval.
  useEffect(()=>{if(!auto&&!(aim&&locked))return;const tm=setInterval(()=>{
-  const live=F.ref.current.filter(f=>!f.dead&&!f.held&&f.x>80&&f.x<L.W-80);
+  const live=F.ref.current.filter(f=>!f.dead&&!f.held&&onScreen(f,60));
   const lf=locked&&live.find(f=>f.id===locked);if(aim&&locked&&!lf){setLocked(null);if(!auto)return;}
   const target=lf||(auto&&live[Math.floor(Math.random()*live.length)]);if(target)fire(target);
  },fast?260:520);return()=>clearInterval(tm);},[auto,aim,locked,fast,A.bet]);
  const stepBet=d=>{audio.play('click');const i=A.bets.indexOf(A.bet);A.setBet(A.bets[Math.min(A.bets.length-1,Math.max(0,i+d))]);};
- const tapField=e=>{const r=e.currentTarget.getBoundingClientRect(),s=r.width/L.W,p={x:(e.clientX-r.left)/s,y:(e.clientY-r.top)/s};
+ const tapField=e=>{const r=e.currentTarget.getBoundingClientRect(),s=r.width/(L.W+2*L.X),p={x:(e.clientX-r.left)/s-L.X,y:(e.clientY-r.top)/s};
   const c=F.ref.current.filter(f=>!f.dead&&!f.held).map(f=>({f,d:Math.hypot(f.x-p.x,f.y-p.y)})).filter(x=>x.d<Math.max(55,x.f.w*.5)).sort((a,b)=>a.d-b.d)[0];
   if(!c)return;if(aim)setLocked(c.f.id);fire(c.f);};
  const claim=async()=>{audio.play('click');try{const s=await api('/api/casino/piggy/claim',{});setPiggy(s);audio.play('nice');haptic('medium');burst({kind:'coins',count:40,theme:themeOf(id)});}catch(e){A.say(e.code==='NOTHING_TO_CLAIM'?'nothingToClaim':'failed');}};
@@ -120,11 +122,11 @@ export default function FishStar({initial}){
  const toggle=(set,v)=>{audio.play('click');set(x=>!x);};
  return <Stage plate={img('plate')} width={L.W} height={L.H} className="fs" dir={isRtl()?'rtl':'ltr'}>
   {cel.node}
-  <div className="fs-field" onPointerDown={tapField}>
+  <div className="fs-field" style={{left:-L.X,width:L.W+2*L.X}} onPointerDown={tapField}>
    {F.list.map(f=><div key={f.id} className={`fs-fish ${f.kind} ${KIND[f.kind].king?'king':''} ${KIND[f.kind].boss?'boss':''} ${f.dead?(f.pull?'pulled':'dead'):''} ${f.hurt&&performance.now()-f.hurt<220?'hurt':''}`}
-    style={{left:f.x,top:f.y,width:f.w,'--flip':f.vx<0?-1:1,'--tilt':`${Math.cos(f.t*f.fr)*f.fr*f.amp*0.3*(f.vx<0?-1:1)}deg`,...(f.pull?{'--px':`${f.pull.x-f.x}px`,'--py':`${f.pull.y-f.y}px`}:{})}}>
+    style={{left:f.x+L.X,top:f.y,width:f.w,'--flip':f.vx<0?-1:1,'--tilt':`${Math.cos(f.t*f.fr)*f.fr*f.amp*0.3*(f.vx<0?-1:1)}deg`,...(f.pull?{'--px':`${f.pull.x-f.x}px`,'--py':`${f.pull.y-f.y}px`}:{})}}>
     <img src={img(f.kind)} alt="" draggable="false"/>{f.w>=170&&!f.dead&&<b>x{mult(f.kind)}</b>}</div>)}
-   {lockedFish&&aim&&<i className="fs-crosshair" style={{left:lockedFish.x,top:lockedFish.y,width:lockedFish.w*.85,height:lockedFish.w*.85}}/>}
+   {lockedFish&&aim&&<i className="fs-crosshair" style={{left:lockedFish.x+L.X,top:lockedFish.y,width:lockedFish.w*.85,height:lockedFish.w*.85}}/>}
   </div>
   {fx.map(f=>f.type==='shell'?<img key={f.k} className="fs-shell" src={img('shell')} alt="" style={{left:L.origin[0],top:L.origin[1]-70,'--dx':`${f.tx-L.origin[0]}px`,'--dy':`${f.ty-L.origin[1]+70}px`}}/>
    :f.type==='net'?<i key={f.k} className="fs-net" style={{left:f.x,top:f.y}}/>
@@ -137,8 +139,7 @@ export default function FishStar({initial}){
    :f.type==='pop'?<span key={f.k} className={`fs-pop ${f.big?'big':''}`} style={{left:f.x,top:f.y}}>{f.text}</span>
    :<span key={f.k} className="cs-coin fs-coin" style={{left:f.x-22,top:f.y-22,'--dx':`${f.dx}px`,'--dy':`${f.dy}px`,animationDelay:`${f.delay}ms`}}/>)}
   {coming&&<div className="fs-coming"><img src={img(coming)} alt=""/><b>{t('bossComing').replace('{fish}',optionName(coming,id))}</b></div>}
-  <img className="fs-over" src={img('column')} alt="" style={{left:1540,top:530,width:122,height:370}}/>
-  <img className="fs-over" src={img('topbar')} alt="" style={{left:1220,top:8,width:448,height:92}}/>
+  <img className="fs-over" src={img('ui')} alt="" style={{left:0,top:0,width:L.W,height:L.H}}/>
   <img className="fs-cannon" key={recoil} src={img('cannon')} alt="" style={{left:L.origin[0]-62,top:L.origin[1]-176,'--rot':`${angle}deg`}}/>
   <RechargeTap x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]}/>
   <Box x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]} className="fs-balance">{A.balance===null?'—':<CountUp value={Number(A.balance)} format={v=>full(Math.round(v))}/>}</Box>
