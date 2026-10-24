@@ -5,7 +5,7 @@ import {DECORATIVE,HALF_MIN_ASPECT,HALF_WIDE,WIDE_WIDTH,halfLayout} from './half
 export const EXT_HEIGHT=2100;
 // Landscape games (design wider than tall) extend left and right instead: plate-ext.webp is EXT_WIDTH x height.
 export const EXT_WIDTH=2400;
-const insets=()=>{const css=getComputedStyle(document.documentElement);const px=k=>Math.max(0,parseFloat(css.getPropertyValue('--oasis-host-inset-'+k))||0);return{top:px('top'),bottom:px('bottom')};};
+const insets=()=>{const css=getComputedStyle(document.documentElement);const px=k=>Math.max(0,parseFloat(css.getPropertyValue('--oasis-host-inset-'+k))||0);return{top:px('top'),bottom:px('bottom'),left:px('left'),right:px('right')};};
 
 /**
  * Renders the concept plate at its design size (default 941x1672), scaled to fit between the host's
@@ -25,8 +25,10 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
   const update=()=>{const {top,bottom}=insets(),w=window.innerWidth,h=window.innerHeight,avail=Math.max(1,h-top-bottom);
    // Voice-room panel: fill it edge to edge (full width, full height; the plate is squeezed vertically if needed).
    if(width<fullHeight&&window.innerWidth/window.innerHeight>HALF_MIN_ASPECT){setFit(wide?{scale:h/height,cy:h/2}:{scale:w/width,scaleY:h/height,cy:h/2});return;}
-   const scale=Math.min(w/width,avail/height),half=height*scale/2;
-   setFit({scale,cy:Math.min(Math.max(h/2,top+half),h-bottom-half)});};
+   // Landscape games also keep clear of a side notch / navigation bar and centre between them.
+   const {left,right}=insets(),availW=width>height?Math.max(1,w-left-right):w;
+   const scale=Math.min(availW/width,avail/height),half=height*scale/2;
+   setFit({scale,cy:Math.min(Math.max(h/2,top+half),h-bottom-half),cx:width>height?left+availW/2:undefined});};
   update();setAspect(window.innerWidth/window.innerHeight);
   const resize=()=>{setAspect(window.innerWidth/window.innerHeight);update();};window.addEventListener('resize',resize);window.addEventListener('oasis:host-state',update);
   return()=>{window.removeEventListener('resize',resize);window.removeEventListener('oasis:host-state',update);};
@@ -48,13 +50,13 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
   const mo=new MutationObserver(()=>place(root));mo.observe(root,{childList:true,subtree:true});
   return()=>mo.disconnect();
  });
- const ext=typeof plate==='string'?plate.replace('/plate.webp','/plate-ext.webp'):null,{scale,cy}=fit,scaleY=fit.scaleY??scale;
+ const ext=typeof plate==='string'?plate.replace('/plate.webp','/plate-ext.webp'):null,{scale,cy}=fit,scaleY=fit.scaleY??scale,left=fit.cx===undefined?undefined:fit.cx;
  const at=`translate(-50%,-50%) scale(${scale},${scaleY})`;
  return <div className="cs-stage-root" dir={dir}>
   <div className="cs-stage-fill" style={{backgroundImage:`url(${plate})`}}/>
   {wide&&<div className="cs-stage-ext" style={{width:WIDE_WIDTH,height,top:cy,transform:at,backgroundImage:`url(${plate.replace('/plate.webp','/plate-wide.webp')})`}}/>}
-  {ext&&!panel&&<div className="cs-stage-ext" style={{...(width>fullHeight?{width:EXT_WIDTH,height}:{width,height:EXT_HEIGHT}),top:cy,transform:at,backgroundImage:`url(${ext})`}}/>}
-  <div ref={stage} className={`cs-stage ${className}`} style={{width,height,top:cy,transform:at,backgroundImage:half?'none':`url(${plate})`}}>
+  {ext&&!panel&&<div className="cs-stage-ext" style={{...(width>fullHeight?{width:EXT_WIDTH,height}:{width,height:EXT_HEIGHT}),top:cy,left,transform:at,backgroundImage:`url(${ext})`}}/>}
+  <div ref={stage} className={`cs-stage ${className}`} style={{width,height,top:cy,left,transform:at,backgroundImage:half?'none':`url(${plate})`}}>
    {half&&<HalfPlate plate={plate} layout={half} width={width} height={fullHeight}/>}{children}</div>
  </div>;
 }
