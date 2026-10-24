@@ -19,7 +19,8 @@ import {migrateWalletBindings} from './wallet-binding.mjs';
 import {migrateSimpleWallet,recoverSimpleWallets} from './simple-wallet.mjs';
 import {migrateCasino,registerCasinoProfiles,casinoState,casinoHistory,placeBet,cashOut,tickCasino} from './casino/rounds.mjs';
 import {migrateInstant,spin as casinoSpin,choose as casinoChoose,recoverInstant} from './casino/instant.mjs';
-import {migrateArcade,openArcade,shoot as arcadeShoot,closeArcade,recoverArcade} from './casino/arcade.mjs';
+import {migrateArcade,openArcade,shoot as arcadeShoot,closeArcade,recoverArcade,isArcadeGame} from './casino/arcade.mjs';
+import {migratePiggy,piggyState,claimPiggy,recoverPiggy,arcadeRecords,arcadeRank} from './casino/piggy.mjs';
 import {isCasinoGame,CASINO_IDS} from '../shared/casino-games.mjs';
 import {routeIntegration} from './integration-routes.mjs';
 import {migrateIntegrationChecks,recoverIntegrationChecks} from './integration-checks.mjs';
@@ -138,6 +139,16 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
     checkOrigin(req);const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','POST',path);
     return send(res,200,await ({open:openArcade,shoot:arcadeShoot,close:closeArcade})[arcade[1]](s,body));
   }
+  // FishStar: piggy bank, records and rankings (arcade games).
+  if(/^\/api\/casino\/(piggy|records|rank)(\?|$)/.test(path)&&req.method==='GET'){
+    const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','GET',path);if(!isArcadeGame(s.game_id))fail(403,'GAME_SESSION_REQUIRED');
+    const u=new URL(req.url,'http://x'),k=u.pathname.split('/').pop();
+    return send(res,200,await (k==='piggy'?piggyState(s):k==='records'?arcadeRecords(s):arcadeRank(s,u.searchParams.get('period')||'day')));
+  }
+  if(path==='/api/casino/piggy/claim'&&req.method==='POST'){
+    checkOrigin(req);const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','POST',path);
+    return send(res,200,await claimPiggy(s));
+  }
   if(path==='/api/casino/choose'&&req.method==='POST'){
     checkOrigin(req);const s=await authenticated(req,()=>playSession(req));limiter.player(s,'probability','POST',path);
     return send(res,200,await casinoChoose(s,body));
@@ -183,7 +194,7 @@ export function createPlatformServer(){return createServer(async(req,res)=>{begi
 }catch(e){if(res.headersSent||res.destroyed)return;const status=e.status||500;if(status===429)res.setHeader('retry-after',String(e.retryAfterSeconds||60));if(status>=500&&!(e instanceof ApiError))console.error('[platform]',e.code||e.message);const message=(e.status?e.message:'服务暂时不可用，请保留原请求重试').slice(0,512);if((req.url||'').startsWith('/v1/')){const allowed=['INVALID_REQUEST','AMOUNT_MISMATCH','SIGNATURE_INVALID','TIMESTAMP_EXPIRED','NONCE_REPLAY','LAUNCH_CODE_INVALID','SCOPE_FORBIDDEN','GAME_DISABLED','NOT_FOUND','IDEMPOTENCY_CONFLICT','INVALID_STATE','RATE_LIMITED','INTERNAL_ERROR'];const code=(allowed.includes(e.code))?e.code:status>=500?'INTERNAL_ERROR':status===403?'SCOPE_FORBIDDEN':status===409?'INVALID_STATE':'INVALID_REQUEST';send(res,status,{code,message,trace_id:id('trace'),retryable:status>=500||status===429});}else send(res,status,{error:{code:e.code||'INTERNAL_ERROR',message}});}});}
 // Cluster mode: the leader worker migrates and runs background jobs; followers only serve HTTP.
 const LEADER=process.env.OASIS_WORKER_ROLE!=='follower';
-await preflightRuntime(pool);if(LEADER){await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateSimpleWallet(pool);await migrateCasino(pool);await migrateInstant(pool);await migrateArcade(pool);
+await preflightRuntime(pool);if(LEADER){await migrateWallet(pool);await migratePlatform();await migrateRuntime(pool);await migratePortal();await migrateCredentials();await seedPlatform();await migratePvp(pool);await migrateOverviewActivity();await migrateWalletBindings(pool);await migrateSimpleWallet(pool);await migrateCasino(pool);await migrateInstant(pool);await migrateArcade(pool);await migratePiggy(pool);
 // Drop game ids that no longer exist (renamed casino pilots) so App game lists stay valid.
 await pool.query(`UPDATE gp_apps SET game_ids=(SELECT COALESCE(jsonb_agg(g),'[]'::jsonb) FROM jsonb_array_elements_text(game_ids) g WHERE g=ANY($1::text[]))
  WHERE EXISTS (SELECT 1 FROM jsonb_array_elements_text(game_ids) g WHERE NOT g=ANY($1::text[]))`,[ALL_GAME_IDS]);
@@ -205,7 +216,7 @@ const server=createPlatformServer();if(!LEADER||process.env.OASIS_LEADER_HTTP!==
 let timer,arcadeTimer,instantTimer,casinoTimer,pvpTimer,integrationTimer,simpleTimer,walletTimer;
 if(LEADER){
 timer=setInterval(()=>recoverPending().catch(e=>console.error('[recovery]',e.code||e.message)),3000);timer.unref();
-arcadeTimer=setInterval(()=>recoverArcade().catch(e=>console.error('[casino arcade]',e.code||e.message)),5000);arcadeTimer.unref();
+arcadeTimer=setInterval(()=>{recoverArcade().catch(e=>console.error('[casino arcade]',e.code||e.message));recoverPiggy().catch(e=>console.error('[casino piggy]',e.code||e.message));},5000);arcadeTimer.unref();
 instantTimer=setInterval(()=>recoverInstant().catch(e=>console.error('[casino spins]',e.code||e.message)),3000);instantTimer.unref();
 let casinoTicking=false;casinoTimer=setInterval(()=>{if(casinoTicking)return;casinoTicking=true;tickCasino().catch(e=>console.error('[casino rounds]',e.code||e.message)).finally(()=>{casinoTicking=false;});},250);casinoTimer.unref();
 pvpTimer=setInterval(()=>tickPvp().catch(e=>console.error('[arena recovery]',e.code||e.message)),250);pvpTimer.unref();

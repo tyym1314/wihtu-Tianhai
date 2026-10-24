@@ -12,6 +12,7 @@ import {PARTNER_EXTERNAL_PROFILE,isPartnerApp} from './production-admission.mjs'
 import {runtime,assertProductionAppReady} from './runtime-mode.mjs';
 import {resolveHostOrigin,assertExchangeOrigin} from './launch-policy.mjs';
 import {loginCredential} from './credentials.mjs';
+import {rememberPlayer} from './casino/piggy.mjs';
 const spec=JSON.parse(readFileSync(new URL('../specs/openapi.json',import.meta.url),'utf8'));
 const catalog=[...JSON.parse(readFileSync(new URL('../specs/game-catalog.json',import.meta.url),'utf8')).games,
  ...Object.values(CASINO_GAMES).filter(g=>CASINO_IDS.includes(g.id)).map(g=>({id:g.id,name:g.zh,nameEn:g.name,category:'probability',family:g.family,status:'casino-shared-round',reference:g.reference}))];
@@ -95,6 +96,7 @@ export async function createSession(app,b,raw){
       const admission=await assertProductionAppReady(c,app,{intent:'session',gameId:game});
       if(app.status!=='active')fail(403,'APP_PAUSED');if(game!=='lobby'&&!app.game_ids.includes(game))fail(403,'GAME_DISABLED');if(!ALL_GAME_IDS.includes(game))fail(409,'GAME_NOT_RELEASED','此竞技游戏尚未发布');
       sid=id('ses');await c.query('INSERT INTO gp_sessions(id,app_id,external_user_id,game_id,host_origin,player_id,admission_profile,admission_revision,locale) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',[sid,app.id,externalUserId,game,hostOrigin,null,admission?.profile||null,admission?.revision||null,sessionLocale(request.locale)]);
+      await rememberPlayer(c,app.id,externalUserId,b.player);
     }
     const code=randomBytes(32).toString('base64url'),expires=new Date(Date.now()+60000).toISOString();const response={session_id:sid,launch_code:code,expires_in:60,expires_at:expires,entry_url:origin+'/play/'+game};
     await c.query('INSERT INTO gp_launch_codes(code_hash,session_id,expires_at,consumed_at,host_origin) VALUES($1,$2,$3,NULL,$4)',[hash(code),sid,expires,hostOrigin]);await c.query('INSERT INTO gp_launch_intents VALUES($1,$2,$3,$4)',[app.id,request.request_id,hash(raw),seal(response)]);await audit('partner','session.created',app.id,{session_id:sid,game_id:game,host_origin:hostOrigin},c);return response;

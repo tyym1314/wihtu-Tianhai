@@ -250,6 +250,16 @@ const DEFINED=Object.freeze({
    targets:Object.freeze([{id:'clownfish',multiplier:2},{id:'bluetang',multiplier:3},{id:'angelfish',multiplier:5},{id:'lanternfish',multiplier:8},{id:'pufferfish',multiplier:12},
     {id:'seaturtle',multiplier:20},{id:'shark',multiplier:50},{id:'crab',min:30,max:88},{id:'goldturtle',min:20,max:100}].map(Object.freeze)),
    weapons:Object.freeze([{id:'cannon',cost:1,targets:1},{id:'hook',cost:2,targets:1},{id:'laser',cost:5,targets:5}].map(Object.freeze))})}),
+ // FishStar (landscape): single cannon at the arcade bet levels; 1% of every shot's return goes to tomorrow's piggy bank.
+ // Special bosses: spinner crab wheel x10-x100; hammer crab sweeps the ordinary fish on screen; whirlpool fish catches
+ // every fish of one kind; the joker cannot be caught and drops a gift on each hit.
+ fishstar:Object.freeze({id:'fishstar',released:true,family:'arcade',kind:'arcade',orientation:'landscape',reference:'FishStar',name:'FishStar',zh:'FishStar',ar:'FishStar',
+  arcade:Object.freeze({rtp:0.97,piggy:0.01,sweepCap:20,bets:Object.freeze([coins(1),coins(5),coins(10),coins(50),coins(100)]),
+   targets:Object.freeze([{id:'butterfly',multiplier:2},{id:'yellowfish',multiplier:3},{id:'blackfish',multiplier:4},{id:'greenfish',multiplier:5},{id:'guppy',multiplier:6},
+    {id:'swordfish',multiplier:10},{id:'shark',multiplier:20},{id:'goldjelly',multiplier:25},{id:'goldturtle',multiplier:30},{id:'manta',multiplier:40},{id:'goldwhale',multiplier:80},
+    {id:'swordking',multiplier:120},{id:'harrierking',multiplier:150},{id:'agate',multiplier:180},{id:'thunderjelly',multiplier:200},{id:'kingcrab',multiplier:250},{id:'kingoctopus',multiplier:300},
+    {id:'spinnercrab',min:10,max:100},{id:'hammercrab',type:'sweep',multiplier:50},{id:'whirlpool',type:'school',multiplier:20},{id:'joker',type:'gift',min:5,max:50}].map(Object.freeze)),
+   weapons:Object.freeze([{id:'cannon',cost:1,targets:1}].map(Object.freeze))})}),
  molestar:Object.freeze({id:'molestar',released:true,family:'arcade',kind:'arcade',reference:'MoleStar',name:'MoleStar',zh:'MoleStar',ar:'MoleStar',
   arcade:Object.freeze({rtp:0.97,bets:Object.freeze([coins(1),coins(5),coins(10),coins(50),coins(100)]),
    targets:Object.freeze([{id:'mole',multiplier:2},{id:'helmet',multiplier:3},{id:'miner',multiplier:5},{id:'ninja',multiplier:10},{id:'king',multiplier:20},{id:'golden',multiplier:50},{id:'star',multiplier:100}].map(Object.freeze)),

@@ -1743,7 +1743,8 @@
           "sphinxlegend",
           "nights1001",
           "fruitmachine",
-          "piratefish"
+          "piratefish",
+          "fishstar"
         ]
       },
       "CompetitiveGameId": {
@@ -1806,7 +1807,8 @@
           "sphinxlegend",
           "nights1001",
           "fruitmachine",
-          "piratefish"
+          "piratefish",
+          "fishstar"
         ]
       },
       "Scope": {
@@ -2491,6 +2493,31 @@
               "committed_at"
             ],
             "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "resource_type": {
+                "const": "promotion_credit",
+                "type": "string"
+              },
+              "resource": {
+                "$ref": "#/components/schemas/PromotionCredit"
+              },
+              "ledger_transaction_id": {
+                "$ref": "#/components/schemas/Identifier"
+              },
+              "committed_at": {
+                "$ref": "#/components/schemas/DateTime"
+              }
+            },
+            "required": [
+              "resource_type",
+              "resource",
+              "ledger_transaction_id",
+              "committed_at"
+            ],
+            "additionalProperties": false
           }
         ]
       },
@@ -2525,7 +2552,8 @@
               "authorize_probability",
               "accept_probability",
               "cancel_probability",
-              "settle_probability"
+              "settle_probability",
+              "promotion_credit"
             ]
           },
           "state": {
@@ -3156,6 +3184,23 @@
             "format": "uri",
             "maxLength": 300,
             "description": "Exact registered host origin, e.g. https://community.example. Omit for the platform console origin. Bound to each one-time launch code."
+          },
+          "player": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Optional display info for rankings.",
+            "properties": {
+              "display_name": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "avatar_url": {
+                "type": "string",
+                "format": "uri",
+                "pattern": "^https://",
+                "maxLength": 512
+              }
+            }
           }
         },
         "required": [
@@ -3574,6 +3619,110 @@
         ],
         "additionalProperties": false,
         "description": "Notification only. Signed request_id equals event_id; operation_id references the original financial command and is independent. Persist/deduplicate (partner_id, app_id, environment, event_id) in a separate inbox before 204; same event ID with different original body rejects. Ignore stale aggregate versions and query authoritative API when needed. Never create a new money operation, debit or credit in response to an event."
+      },
+      "PromotionCreditRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "partner_id",
+          "app_id",
+          "environment",
+          "wallet_scope_id",
+          "currency_id",
+          "request_id",
+          "external_user_id",
+          "amount_minor",
+          "promotion_id"
+        ],
+        "description": "House-funded credit to a player (FishStar piggy bank). Idempotent by request_id.",
+        "properties": {
+          "partner_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "app_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "environment": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "wallet_scope_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "currency_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "request_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "external_user_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "promotion_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "game_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          },
+          "amount_minor": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          }
+        }
+      },
+      "PromotionCredit": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "partner_id",
+          "app_id",
+          "environment",
+          "wallet_scope_id",
+          "currency_id",
+          "promotion_id",
+          "external_user_id",
+          "amount_minor",
+          "state"
+        ],
+        "properties": {
+          "partner_id": {
+            "$ref": "#/components/schemas/Identifier"
+          },
+          "app_id": {
+            "$ref": "#/components/schemas/Identifier"
+          },
+          "wallet_scope_id": {
+            "$ref": "#/components/schemas/Identifier"
+          },
+          "currency_id": {
+            "$ref": "#/components/schemas/Identifier"
+          },
+          "promotion_id": {
+            "$ref": "#/components/schemas/Identifier"
+          },
+          "external_user_id": {
+            "$ref": "#/components/schemas/Identifier"
+          },
+          "environment": {
+            "$ref": "#/components/schemas/Environment"
+          },
+          "amount_minor": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,18}$"
+          },
+          "state": {
+            "const": "CREDITED",
+            "type": "string"
+          }
+        }
       }
     },
     "parameters": {

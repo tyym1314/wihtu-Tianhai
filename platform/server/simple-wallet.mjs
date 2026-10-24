@@ -117,7 +117,7 @@ export async function sweepUser(db,app,binding,user,{reason='payout',reference=n
 const DEBITS={'/wallet/v1/reservations':b=>({amount:b.amount_minor,reason:'match_entry',reference:b.match_id,game:b.terms?.game_id}),
  '/wallet/v1/probability/authorize':b=>({amount:b.stake_minor,reason:'spin_bet',reference:b.cycle_id,game:b.game_id}),
  '/wallet/v1/probability/authorize-accept':b=>({amount:b.stake_minor,reason:'spin_bet',reference:b.cycle_id,game:b.game_id})};
-const CREDIT_REASON={'/wallet/v1/matches/release':'match_refund','/wallet/v1/matches/settle':'match_payout','/wallet/v1/probability/settle':'spin_win','/wallet/v1/probability/cancel':'spin_refund'};
+const CREDIT_REASON={'/wallet/v1/matches/release':'match_refund','/wallet/v1/matches/settle':'match_payout','/wallet/v1/probability/settle':'spin_win','/wallet/v1/probability/cancel':'spin_refund','/wallet/v1/promotions/credit':'piggy'};
 
 /** The rich command protocol, served by the internal ledger and funded through simple-v1. */
 export async function simpleWalletRequest(db,app,binding,method,path,raw,requestId){
@@ -151,7 +151,7 @@ export async function simpleWalletRequest(db,app,binding,method,path,raw,request
  const result=await internal(db,app,method,path,raw,requestId);
  if(result?.state==='SUCCEEDED'&&CREDIT_REASON[path]){
   const users=(await db.query("SELECT DISTINCT substr(account,6) AS user FROM wallet_ledger WHERE scope_id=$1 AND operation_id=$2 AND account LIKE 'user:%' AND delta_available>0",[scopeId(app),requestId])).rows;
-  for(const {user} of users)await sweepUser(db,app,binding,user,{reason:CREDIT_REASON[path],reference:body.match_id||body.cycle_id||null,game:body.game_id||null}).catch(()=>{});
+  for(const {user} of users)await sweepUser(db,app,binding,user,{reason:CREDIT_REASON[path],reference:body.match_id||body.cycle_id||body.promotion_id||null,game:body.game_id||null}).catch(()=>{});
  }
  return result;
 }

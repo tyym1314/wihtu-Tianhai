@@ -274,7 +274,16 @@ async function settleProbability(c,b){
  await ledger(c,'user:'+u.external_user_id,payout,-stake,{cycle_id:b.cycle_id});await ledger(c,'treasury',max-payout+stake,-max,{cycle_id:b.cycle_id});
  const row=(await c.db.query("UPDATE wallet_probability SET state='SETTLED',gross_payout_minor=$3,result_hash=$4,updated_at=now() WHERE scope_id=$1 AND authorization_id=$2 RETURNING *",[c.id,b.authorization_id,b.gross_payout_minor,b.result_hash])).rows[0];return receipt(c,'probability_authorization',authResource(c.s,row));
 }
+/** House-funded credit (FishStar piggy bank): treasury -> player, idempotent by request id. */
+async function promotionCredit(c,b){
+ const amt=amount(b.amount_minor,true);await ensureTotals(c);
+ if(BigInt(c.s.treasury_available)<amt)fail('INSUFFICIENT_FUNDS','Treasury cannot fund this credit');
+ const u=await user(c,b.external_user_id);creditRoom(u,amt);change(u,'available',amt);await saveUser(c,u);scopeChange(c,'treasury_available',-amt);
+ await ledger(c,'user:'+u.external_user_id,amt,0n,{promotion_id:b.promotion_id});await ledger(c,'treasury',-amt,0n,{promotion_id:b.promotion_id});
+ return receipt(c,'promotion_credit',{...scopeOf(c.s),promotion_id:b.promotion_id,external_user_id:b.external_user_id,amount_minor:b.amount_minor,state:'CREDITED'});
+}
 const commands={
+ '/wallet/v1/promotions/credit':['promotion_credit','PromotionCreditRequest',promotionCredit],
  '/wallet/v1/reservations':['reserve','ReserveRequest',reserve],
  '/wallet/v1/matches/capture':['capture_match','CaptureMatchRequest',capture],
  '/wallet/v1/matches/release':['release_match','ReleaseMatchRequest',release],

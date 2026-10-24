@@ -16,6 +16,7 @@ import {openProbability} from './funding.mjs';
 import {assertNewFinancialAdmission} from '../production-admission.mjs';
 import {CASINO_GAMES} from '../../shared/casino-games.mjs';
 import {createRng} from './rng.mjs';
+import {accruePiggy} from './piggy.mjs';
 
 const canonical=v=>v===null||typeof v!=='object'?JSON.stringify(v):Array.isArray(v)?`[${v.map(canonical).join(',')}]`:`{${Object.keys(v).sort().map(k=>`${JSON.stringify(k)}:${canonical(v[k])}`).join(',')}}`;
 const sha=v=>createHash('sha256').update(v).digest('hex');
@@ -23,7 +24,9 @@ const IDLE_MS=120000,MAX_SHOTS=500;
 
 export function arcadeModel(game){
  const a=game.arcade,config={family:'arcade',...a,rng:'HMAC-SHA256 counter'};
- const maxM=Math.max(...a.targets.map(t=>t.max??t.multiplier));
+ // A sweep (hammer crab) or school (whirlpool) pays its own multiplier plus up to sweepCap ordinary fish.
+ const extra=(a.sweepCap||0)*Math.max(0,...a.targets.filter(sweepable).map(t=>t.multiplier));
+ const maxM=Math.max(...a.targets.map(t=>(t.max??t.multiplier)+(t.type==='sweep'||t.type==='school'?extra:0)));
  // A session can win at most every shot hitting the best targets with the widest weapon.
  const liability=Math.ceil(maxM*Math.max(...a.weapons.map(w=>w.targets/w.cost)));
  const hash=sha(canonical(config));
@@ -42,20 +45,34 @@ export const arcadeModels=()=>[...byVersion.values()];
 export const arcadeModelFor=(gameId,tier)=>tierModels[`${gameId}:${tier}`]||models[gameId];
 export const isArcadeGame=gameId=>CASINO_GAMES[gameId]?.family==='arcade';
 
-/** Resolve one shot: which struck targets are captured and what each pays (multiple of bet x100). */
+/**
+ * Resolve one shot: which struck targets are captured and what each pays (multiple of bet x100).
+ * A target is an id, or {id, with:[ids]} for a sweep / school boss: `with` lists the ordinary fish it would take
+ * along (a school: all of one kind). Capture uses the mean of everything it pays, so the return per shot stays
+ * the configured rate whatever is on screen. Games with a piggy bank keep that share out of the shot's return.
+ */
 export function resolveShot(model,seedHex,seq,weaponId,targetIds){
  const c=model.config,w=c.weapons.find(x=>x.id===weaponId);if(!w)fail(400,'INVALID_WEAPON');
  if(!Array.isArray(targetIds)||!targetIds.length||targetIds.length>w.targets)fail(400,'INVALID_TARGETS');
- const rng=createRng(seedHex,`${model.version}:shot:${seq}`),hits=[];
- for(const tid of targetIds){
-  const t=c.targets.find(x=>x.id===tid);if(!t)fail(400,'INVALID_TARGET');
-  // Ranged targets (treasure wheels) pay a uniform multiplier in [min,max]; capture uses the mean.
-  const mean=t.multiplier??(t.min+t.max)/2,p=c.rtp*w.cost/(w.targets*mean);
-  if(rng.int(1_000_000)<Math.round(p*1_000_000)){const m=t.multiplier??t.min+rng.int(t.max-t.min+1);hits.push({target:tid,multiplier:m});}
+ const rng=createRng(seedHex,`${model.version}:shot:${seq}`),hits=[],rtp=c.rtp-(c.piggy||0);
+ for(const entry of targetIds){
+  const tid=typeof entry==='string'?entry:entry?.id,t=c.targets.find(x=>x.id===tid);if(!t)fail(400,'INVALID_TARGET');
+  const group=t.type==='sweep'||t.type==='school';let along=[];
+  if(typeof entry!=='string'){
+   if(!group||!Array.isArray(entry.with)||entry.with.length>(c.sweepCap||0))fail(400,'INVALID_TARGET');
+   along=entry.with.map(x=>c.targets.find(y=>y.id===x&&sweepable(y)));if(along.some(x=>!x))fail(400,'INVALID_TARGET');
+   if(t.type==='school'&&new Set(entry.with).size>1)fail(400,'INVALID_TARGET');
+  }
+  // Ranged targets (treasure wheels, gifts) pay a uniform multiplier in [min,max]; capture uses the mean.
+  const mean=(t.multiplier??(t.min+t.max)/2)+along.reduce((a,x)=>a+x.multiplier,0),p=rtp*w.cost/(w.targets*mean);
+  if(rng.int(1_000_000)<Math.round(p*1_000_000)){const own=t.multiplier??t.min+rng.int(t.max-t.min+1),m=own+along.reduce((a,x)=>a+x.multiplier,0);
+   hits.push({target:tid,multiplier:m,...(along.length?{with:along.map(x=>x.id)}:{})});}
   else rng.int(2);
  }
  return {cost:w.cost,hits,win_x100:hits.reduce((a,h)=>a+h.multiplier*100,0)};
 }
+/** Ordinary fish a sweep or school boss can take along: fixed multiplier, no special type, at most 50x. */
+export function sweepable(t){return !t.type&&t.multiplier!==undefined&&t.multiplier<=50;}
 
 export async function migrateArcade(db=pool){
  await db.query(`CREATE TABLE IF NOT EXISTS casino_arcade (
@@ -139,7 +156,9 @@ async function settle(app,a){
  const shots=(await pool.query('SELECT seq,weapon,result FROM casino_arcade_shots WHERE arcade_id=$1 ORDER BY seq',[a.id])).rows;
  await command(app,a.id,'/wallet/v1/probability/settle',{...base(app,a),request_id:'settle_'+a.id,game_id:a.game_id,math_version:model.version,math_config_hash:model.hash,
   stake_minor:String(stake),gross_payout_minor:String(gross),result_hash:sha(JSON.stringify(shots))});
- return (await pool.query("UPDATE casino_arcade SET status='SETTLED',updated_at=now() WHERE id=$1 RETURNING *",[a.id])).rows[0];
+ // The piggy share accrues exactly once: in the transaction that moves the session to SETTLED.
+ return tx(async c=>{const done=(await c.query("UPDATE casino_arcade SET status='SETTLED',updated_at=now() WHERE id=$1 AND status='CLOSING' RETURNING *",[a.id])).rows[0];
+  if(done){await accruePiggy(c,done);return done;}return (await c.query('SELECT * FROM casino_arcade WHERE id=$1',[a.id])).rows[0];});
 }
 export async function recoverArcade(){
  const open=(await pool.query("SELECT * FROM casino_arcade WHERE (status='OPEN' AND last_shot_at<now()-$1::int*interval '1 millisecond') OR (status='CLOSING' AND updated_at<now()-interval '3 seconds') LIMIT 50",[IDLE_MS])).rows;

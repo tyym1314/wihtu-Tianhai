@@ -7,7 +7,7 @@ import {ARENA_GAMES,ARENA_IDS} from '../shared/games.mjs';
 import DICT from '../arena/shared/i18n-dict.mjs';
 const out='public/launch',icons=`${out}/icons`;mkdirSync(icons,{recursive:true});
 const meta={};
-for(const id of CASINO_IDS){const g=CASINO_GAMES[id];meta[id]={name:{zh:g.zh,en:g.name,ar:g.ar},family:g.family};}
+for(const id of CASINO_IDS){const g=CASINO_GAMES[id];meta[id]={name:{zh:g.zh,en:g.name,ar:g.ar},family:g.family,...(g.orientation?{orientation:g.orientation}:{})};}
 for(const id of ARENA_IDS){const g=ARENA_GAMES[id],d=DICT[g.name]||[];meta[id]={name:{zh:g.name,en:d[0]||g.en,ar:d[1]||d[0]||g.en},family:'arena'};}
 meta.thunder={name:{zh:'雷霆王座',en:'Thunder Throne',ar:'عرش الرعد'},family:'slot'};
 meta.tiger={name:{zh:'虎虎生财',en:'Golden Tiger',ar:'النمر الذهبي'},family:'slot'};

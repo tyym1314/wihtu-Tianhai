@@ -36,6 +36,12 @@ export async function command(app,cycleId,path,body){
     for(const[k,v]of Object.entries(scope(app)))if(result[k]!==v)fail(503,'WALLET_INVALID_SCOPE');
     if(result.state==='SUCCEEDED'){
       const frozen=JSON.parse(op.raw_body),resource=result.receipt?.resource;
+      if(op.path==='/wallet/v1/promotions/credit'){
+        // House credit (piggy bank): the receipt must name the same player, amount and promotion.
+        if(!resource||result.receipt.resource_type!=='promotion_credit'||resource.state!=='CREDITED'||['external_user_id','amount_minor','promotion_id'].some(k=>resource[k]!==frozen[k]))fail(503,'WALLET_INVALID_RECEIPT');
+        await pool.query("UPDATE gp_operations SET state=$1,response=$2,attempts=attempts+1,updated_at=now(),next_attempt_at=now() WHERE id=$3",[result.state,result,op.id]);
+        return result;
+      }
       if(!resource||result.receipt.resource_type!=='probability_authorization')fail(503,'WALLET_INVALID_RECEIPT');
       for(const k of ['cycle_id','authorization_id','game_id','math_version','math_config_hash','stake_minor','gross_payout_minor','result_hash'])if(frozen[k]!==undefined&&resource[k]!==frozen[k])fail(503,'WALLET_INVALID_RECEIPT');
       const expected={authorize:'AUTHORIZED',accept:'ACCEPTED','authorize-accept':'ACCEPTED',settle:'SETTLED',cancel:'CANCELLED'}[op.path.split('/').pop()];
