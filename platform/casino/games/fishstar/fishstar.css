@@ -70,3 +70,21 @@
 .fs-rank>div{display:flex;align-items:center;gap:14px;padding:8px 14px;border-bottom:1px solid #ffffff18;font-size:26px}.fs-rank>div.me{background:#ffd34d22}
 .fs-rank em{width:50px;font-style:normal;font-weight:900;color:#ffd34d}.fs-rank img,.fs-rank i{width:48px;height:48px;border-radius:50%;background:#ffffff22;object-fit:cover}
 .fs-rank span{flex:1;text-align:start}.fs-rank b{color:#ffe9a0}
+.fs-piggy-wrap>div{flex:1;min-width:0}
+.fs-piggy-wrap p{font-size:20px;line-height:1.5}
+.fs-piggy-art{width:220px}
+.fs-piggy-cols>div{min-width:0}
+.fs-piggy-cols b{font-size:38px}
+.fs-rank{width:100%}.fs-rank>div{width:100%;box-sizing:border-box}
+.fs-panel .fs-tabs,.fs-panel .fs-table{width:100%}
+.fs-panel.fs-piggy{max-height:94%;padding:18px 28px}
+.fs-piggy .fs-piggy-wrap h2{font-size:24px;margin-bottom:4px}
+.fs-piggy .fs-piggy-wrap p{font-size:14px;line-height:1.45;margin-bottom:4px}
+.fs-piggy .fs-piggy-art{width:170px}
+.fs-piggy .fs-piggy-cols{margin-top:6px;gap:12px}
+.fs-piggy .fs-piggy-cols>div{padding:10px;gap:4px}
+.fs-piggy .fs-piggy-cols small{font-size:14px}
+.fs-piggy .fs-piggy-cols b{font-size:26px}
+.fs-piggy .fs-piggy-cols em{font-size:12px}
+.fs-piggy .cs-gold-btn{padding:6px 22px;font-size:16px}
+.fs-piggy .fs-piggy-cols em{line-height:1.3}
