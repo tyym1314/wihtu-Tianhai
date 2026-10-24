@@ -137,6 +137,8 @@ export default function FishStar({initial}){
    :f.type==='pop'?<span key={f.k} className={`fs-pop ${f.big?'big':''}`} style={{left:f.x,top:f.y}}>{f.text}</span>
    :<span key={f.k} className="cs-coin fs-coin" style={{left:f.x-22,top:f.y-22,'--dx':`${f.dx}px`,'--dy':`${f.dy}px`,animationDelay:`${f.delay}ms`}}/>)}
   {coming&&<div className="fs-coming"><img src={img(coming)} alt=""/><b>{t('bossComing').replace('{fish}',optionName(coming,id))}</b></div>}
+  <img className="fs-over" src={img('column')} alt="" style={{left:1540,top:530,width:122,height:370}}/>
+  <img className="fs-over" src={img('topbar')} alt="" style={{left:1220,top:8,width:448,height:92}}/>
   <img className="fs-cannon" key={recoil} src={img('cannon')} alt="" style={{left:L.origin[0]-62,top:L.origin[1]-176,'--rot':`${angle}deg`}}/>
   <RechargeTap x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]}/>
   <Box x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]} className="fs-balance">{A.balance===null?'—':<CountUp value={Number(A.balance)} format={v=>full(Math.round(v))}/>}</Box>
