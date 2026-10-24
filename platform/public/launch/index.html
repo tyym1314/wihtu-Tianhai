@@ -94,7 +94,9 @@ $('title').textContent=T.entering;$('message').textContent=T.wait;$('back').text
 history.replaceState(null,'',location.pathname+location.search);
 let sdk=null,closed=false,launchUsed=false;
 // Landscape games ask the App (1.6.7+) to turn the screen; older Apps ignore unknown messages.
-setTimeout(()=>{if((window.LAUNCH_META||{})[gameId]?.orientation==='landscape')notifyApp('orientation',{value:'landscape'});},0);
+setTimeout(()=>{if((window.LAUNCH_META||{})[gameId]?.orientation==='landscape')notifyApp('orientation',{value:'landscape'});
+ // The loading screen is up: the App (1.6.7+) removes its own placeholder.
+ notifyApp('launch_shown');},0);
 function show(state,title,message){const s=$('status');s.hidden=false;s.dataset.state=state;$('title').textContent=title;$('message').textContent=message;$('back').hidden=state!=='error';}
 function notifyApp(type,detail={}){
  const payload=JSON.stringify({type,game_id:gameId,...detail});

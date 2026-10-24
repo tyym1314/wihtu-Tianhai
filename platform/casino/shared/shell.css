@@ -215,3 +215,4 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cs-lite.epic .cs-lite-bar em{color:#e8f8ff;text-shadow:0 0 18px #38b6ff,0 3px 0 #0a2a6a}
 .cs-lite.done .cs-lite-bar em{animation:cs-amount-punch .5s cubic-bezier(.3,1.5,.5,1)}
 @keyframes cs-lite-in{from{transform:translateX(-50%) translateY(-40%) scale(.6);opacity:0}to{transform:translateX(-50%);opacity:1}}
+.cs-lite-bar em{text-align:center;display:inline-block}
