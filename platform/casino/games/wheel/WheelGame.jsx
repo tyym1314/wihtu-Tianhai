@@ -45,7 +45,7 @@ export default function WheelGame({initial}){
  useEffect(()=>{if(phase==='betting'&&secs<=5&&secs>0&&secs!==lastSec.current){lastSec.current=secs;audio.play('tick');}},[secs,phase]);
  useEffect(()=>{
   if(phase!=='result'||played.current===round.id||!result)return;played.current=round.id;
-  const won=g.myWin>0n;if(won){setSessionWin(v=>v+Number(g.myWin));fx.celebrate(g.myWin,g.myStake,{fast:true});}else audio.play(g.myStake>0n?'lose':'select');
+  const won=g.myWin>0n;if(won){setSessionWin(v=>v+Number(g.myWin));fx.celebrate(g.myWin,g.myStake,{fast:true,within:round?.ends_at?round.ends_at-now:undefined});}else audio.play(g.myStake>0n?'lose':'select');
   if(won){const bal=[L.balance[0]+L.balance[2]/2,L.balance[1]+L.balance[3]/2];
    const from=result.winners.filter(w=>L.items[w]&&g.mine[w]).map(w=>L.items[w]);
    setCoins(from.flatMap(([x,y],k)=>Array.from({length:10},(_,i)=>({id:`${round.id}-${k}-${i}`,x,y,dx:bal[0]-x+(i-5)*8,dy:bal[1]-y,delay:i*60}))));

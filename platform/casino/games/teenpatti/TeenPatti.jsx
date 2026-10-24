@@ -35,7 +35,7 @@ export default function TeenPatti({initial}){
  const secs=Math.max(0,Math.ceil((round.bet_until-now)/1000));
  const once=(k,f)=>{if(!seen.current[round.id+k]){seen.current[round.id+k]=1;f();}};
  useEffect(()=>{if(phase==='drawing')once('deal',()=>audio.play('deal'));HANDS.forEach((_,i)=>{if(phase==='drawing'&&shown(i))once('f'+i,()=>audio.play('flip'));});
-  if(winner)once('w',()=>{const won=g.myWin>0n||state.my_bets.some(b=>b.option_id===winner);if(g.myWin>0n)fx.celebrate(g.myWin,g.myStake,{fast:true});else audio.play(won?'win':g.myStake>0n?'lose':'select');
+  if(winner)once('w',()=>{const won=g.myWin>0n||state.my_bets.some(b=>b.option_id===winner);if(g.myWin>0n)fx.celebrate(g.myWin,g.myStake,{fast:true,within:round?.ends_at?round.ends_at-now:undefined});else audio.play(won?'win':g.myStake>0n?'lose':'select');
    if(g.mine[winner]){const x=ZONE_X[winner]+ZONE_W/2,y=950;setCoins(Array.from({length:12},(_,k)=>({id:round.id+k,x,y,dx:BALANCE[0]-x+(k-6)*10,dy:BALANCE[1]-y,delay:k*55})));setTimeout(()=>audio.play('coin'),700);setTimeout(()=>setCoins([]),2200);}});},[now]);
  useEffect(()=>{if(phase==='betting'&&secs<=3&&secs>0)once('t'+secs,()=>audio.play('tick'));},[secs]);
  const totals=state.totals||{};

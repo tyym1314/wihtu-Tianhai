@@ -57,7 +57,7 @@ export default function TableGame({initial}){
  useEffect(()=>{if(phase==='drawing'&&rolled.current!==round.id){rolled.current=round.id;if(D.type==='dice')audio.play('dice');}},[phase,round.id]);
  useEffect(()=>{
   if(phase!=='result'||played.current===round.id||!result)return;played.current=round.id;
-  const won=g.myWin>0n;if(won)fx.celebrate(g.myWin,g.myStake,{fast:true});else audio.play(g.myStake>0n?'lose':'select');
+  const won=g.myWin>0n;if(won)fx.celebrate(g.myWin,g.myStake,{fast:true,within:round?.ends_at?round.ends_at-now:undefined});else audio.play(g.myStake>0n?'lose':'select');
   if(won){const bal=[L.balance[0]+L.balance[2]/2,L.balance[1]+L.balance[3]/2];
    const from=GAME.options.filter(o=>winning(o)&&g.mine[o.id]).map(o=>{const [x,y,w,h]=L.cells[o.id];return [x+w/2,y+h/2];});
    setCoins(from.flatMap(([x,y],k)=>Array.from({length:10},(_,i)=>({id:`${round.id}-${k}-${i}`,x,y,dx:bal[0]-x+(i-5)*8,dy:bal[1]-y,delay:i*60}))));

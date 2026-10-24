@@ -45,7 +45,7 @@ export default function GreedyLion({initial}){
  // Reveal: win/lose jingle and coins flying from the winning plates to the balance.
  useEffect(()=>{
   if(phase!=='result'||played.current===round.id||!round.result)return;played.current=round.id;
-  const won=g.myWin>0n;if(won)fx.celebrate(g.myWin,g.myStake,{fast:true});else audio.play(g.myStake>0n?'lose':'select');
+  const won=g.myWin>0n;if(won)fx.celebrate(g.myWin,g.myStake,{fast:true,within:round?.ends_at?round.ends_at-now:undefined});else audio.play(g.myStake>0n?'lose':'select');
   if(won){const from=round.result.winners.filter(w=>PLATE[w]&&g.mine[w]).map(w=>PLATE[w]);
    setCoins(from.flatMap(([x,y],k)=>Array.from({length:10},(_,i)=>({id:`${round.id}-${k}-${i}`,x,y,dx:BALANCE[0]-x+(i-5)*8,dy:BALANCE[1]-y,delay:i*60}))));
    setTimeout(()=>audio.play('coin'),700);setTimeout(()=>setCoins([]),2200);}
