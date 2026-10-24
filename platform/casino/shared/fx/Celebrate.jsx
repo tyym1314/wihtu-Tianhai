@@ -40,10 +40,26 @@ export function useCelebration(id,audio){
  useEffect(()=>{const c=navigator.connection,slow=c&&(c.saveData||/(^|-)2g|3g/.test(c.effectiveType||''));if(slow)return;let stop=false;
   const tm=setTimeout(async()=>{for(const n of ['title-nice','title-great','great-banner','title-big','vault-door','title-mega','title-epic','title-legendary','crown','fire-frame']){if(stop)return;const i=new Image();i.src=art(n);await i.decode().catch(()=>{});}},6000);
   return()=>{stop=true;clearTimeout(tm);};},[]);
- async function celebrate(total,stake,{at,from,fast=false}={}){
+ const liteRun=useRef(0);
+ /**
+  * Real-time games (arcade, crash): the same tiers without blocking the play. No dimming, no click capture: a title
+  * bar at the top with the rolling amount, coins from the catch and an edge glow per tier; a newer win replaces it.
+  */
+ async function celebrateLite(win,bet,tier,sx,sy){
+  const run=++liteRun.current,ms={great:1500,big:2000,mega:2500,epic:3000,legendary:3500}[tier],roll=ms*0.6;
+  setShow({kind:'lite',tier,value:0,run});audio.play(tier==='great'?'stamp':STING[tier],{volume:.7});haptic(tier==='great'?'medium':BUZZ[tier]);
+  burst({kind:'coins',x:sx,y:sy,count:tier==='great'?24:40,theme});burst({kind:'sparks',x:sx,y:sy,count:30,theme});
+  if(tier!=='great')burst({kind:'confetti',x:innerWidth/2,y:innerHeight*0.12,count:tier==='big'?30:60,theme});
+  const t0=performance.now();
+  while(liteRun.current===run){const q=Math.min(1,(performance.now()-t0)/roll);setShow(s=>s&&s.run===run?{...s,value:Math.round(win*easeOut(q))}:s);if(q>=1)break;await sleep(33);}
+  if(liteRun.current!==run)return;setShow(s=>s&&s.run===run?{...s,value:win,done:true}:s);audio.play('roll-end',{volume:.6});
+  await sleep(ms-roll);if(liteRun.current===run)setShow(null);
+ }
+ async function celebrate(total,stake,{at,from,fast=false,lite=false}={}){
   const win=Number(total),bet=Number(stake);if(!(win>0)||!(bet>0))return;
   const x=win/bet,tier=tierOf(x,th),speed=fast?0.5:1;
   const [sx,sy]=at?toScreen(at[0],at[1]):[innerWidth/2,innerHeight*0.62];
+  if(lite&&ORDER.indexOf(tier)>=2)return celebrateLite(win,bet,tier,sx,sy);
   // SMALL: the amount rises from the reels as a big gold number and flies into the WIN box, which flashes.
   // No banner: a win below the stake is not dressed up as a big moment.
   if(tier==='small'){
@@ -98,6 +114,8 @@ export function useCelebration(id,audio){
  if(typeof location!=='undefined'&&/^(localhost|127\.0\.0\.1)$/.test(location.hostname))window.__oasisFx=(w,b,o)=>celebrate(w,b,o);
  const st=typeof document!=='undefined'&&document.querySelector('.cs-stage'),sc=st?st.getBoundingClientRect().width/st.offsetWidth:1;
  let layer=null;
+ if(show?.kind==='lite')layer=<div className={`cs-lite ${show.tier} ${show.done?'done':''}`}><i className="cs-lite-edge"/>
+  <div className="cs-lite-bar" key={show.run}><img src={art('title-'+show.tier)} alt={t(LABEL[show.tier])}/><em>{full(show.value)}</em></div></div>;
  if(show?.kind==='nice')layer=<div className={`cs-nice ${show.done?'done':''} ${show.leaving?'leaving':''}`}>
   <div className="cs-nice-plate"><i className="cs-nice-sweep"/>{[0,1,2,3,4,5].map(i=><i key={i} className="cs-star" style={{'--i':i}}/>)}
    <img className="cs-nice-title" src={art('title-nice')} alt={t('niceWin')}/><em>{full(show.value)}</em></div></div>;

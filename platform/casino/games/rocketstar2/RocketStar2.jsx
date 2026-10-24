@@ -81,7 +81,7 @@ export default function RocketStar2({initial}){
  const audio=useAudio('rocketstar2',['launch','boom','cash','click','chip','tick','coin','select','close','ding','nice','stamp','rollup','roll-end','charge','cheer','celebrate-loop','sting-big','sting-mega','sting-epic','sting-legend']);
  const cel=useCelebration('rocketstar2',audio),cele=useRef({});
  // Cash-outs (manual or auto) get the win tiers: payout over stake.
- useEffect(()=>{for(const b of state.my_bets||[])if(b.cashout_x100&&b.payout_minor&&!cele.current[b.id]){cele.current[b.id]=1;cel.celebrate(BigInt(b.payout_minor),BigInt(b.stake_minor),{fast:true});}},[state.my_bets]);
+ useEffect(()=>{for(const b of state.my_bets||[])if(b.cashout_x100&&b.payout_minor&&!cele.current[b.id]){cele.current[b.id]=1;cel.celebrate(BigInt(b.payout_minor),BigInt(b.stake_minor),{lite:true});}},[state.my_bets]);
  const offset=useRef(initial.server_now-Date.now()),balanceRound=useRef(null),ref=useRef(initial),ship=useRef(null),seen=useRef({}),tip=useRef([560,500]);
  const serverNow=()=>Date.now()+offset.current;
  const say=useCallback(key=>setToast({key,id:Math.random()}),[]);

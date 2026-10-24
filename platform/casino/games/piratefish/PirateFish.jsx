@@ -66,7 +66,7 @@ export default function PirateFish({initial}){
   const pay=()=>{addFx({type:'pop',x:f.x,y:f.y-f.w*.3,text:`+${full(minor)}`,big:x>=20},1400);
    for(let i=0;i<10;i++)addFx({type:'coin',x:f.x,y:f.y,dx:L.balance[0]+L.balance[2]/2-f.x+(Math.random()-.5)*60,dy:L.balance[1]+25-f.y,delay:120+i*45},1100);
    burst({kind:'sparks',x:sx,y:sy,count:x>=5?26:12,theme:themeOf(id)});
-   if(x>=10)cel.celebrate(minor,bet,{fast:true});else audio.play(x>=3?'win':'coin');};
+   if(x>=3)cel.celebrate(minor,bet,{lite:true,at:[f.x,f.y]});else audio.play('coin');};
   // The crab and the golden turtle spin their multiplier on a small reel before paying.
   if(ranged){f.held=true;addFx({type:'reel',x:f.x,y:f.y-f.w*.55,to:multiplier},1300);audio.play('reel-stop',{rate:1.2});setTimeout(()=>{f.held=false;f.dead=performance.now();pay();},1100);}
   else{f.dead=performance.now();pay();}

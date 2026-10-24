@@ -93,7 +93,7 @@ export default function CrashGame({initial}){
  const bet=state.my_bets.find(b=>b.option_id==='a'&&live(b));
  // Cash-outs (manual or auto) get the win tiers: payout over stake.
  const cele=useRef({});
- useEffect(()=>{for(const b of state.my_bets||[])if(b.cashout_x100&&b.payout_minor&&!cele.current[b.id]){cele.current[b.id]=1;cel.celebrate(BigInt(b.payout_minor),BigInt(b.stake_minor),{fast:true});}},[state.my_bets]);
+ useEffect(()=>{for(const b of state.my_bets||[])if(b.cashout_x100&&b.payout_minor&&!cele.current[b.id]){cele.current[b.id]=1;cel.celebrate(BigInt(b.payout_minor),BigInt(b.stake_minor),{lite:true});}},[state.my_bets]);
  async function placeBet(stake){
   if(phaseOf(ref.current.round,serverNow())!=='betting'){say('closed');return;}
   if(bet){say('already');return;}

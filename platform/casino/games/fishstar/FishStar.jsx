@@ -80,7 +80,7 @@ export default function FishStar({initial}){
   addFx({type:'pop',x:f.x,y:f.y-f.w*.3,text:`+${full(minor)}`,big:x>=30},1500);
   for(const c of coinsFrom)for(let i=0;i<(coinsFrom.length>1?3:10);i++)addFx({type:'coin',x:c.x,y:c.y,dx:L.balance[0]+L.balance[2]/2-c.x+(Math.random()-.5)*60,dy:L.balance[1]+20-c.y,delay:120+i*45},1100);
   burst({kind:'sparks',x:sx,y:sy,count:x>=10?30:14,theme:themeOf(id)});
-  if(x>=10){cel.celebrate(minor,bet(),{fast:true});haptic(x>=50?'heavy':'medium');}else{audio.play(x>=3?'win':'coin');haptic('light');}
+  if(x>=3)cel.celebrate(minor,bet(),{lite:true,at:[f.x,f.y]});else{audio.play('coin');haptic('light');}
  }
  function caught(f,hit,along){
   const minor=bet()*BigInt(hit.multiplier),k=KIND[f.kind];

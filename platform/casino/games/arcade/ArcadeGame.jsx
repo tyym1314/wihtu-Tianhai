@@ -61,7 +61,7 @@ export default function ArcadeGame({initial}){
   if(big)setSlots(s=>[{k:Math.random(),kind:at.kind,minor},...s].slice(0,3));
   // Win tiers per shot (multiplier = win / bet): sparks for every hit, full celebration from 10x.
   const bet=BigInt(A.open?.bet_minor||A.bet),x=Number(minor/bet),[sx,sy]=toScreen(at.x,at.y);burst({kind:'sparks',x:sx,y:sy,count:x>=5?24:10,theme:themeOf(id)});
-  if(x>=10)cel.celebrate(minor,bet,{fast:true});else audio.play(x>=3?'win-m':'coin');};
+  if(x>=3)cel.celebrate(minor,bet,{lite:true,at:[at.x,at.y]});else audio.play('coin');};
 
  async function fire(target){
   const w=weapons.find(x=>x.id===weapon);
