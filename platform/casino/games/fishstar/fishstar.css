@@ -52,10 +52,12 @@
 .fs-hot,.fs-btn{position:absolute;background:transparent;border:0;padding:0;cursor:pointer}
 .fs-btn.on{box-shadow:0 0 0 5px #57e2ff,0 0 26px 6px #57e2ffaa;animation:fs-on 1.2s ease-in-out infinite}
 @keyframes fs-on{50%{box-shadow:0 0 0 5px #9ff0ff,0 0 34px 10px #57e2ffcc}}
-.fs-panel{position:relative;width:min(1100px,92%);max-height:86%;overflow:auto;text-align:center}
+.fs-panel{position:relative;width:min(1200px,90%);max-width:none;max-height:88%;overflow:auto;text-align:center;box-sizing:border-box}
 .fs-x{position:absolute;right:10px;top:6px;width:54px;height:54px;border-radius:50%;border:0;background:#ffffff22;color:#fff;font:700 36px/54px system-ui;cursor:pointer}
-.fs-piggy-art{width:220px;margin:-10px auto 0;display:block;filter:drop-shadow(0 8px 14px #0008)}
-.fs-piggy-cols{display:flex;gap:24px;justify-content:center;margin-top:14px}
+.fs-piggy-wrap{display:flex;align-items:center;gap:28px;text-align:start}
+.fs-piggy-wrap h2{margin:0 0 6px}.fs-piggy-wrap p{margin:0 0 6px;font-size:22px}
+.fs-piggy-art{width:260px;flex:none;display:block;filter:drop-shadow(0 8px 14px #0008)}
+.fs-piggy-cols{display:flex;gap:18px;justify-content:center;margin-top:10px}
 .fs-piggy-cols>div{flex:1;max-width:380px;padding:16px;border-radius:20px;background:#ffffff14;display:flex;flex-direction:column;gap:8px;align-items:center}
 .fs-piggy-cols b{font:900 44px/1 Georgia,serif;color:#ffe9a0}
 .fs-piggy-cols em{font-size:20px;color:#bcd;font-style:normal}

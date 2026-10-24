@@ -165,10 +165,10 @@ function Panel({kind,close,piggy,claim,GAME,img,mult,id}){
   if(kind==='rank'){setData(null);api(`/api/casino/rank?period=${period}`).then(setData).catch(()=>setData({rows:[]}));}},[kind,period]);
  return <div className="cs-modal-back" onClick={close}><div className={`cs-modal fs-panel fs-${kind}`} onClick={e=>e.stopPropagation()}>
   <button className="fs-x" onClick={close} aria-label={t('close')}>×</button>
-  {kind==='piggy'&&<><img className="fs-piggy-art" src={img('piggy')} alt=""/><h2>{t('piggyBank')}</h2><p>{t('piggyText')}</p>
+  {kind==='piggy'&&<div className="fs-piggy-wrap"><img className="fs-piggy-art" src={img('piggy')} alt=""/><div><h2>{t('piggyBank')}</h2><p>{t('piggyText')}</p>
    <div className="fs-piggy-cols"><div><small>{t('rewardToday')}</small><b>{piggy?full(BigInt(piggy.claimable_minor)):'—'}</b>
     <button className="cs-gold-btn" disabled={!piggy||piggy.claimable_minor==='0'} onClick={claim}>{piggy&&piggy.claimed_minor!=='0'?t('received'):t('receive')}</button></div>
-    <div><small>{t('rewardTomorrow')}</small><b>{piggy?full(BigInt(piggy.today_minor)):'—'}</b><em>{t('piggyExpire')}</em></div></div></>}
+    <div><small>{t('rewardTomorrow')}</small><b>{piggy?full(BigInt(piggy.today_minor)):'—'}</b><em>{t('piggyExpire')}</em></div></div></div></div>}
   {kind==='rules'&&<><h2>{t('rules')}</h2><p>{t('fishStarRules')}</p><div className="fs-codex">{GAME.arcade.targets.map(x=><div key={x.id}><img src={img(x.id)} alt=""/><span>{optionName(x.id,id)}</span><b>x{mult(x.id)}</b></div>)}</div></>}
   {kind==='records'&&<><h2>{t('records')}</h2><table className="fs-table"><thead><tr><th>{t('time')}</th><th>{t('spend')}</th><th>{t('income')}</th></tr></thead>
    <tbody>{(data?.records||[]).map((r,i)=><tr key={i}><td>{new Date(r.at).toLocaleString()}</td><td>{full(BigInt(r.spent_minor))}</td><td>{full(BigInt(r.won_minor))}</td></tr>)}</tbody></table>
