@@ -1,3 +1,4 @@
+import {activeHalf} from '../half.mjs';
 /**
  * Full-screen canvas particles (coins, sparks, confetti, fireworks) above the game, below dialogs.
  * One canvas per page, created on first use; draws only while particles are alive.
@@ -78,5 +79,6 @@ function frame(now){
 /** Design pixel (relative to the .cs-stage element) to viewport CSS pixel. */
 export function toScreen(x,y){
  const st=document.querySelector('.cs-stage');if(!st)return [innerWidth/2,innerHeight/2];
- const r=st.getBoundingClientRect();return [r.left+x*r.width/st.offsetWidth,r.top+y*r.height/st.offsetHeight];
+ // Half layout: full-plate y is mapped onto the shortened plate.
+ const r=st.getBoundingClientRect(),my=activeHalf?activeHalf.map(y):y;return [r.left+x*r.width/st.offsetWidth,r.top+my*r.height/st.offsetHeight];
 }

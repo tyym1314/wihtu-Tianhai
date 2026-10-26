@@ -1,5 +1,5 @@
 import React,{useEffect,useLayoutEffect,useRef,useState} from 'react';
-import {DECORATIVE,HALF_MIN_ASPECT,HALF_WIDE,WIDE_WIDTH,halfLayout} from './half.mjs';
+import {DECORATIVE,HALF_MIN_ASPECT,HALF_WIDE,WIDE_WIDTH,halfLayout,setActiveHalf} from './half.mjs';
 
 // Extended plates (plate-ext.webp) continue the art above and below the 1672-px design area.
 export const EXT_HEIGHT=2100;
@@ -36,7 +36,7 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
  // Half-screen: move every overlay up by the plate height removed above it (CSS `translate`, so the
  // elements' own transforms and animations are untouched); full-stage wrappers pass this on to their children.
  useLayoutEffect(()=>{
-  const root=stage.current;if(!root)return;
+  const root=stage.current;if(!root)return;setActiveHalf(half);
   const place=parent=>{for(const el of parent.children){if(el.dataset.halfBands!==undefined)continue;
    const top=el.offsetTop,h=el.offsetHeight;
    if(!half){el.style.translate='';el.style.visibility='';continue;}
@@ -45,6 +45,9 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
    const c=top+Math.min(h,80)/2,cut=half.cutAt(c),decor=DECORATIVE.test(el.className?.toString?.()||'');
    // Inside a removed band: decoration hides, controls / live data sit at the seam.
    el.style.translate=`0 ${cut&&!decor?half.map(cut[0])-top:half.map(c)-c}px`;
+   // Flying coins: the start moved with its band; the flight (--dy, full-plate px) is re-aimed at the mapped target.
+   const dy=el.dataset.dy0??el.style.getPropertyValue('--dy');
+   if(dy){el.dataset.dy0=dy;const y0=top+h/2,d=parseFloat(dy);el.style.setProperty('--dy',`${half.map(y0+d)-half.map(y0)}px`);}
    el.style.visibility=cut&&decor?'hidden':'';}};
   place(root);
   const mo=new MutationObserver(()=>place(root));mo.observe(root,{childList:true,subtree:true});

@@ -58,3 +58,7 @@ export function halfLayout(id,height=1672){
  const cutAt=v=>{const g=seg.find(g=>g.s===0&&v>g.a&&v<g.b);return g?[g.a,g.b]:null;};
  return {segments:seg,height:Math.round(map(height)),map,cutAt,removedAbove:v=>v-map(v)};
 }
+
+// The half layout currently on screen (set by Stage), so effects aimed in full-plate pixels land correctly.
+export let activeHalf=null;
+export const setActiveHalf=h=>{activeHalf=h;};
