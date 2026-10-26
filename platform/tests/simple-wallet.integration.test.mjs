@@ -198,6 +198,9 @@ test('RocketStar2 hides the crash point in flight and pays manual and automatic 
  const flying=await casino.casinoState(bob);assert.equal(flying.round.status,'drawing');assert.equal(flying.round.result,undefined);assert.equal(flying.round.reveal_at,null);
  const out=await casino.cashOut(bob,{bet_id:manual.id});assert.ok(out.cashout_x100>=130&&out.cashout_x100<140,String(out.cashout_x100));
  assert.equal((await casino.casinoState(bob)).cashouts.length,1);
+ // Regression (2026-10-26): once the rocket has passed an auto target, a manual cash-out pays the target, not more.
+ await pool.query('UPDATE casino_rounds SET bet_until=$2 WHERE id=$1',[s0.round.id,Date.now()-timeToReach(250)]);
+ const passed=await casino.cashOut(alice,{bet_id:auto.id});assert.equal(passed.cashout_x100,150);assert.equal(passed.payout_minor,'15000');
  await pool.query('UPDATE casino_rounds SET reveal_at=$2,ends_at=$3 WHERE id=$1',[s0.round.id,Date.now()-1,Date.now()+3000]);
  await assert.rejects(casino.cashOut(bob,{bet_id:late.id}),{code:'CRASHED'});
  await casino.tickCasino();await casino.tickCasino();await recover();

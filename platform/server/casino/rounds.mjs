@@ -316,8 +316,11 @@ export async function cashOut(session,body){
   if(!b)fail(404,'BET_NOT_FOUND');if(b.cashout_x100)return b;
   const r=num((await c.query('SELECT * FROM casino_rounds WHERE id=$1 FOR SHARE',[b.round_id])).rows[0]),now=Date.now();
   if(b.status!=='ACCEPTED'||r.status!=='drawing'||now<r.bet_until)fail(409,'CASHOUT_UNAVAILABLE');
-  const x=multiplierAt(now-r.bet_until);
-  if(now>=r.reveal_at||x>=r.result.crash_x100)fail(409,'CRASHED');
+  const now_x=multiplierAt(now-r.bet_until);
+  if(now>=r.reveal_at||now_x>=r.result.crash_x100)fail(409,'CRASHED');
+  // An auto cash-out target the rocket has already passed was taken at that target: a later manual request
+  // must not pay more (otherwise the target is a free floor and the manual cash-out a free upside).
+  const x=b.auto_x100&&now_x>=b.auto_x100?b.auto_x100:now_x;
   return (await c.query("UPDATE casino_bets SET status='SETTLING',cashout_x100=$2,payout_minor=$3,updated_at=now() WHERE id=$1 RETURNING *",[b.id,x,String(BigInt(b.stake_minor)*BigInt(x)/100n)])).rows[0];
  });
  return betView(bet);
