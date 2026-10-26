@@ -23,8 +23,11 @@ const models=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>g.kind==='
 // Return-rate tiers (see rtp.mjs): extra pinned models per (game, tier).
 const tierModels=Object.fromEntries(Object.values(CASINO_GAMES).filter(g=>g.kind==='instant').flatMap(g=>RTP_TIERS.map(t=>{const v=tierGame(g,t);return v?[[`${g.id}:${t}`,engineOf(g).model(v)]]:[];}).flat()));
 // Earlier calibrations (2M-spin recheck 2026-10-20): kept so spins pinned to them still settle.
-const LEGACY_PAY_SCALE={djlive:[22.82],magicslot:[31.1],chillislot:[25],jackpotslots:[26.6],sphinxlegend:[31.6]};
-const legacyModels=Object.entries(LEGACY_PAY_SCALE).flatMap(([id,scales])=>scales.flatMap(payScale=>{const g=CASINO_GAMES[id],old={...g,slot:{...g.slot,payScale}};
+// An entry is a payScale, or {payScale, freeSpins} for a calibration whose feature settings also changed.
+// SphinxLegend before 2026-10-26: the third package was 7 x3 (worth 21 spins, the others 20).
+const SPHINX_FS_V1={trigger:3,award:20,perExtra:0,retrigger:0,maxPlayed:60,choices:[{award:20,multiplier:1},{award:10,multiplier:2},{award:7,multiplier:3},{award:4,multiplier:5}]};
+const LEGACY_PAY_SCALE={djlive:[22.82],magicslot:[31.1],chillislot:[25],jackpotslots:[26.6],sphinxlegend:[{payScale:31.6,freeSpins:SPHINX_FS_V1},{payScale:31.77,freeSpins:SPHINX_FS_V1}]};
+const legacyModels=Object.entries(LEGACY_PAY_SCALE).flatMap(([id,scales])=>scales.flatMap(entry=>{const g=CASINO_GAMES[id],old={...g,slot:{...g.slot,...(typeof entry==='number'?{payScale:entry}:entry)}};
  return [engineOf(g).model(old),...RTP_TIERS.map(t=>tierGame(old,t)).filter(Boolean).map(v=>engineOf(g).model(v))];}));
 const byVersion=new Map([...legacyModels,...Object.values(models),...Object.values(tierModels)].map(m=>[m.version,m]));
 export const instantModelFor=(gameId,tier)=>tierModels[`${gameId}:${tier}`]||models[gameId];

@@ -198,11 +198,11 @@ const DEFINED=Object.freeze({
   wild:{id:'wild',reels:[1,2,3,4]},scatter:{id:'pepper',pays:[[3,200],[4,800],[5,3000]]},
   freeSpins:{trigger:3,award:12,perExtra:0,retrigger:3,multiplier:1,maxPlayed:60,boards:{start:2,collect:'chilli',steps:[{at:9,boards:3,wildReel:4},{at:14,boards:4,wildReel:3},{at:30,wildReel:2}]}},maxWin:5000}),
  // sphinxlegend: 5x3, 20 lines; 3 scatters let the player choose one of four free spin packages of equal value.
- sphinxlegend:linesSlot('sphinxlegend','SphinxLegend',{lines:LINES_20,payScale:31.77,
+ sphinxlegend:linesSlot('sphinxlegend','SphinxLegend',{lines:LINES_20,payScale:31.89,
   symbols:[['sphinx',[500,2000,8000]],['pharaoh',[300,1200,5000]],['cat',[200,800,3000]],['eye',[150,600,2000]],['ankh',[100,400,1500]],['A',[50,200,600]],['K',[40,150,500]],['Q',[30,120,400]],['J',[20,100,300]]],
   weights:{sphinx:10,pharaoh:14,cat:18,eye:22,ankh:26,A:40,K:44,Q:48,J:52,wild:[0,12,12,12,12],pyramid:8},wild:{id:'wild',reels:[1,2,3,4]},
   scatter:{id:'pyramid',pays:[[3,200],[4,1000],[5,5000]]},
-  freeSpins:{trigger:3,award:20,perExtra:0,retrigger:0,maxPlayed:60,choices:[{award:20,multiplier:1},{award:10,multiplier:2},{award:7,multiplier:3},{award:4,multiplier:5}]},maxWin:5000}),
+  freeSpins:{trigger:3,award:20,perExtra:0,retrigger:0,maxPlayed:60,choices:[{award:20,multiplier:1},{award:10,multiplier:2},{award:5,multiplier:4},{award:4,multiplier:5}]},maxWin:5000}),
  // 1001Nights: 5x3, 20 lines; random wild spins; a wild on reel 2 or 4 grows into a 1x3 mega wild;
  // 3 lamps give 10 "fortune" free spins with the low symbols removed.
  nights1001:linesSlot('nights1001','1001Nights',{lines:LINES_20,payScale:3.95,
