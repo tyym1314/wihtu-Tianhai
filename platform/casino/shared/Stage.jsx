@@ -55,14 +55,27 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
  });
  const ext=typeof plate==='string'?plate.replace('/plate.webp','/plate-ext.webp'):null,{scale,cy}=fit,scaleY=fit.scaleY??scale,left=fit.cx===undefined?undefined:fit.cx;
  const at=`translate(-50%,-50%) scale(${scale},${scaleY})`;
+ // Full screen: the extended plate is one complete picture (its centre is the plate's own pixels), so it is the
+ // only background drawn; the plate and the blurred fill are used only while it is missing.
+ const extReady=useImageReady(ext&&!panel?ext:null),single=extReady&&!half;
  return <div className="cs-stage-root" dir={dir}>
-  <div className="cs-stage-fill" style={{backgroundImage:`url(${plate})`}}/>
+  {!single&&<div className="cs-stage-fill" style={{backgroundImage:`url(${plate})`}}/>}
   {wide&&<div className="cs-stage-ext" style={{width:WIDE_WIDTH,height,top:cy,transform:at,backgroundImage:`url(${plate.replace('/plate.webp','/plate-wide.webp')})`}}/>}
   {ext&&!panel&&<div className="cs-stage-ext" style={{...(width>fullHeight?{width:EXT_WIDTH,height}:{width,height:EXT_HEIGHT}),top:cy,left,transform:at,backgroundImage:`url(${ext})`}}/>}
-  <div ref={stage} className={`cs-stage ${className}`} style={{width,height,top:cy,left,transform:at,backgroundImage:half?'none':`url(${plate})`}}>
+  <div ref={stage} className={`cs-stage ${className}`} style={{width,height,top:cy,left,transform:at,backgroundImage:half||single?'none':`url(${plate})`}}>
    {half&&<HalfPlate plate={plate} layout={half} width={width} height={fullHeight}/>}{children}</div>
  </div>;
 }
+
+/** True once the image has loaded (main.jsx preloads plate-ext, so this is normally true on the first frame). */
+function useImageReady(src){
+ const [ready,setReady]=useState(()=>!!src&&loaded.has(src));
+ useEffect(()=>{if(!src){setReady(false);return;}if(loaded.has(src)){setReady(true);return;}
+  let live=true;const i=new Image();i.onload=()=>{loaded.add(src);if(live)setReady(true);};i.onerror=()=>{if(live)setReady(false);};i.src=src;
+  return()=>{live=false;};},[src]);
+ return ready;
+}
+const loaded=new Set();
 
 const SEAM=24;
 /** The kept / squeezed segments of the plate stacked top to bottom; a segment after a cut fades in over the one above. */
