@@ -18,7 +18,9 @@ const Scene=LOADERS[GAME]&&lazy(LOADERS[GAME]);
 // so a slow connection never opens on empty reels. Capped at 15 s; anything still loading keeps loading in place.
 const img=n=>{const i=new Image();i.src=`/casino/${GAME}/${n}.webp?v=${__ASSET_VERSION__}`;return i.decode().catch(()=>{});};
 async function preload(){
- const plate=img('plate'),{CASINO_GAMES}=await import('../shared/casino-games.mjs');
+ // plate-ext fills the screen above/below (left/right for landscape) the design area: load it with the plate,
+ // otherwise the game opens with bare bands that fill in a moment later. Games without one resolve on the 404.
+ const plate=Promise.all([img('plate'),img('plate-ext')]),{CASINO_GAMES}=await import('../shared/casino-games.mjs');
  const S=CASINO_GAMES[GAME]?.slot,symbols=S?[...new Set([...(S.symbols||[]).map(x=>x.id),S.wild?.id,S.scatter?.id].filter(Boolean))]:[];
  const extra={olympus:['spinbtn']}[GAME]||[];
  const steps=[LOADERS[GAME](),plate,...[...symbols,...extra].map(img)];let done=0;
