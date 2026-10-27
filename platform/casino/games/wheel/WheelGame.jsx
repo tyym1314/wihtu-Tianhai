@@ -12,6 +12,7 @@ import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import {LAYOUTS} from './layouts.mjs';
 import {ChipRow,chipAt} from '../../shared/ChipRow.jsx';
 import './wheel.css';
+import {playerName,playerInitial} from '../../shared/player.mjs';
 
 const SPARKS=[[60,320],[880,420],[90,1040],[860,1100],[460,250],[300,1300],[700,1300]];
 const ell=([x,y,rx,ry])=>({left:x-rx,top:y-ry,width:2*rx,height:2*ry,borderRadius:'50%'});
@@ -74,7 +75,7 @@ export default function WheelGame({initial}){
   </Box>
   <RechargeTap x={bx} y={by} w={bw} h={bh}/><Box x={bx} y={by} w={bw} h={bh} className="wg-balance">{g.balance===null?'—':<CountUp value={Number(g.balance)} format={v=>full(Math.round(v))}/>}</Box>
   {L.winners&&<Box x={L.winners[0]} y={L.winners[1]} w={L.winners[2]} h={L.winners[3]} className="wg-winners">
-   {(state.today_winners||[]).length?state.today_winners.slice(0,L.winners[4]).map((w,i)=><div key={w.external_user_id}><em className={`r${i}`}>{w.external_user_id===state.me?'★':(w.external_user_id[0]||'?').toUpperCase()}</em><span>{w.external_user_id===state.me?t('myBet'):w.external_user_id.slice(0,9)}</span><b>{short(w.payout_minor)}</b></div>):<p>—</p>}
+   {(state.today_winners||[]).length?state.today_winners.slice(0,L.winners[4]).map((w,i)=><div key={w.external_user_id}><em className={`r${i}`}>{w.external_user_id===state.me?'★':playerInitial(w)}</em><span>{w.external_user_id===state.me?t('myBet'):playerName(w,9)}</span><b>{short(w.payout_minor)}</b></div>):<p>—</p>}
   </Box>}
   {L.pool&&<Box x={L.pool[0]} y={L.pool[1]} w={L.pool[2]} h={L.pool[3]} className="wg-jackpot"><CountUp value={Object.values(totals).reduce((a,x)=>a+Number(x.stake_minor),0)} format={v=>full(Math.round(v))}/></Box>}
   {L.todayWin&&<Box x={L.todayWin[0]} y={L.todayWin[1]} w={L.todayWin[2]} h={L.todayWin[3]} className="wg-balance"><CountUp value={sessionWin} format={v=>full(Math.round(v))}/></Box>}

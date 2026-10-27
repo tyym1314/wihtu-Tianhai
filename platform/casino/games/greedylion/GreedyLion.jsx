@@ -9,6 +9,7 @@ import {RechargeTap,useHostBalance} from '../../shared/recharge.jsx';
 import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import {HistoryModal} from '../../shared/History.jsx';
 import './greedylion.css';
+import {playerName,playerInitial} from '../../shared/player.mjs';
 
 const GAME=CASINO_GAMES.greedylion;
 const img=n=>`/casino/greedylion/${n}.webp?v=${__ASSET_VERSION__}`;
@@ -69,7 +70,7 @@ export default function GreedyLion({initial}){
   </Box>
   <RechargeTap x={742} y={20} w={132} h={50}/><Box x={742} y={20} w={132} h={50} className="gl-balance">{g.balance===null?'—':<CountUp value={Number(g.balance)} format={v=>full(Math.round(v))}/>}</Box>
   <Box x={672} y={150} w={248} h={112} className="gl-winners">
-   {(state.today_winners||[]).length?state.today_winners.map((w,i)=><div key={w.external_user_id}><em className={`r${i}`}>{w.external_user_id===state.me?'★':(w.external_user_id[0]||'?').toUpperCase()}</em><span>{w.external_user_id===state.me?t('myBet'):w.external_user_id.slice(0,9)}</span><b>{short(w.payout_minor)}</b></div>)
+   {(state.today_winners||[]).length?state.today_winners.map((w,i)=><div key={w.external_user_id}><em className={`r${i}`}>{w.external_user_id===state.me?'★':playerInitial(w)}</em><span>{w.external_user_id===state.me?t('myBet'):playerName(w,9)}</span><b>{short(w.payout_minor)}</b></div>)
     :<p>—</p>}
   </Box>
   {ORDER.map((id,i)=>{const [x,y]=PLATE[id];return <React.Fragment key={id}>

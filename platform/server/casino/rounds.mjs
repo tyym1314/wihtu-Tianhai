@@ -121,6 +121,15 @@ function sharedSnapshot(app,gameId,now){
  const pending=buildSnapshot(app,gameId,now).then(value=>{snapshots.set(key,{at:now,value});return value;},e=>{snapshots.delete(key);throw e;});
  snapshots.set(key,{...(hit||{}),pending});return pending;
 }
+/** Host display names / avatars (sent with each session) for rows that show other players. */
+async function withNames(appId,rows){
+ const ids=[...new Set(rows.map(r=>r.external_user_id))];if(!ids.length)return rows;
+ let found;
+ try{found=(await pool.query('SELECT external_user_id,display_name,avatar_url FROM casino_players WHERE app_id=$1 AND external_user_id=ANY($2)',[appId,ids])).rows;}
+ catch(e){if(e.code==='42P01')return rows;throw e;} // names table not created yet: show ids as before
+ const names=new Map(found.map(r=>[r.external_user_id,r]));
+ return rows.map(r=>({...r,name:names.get(r.external_user_id)?.display_name||null,avatar_url:names.get(r.external_user_id)?.avatar_url||null}));
+}
 async function buildSnapshot(app,gameId,now){
  const round=await currentRound(app,gameId,now),game=CASINO_GAMES[gameId];
  const [totals,history,winners,today]=await Promise.all([
@@ -131,16 +140,17 @@ async function buildSnapshot(app,gameId,now){
   todayWinners(app.id,gameId,now),
  ]);
  return {round,totals:Object.fromEntries(totals.rows.map(t=>[t.option_id,{stake_minor:t.total,players:t.players}])),
-  history:history.rows.map(h=>({seq:Number(h.seq),outcome:h.outcome})),winners:winners.rows.map(w=>({external_user_id:w.external_user_id,payout_minor:w.payout})),today,
-  cashouts:game.family==='crash'?(await pool.query('SELECT external_user_id,stake_minor::text stake_minor,cashout_x100 FROM casino_bets WHERE round_id=$1 AND cashout_x100 IS NOT NULL ORDER BY cashout_x100 LIMIT 30',[round.id])).rows:undefined,
+  history:history.rows.map(h=>({seq:Number(h.seq),outcome:h.outcome})),winners:await withNames(app.id,winners.rows.map(w=>({external_user_id:w.external_user_id,payout_minor:w.payout}))),today,
+  cashouts:game.family==='crash'?await withNames(app.id,(await pool.query('SELECT external_user_id,stake_minor::text stake_minor,cashout_x100 FROM casino_bets WHERE round_id=$1 AND cashout_x100 IS NOT NULL ORDER BY cashout_x100 LIMIT 30',[round.id])).rows):undefined,
   jackpot:game.bonus?.jackpot?await seedJackpot(app.id,gameId):undefined};
 }
 // Today's (UTC) biggest winners in this App and game, by total payout of revealed rounds.
 async function todayWinners(appId,gameId,now){
  const key=appId+':'+gameId,hit=todays.get(key);if(hit&&now-hit.at<TODAY_MS)return hit.value;
- const rows=(await pool.query(`SELECT b.external_user_id,sum(b.payout_minor)::text payout FROM casino_bets b JOIN casino_rounds r ON r.id=b.round_id
+ let rows=(await pool.query(`SELECT b.external_user_id,sum(b.payout_minor)::text payout FROM casino_bets b JOIN casino_rounds r ON r.id=b.round_id
    WHERE b.app_id=$1 AND r.app_id=$1 AND r.game_id=$2 AND b.status='SETTLED' AND b.payout_minor>0 AND r.reveal_at<=$3 AND b.created_at>=date_trunc('day',now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
    GROUP BY 1 ORDER BY sum(b.payout_minor) DESC LIMIT 3`,[appId,gameId,now])).rows.map(w=>({external_user_id:w.external_user_id,payout_minor:w.payout}));
+ rows=await withNames(appId,rows);
  todays.set(key,{at:now,value:rows});return rows;
 }
 

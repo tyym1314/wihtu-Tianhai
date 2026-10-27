@@ -11,6 +11,7 @@ import {CASINO_GAMES} from '../../../shared/casino-games.mjs';
 import {HistoryModal} from '../../shared/History.jsx';
 import '../rocketstar2/rocketstar2.css';
 import './crash.css';
+import {playerName,playerInitial} from '../../shared/player.mjs';
 
 const GROWTH=Math.log(2)/8000;
 const multAt=ms=>Math.floor(100*Math.exp(GROWTH*Math.max(0,ms))+1e-9);
@@ -139,7 +140,7 @@ export default function CrashGame({initial}){
   {state.history.slice(0,P.n).map((h,i)=>{const x=Math.round(Number(h.outcome)*100);return <Box key={h.seq} x={P.x+i*(P.w+P.gap)} y={P.y} w={P.w} h={P.h} className={`cg-pill ${tone(x)}`}>{h.outcome}{id==='crash'?'X':''}</Box>;})}
   {L.best&&<Box x={L.best[0]} y={L.best[1]} w={L.best[2]} h={L.best[3]} className="cg-best">{best?`${best.toFixed(2)}x`:'—'}</Box>}
   {L.players&&<Box x={L.players[0]} y={L.players[1]} w={L.players[2]} h={L.players[3]} className="cg-players">
-   {(state.cashouts||[]).slice(-4).reverse().map((c,i)=><div key={c.external_user_id+i}><em>{c.external_user_id===state.me?'★':(c.external_user_id[0]||'?').toUpperCase()}</em><span><b>{c.external_user_id===state.me?t('myBet'):c.external_user_id.slice(0,8)}</b><small>{fx(c.cashout_x100)}x · win {short(BigInt(c.stake_minor)*BigInt(c.cashout_x100)/100n)}</small></span></div>)}</Box>}
+   {(state.cashouts||[]).slice(-4).reverse().map((c,i)=><div key={c.external_user_id+i}><em>{c.external_user_id===state.me?'★':playerInitial(c)}</em><span><b>{c.external_user_id===state.me?t('myBet'):playerName(c,8)}</b><small>{fx(c.cashout_x100)}x · win {short(BigInt(c.stake_minor)*BigInt(c.cashout_x100)/100n)}</small></span></div>)}</Box>}
   <RechargeTap x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]}/><Box x={L.balance[0]} y={L.balance[1]} w={L.balance[2]} h={L.balance[3]} className="wg-balance cg-bal">{balance===null?'—':<CountUp value={Number(balance)} format={v=>full(Math.round(v))}/>}</Box>
   <ChipRow id={id} chips={GAME.chips} isOn={c=>!!bet&&bet.stake_minor===c} disabled={busy||phase!=='betting'||!!bet} onPick={placeBet}/>
   <button className={`cg-take ${canCash?'cash':bet?.cashout_x100?'done':''}`} style={box(L.take)} disabled={!canCash} onClick={cash}>{takeText}</button>
