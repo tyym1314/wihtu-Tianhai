@@ -57,13 +57,16 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
  const at=`translate(-50%,-50%) scale(${scale},${scaleY})`;
  // Full screen: the extended plate is one complete picture (its centre is the plate's own pixels), so it is the
  // only background drawn; the plate and the blurred fill are used only while it is missing.
- const extReady=useImageReady(ext&&!panel?ext:null),single=extReady&&!half;
+ const extReady=useImageReady(ext&&!panel?ext:null),wideSrc=wide?plate.replace('/plate.webp','/plate-wide.webp'):null,wideReady=useImageReady(wideSrc);
+ // Voice-room panel: a baked one-piece plate-half.webp replaces the stacked bands (see scripts/casino-half-plates.py).
+ const halfSrc=half?plate.replace('/plate.webp','/plate-half.webp'):null,halfReady=useImageReady(halfSrc);
+ const single=(extReady&&!half&&!panel)||(wide&&wideReady)||(half&&halfReady);
  return <div className="cs-stage-root" dir={dir}>
   {!single&&<div className="cs-stage-fill" style={{backgroundImage:`url(${plate})`}}/>}
-  {wide&&<div className="cs-stage-ext" style={{width:WIDE_WIDTH,height,top:cy,transform:at,backgroundImage:`url(${plate.replace('/plate.webp','/plate-wide.webp')})`}}/>}
+  {wide&&<div className="cs-stage-ext" style={{width:WIDE_WIDTH,height,top:cy,transform:at,backgroundImage:`url(${wideSrc})`}}/>}
   {ext&&!panel&&<div className="cs-stage-ext" style={{...(width>fullHeight?{width:EXT_WIDTH,height}:{width,height:EXT_HEIGHT}),top:cy,left,transform:at,backgroundImage:`url(${ext})`}}/>}
-  <div ref={stage} className={`cs-stage ${className}`} style={{width,height,top:cy,left,transform:at,backgroundImage:half||single?'none':`url(${plate})`}}>
-   {half&&<HalfPlate plate={plate} layout={half} width={width} height={fullHeight}/>}{children}</div>
+  <div ref={stage} className={`cs-stage ${className}`} style={{width,height,top:cy,left,transform:at,backgroundImage:half&&halfReady?`url(${halfSrc})`:(half||single?'none':`url(${plate})`),backgroundSize:'100% 100%'}}>
+   {half&&!halfReady&&<HalfPlate plate={plate} layout={half} width={width} height={fullHeight}/>}{children}</div>
  </div>;
 }
 
