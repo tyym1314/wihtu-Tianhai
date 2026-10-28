@@ -68,7 +68,10 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
 
 /** True once the image has loaded (main.jsx preloads plate-ext, so this is normally true on the first frame). */
 function useImageReady(src){
- const [ready,setReady]=useState(()=>!!src&&loaded.has(src));
+ // main.jsx preloads the same URL before the scene mounts: an image already in the memory cache is ready on the
+ // first render, so the fallback plate is never painted in between.
+ const [ready,setReady]=useState(()=>{if(!src)return false;if(loaded.has(src))return true;const i=new Image();i.src=src;
+  if(i.complete&&i.naturalWidth){loaded.add(src);return true;}return false;});
  useEffect(()=>{if(!src){setReady(false);return;}if(loaded.has(src)){setReady(true);return;}
   let live=true;const i=new Image();i.onload=()=>{loaded.add(src);if(live)setReady(true);};i.onerror=()=>{if(live)setReady(false);};i.src=src;
   return()=>{live=false;};},[src]);
