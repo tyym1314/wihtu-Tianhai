@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import {waitForLaunch,reportProgress,reportShown} from './shared/client.mjs';
 import {t,setLocale,isRtl} from './shared/i18n.mjs';
 import './shared/shell.css';
+import {HALF_MIN_ASPECT} from './shared/half.mjs';
 
 const GAME=location.pathname.split('/').pop();
 const LOADERS={greedylion:()=>import('./games/greedylion/GreedyLion.jsx'),rocketstar2:()=>import('./games/rocketstar2/RocketStar2.jsx'),teenpatti:()=>import('./games/teenpatti/TeenPatti.jsx'),olympus:()=>import('./games/olympus/Olympus.jsx'),piratefish:()=>import('./games/piratefish/PirateFish.jsx'),fishstar:()=>import('./games/fishstar/FishStar.jsx')};
@@ -18,9 +19,10 @@ const Scene=LOADERS[GAME]&&lazy(LOADERS[GAME]);
 // so a slow connection never opens on empty reels. Capped at 15 s; anything still loading keeps loading in place.
 const img=n=>{const i=new Image();i.src=`/casino/${GAME}/${n}.webp?v=${__ASSET_VERSION__}`;return i.decode().catch(()=>{});};
 async function preload(){
- // plate-ext fills the screen above/below (left/right for landscape) the design area: load it with the plate,
- // otherwise the game opens with bare bands that fill in a moment later. Games without one resolve on the 404.
- const plate=Promise.all([img('plate'),img('plate-ext')]),{CASINO_GAMES}=await import('../shared/casino-games.mjs');
+ // The background is one complete picture per mode (voice-room panel or full screen); the scene waits for it so
+ // nothing is ever drawn in pieces. Same choice as Stage: a panel is wider than HALF_MIN_ASPECT.
+ const panel=window.innerWidth/window.innerHeight>HALF_MIN_ASPECT;
+ const plate=img(panel?'plate-half':'plate-full'),{CASINO_GAMES}=await import('../shared/casino-games.mjs');
  const S=CASINO_GAMES[GAME]?.slot,symbols=S?[...new Set([...(S.symbols||[]).map(x=>x.id),S.wild?.id,S.scatter?.id].filter(Boolean))]:[];
  const extra={olympus:['spinbtn']}[GAME]||[];
  const steps=[LOADERS[GAME](),plate,...[...symbols,...extra].map(img)];let done=0;

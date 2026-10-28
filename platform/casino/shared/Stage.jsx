@@ -53,20 +53,16 @@ export function Stage({plate,width=941,height:fullHeight=1672,className='',dir,c
   const mo=new MutationObserver(()=>place(root));mo.observe(root,{childList:true,subtree:true});
   return()=>mo.disconnect();
  });
- const ext=typeof plate==='string'?plate.replace('/plate.webp','/plate-ext.webp'):null,{scale,cy}=fit,scaleY=fit.scaleY??scale,left=fit.cx===undefined?undefined:fit.cx;
+ const {scale,cy}=fit,scaleY=fit.scaleY??scale,left=fit.cx===undefined?undefined:fit.cx;
  const at=`translate(-50%,-50%) scale(${scale},${scaleY})`;
- // Full screen: the extended plate is one complete picture (its centre is the plate's own pixels), so it is the
- // only background drawn; the plate and the blurred fill are used only while it is missing.
- const extReady=useImageReady(ext&&!panel?ext:null),wideSrc=wide?plate.replace('/plate.webp','/plate-wide.webp'):null,wideReady=useImageReady(wideSrc);
- // Voice-room panel: a baked one-piece plate-half.webp replaces the stacked bands (see scripts/casino-half-plates.py).
- const halfSrc=half?plate.replace('/plate.webp','/plate-half.webp'):null,halfReady=useImageReady(halfSrc);
- const single=(extReady&&!half&&!panel)||(wide&&wideReady)||(half&&halfReady);
+ // One complete picture per mode, nothing stacked: plate-full (full screen, art beyond the design area included),
+ // plate-half (voice-room panel). The scene is shown only once it has loaded (main.jsx preloads the same file).
+ const one=typeof plate==='string'?plate.replace('/plate.webp',panel?'/plate-half.webp':'/plate-full.webp'):null,ready=useImageReady(one);
+ const box=panel?(wide?{width:WIDE_WIDTH,height}:{width,height}):(width>fullHeight?{width:EXT_WIDTH,height}:{width,height:EXT_HEIGHT});
  return <div className="cs-stage-root" dir={dir}>
-  {!single&&<div className="cs-stage-fill" style={{backgroundImage:`url(${plate})`}}/>}
-  {wide&&<div className="cs-stage-ext" style={{width:WIDE_WIDTH,height,top:cy,transform:at,backgroundImage:`url(${wideSrc})`}}/>}
-  {ext&&!panel&&<div className="cs-stage-ext" style={{...(width>fullHeight?{width:EXT_WIDTH,height}:{width,height:EXT_HEIGHT}),top:cy,left,transform:at,backgroundImage:`url(${ext})`}}/>}
-  <div ref={stage} className={`cs-stage ${className}`} style={{width,height,top:cy,left,transform:at,backgroundImage:half&&halfReady?`url(${halfSrc})`:(half||single?'none':`url(${plate})`),backgroundSize:'100% 100%'}}>
-   {half&&!halfReady&&<HalfPlate plate={plate} layout={half} width={width} height={fullHeight}/>}{children}</div>
+  {ready?<div className="cs-stage-ext" style={{...box,top:cy,left,transform:at,backgroundImage:`url(${one})`}}/>
+   :<div className="cs-stage-ext" style={{width,height,top:cy,left,transform:at,backgroundImage:half?'none':`url(${plate})`}}>{half&&<HalfPlate plate={plate} layout={half} width={width} height={fullHeight}/>}</div>}
+  <div ref={stage} className={`cs-stage ${className}`} style={{width,height,top:cy,left,transform:at}}>{children}</div>
  </div>;
 }
 
