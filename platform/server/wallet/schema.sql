@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS wallet_ledger (id bigserial PRIMARY KEY, scope_id tex
 CREATE INDEX IF NOT EXISTS wallet_reservations_expiry ON wallet_reservations(scope_id,expires_at) WHERE state='RESERVED';
 CREATE INDEX IF NOT EXISTS wallet_probability_expiry ON wallet_probability(scope_id,expires_at) WHERE state='AUTHORIZED';
 CREATE INDEX IF NOT EXISTS wallet_ledger_operations ON wallet_ledger(scope_id,operation_id);
+-- Transfer clearing audit (deploy/monitor.mjs) reads only transfer:* accounts; without this it scans the whole ledger.
+CREATE INDEX IF NOT EXISTS wallet_ledger_transfer_accounts ON wallet_ledger(scope_id,account) WHERE account LIKE 'transfer:%';
 CREATE TABLE IF NOT EXISTS wallet_operation_ids (partner_id text NOT NULL, app_id text NOT NULL, environment text NOT NULL, operation_id text NOT NULL, scope_id text NOT NULL REFERENCES wallet_scopes, PRIMARY KEY(partner_id,app_id,environment,operation_id));
 
 -- Bounded nonredeemable coin issuer account; existing 47-table structure remains.
