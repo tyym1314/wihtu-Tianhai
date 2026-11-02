@@ -166,7 +166,7 @@ function Panel({kind,close,piggy,claim,GAME,img,mult,id}){
  const [data,setData]=useState(null),[period,setPeriod]=useState('day');
  useEffect(()=>{if(kind==='records')api('/api/casino/records').then(setData).catch(()=>setData({records:[]}));
   if(kind==='rank'){setData(null);api(`/api/casino/rank?period=${period}`).then(setData).catch(()=>setData({rows:[]}));}},[kind,period]);
- return <div className="cs-modal-back" onClick={close}><div className={`cs-modal fs-panel fs-${kind}`} onClick={e=>e.stopPropagation()}>
+ return <div className="cs-modal-back" onClick={close}><div className={`cs-modal fs-panel fs-p-${kind}`} onClick={e=>e.stopPropagation()}>
   <button className="fs-x" onClick={close} aria-label={t('close')}>×</button>
   {kind==='piggy'&&<div className="fs-piggy-wrap"><img className="fs-piggy-art" src={img('piggy')} alt=""/><div><h2>{t('piggyBank')}</h2><p>{t('piggyText')}</p>
    <div className="fs-piggy-cols"><div><small>{t('rewardToday')}</small><b>{piggy?full(BigInt(piggy.claimable_minor)):'—'}</b>
