@@ -25,4 +25,6 @@ printf '{"schema":3,"environment":"production","database":"oasis_production","re
 (cd "$TMP" && sha256sum -- * > SHA256SUMS)
 mv -T "$TMP" "$DEST/$TS"
 trap - EXIT
+# Keep only the newest backup (disk is small; older ones are removed after the new one is complete).
+find "$DEST" -mindepth 1 -maxdepth 1 -type d -name '2*Z' ! -name "$TS" -exec rm -rf {} +
 printf '{"backup":"%s","database_bytes":%s}\n' "$DEST/$TS" "$(stat -c %s "$DEST/$TS/database.dump")"
